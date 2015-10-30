@@ -365,22 +365,18 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
   ! scale the iteration by 1/10 such that the numbers used in the output file aren't too large
   WRITE(iter_char(1:7),'(I7.7)') iter
 
-  !! store the current iteration in "filenum"
-  !filenum(fileCount) = iter
-  !fileCount = fileCount + 1_lng
 
   ! open the proper output file
-  OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.dat')
-  WRITE(160,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "i" "Sh" "rp" "bulk_conc" "delNBbyCV"'
-  WRITE(160,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
-  !WRITE(160,'(A10,E15.5,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',np,'F=POINT'
+!  OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.dat')
+ 
+  OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
+  WRITE(160,*) '"x","y","z","u","v","w","i","Sh","rp","bulk_conc","delNBbyCV"'
 
       DO i=1,np
-
-         !WRITE(160,'(6E15.5,1I4,2E15.5)') xp(i)*xcf,yp(i)*ycf,MOD(zp(i),REAL(nz,dbl))*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,rp(i),par_conc(i)
-         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (xp(i)-1_lng))*xcf,((jMin - Cj) + (yp(i)-1_lng))*ycf,(((kMin - 1_lng) + &
-	 				  MOD(zp(i),REAL(nz,dbl))) - 0.5_dbl)*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,sh(i),rp(i),bulk_conc(i),delNBbyCV(i)
-
+!         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (xp(i)-1_lng))*xcf,((jMin - Cj) + (yp(i)-1_lng))*ycf,(((kMin - 1_lng) + &
+!	 	  MOD(zp(i),REAL(nz,dbl))) - 0.5_dbl)*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,sh(i),rp(i),bulk_conc(i),delNBbyCV(i)
+         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (xp(i)-1_lng)),',',((jMin - Cj) + (yp(i)-1_lng)),',',(((kMin - 1_lng) + &
+	 	  MOD(zp(i),REAL(nz,dbl))) - 0.5_dbl), ',', up(i)*vcf,',', vp(i)*vcf,',', wp(i)*vcf,',',i,',',sh(i),',',rp(i),',',bulk_conc(i),',',delNBbyCV(i)
       END DO
 
   CLOSE(160)
