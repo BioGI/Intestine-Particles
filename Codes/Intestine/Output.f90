@@ -375,8 +375,9 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
       DO i=1,np
 !         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (xp(i)-1_lng))*xcf,((jMin - Cj) + (yp(i)-1_lng))*ycf,(((kMin - 1_lng) + &
 !	 	  MOD(zp(i),REAL(nz,dbl))) - 0.5_dbl)*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,sh(i),rp(i),bulk_conc(i),delNBbyCV(i)
-         WRITE(160,1001) ((iMin - Ci) + (xp(i)-1_lng)),',',((jMin - Cj) + (yp(i)-1_lng)),',',(((kMin - 1_lng) + &
-	 	  MOD(zp(i),REAL(nz,dbl))) - 0.5_dbl), ',', up(i)*vcf,',', vp(i)*vcf,',', wp(i)*vcf,',',i,',',sh(i),',',rp(i),',',bulk_conc(i),',',delNBbyCV(i)
+!        WRITE(160,1001) ((iMin - Ci) + (xp(i)-1_lng)),',',((jMin - Cj) + (yp(i)-1_lng)),',',(((kMin - 1_lng) + &
+ 
+        WRITE(160,1001) xp(i),',',yp(i),',',zp(i), ',', up(i)*vcf,',', vp(i)*vcf,',', wp(i)*vcf,',',i,',',sh(i),',',rp(i),',',bulk_conc(i),',',delNBbyCV(i)
 1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5)
       END DO
 
