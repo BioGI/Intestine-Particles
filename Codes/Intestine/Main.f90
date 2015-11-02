@@ -14,7 +14,8 @@ USE Output
 IMPLICIT NONE
 
 INTEGER(lng) :: mpierr							! MPI standard error variable
-
+INTEGER, allocatable :: seed(:)
+INTEGER :: seed_size
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MPI Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CALL MPI_INIT(mpierr)							! initialize parallelization [Intrinsic]
@@ -22,6 +23,12 @@ CALL MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs,mpierr)			! get the size of the paral
 CALL MPI_COMM_RANK(MPI_COMM_WORLD,myid,mpierr)				! assign each prossessing unit a number (myid) for identification [Intrinsic]
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Simulation Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CALL RANDOM_SEED(size=seed_size)
+ALLOCATE(seed(seed_size))
+seed=10972
+CALL RANDOM_SEED(put=seed)
+DEALLOCATE(seed)
+
 CALL Global_Setup							! set up the simulation {MODULE: Setup]
 CALL MPI_Setup								! set up MPI component of the simulation [MODULE: Parallel]
 CALL LBM_Setup								! set up LBM simulation [MODULE: LBM]
