@@ -32,7 +32,7 @@
 4		! initial/maintained scalar distribution [1=BLOB,2=LINE,3=INLET,4=UNIFORM]	(sclrIC)
 0.0		! period at which to start the scalar calculation				(phiPer)
 1.0		! maximum value of scalar distribution                                	        (phiIC)
-1.0		! number of time periods							(nPers)
+5.0		! number of time periods							(nPers)
 20		! approximate number of output files						(numOuts)
 .FALSE.		! restart flag, .TRUE. or .FALSE						(restart)
 1		! flag to track particles (0 if off and 1 if on)				(ParticleTrack)
