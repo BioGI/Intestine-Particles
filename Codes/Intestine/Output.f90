@@ -392,59 +392,64 @@ END SUBROUTINE PrintFields
 SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
 !------------------------------------------------------------------------------------------------------------
 IMPLICIT NONE
-INTEGER(lng) 	:: numParticlesSub
-INTEGER(lng)	:: i,j,k,ii,jj,kk,n,xaxis,yaxis		! index variables (local and global)
-CHARACTER(7)	:: iter_char				! iteration stored as a character
+INTEGER(lng) :: numParticlesSub
+INTEGER(lng) :: i,j,k,ii,jj,kk,n,xaxis,yaxis			! index variables (local and global)
+CHARACTER(7) :: iter_char					! iteration stored as a character
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
 
-IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)	&
-                                                   .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
+IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
+   .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0) &
+   .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
 
-  ! scale the iteration by 1/10 such that the numbers used in the output file aren't too large
-  WRITE(iter_char(1:7),'(I7.7)') iter
+   !------ scale the iteration by 1/10 such that the numbers used in the output file aren't too large
+   WRITE(iter_char(1:7),'(I7.7)') iter
 
-  ! store the current iteration in "parfilenum"
-  parfilenum(parfileCount) = iter
-  !numparticleSubfile(parfileCount) = numParticlesSub
-  numParticlesSub  = 0_lng
- !parfileCount = parfileCount + 1_lng
+   !------ store the current iteration in "parfilenum"
+   parfilenum(parfileCount) = iter
+   numParticlesSub  = 0_lng
 
-  ! open the proper output file
-  OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.dat')
-  WRITE(160,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "ParID" "Sh" "rp" "bulk_conc" "delNBbyCV" "Sst" "S" "Veff" "Nbj"'
-  WRITE(160,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
-  !WRITE(160,'(A10,E15.5,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',np,'F=POINT'
+   !------ open the proper output file
+   OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.dat')
+   WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
 
-! Using linked lists
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	numParticlesSub = numParticlesSub + 1_lng
-	next => current%next ! copy pointer of next node
+   !------ Using linked lists
+   current => ParListHead%next
 
-         !WRITE(160,'(6E15.5,1I4,2E15.5)') xp(i)*xcf,yp(i)*ycf,MOD(zp(i),REAL(nz,dbl))*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,rp(i),par_conc(i)
-!         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (xp(i)-1_lng))*xcf,((jMin - Cj) + (yp(i)-1_lng))*ycf,(((kMin - 1_lng) + &
-!	 MOD(zp(i),REAL(nz,dbl))) - 0.5_dbl)*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,sh(i),rp(i),bulk_conc(i),delNBbyCV(i)
+   DO WHILE (ASSOCIATED(current))
+      numParticlesSub = numParticlesSub + 1_lng
+      next => current%next 					! copy pointer of next node
 
-!         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (current%pardata%xp-1_lng))*xcf,((jMin - Cj) + (current%pardata%yp-1_lng))*ycf,(((kMin - 1_lng) + &
-!	 MOD(current%pardata%zp,REAL(nz,dbl))) - 0.5_dbl)*zcf, current%pardata%up*vcf, current%pardata%vp*vcf, current%pardata%wp*vcf,current%pardata%parid,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV
+      WRITE(160,1001) 	current%pardata%xp 	  ,',',	&
+			current%pardata%yp  	  ,',',	&
+			current%pardata%zp 	  ,',',	&
+                        current%pardata%up*vcf 	  ,',',	&
+		       	current%pardata%vp*vcf 	  ,',',	&
+			current%pardata%wp*vcf 	  ,',',	&
+                        current%pardata%parid 	  ,',',	&
+			current%pardata%sh 	  ,',',	&
+			current%pardata%rp 	  ,',',	&
+			current%pardata%bulk_conc ,',', &
+			current%pardata%delNBbyCV ,',', &
+			current%pardata%Sst 	  ,',',	&
+			current%pardata%S 	  ,',',	&
+			current%pardata%Veff 	  ,',',	&
+			current%pardata%Nbj
 
-         WRITE(160,'(6E15.5,1I9,8E15.5)') ((current%pardata%xp-xaxis))*xcf,((current%pardata%yp-yaxis))*ycf,((MOD(current%pardata%zp,REAL(nz,dbl))) - 0.5_dbl)*zcf, current%pardata%up*vcf, current%pardata%vp*vcf, current%pardata%wp*vcf,current%pardata%parid,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%Sst,current%pardata%S,current%pardata%Veff,current%pardata%Nbj
+1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2)
 
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-   CLOSE(160)
+     current => next   						! point to next node in the list
+  ENDDO
+
+  CLOSE(160)
   numparticleSubfile(parfileCount) = numParticlesSub	
   parfileCount = parfileCount + 1_lng
 ENDIF
 
 ! NEED TO MERGE THIS OUTPUT IN THE CASE OF PARALLEL
-
 
 !------------------------------------------------------------------------------------------------------------
 END SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
