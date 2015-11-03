@@ -358,34 +358,6 @@ END IF
 END SUBROUTINE PrintFields
 !------------------------------------------------
 
-!!------------------------------------------------------------------------------------------------------------
-!SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
-!!------------------------------------------------------------------------------------------------------------
-!IMPLICIT NONE
-!
-!INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
-!CHARACTER(7)	:: iter_char				! iteration stored as a character
-!
-!IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)	&
-!                                                   .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
-!  ! scale the iteration by 1/10 such that the numbers used in the output file aren't too large
-!  WRITE(iter_char(1:7),'(I7.7)') iter
-!  OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-!  WRITE(160,*) '"x","y","z","u","v","w","i","Sh","rp","bulk_conc","delNBbyCV"'
-!  DO i=1,np
-!     WRITE(160,1001) xp(i),',',yp(i),',',zp(i), ',', up(i)*vcf,',', vp(i)*vcf,',', wp(i)*vcf,',',i,',',sh(i),',',rp(i),',',bulk_conc(i),',',delNBbyCV(i)
-!1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5)
-!  END DO
-!
-!  CLOSE(160)
-!ENDIF
-!
-!! NEED TO MERGE THIS OUTPUT IN THE CASE OF PARALLEL
-!
-!!------------------------------------------------------------------------------------------------------------
-!END SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
-!!------------------------------------------------------------------------------------------------------------
-
 
 
 !------------------------------------------------------------------------------------------------------------
@@ -413,7 +385,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
    numParticlesSub  = 0_lng
 
    !------ open the proper output file
-   OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.dat')
+   OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
    WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
 
    !------ Using linked lists
@@ -454,19 +426,6 @@ ENDIF
 !------------------------------------------------------------------------------------------------------------
 END SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
 !------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
