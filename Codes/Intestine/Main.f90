@@ -59,24 +59,22 @@ DO iter = iter0-0_lng,nt
    CALL Collision							! collision step [MODULE: Algorithm]
    CALL MPI_Transfer							! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
   
-   !------ For full 3D domain 
    IF (domaintype .EQ. 0) THEN  					! only needed when planes of symmetry exist
       CALL SymmetryBC							! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
    ENDIF
 
-
    IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN	! If particle tracking is 'on' then do the following
-       CALL Particle_Track
+      CALL Calc_Global_Bulk_Scalar_Conc 
+      CALL Collect_Distribute_Global_Bulk_Scalar_Conc
+      CALL Particle_Track
    ENDIF
   
    CALL Stream								! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
    CALL Macro								! calcuate the macroscopic quantities [MODULE: Algorithm]
 
-
    IF (iter .GE. phiStart) THEN
       CALL Scalar							! calcuate the evolution of scalar in the domain [MODULE: Algorithm]
    END IF
-
 
    !------ Testing values with time
    IF (myid .EQ. master) THEN
@@ -106,9 +104,11 @@ DO iter = iter0-0_lng,nt
    ENDIF
 
    CALL PrintFields							! output the velocity, density, and scalar fields [MODULE: Output]
+
    IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN       ! If particle tracking is 'on' then do the following 
        CALL PrintParticles						! output the particle velocity, radius, position and con. [MODULE: Output]
    ENDIF
+
    CALL PrintScalar							! prints total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
    CALL PrintMass							! print the total mass in the system (TEST)
    CALL PrintVolume							! print the volume in the system (TEST)
@@ -123,6 +123,7 @@ CALL PrintFinalRestart							! print a final set of restart files to continue if
 CALL DEAllocateArrays							! clean up the memory [MODULE: Setup]
 CALL CloseOutputFiles							! closes output files [MODULE: Output.f90]
 CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
+!CALL MPI_TYPE_FREE(mpipartransfertype,mpierr)
 CALL MPI_FINALIZE(mpierr)						! end the MPI simulation [Intrinsic]
 
 !================================================ 
