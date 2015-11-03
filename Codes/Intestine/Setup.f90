@@ -9,60 +9,57 @@ IMPLICIT NONE
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LBM Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-INTEGER(lng), PARAMETER :: NumDistDirs	= 14_lng					! number of distribution function directions minus one (ex. D3Q15 -> 14)
-
-REAL(dbl),		ALLOCATABLE :: f(:,:,:,:)							! distribution function
-REAL(dbl), 		ALLOCATABLE :: fplus(:,:,:,:)						! post-collision distribution function
+INTEGER(lng), PARAMETER :: NumDistDirs	= 14_lng				! number of distribution function directions minus one (ex. D3Q15 -> 14)
+REAL(dbl),		ALLOCATABLE :: f(:,:,:,:)				! distribution function
+REAL(dbl), 		ALLOCATABLE :: fplus(:,:,:,:)				! post-collision distribution function
 REAL(dbl), 		ALLOCATABLE :: u(:,:,:),v(:,:,:),w(:,:,:)		! x,y, and z components of the fluid velocity vector
-REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)							! density
+REAL(dbl), 		ALLOCATABLE :: dudx(:,:,:),dudy(:,:,:),dudz(:,:,:)	! x,y, and z components of the fluid velocity vector
+REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)				! density
 INTEGER(lng), 	ALLOCATABLE :: node(:,:,:)    					! node flags (FLUID/SOLID)
-REAL(dbl), 		ALLOCATABLE :: ex(:),ey(:),ez(:)					! LBM discretized velocity vectors
+REAL(dbl), 		ALLOCATABLE :: ex(:),ey(:),ez(:)			! LBM discretized velocity vectors
 INTEGER(lng), 	ALLOCATABLE :: bb(:), sym(:,:)					! bounceback and symmetry directions
-REAL(dbl), 		ALLOCATABLE :: wt(:)    							! weighting coefficients for the equilibrium distribution functions
-
-REAL(dbl)		:: den, denL											! density (physical, lattice units)
-REAL(dbl)		:: nu, nuL												! kinematic viscosity (physical, lattice units)
-REAL(dbl) 		:: cs														! speed of sound on the lattice
-REAL(dbl)		:: tau													! relaxation parameters of coarse and fine blocks
-REAL(dbl)		:: oneOVERtau											! reciprical of tau
-INTEGER(lng)	:: nx,ny,nz												! number of global nodes in the x, y, and z directions respectively
-INTEGER(lng)	:: nxSub,nySub,nzSub									! number of local nodes in the each direction
-INTEGER(lng)	:: iter0,iter,nt										! initial time step, timestep index, total number of timesteps
-INTEGER(lng)	:: domaintype												! a flag to denote domain type - 0 for 1/4th cylinder and 1 for full cylinder
-INTEGER(lng), PARAMETER :: FLUID		= 0_lng						! fluid
-INTEGER(lng), PARAMETER :: SOLID		= 1_lng						! solid
-
-LOGICAL :: restart														! Restart Flag
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REAL(dbl), 		ALLOCATABLE :: wt(:)    				! weighting coefficients for the equilibrium distribution functions
+REAL(dbl)		:: den, denL						! density (physical, lattice units)
+REAL(dbl)		:: nu, nuL						! kinematic viscosity (physical, lattice units)
+REAL(dbl) 		:: cs							! speed of sound on the lattice
+REAL(dbl)		:: tau							! relaxation parameters of coarse and fine blocks
+REAL(dbl)		:: oneOVERtau						! reciprical of tau
+INTEGER(lng)	:: nx,ny,nz							! number of global nodes in the x, y, and z directions respectively
+INTEGER(lng)	:: nxSub,nySub,nzSub						! number of local nodes in the each direction
+INTEGER(lng)	:: iter0,iter,nt						! initial time step, timestep index, total number of timesteps
+INTEGER(lng)	:: domaintype							! a flag to denote domain type - 0 for 1/4th cylinder and 1 for full cylinder
+INTEGER(lng), PARAMETER :: FLUID		= 0_lng				! fluid inbetween
+INTEGER(lng), PARAMETER :: SOLID		= 1_lng				! solid interior (moving)
+INTEGER(lng), PARAMETER :: SOLID2		= 2_lng				! solid exterior (stationary)
+INTEGER(lng), PARAMETER :: qitermax = 15_lng 					! max number of q iterations
+LOGICAL :: restart								! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-REAL(dbl), ALLOCATABLE :: phi(:,:,:)			! passive scalar
-REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)	! passive scalar contribution from particles
-REAL(dbl), ALLOCATABLE :: phiTemp(:,:,:)		! temporary storage of passive scalar
-REAL(dbl) :: Sc 										! Schmidt number
-REAL(dbl) :: Dm,Dmcf									! binary molecular diffusivity (passive scalar in fluid), diffusivity conversion factor
-REAL(dbl) :: Delta									! scalar parameter
-REAL(dbl) :: phiIC, phiWall						! values of scalar: initial, wall, contribution from boundary
+REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
+REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)				! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: tausgs_particle_x(:,:,:)				! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: tausgs_particle_y(:,:,:)				! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: tausgs_particle_z(:,:,:)				! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: phiTemp(:,:,:)					! temporary storage of passive scalar
+REAL(dbl) :: Sc 								! Schmidt number
+REAL(dbl) :: Dm,Dmcf								! binary molecular diffusivity (passive scalar in fluid), diffusivity conversion factor
+REAL(dbl) :: Delta								! scalar parameter
+REAL(dbl) :: phiIC, phiWall							! values of scalar: initial, wall, contribution from boundary
 REAL(dbl) :: phiAbsorbed							! total amount of scalar absorbed up to current time
 REAL(dbl) :: phiAbsorbedS							! total amount of scalar absorbed up to current time - through the macroscopic surface
 REAL(dbl) :: phiAbsorbedV							! total amount of scalar absorbed up to current time - through the villi
 REAL(dbl) :: phiInOut								! total amount of scalar leaving/entering the domain
 REAL(dbl) :: phiTotal								! total intial amount of scalar in the domain
-REAL(dbl) :: sigma									! standard deviation for scalar distributions
-REAL(dbl) :: phiPer									! period at which to start the scalar
+REAL(dbl) :: sigma								! standard deviation for scalar distributions
+REAL(dbl) :: phiPer								! period at which to start the scalar
 INTEGER(lng) :: phiStart							! iteration to start scalar calculation scalar
 INTEGER(lng) :: sclrIC								! initial condition to use (BLOB, LINE, or INLET)
-
-REAL(dbl), PARAMETER :: ee = 2.71828182846	! e^1
-
-INTEGER(lng), PARAMETER :: BLOB=1				! scalar initial condition: circular gaussian distribution of scalar at the center of the domain
-INTEGER(lng), PARAMETER :: LINE=2				! scalar initial condition: gaussian distribution of scalar in the x,y-directions along the centerline
-INTEGER(lng), PARAMETER :: INLET=3				! scalar initial condition: gaussian distribution of scalar in the z-direction along the inlet
-INTEGER(lng), PARAMETER :: UNIFORM=4			! scalar initial condition: uniform scalar in the entire domain (phi=phiIC)
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REAL(dbl), PARAMETER :: ee = 2.71828182846					! e^1
+INTEGER(lng), PARAMETER :: BLOB=1						! scalar initial condition: circular gaussian distribution of scalar at the center of the domain
+INTEGER(lng), PARAMETER :: LINE=2						! scalar initial condition: gaussian distribution of scalar in the x,y-directions along the centerline
+INTEGER(lng), PARAMETER :: INLET=3						! scalar initial condition: gaussian distribution of scalar in the z-direction along the inlet
+INTEGER(lng), PARAMETER :: UNIFORM=4						! scalar initial condition: uniform scalar in the entire domain (phi=phiIC)
+REAL(dbl) :: phiInNodes,phiOutNodes						! total amount of scalar leaving/entering the domain
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parallel (MPI) Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -211,13 +208,83 @@ INTEGER(lng)	:: ParticleTrack			! a flag to denote if particle track is on (1) o
 INTEGER(lng), PARAMETER :: ParticleOn=1			! flag to signify Particle Tracking is on
 INTEGER(lng), PARAMETER :: ParticleOff=0		! flag for signify if particle tracking is off
 INTEGER(lng)    :: np					! number of particles
-REAL(dbl), ALLOCATABLE		:: xp(:),yp(:),zp(:)				! particle physical location coordinates
-INTEGER(lng), ALLOCATABLE 	:: ipar(:),jpar(:),kpar(:)			! particle computational nodal coordinates
-REAL(dbl), ALLOCATABLE		:: up(:),vp(:),wp(:)				! particle velocities
-REAL(dbl), ALLOCATABLE		:: rp(:),delNBbyCV(:),par_conc(:),bulk_conc(:),rpold(:)		! particle radius and drug release rate
-REAL(dbl), ALLOCATABLE		:: sh(:),gamma_cont(:)					! particle sherwood number
-!REAL(dbl), PARAMETER :: molarvol=2.65e-10,diffm=6.7e-10		! drug properties
-REAL(dbl), PARAMETER :: molarvol=2.65e-4_dbl,diffm=2.4e-7_dbl!1.2e-6		! drug properties
+
+REAL(dbl), PARAMETER :: molarvol=92.73_dbl,diffm=8.47e-7_dbl,R0=0.0026_dbl,Cs_mol=3.14854e-6!1.2e-6             ! drug properties
+REAL(dbl):: Cb_global           ! Global bulk scalar Concentration
+INTEGER(lng):: Cb_numFluids     ! Number of fluid nodes in the process for Global bulk scalar Concentration
+INTEGER(lng):: num_particles    ! Total number of particles in domain
+
+
+INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) ! List of starting/enning i indices for each subdomain
+INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) ! List of starting/enning j indices for each subdomain
+INTEGER(lng), ALLOCATABLE :: kMaxDomain(:),kMinDomain(:) ! List of starting/enning k indices for each subdomain
+REAL(dbl), ALLOCATABLE  :: partransfersend(:,:),partransferrecv(:,:)
+INTEGER(lng),ALLOCATABLE :: parreqid(:),parwtstat(:,:)          ! number of send/recv requests
+INTEGER(lng),ALLOCATABLE :: probestat(:)        ! MPI status object
+INTEGER(lng),ALLOCATABLE :: numpartransfer(:)   ! Particles to be transferred in each direction
+INTEGER(lng) :: NumCommDirsPar = 26_lng
+INTEGER(lng) :: NumParVar = 16_lng
+
+TYPE ParRecordTransfer
+        SEQUENCE
+        INTEGER(lng)    :: parid ! particle id in the overall list - a tag that can be used to track the particle
+        INTEGER(lng)    :: cur_part     ! current sub-domain id / partition number
+        INTEGER(lng)    :: new_part     ! current sub-domain id / partition number
+        REAL(dbl)       :: xp   ! particle x-position
+        REAL(dbl)       :: yp ! particle y-position
+        REAL(dbl)       :: zp   ! particle z-position
+        REAL(dbl)       :: up   ! particle u-velocity
+        REAL(dbl)       :: vp   ! particle v-velocity
+        REAL(dbl)       :: wp   ! particle w-velocity
+        REAL(dbl)       :: rp   ! particle radius
+        REAL(dbl)       :: delNBbyCV ! particle drug release concentration
+        REAL(dbl)       :: par_conc ! particle concentration
+        REAL(dbl)       :: bulk_conc ! bulk concentration at particle location
+        REAL(dbl)       :: xpold        ! particle x-position
+        REAL(dbl)       :: ypold        ! particle y-position
+        REAL(dbl)       :: zpold        ! particle z-position
+        REAL(dbl)       :: upold        ! particle u-velocity
+        REAL(dbl)       :: vpold        ! particle v-velocity
+        REAL(dbl)       :: wpold        ! particle w-velocity
+        REAL(dbl)       :: rpold        ! old particle radius
+        REAL(dbl)       :: sh   ! Sherwood number
+        REAL(dbl)       :: gamma_cont   ! gamma - container effect
+        REAL(dbl)       :: S    ! Shear rate at particle location
+        REAL(dbl)       :: Sst  ! Shear peclet number
+        REAL(dbl)       :: Veff ! effective particle container volume
+        REAL(dbl)       :: Nbj  ! number of moles associated with the particlnumber of moles associated with the particle
+END TYPE ParRecordTransfer
+
+TYPE ParRecord
+        TYPE(ParRecord), POINTER :: prev => NULL()! pointer to prev record
+        TYPE(ParRecord), POINTER :: next => NULL()      ! pointer to next record
+        INTEGER(lng)    :: parid ! particle id in the overall list - a tag that can be used to track the particle
+        TYPE(ParRecordTransfer) :: pardata
+END TYPE ParRecord
+
+TYPE(ParRecordTransfer),ALLOCATABLE :: ParSendArray(:,:),ParRecvArray(:,:)
+TYPE(ParRecord), POINTER :: ParListHead,ParListEnd
+TYPE(ParRecordTransfer) :: ParInit
+LOGICAL :: ParticleTransfer
+INTEGER :: mpipartransfertype
+INTEGER :: numparticlesSub
+INTEGER(lng), PARAMETER :: der_type_count = 26_lng,numparticlesDomain = 1000_lng
+INTEGER :: mpidblextent,mpiintextent
+INTEGER(lng), DIMENSION(der_type_count) :: der_block_len,der_block_types,der_block_offsets
+REAL(dbl) :: fmovingsum,fmovingrhosum
+INTEGER(lng), ALLOCATABLE  :: parfilenum(:),numparticleSubfile(:) 	! array of particle output file numbers and number of particles in each of these files
+INTEGER(lng) :: parfileCount                         			! current output file number (out of total number of output files)
+
+
+
+
+!----OLD
+!REAL(dbl), ALLOCATABLE		:: xp(:),yp(:),zp(:)				! particle physical location coordinates
+!INTEGER(lng), ALLOCATABLE 	:: ipar(:),jpar(:),kpar(:)			! particle computational nodal coordinates
+!REAL(dbl), ALLOCATABLE		:: up(:),vp(:),wp(:)				! particle velocities
+!REAL(dbl), ALLOCATABLE		:: rp(:),delNBbyCV(:),par_conc(:),bulk_conc(:),rpold(:)		! particle radius and drug release rate
+!REAL(dbl), ALLOCATABLE		:: sh(:),gamma_cont(:)					! particle sherwood number
+!REAL(dbl), PARAMETER :: molarvol=2.65e-4_dbl,diffm=2.4e-7_dbl!1.2e-6		! drug properties
 
 !************************************************
 
@@ -229,7 +296,8 @@ SUBROUTINE Global_Setup		! sets up simulation
 IMPLICIT NONE
 
 CALL ReadInput					! read input from file
-CALL SubDomainSetup			! set up the MPI subdomains
+!CALL SubDomainSetup			! set up the MPI subdomains
+CALL SubDomainSetupNew			! set up the MPI subdomains
 CALL AllocateArrays			! allocate global variable arrays
 
 !------------------------------------------------
@@ -324,7 +392,275 @@ END IF
 !------------------------------------------------
 END SUBROUTINE ReadInput
 !------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE SubDomainSetupNew	! generates the information (ID number, starting/ending indices) of each neighboring subdomain (using the subroutine SetSubIDBC in this module)
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
 
+! Define local variables
+INTEGER(lng) :: CDx(NumCommDirs), CDy(NumCommDirs), CDz(NumCommDirs)		! communication direction vectors in the x, y, and z directions respectively
+INTEGER(lng) :: thisSub																	! ID of the current subdomain
+INTEGER(lng) :: iComm,iSub,jSub,kSub,iiSub,jjSub,kkSub						! index variables
+INTEGER(lng) :: quotientX, quotientY, quotientZ					 				! variables for determining the local subdomain bounds
+
+ALLOCATE(SubID(NumCommDirs))															! id number of neighboring subdomains (same as rank of processing unit working on domain)
+
+ALLOCATE(iMaxDomain(NumSubsTotal))
+ALLOCATE(iMinDomain(NumSubsTotal))
+ALLOCATE(jMaxDomain(NumSubsTotal))
+ALLOCATE(jMinDomain(NumSubsTotal))
+ALLOCATE(kMaxDomain(NumSubsTotal))
+ALLOCATE(kMinDomain(NumSubsTotal))
+
+! fill out communication direction vectors
+CDx(1) =   1_lng
+CDy(1) =   0_lng
+CDz(1) =   0_lng
+
+CDx(2) =  -1_lng
+CDy(2) =   0_lng
+CDz(2) =   0_lng
+
+CDx(3) =   0_lng
+CDy(3) =   1_lng
+CDz(3) =   0_lng
+
+CDx(4) =   0_lng
+CDy(4) =  -1_lng
+CDz(4) =   0_lng
+
+CDx(5) =   0_lng
+CDy(5) =   0_lng
+CDz(5) =   1_lng
+
+CDx(6) =   0_lng
+CDy(6) =   0_lng
+CDz(6) =  -1_lng
+
+CDx(7) =   1_lng
+CDy(7) =   1_lng
+CDz(7) =   0_lng
+
+CDx(8) =  -1_lng
+CDy(8) =  -1_lng
+CDz(8) =   0_lng
+
+CDx(9) =   1_lng
+CDy(9) =  -1_lng
+CDz(9) =   0_lng
+
+CDx(10) = -1_lng
+CDy(10) =  1_lng
+CDz(10) =  0_lng
+
+CDx(11) =  0_lng
+CDy(11) =  1_lng
+CDz(11) =  1_lng
+
+CDx(12) =  0_lng
+CDy(12) = -1_lng
+CDz(12) = -1_lng
+
+CDx(13) =  0_lng
+CDy(13) =  1_lng
+CDz(13) = -1_lng
+
+CDx(14) =  0_lng
+CDy(14) = -1_lng
+CDz(14) =  1_lng
+
+CDx(15) =  1_lng
+CDy(15) =  0_lng
+CDz(15) =  1_lng
+
+CDx(16) = -1_lng
+CDy(16) =  0_lng
+CDz(16) = -1_lng
+
+CDx(17) = -1_lng
+CDy(17) =  0_lng
+CDz(17) =  1_lng
+
+CDx(18) =  1_lng
+CDy(18) =  0_lng
+CDz(18) = -1_lng
+
+CDx(19) =  1_lng
+CDy(19) =  1_lng
+CDz(19) =  1_lng
+
+CDx(20) = -1_lng
+CDy(20) = -1_lng
+CDz(20) = -1_lng
+
+CDx(21) =  1_lng
+CDy(21) =  1_lng
+CDz(21) = -1_lng
+
+CDx(22) = -1_lng
+CDy(22) = -1_lng
+CDz(22) =  1_lng
+
+CDx(23) = -1_lng
+CDy(23) =  1_lng
+CDz(23) =  1_lng
+
+CDx(24) =  1_lng
+CDy(24) = -1_lng
+CDz(24) = -1_lng
+
+CDx(25) =  1_lng
+CDy(25) = -1_lng
+CDz(25) =  1_lng
+
+CDx(26) = -1_lng
+CDy(26) =  1_lng
+CDz(26) = -1_lng
+
+! Number of the current subdomain
+mySub = myid + 1_lng							! subdomain number
+!WRITE(sub(1:2),'(I2.2)') mySub			! write subdomain number to 'sub' for output file exentsions
+WRITE(sub(1:5),'(I5.5)') mySub			! write subdomain number to 'sub' for output file exentsions
+
+! Define the local computational domain bounds (iMin:iMax,jMin:jMax,kMin:kMax)
+quotientX	= CEILING(REAL(nx)/NumSubsX)						! divide the number of nodes by the number of subdomains (round up)
+quotientY	= CEILING(REAL(ny)/NumSubsY)						! divide the number of nodes by the number of subdomains (round up)
+quotientZ	= CEILING(REAL(nz)/NumSubsZ)						! divide the number of nodes by the number of subdomains (round up)
+
+iMin = MOD(myid,NumSubsX)*quotientX + 1_lng					! starting local i index 
+iMax = iMin + (quotientX - 1_lng)								! ending local i index
+
+jMin = MOD((myid/NumSubsX),NumSubsY)*quotientY + 1_lng	! starting local j index
+jMax = jMin + (quotientY - 1_lng)								! ending local j index
+
+kMin = (myid/(NumSubsX*NumSubsY))*quotientZ + 1_lng		! starting local k index 
+kMax = kMin + (quotientZ - 1_lng)								! ending local k index
+
+! Check the bounds
+IF(iMax .GT. nx) THEN
+  iMax = nx																! if iMax is greater than nx, correct it
+END IF
+
+IF(jMax .GT. ny) THEN
+  jMax = ny																! if jMax is greater than ny, correct it
+END IF
+
+IF(kMax .GT. nz) THEN
+  kMax = nz																! if kMax is greater than nz, correct it
+END IF
+
+
+! Loop through the subdomains
+DO kSub=1,NumSubsZ
+  DO jSub=1,NumSubsY
+    DO iSub=1,NumSubsX
+
+      thisSub = iSub + (jSub-1)*NumSubsX + (kSub-1)*NumSubsX*NumSubsY	! get the ID of the current Subdomain
+
+      IF(mySub .EQ. thisSub) THEN													! fill out the SubID array of the current subdomain is the 
+     
+        ! Loop through the communication directions for the current subdomain
+        DO iComm=1,NumCommDirs
+
+          iiSub = iSub + CDx(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
+          jjSub = jSub + CDy(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
+          kkSub = kSub + CDz(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
+      
+          !CALL SetSubID(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
+          CALL SetSubIDNew(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
+
+        END DO
+
+      END IF
+
+! Fill up arrays containging iMax, iMin, jMax,jMin,kMax, kMin for all subdomains
+
+
+	iMinDomain(thisSub) = MOD((thisSub-1_lng),NumSubsX)*quotientX + 1_lng			! starting local i index 
+	iMaxDomain(thisSub) = iMinDomain(thisSub) + (quotientX - 1_lng)				! ending local i index
+	
+	jMinDomain(thisSub) = MOD(((thisSub-1_lng)/NumSubsX),NumSubsY)*quotientY + 1_lng	! starting local j index
+	jMaxDomain(thisSub) = jMinDomain(thisSub) + (quotientY - 1_lng)				! ending local j index
+	
+	kMinDomain(thisSub) = ((thisSub-1_lng)/(NumSubsX*NumSubsY))*quotientZ + 1_lng		! starting local k index 
+	kMaxDomain(thisSub) = kMinDomain(thisSub) + (quotientZ - 1_lng)				! ending local k index
+	
+	! Check the bounds
+	IF(iMaxDomain(thisSub) .GT. nx) THEN
+	  iMaxDomain(thisSub) = nx																! if iMax is greater than nx, correct it
+	END IF
+	
+	IF(jMaxDomain(thisSub) .GT. ny) THEN
+	  jMaxDomain(thisSub) = ny																! if jMax is greater than ny, correct it
+	END IF
+	
+	IF(kMaxDomain(thisSub) .GT. nz) THEN
+	  kMaxDomain(thisSub) = nz																! if kMax is greater than nz, correct it
+	END IF
+
+    END DO
+  END DO
+END DO
+
+! Commented out by Balaji 02/25/2015
+!! Define the local computational domain bounds (iMin:iMax,jMin:jMax,kMin:kMax)
+!quotientX	= CEILING(REAL(nx)/NumSubsX)						! divide the number of nodes by the number of subdomains (round up)
+!quotientY	= CEILING(REAL(ny)/NumSubsY)						! divide the number of nodes by the number of subdomains (round up)
+!quotientZ	= CEILING(REAL(nz)/NumSubsZ)						! divide the number of nodes by the number of subdomains (round up)
+!
+!iMin = MOD(myid,NumSubsX)*quotientX + 1_lng					! starting local i index 
+!iMax = iMin + (quotientX - 1_lng)								! ending local i index
+!
+!jMin = MOD((myid/NumSubsX),NumSubsY)*quotientY + 1_lng	! starting local j index
+!jMax = jMin + (quotientY - 1_lng)								! ending local j index
+!
+!kMin = (myid/(NumSubsX*NumSubsY))*quotientZ + 1_lng		! starting local k index 
+!kMax = kMin + (quotientZ - 1_lng)								! ending local k index
+!
+!! Check the bounds
+!IF(iMax .GT. nx) THEN
+!  iMax = nx																! if iMax is greater than nx, correct it
+!END IF
+!
+!IF(jMax .GT. ny) THEN
+!  jMax = ny																! if jMax is greater than ny, correct it
+!END IF
+!
+!IF(kMax .GT. nz) THEN
+!  kMax = nz																! if kMax is greater than nz, correct it
+!END IF
+!
+
+! Determine the number of nodes in each direction
+nxSub = (iMax - iMin) + 1_lng
+nySub = (jMax - jMin) + 1_lng
+nzSub = (kMax - kMin) + 1_lng
+
+! Write the local bounds to a file [TEST]
+!OPEN(171,FILE='localBounds-'//sub//'.dat')
+!WRITE(171,*) 'iMin =', iMin, 'iMax=', iMax
+!WRITE(171,*) 'jMin =', jMin, 'jMax=', jMax 
+!WRITE(171,*) 'kMin =', kMin, 'kMax=', kMax
+!WRITE(171,*) 
+!WRITE(171,*) 'nx =', nx, 'ny=', ny, 'nz=', nz
+!WRITE(171,*) 'nxSub =', nxSub, 'nySub=', nySub, 'nzSub=', nzSub
+!WRITE(171,*) 
+!WRITE(171,*) 'quotientX =', quotientX
+!WRITE(171,*) 'quotientY =', quotientY
+!WRITE(171,*) 'quotientZ =', quotientZ
+!CLOSE(171)
+
+! Write the subID to a file [TEST]
+!OPEN(172,FILE='sub-'//sub//'.dat')
+!DO iComm=1,NumCommDirs
+!  WRITE(172,*)'iComm=',iComm,'SubID(iComm)=', SubID(iComm)
+!END DO
+!CLOSE(172)
+!STOP
+
+!------------------------------------------------
+END SUBROUTINE SubDomainSetupNew
+!------------------------------------------------
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE SubDomainSetup	! generates the information (ID number, starting/ending indices) of each neighboring subdomain (using the subroutine SetSubIDBC in this module)
 !--------------------------------------------------------------------------------------------------
@@ -531,7 +867,77 @@ nzSub = (kMax - kMin) + 1_lng
 !------------------------------------------------
 END SUBROUTINE SubDomainSetup
 !------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE SetSubIDNew(iComm,iiSub,jjSub,kkSub)									! sets SubID based on neighboring subdomains
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
 
+! Define local variables
+INTEGER(lng), INTENT(IN) :: iComm, iiSub, jjSub, kkSub 					! index variables
+INTEGER(lng) :: nSub, kkSub2,jjSub2														! neighboring subdomain ID, kkSub (reset for periodicity)
+
+IF(((iiSub .LT. 1) .OR. (iiSub .GT. NumSubsX))		&
+!   .OR. ((kkSub .LT. 1) .OR. (kkSub .GT. NumSubsZ))	& 					! comment out for periodic BCs in the k-direction
+!   .OR. ((jjSub .LT. 1) .OR. (jjSub .GT. NumSubsY))	&
+	)	THEN 
+
+  SubID(iComm) = 0_lng	! no neighbor
+
+ELSE IF((kkSub .LT. 1)) THEN
+	kkSub2 = NumSubsZ	! reset kkSub for periodicity in the z-direction
+	IF((jjSub .LT. 1)) THEN
+		  jjSub2 = NumSubsY																	! reset kkSub for periodicity in the z-direction
+		  nSub = iiSub + (jjSub2-1)*NumSubsX + (kkSub2-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		  SubID(iComm) = nSub			! set SubID(iComm) to neighboring sudomain ID
+	
+	ELSE IF((jjSub .GT. NumSubsY)) THEN
+		jjSub2 = 1_lng																		! reset kkSub for periodicity in the z-direction
+		nSub = iiSub + (jjSub2-1)*NumSubsX + (kkSub2-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		SubID(iComm) = nSub			! set SubID(iComm) to neighboring sudomain ID
+	ELSE
+		nSub = iiSub + (jjSub-1)*NumSubsX + (kkSub2-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		SubID(iComm) = nSub		! set SubID(iComm) to neighboring sudomain ID
+	END IF
+ELSE IF((kkSub .GT. NumSubsZ)) THEN
+
+	kkSub2 = 1_lng	! reset kkSub for periodicity in the z-direction
+	IF((jjSub .LT. 1)) THEN
+		  jjSub2 = NumSubsY																	! reset kkSub for periodicity in the z-direction
+		  nSub = iiSub + (jjSub2-1)*NumSubsX + (kkSub2-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		  SubID(iComm) = nSub			! set SubID(iComm) to neighboring sudomain ID
+	
+	ELSE IF((jjSub .GT. NumSubsY)) THEN
+		jjSub2 = 1_lng																		! reset kkSub for periodicity in the z-direction
+		nSub = iiSub + (jjSub2-1)*NumSubsX + (kkSub2-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		SubID(iComm) = nSub			! set SubID(iComm) to neighboring sudomain ID
+	ELSE
+		nSub = iiSub + (jjSub-1)*NumSubsX + (kkSub2-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		SubID(iComm) = nSub		! set SubID(iComm) to neighboring sudomain ID
+	END IF
+ELSE
+  
+	IF((jjSub .LT. 1)) THEN
+		  jjSub2 = NumSubsY																	! reset kkSub for periodicity in the z-direction
+		  nSub = iiSub + (jjSub2-1)*NumSubsX + (kkSub-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		  SubID(iComm) = nSub			! set SubID(iComm) to neighboring sudomain ID
+	
+	ELSE IF((jjSub .GT. NumSubsY)) THEN
+		jjSub2 = 1_lng																		! reset kkSub for periodicity in the z-direction
+		nSub = iiSub + (jjSub2-1)*NumSubsX + (kkSub-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		SubID(iComm) = nSub			! set SubID(iComm) to neighboring sudomain ID
+	ELSE
+		nSub = iiSub + (jjSub-1)*NumSubsX + (kkSub-1)*NumSubsX*NumSubsY	! neighboring subdomain ID
+		SubID(iComm) = nSub		! set SubID(iComm) to neighboring sudomain ID
+	END IF
+
+
+END IF
+
+!write(*,*) SubID(iComm),NumSubsX,NumSubsY,NumSubsZ,iiSub,jjSub,kkSub,SubID(icomm)
+
+!------------------------------------------------
+END SUBROUTINE SetSubIDNew
+!------------------------------------------------
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE SetSubID(iComm,iiSub,jjSub,kkSub)									! sets SubID based on neighboring subdomains
 !--------------------------------------------------------------------------------------------------
@@ -570,6 +976,138 @@ END IF
 END SUBROUTINE SetSubID
 !------------------------------------------------
 
+
+
+
+
+
+
+
+!-------------------------------------------------------------------------------------------------
+!!!!!!! SUBROUTINES TO HANDLE POINTERS AND LINKED LISTS FOR PARTICLES
+!-------------------------------------------------------------------------------------------------
+
+
+! Initialize a head node SELF and optionally store the provided DATA.
+!------------------------------------------------
+SUBROUTINE list_init(self)
+!------------------------------------------------
+  TYPE(ParRecord), POINTER :: self
+
+  ALLOCATE(self) ! Note: When self is allocated, all the
+
+!  ALLOCATE(self%next)
+!  ALLOCATE(self%prev)
+!  ALLOCATE(self%xp)
+!  ALLOCATE(self%yp)
+!  ALLOCATE(self%zp)
+!  ALLOCATE(self%up)
+!  ALLOCATE(self%vp)
+!  ALLOCATE(self%wp)
+!  ALLOCATE(self%rp)
+!  ALLOCATE(self%delNBbyCV)
+!  ALLOCATE(self%par_conc)
+!  ALLOCATE(self%bulk_conc)
+!  ALLOCATE(self%rpold)
+!  ALLOCATE(self%sh)
+!  ALLOCATE(self%gamma_cont)
+!  ALLOCATE(self%cur_part)
+
+  NULLIFY(self%next)
+  NULLIFY(self%prev)
+
+!------------------------------------------------
+END SUBROUTINE list_init
+!------------------------------------------------
+
+! Insert a list node after SELF (an arbitrary node)
+! NOTE: Remember to assign data to these new nodes
+!------------------------------------------------
+SUBROUTINE list_insert(self)
+!------------------------------------------------
+  TYPE(ParRecord), POINTER :: self
+  TYPE(ParRecord), POINTER :: new
+
+! Allocate and initialize the new pointer
+  ALLOCATE(new)
+  NULLIFY(new%next)
+  NULLIFY(new%prev)
+
+  IF (ASSOCIATED(self%next)) THEN
+        new%next => self%next
+        self%next%prev => new
+  ELSE
+        NULLIFY(new%next)
+  END IF
+  new%prev => self
+  self%next => new
+
+!------------------------------------------------
+END SUBROUTINE list_insert
+!------------------------------------------------
+
+! Delete a list node pointed by SELF (an arbitrary node)
+!------------------------------------------------
+SUBROUTINE list_delete(self)
+!------------------------------------------------
+  TYPE(ParRecord), POINTER :: self
+  TYPE(ParRecord), POINTER :: next
+
+  !ALLOCATE(next)
+  self%prev%next => self%next
+  IF (ASSOCIATED(self%next)) THEN
+        self%next%prev => self%prev
+  ENDIF
+
+  !self%prev => NULL()
+  !self%next => NULL()
+  NULLIFY(self%prev)
+  NULLIFY(self%next)
+  DEALLOCATE(self)
+
+!------------------------------------------------
+END SUBROUTINE list_delete
+!------------------------------------------------
+
+
+! Free the entire list and all data, beginning at SELF
+!------------------------------------------------
+SUBROUTINE list_free(self)
+!------------------------------------------------
+  TYPE(ParRecord), POINTER :: self
+  TYPE(ParRecord), POINTER :: current
+  TYPE(ParRecord), POINTER :: next
+  current => self
+  DO WHILE (ASSOCIATED(current))
+     next => current%next ! copy pointer of next node
+     DEALLOCATE(current)
+     NULLIFY(current)
+     ! point to next node in the list
+     current => next
+     !write(*,*) i
+  END DO
+!------------------------------------------------
+end subroutine list_free
+!------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE AllocateArrays	! allocates array space
 !--------------------------------------------------------------------------------------------------
@@ -588,6 +1126,9 @@ ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(phi(0:nxSub+1,0:nySub+1,0:nzSub+1), 						&
          phiTemp(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(tausgs_particle_y(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(tausgs_particle_z(0:nxSub+1,0:nySub+1,0:nzSub+1))
 
 ! Node Flags
 ALLOCATE(node(0:nxSub+1,0:nySub+1,0:nzSub+1))
@@ -696,9 +1237,29 @@ DEALLOCATE(villiLoc)					! location of the villi
 IF(randORord .EQ. RANDOM) THEN
   DEALLOCATE(rnd)						! array of random numbers for random villi phase angles
 END IF
+
 !Particle arrays
-DEALLOCATE(xp,yp,zp,up,vp,wp,ipar,jpar,kpar,rp,delNBbyCV)
-DEALLOCATE(par_conc,bulk_conc,sh,gamma_cont,rpold)
+IF(ParticleTrack.EQ.ParticleOn) THEN
+	!DEALLOCATE(xp,yp,zp,up,vp,wp,ipar,jpar,kpar,rp,delNBbyCV)
+	!DEALLOCATE(par_conc,bulk_conc,sh,gamma_cont,rpold)
+	!DEALLOCATE(ParList)
+	CALL list_free(ParListHead)
+END IF
+! Particle MPI arrays
+DEALLOCATE(iMinDomain)
+DEALLOCATE(iMaxDomain)
+DEALLOCATE(jMinDomain)
+DEALLOCATE(jMaxDomain)
+DEALLOCATE(kMinDomain)
+DEALLOCATE(kMaxDomain)
+DEALLOCATE(partransfersend)
+DEALLOCATE(partransferrecv)
+DEALLOCATE(numpartransfer)
+DEALLOCATE(parreqid)
+DEALLOCATE(parwtstat)
+DEALLOCATE(probestat)
+!DEALLOCATE(ParSendArray)
+!DEALLOCATE(ParRecvArray)
 !------------------------------------------------
 END SUBROUTINE DEAllocateArrays
 !------------------------------------------------
