@@ -700,41 +700,30 @@ END SUBROUTINE Update_Sh
 
 
 
-!!------------------------------------------------
-!SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
-!! Called by Particle_Track (LBM.f90) to get delphi_particle
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
-!REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
-!
-!DO i=1,np
-!	ix0=FLOOR(xp(i))
-!	ix1=FLOOR(xp(i))+1_lng
-!	iy0=FLOOR(yp(i))
-!	iy1=FLOOR(yp(i))+1_lng
-!	iz0=FLOOR(zp(i))
-!	iz1=FLOOR(zp(i))+1_lng
-!	delphi_particle(ix0,iy0,iz0)=delNBbyCV(i)*(phi(ix0,iy0,iz0))/(bulk_conc(i))
-!	delphi_particle(ix0,iy1,iz0)=delNBbyCV(i)*(phi(ix0,iy1,iz0))/(bulk_conc(i))
-!	delphi_particle(ix1,iy0,iz0)=delNBbyCV(i)*(phi(ix1,iy0,iz0))/(bulk_conc(i))
-!	delphi_particle(ix1,iy1,iz0)=delNBbyCV(i)*(phi(ix1,iy1,iz0))/(bulk_conc(i))
-!	delphi_particle(ix0,iy0,iz1)=delNBbyCV(i)*(phi(ix0,iy0,iz1))/(bulk_conc(i))
-!	delphi_particle(ix0,iy1,iz1)=delNBbyCV(i)*(phi(ix0,iy1,iz1))/(bulk_conc(i))
-!	delphi_particle(ix1,iy0,iz1)=delNBbyCV(i)*(phi(ix1,iy0,iz1))/(bulk_conc(i))
-!	delphi_particle(ix1,iy1,iz1)=delNBbyCV(i)*(phi(ix1,iy1,iz1))/(bulk_conc(i))
-!
-!ENDDO
-!!------------------------------------------------
-!END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
-!!------------------------------------------------
+
+
+!------------------------------------------------
+SUBROUTINE Compute_shear
+!------------------------------------------------
+! The goal of this is subroutine is to compute a shear field
+IMPLICIT NONE
+INTEGER(lng)  :: i,j,k
+REAL(dbl)  :: temp
+
+! Notes: We will compute the components of the strain rate tensor using central difference everywhere except near the processor boundaries where we will use one sided difference. 
+
+!------------------------------------------------
+END SUBROUTINE Compute_shear
+!------------------------------------------------
+
+
 
 
 
 
 
 !------------------------------------------------
-SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
+SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
 ! Called by Particle_Track (LBM.f90) to get delphi_particle
 !------------------------------------------------
 IMPLICIT NONE
@@ -753,203 +742,200 @@ zcf3=xcf*ycf*zcf
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
+	next => current%next ! copy pointer of next node
 
-        !write(*,*) current%pardata%parid,iter,mySub,current%pardata%new_part,xp,iMin,yp,jMin,zp,kMin
+	!write(*,*) current%pardata%parid,iter,mySub,current%pardata%new_part,xp,iMin,yp,jMin,zp,kMin
 
-        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
         delta_par = ((current%pardata%rp/xcf)/current%pardata%sh)+(current%pardata%rp/xcf) ! calculate length scale delta_j = R_j/Sh_j for jth particle and effective radius delta_par = delta_j + R_j (note: need to convert this into Lattice units and not use the physical length units)
         delta_par = ((88.0_dbl/21.0_dbl)*((delta_par)**3.0_dbl))**(1.0_dbl/3.0_dbl) ! compute equivalent cubic mesh length scale
         !delta_par = delta_mesh
 
-        ix0=FLOOR(xp)
-        ix1=CEILING(xp)
-        iy0=FLOOR(yp)
-        iy1=CEILING(yp)
-        iz0=FLOOR(zp)
-        iz1=CEILING(zp)
+	ix0=FLOOR(xp)
+	ix1=CEILING(xp)
+	iy0=FLOOR(yp)
+	iy1=CEILING(yp)
+	iz0=FLOOR(zp)
+	iz1=CEILING(zp)
 
 ! Boundaries of the volume of influence of the particle
-        ax0 = xp - 0.5_dbl*delta_par
-        ax1 = xp + 0.5_dbl*delta_par
-        ay0 = yp - 0.5_dbl*delta_par
-        ay1 = yp + 0.5_dbl*delta_par
-        az0 = zp - 0.5_dbl*delta_par
-        az1 = zp + 0.5_dbl*delta_par
+	ax0 = xp - 0.5_dbl*delta_par
+	ax1 = xp + 0.5_dbl*delta_par
+	ay0 = yp - 0.5_dbl*delta_par
+	ay1 = yp + 0.5_dbl*delta_par
+	az0 = zp - 0.5_dbl*delta_par
+	az1 = zp + 0.5_dbl*delta_par
 
-        if (iz0.GT.nzSub) then
-                iz0 = iz0-1_lng
-        elseif (iz0.LT.1_lng) then
-                iz0 = iz0 +1_lng
-        endif
-        if (ix0.GT.nxSub) then
-                ix0 = ix0-1_lng
-        elseif (ix0.LT.1) then
-                ix0 = ix0 +1_lng
-        endif
-        if (iy0.GT.nySub) then
-                iy0 = iy0-1_lng
-        elseif (iy0.LT.1) then
-                iy0 = iy0 +1_lng
-        endif
-        if (iz1.GT.nzSub) then
-                iz1 = iz1-1_lng
-        elseif (iz1.LT.1_lng) then
-                iz1 = iz1 +1_lng
-        endif
-        if (ix1.GT.nxSub) then
-                ix1 = ix1-1_lng
-        elseif (ix1.LT.1) then
-                ix1 = ix1 +1_lng
-        endif
-        if (iy1.GT.nySub) then
-                iy1 = iy1-1_lng
-        elseif (iy1.LT.1) then
-                iy1 = iy1 +1_lng
-        endif
+	if (iz0.GT.nzSub) then
+		iz0 = iz0-1_lng
+	elseif (iz0.LT.1_lng) then
+		iz0 = iz0 +1_lng
+	endif
+	if (ix0.GT.nxSub) then
+		ix0 = ix0-1_lng
+	elseif (ix0.LT.1) then
+		ix0 = ix0 +1_lng
+	endif
+	if (iy0.GT.nySub) then
+		iy0 = iy0-1_lng
+	elseif (iy0.LT.1) then
+		iy0 = iy0 +1_lng
+	endif
+	if (iz1.GT.nzSub) then
+		iz1 = iz1-1_lng
+	elseif (iz1.LT.1_lng) then
+		iz1 = iz1 +1_lng
+	endif
+	if (ix1.GT.nxSub) then
+		ix1 = ix1-1_lng
+	elseif (ix1.LT.1) then
+		ix1 = ix1 +1_lng
+	endif
+	if (iy1.GT.nySub) then
+		iy1 = iy1-1_lng
+	elseif (iy1.LT.1) then
+		iy1 = iy1 +1_lng
+	endif
 
-        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)!*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)!*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)!*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c110 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+	c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)!*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+	c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)!*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+	c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)!*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+	c110 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
 
-        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c111 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+	c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+	c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+	c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+	c111 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
 
         csum = c000 + c010 + c100 + c110 + c001 + c011 + c101 + c111
 
-        Nbj = 0.0_dbl ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-        Veff = 0.0_dbl ! initialize Veff - the eff. volume of each particle
-        bulkconc = Cb_global
-        !bulkconc = current%pardata%bulk_conc
-        ! Need to solve an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-        CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
-                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-        current%pardata%Veff = Veff ! store Veff in particle record
-        current%pardata%Nbj = Nbj       ! store Nbj in particle record
-        Nbj = Nbj/zcf3 ! convert Nbj (number of moles) to a conc by division with cell volume (dimensional)
+	Nbj = 0.0_dbl ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+	Veff = 0.0_dbl ! initialize Veff - the eff. volume of each particle
+	bulkconc = Cb_global
+	!bulkconc = current%pardata%bulk_conc
+	! Need to solve an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
+	CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
+		      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
+	current%pardata%Veff = Veff ! store Veff in particle record
+	current%pardata%Nbj = Nbj	! store Nbj in particle record
+	Nbj = Nbj/zcf3 ! convert Nbj (number of moles) to a conc by division with cell volume (dimensional) 
 
         IF (csum.EQ.0.0) THEN ! csum = 0 then dump the drug molecules to the nearest fluid node
-                delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-                tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
-                tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
-                tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
+	        delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+		tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
+		tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
+		tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
 
         ELSE ! if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
 
                 c000 = c000/csum
-                c010 = c010/csum
-                c100 = c100/csum
-                c110 = c110/csum
-                c001 = c001/csum
-                c011 = c011/csum
-                c101 = c101/csum
-                c111 = c111/csum
+        	c010 = c010/csum
+        	c100 = c100/csum
+        	c110 = c110/csum
+        	c001 = c001/csum
+        	c011 = c011/csum
+        	c101 = c101/csum
+        	c111 = c111/csum
 
-                !delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+        	!delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+                
+        	delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
+        	delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
+        	delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
+        	delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
+        	delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
+        	delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
+        	delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
+        	delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
 
-                delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
-                delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
-                delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
-                delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
-                delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
-                delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
-                delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
-                delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
+        	tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
+		tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
+		tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
+        	tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
+        	tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
+        	tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
+        	tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
+        	tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
 
-                tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
-                tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
-                tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
-                tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
-                tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
-                tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
-                tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
-                tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
+        	tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
+        	tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
+        	tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
+        	tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
+        	tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
+        	tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
+        	tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
+        	tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
 
-                tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
-                tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
-                tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
-                tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
-                tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
-                tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
-                tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
-                tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
-
-                tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
-                tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
-                tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
-                tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
-                tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
-                tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
-                tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
-                tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
+        	tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
+        	tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
+        	tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
+        	tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
+        	tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
+        	tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
+        	tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
+        	tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
 
         END IF
 
-! point to next node in the list
-        current => next
+
+	! point to next node in the list
+	current => next
 ENDDO
 
 !------------------------------------------------
-END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
+END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
 !------------------------------------------------
-
-
-
-
 
 
 
@@ -1005,7 +991,7 @@ DO WHILE ((error.gt.tol).AND.(iter.LE.nmax))
         xold = xnew
 END DO
 !xnew = max(min(xnew,0.5_dbl),0.01)
-xnew = max(min(xnew,1.0_dbl),0.01) ! Limit xnew (radius ratio) to values that are meaningful and not too small or large.
+xnew = max(min(xnew,1.0_dbl),0.01) ! Limit xnew (radius ratio) to values that are meaningful and not too small or large. 
 Reff = Rj/xnew
 Veff = (88.0_dbl/21.0_dbl)*(Reff**3.0_dbl)
 Nbj = conc*Veff
@@ -1014,102 +1000,6 @@ Nbj = conc*Veff
 !------------------------------------------------
 END SUBROUTINE Find_Root
 !------------------------------------------------
-
-
-
-
-
-
-
-
-!!------------------------------------------------
-!SUBROUTINE Particle_Track
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)   :: i
-!REAL(dbl)      :: xpold(1:np),ypold(1:np),zpold(1:np) ! old particle coordinates (working coordinates are stored in xp,yp,zp)
-!REAL(dbl)      :: xpnew(1:np),ypnew(1:np),zpnew(1:np) ! new particle coordinates (working coordinates are stored in xp,yp,zp)
-!REAL(dbl)      :: upold(1:np),vpold(1:np),wpold(1:np) ! old particle velocity components (new vales are stored in up, vp, wp)
-!
-!! Second order interpolation in time
-!
-!!Backup particle data from previous time step
-!xpold(1:np) = xp(1:np)
-!ypold(1:np) = yp(1:np)
-!zpold(1:np) = zp(1:np)
-!upold(1:np) = up(1:np)
-!vpold(1:np) = vp(1:np)
-!wpold(1:np) = wp(1:np)
-!
-!DO i=1,np
-!	xp(i)=xpold(i)+up(i)
-!	yp(i)=ypold(i)+vp(i)
-!	zp(i)=zpold(i)+wp(i)
-!	IF(zp(i).GE.REAL(nz,dbl)) THEN
-!		zp(i) = MOD(zp(i),REAL(nz,dbl))
-!	ENDIF
-!ENDDO
-!CALL Interp_Parvel
-!DO i=1,np
-!	xp(i)=xpold(i)+0.5*(up(i)+upold(i))
-!	yp(i)=ypold(i)+0.5*(vp(i)+vpold(i))
-!	zp(i)=zpold(i)+0.5*(wp(i)+wpold(i))
-!	xpnew(i)=xp(i)
-!	ypnew(i)=yp(i)
-!	zpnew(i)=zp(i)
-!	IF(zp(i).GE.REAL(nz,dbl)) THEN
-!		zp(i) = MOD(zp(i),REAL(nz,dbl))
-!	ENDIF
-!ENDDO
-!
-!
-!CALL Interp_Parvel ! interpolate final particle velocities after the final position is ascertained. 
-!CALL Interp_bulkconc ! interpolate final bulk_concentration after the final position is ascertained.
-!CALL Calc_Scalar_Release ! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
-!CALL Interp_ParToNodes_Conc ! At this position, also calculate the number of
-!!drug molecules released by the particle at this new position 
-!DO i=1,np
-!	xp(i)=xpnew(i)
-!	yp(i)=ypnew(i)
-!	zp(i)=zpnew(i)
-!ENDDO
-!
-!IF (myid .EQ. master) THEN
-!      open(72,file='particle1-history.dat',position='append')
-!      write(72,*) iter,xp(1),yp(1),zp(1),up(1),vp(1),wp(1),sh(1),rp(1),bulk_conc(1),delNBbyCV(1)
-!      close(72)
-!      open(73,file='particle3-history.dat',position='append')
-!      write(73,*) iter, xp(3),yp(3),zp(3),up(3),vp(3),wp(3),sh(3),rp(3),bulk_conc(3),delNBbyCV(3)
-!      close(73) 
-!      open(74,file='particle5-history.dat',position='append')
-!      write(74,*) iter, xp(5),yp(5),zp(5),up(5),vp(5),wp(5),sh(5),rp(5),bulk_conc(5),delNBbyCV(5)
-!      close(74)
-!      open(75,file='particle7-history.dat',position='append')
-!      write(75,*) iter, xp(7),yp(7),zp(7),up(7),vp(7),wp(7),sh(7),rp(7),bulk_conc(7),delNBbyCV(7)
-!      close(75)
-!      open(76,file='particle9-history.dat',position='append')
-!      write(76,*) iter, xp(9),yp(9),zp(9),up(9),vp(9),wp(9),sh(9),rp(9),bulk_conc(9),delNBbyCV(9)
-!      close(76) 
-!      open(77,file='particle10-history.dat',position='append')
-!      write(77,*) iter, xp(10),yp(10),zp(10),up(10),vp(10),wp(10),sh(10),rp(10),bulk_conc(10),delNBbyCV(10)
-!      close(77)
-!      open(78,file='particle8-history.dat',position='append')
-!      write(78,*) iter, xp(8),yp(8),zp(8),up(8),vp(8),wp(8),sh(8),rp(8),bulk_conc(8),delNBbyCV(8)
-!      close(78)
-!      open(79,file='particle6-history.dat',position='append')
-!      write(79,*) iter, xp(6),yp(6),zp(6),up(6),vp(6),wp(6),sh(6),rp(6),bulk_conc(6),delNBbyCV(6)
-!      close(79)
-!      open(80,file='particle4-history.dat',position='append')
-!      write(80,*) iter, xp(4),yp(4),zp(4),up(4),vp(4),wp(4),sh(4),rp(4),bulk_conc(4),delNBbyCV(4)
-!      close(80)
-!      open(81,file='particle2-history.dat',position='append')
-!      write(81,*) iter, xp(2),yp(2),zp(2),up(2),vp(2),wp(2),sh(2),rp(2),bulk_conc(2),delNBbyCV(2)
-!      close(81)
-!ENDIF
-!
-!!------------------------------------------------
-!END SUBROUTINE Particle_Track
-!!------------------------------------------------
 
 
 
@@ -1126,18 +1016,18 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 ParticleTransfer = .FALSE. ! AT this time we do not know if any particles need to be transferred.
-delphi_particle = 0.0_dbl ! set delphi_particle to 0.0 before every time step, when the particle drug release happens.
+delphi_particle = 0.0_dbl ! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
 tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
 tausgs_particle_z = 0.0_dbl
-
-IF (iter.GT.iter0+0_lng) THEN ! IF condition ensures that at the first step, the only part of this subroutine that operates is computing the partitions the particles belong to without releasing any drug.
+	
+IF (iter.GT.iter0+0_lng) THEN ! IF condition ensures that at the first step, the only part of this subroutine that operates is computing the partitions the particles belong to without releasing any drug.  
 ! Second order interpolation in time
 !Backup particle data from previous time step
 ! Using a linked list of particle records
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
+	next => current%next ! copy pointer of next node
 
         current%pardata%xpold = current%pardata%xp
         current%pardata%ypold = current%pardata%yp
@@ -1183,15 +1073,15 @@ ENDIF
 DO kk=0,nzSub+1
         DO jj=0,nySub+1
                 DO ii=0,nxSub+1
-                        if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
-                                tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
-                        endif
-                        if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
-                                tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
-                        endif
-                        if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
-                                tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
-                        endif
+			if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
+                        	tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
+			endif
+			if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
+                        	tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
+			endif
+			if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
+                        	tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
+			endif
                 ENDDO
         ENDDO
 ENDDO
@@ -1300,26 +1190,6 @@ END SUBROUTINE Particle_Track
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE Equilibrium		! calculate the equilibrium distribution function and set f to feq (initial condition)
 !--------------------------------------------------------------------------------------------------
@@ -1333,9 +1203,6 @@ REAL(dbl)		:: feq						! equilibrium distribution function
 DO k=1,nzSub+0
   DO j=1,nySub+0
     DO i=1,nxSub+0
-!DO k=0,nzSub+1
-!  DO j=0,nySub+1
-!    DO i=0,nxSub+1
 
       IF(node(i,j,k) .EQ. FLUID) THEN
       
@@ -1365,6 +1232,8 @@ END DO
 END SUBROUTINE Equilibrium
 !------------------------------------------------
 
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE Collision		! calculates equilibrium distribution function AND collision step for each node
 !--------------------------------------------------------------------------------------------------
@@ -1378,9 +1247,6 @@ REAL(dbl)		:: feq						! equilibrium distribution function
 DO k=1,nzSub+0
   DO j=1,nySub+0
     DO i=1,nxSub+0
-!DO k=0,nzSub+1
-!  DO j=0,nySub+1
-!    DO i=0,nxSub+1
 
       IF(node(i,j,k) .EQ. FLUID) THEN
 
@@ -1396,6 +1262,7 @@ DO k=1,nzSub+0
         
           feq	= (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5*Usum*Usum - 1.5*uu)	! equilibrium distribution function
           f(m,i,j,k)		= f(m,i,j,k) - oneOVERtau*(f(m,i,j,k) - feq)							! collision
+	!write(*,*) 0.5_dbl*s1/vcf,s1,vcf,xcf,nu,nuL,tau!m,i,j,k,f(m,i,j,k),w(i,j,k)
         
         END DO 
 
@@ -1405,10 +1272,15 @@ DO k=1,nzSub+0
   END DO
 END DO
 
-
 !------------------------------------------------
 END SUBROUTINE Collision
 !------------------------------------------------
+
+
+
+
+
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE Stream	! stream the distribution functions between neighboring nodes (stream - using Lallemand 2nd order moving BB)
@@ -1418,7 +1290,7 @@ IMPLICIT NONE
 INTEGER(lng) :: i,j,k,m,im1,jm1,km1		! index variables
 REAL(dbl) :: fbb								! bounced back distribution function
 
-fplus = f										! store the post-collision distribution function
+fplus = f									! store the post-collision distribution function
 
 ! interior nodes (away from other subdomains)
 DO k=2,nzSub-1
@@ -1578,11 +1450,11 @@ DO i=1,nxSub,(nxSub-1)
         
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
-          ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
-            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  						! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
+          ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
+            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  				! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)							! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
@@ -1611,42 +1483,44 @@ END DO
 END SUBROUTINE Stream
 !------------------------------------------------
 
+
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE Macro	! calculate the macroscopic quantities
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k,m						! index variables
-
 INTEGER(lng) :: ii,jj,kk
+
+LOGICAL :: nodebounflag
 
 ! Balaji modified to include 0 to nzSub+1
 DO k=1,nzSub
   DO j=1,nySub
     DO i=1,nxSub
-!DO k=0,nzSub+1
-!  DO j=0,nySub+1
-!    DO i=0,nxSub+1
       
       IF(node(i,j,k) .EQ. FLUID) THEN
 
         ! initialize arrays
-        rho(i,j,k)		= 0.0_dbl								! density
-        u(i,j,k)		= 0.0_dbl								! x-velocity
-        v(i,j,k)		= 0.0_dbl								! y-velocity
-        w(i,j,k)		= 0.0_dbl								! z-velocity     
+        rho(i,j,k)		= 0.0_dbl				! density
+        u(i,j,k)		= 0.0_dbl				! x-velocity
+        v(i,j,k)		= 0.0_dbl				! y-velocity
+        w(i,j,k)		= 0.0_dbl				! z-velocity     
 
         DO m=0,NumDistDirs  
           rho(i,j,k)	= rho(i,j,k) + f(m,i,j,k)			! density
-          u(i,j,k)	= u(i,j,k)   + f(m,i,j,k)*ex(m)	! x-velocity
-          v(i,j,k)	= v(i,j,k)   + f(m,i,j,k)*ey(m)	! y-velocity
-          w(i,j,k)	= w(i,j,k)   + f(m,i,j,k)*ez(m)	! z-velocity
+          u(i,j,k)	= u(i,j,k)   + f(m,i,j,k)*ex(m)			! x-velocity
+          v(i,j,k)	= v(i,j,k)   + f(m,i,j,k)*ey(m)			! y-velocity
+          w(i,j,k)	= w(i,j,k)   + f(m,i,j,k)*ez(m)			! z-velocity
         END DO
 
         IF(rho(i,j,k) .NE. 0) THEN
-          u(i,j,k) = u(i,j,k)/rho(i,j,k)					! x-velocity
-          v(i,j,k) = v(i,j,k)/rho(i,j,k)					! y-velocity
-          w(i,j,k) = w(i,j,k)/rho(i,j,k)					! z-velocity
+          u(i,j,k) = u(i,j,k)/rho(i,j,k)				! x-velocity
+          v(i,j,k) = v(i,j,k)/rho(i,j,k)				! y-velocity
+          w(i,j,k) = w(i,j,k)/rho(i,j,k)				! z-velocity
         ELSE          
 
           OPEN(6678,FILE='error.'//sub//'.txt')
@@ -1673,66 +1547,29 @@ DO k=1,nzSub
           WRITE(1001,'(8E15.5,I6)') x(i), y(j), z(k), u(i,j,k), v(i,j,k), w(i,j,k), (rho(i,j,k)-denL)*dcf*pcf, phi(i,j,k), node(i,j,k)
           CLOSE(1001)
 
-          CALL PrintFieldsTEST										! output the velocity, density, and scalar fields [MODULE: Output]
+          CALL PrintFieldsTEST									! output the velocity, density, and scalar fields [MODULE: Output]
 
           STOP
 
         END IF
 
       ELSE
-      
         rho(i,j,k)	= denL									! density (zero gauge pressure)
-        u(i,j,k)		= 0.0_dbl								! x-velocity
-        v(i,j,k)		= 0.0_dbl								! y-velocity
-        w(i,j,k)		= 0.0_dbl								! z-velocity
+        u(i,j,k)		= 0.0_dbl							! x-velocity
+        v(i,j,k)		= 0.0_dbl							! y-velocity
+        w(i,j,k)		= 0.0_dbl							! z-velocity
         phi(i,j,k)	= phiWall								! scalar
-        
-	
-
       END IF
 
     END DO
   END DO
 END DO   
 
-!! Balaji added for serial job ! need to do this for parallel using
-!MPI_Transfer
-!	!write(*,*) iter,MAXVAL(f(:,:,:,0)-f(:,:,:,nzSub))
-!	!write(*,*) iter,MAXVAL(f(:,:,:,nzSub+1)-f(:,:,:,1))
-!       u(0:nxSub+1,0:nySub+1,0)=u(0:nxSub+1,0:nySub+1,nzSub)
-!       u(0:nxSub+1,0:nySub+1,nzSub+1)=u(0:nxSub+1,0:nySub+1,1)
-!       u(0,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       u(nxSub+1,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       u(:,0,:)=0.0_dbl
-!       u(:,nySub+1,:)=0.0_dbl
-!	!write(*,*) iter,MAXVAL(f(:,:,:,0)-f(:,:,:,nzSub))
-!	!write(*,*) iter,MAXVAL(f(:,:,:,nzSub+1)-f(:,:,:,1))
-!
-!       v(0:nxSub+1,0:nySub+1,0)=v(0:nxSub,0:nySub+1,nzSub)
-!       v(0:nxSub+1,0:nySub+1,nzSub+1)=v(0:nxSub+1,0:nySub+1,1)
-!       v(0,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       v(nxSub+1,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       v(:,0,:)=0.0_dbl
-!       v(:,nySub+1,:)=0.0_dbl
-!       
-!       w(0:nxSub+1,0:nySub+1,0)=w(0:nxSub+1,0:nySub+1,nzSub)
-!       w(0:nxSub+1,0:nySub+1,nzSub+1)=w(0:nxSub+1,0:nySub+1,1)
-!       w(0,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       w(nxSub+1,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       w(:,0,:)=0.0_dbl
-!       w(:,nySub+1,:)=0.0_dbl
-!
-!       rho(0:nxSub+1,0:nySub+1,0)=rho(0:nxSub+1,0:nySub+1,nzSub)
-!       rho(0:nxSub+1,0:nySub+1,nzSub+1)=rho(0:nxSub+1,0:nySub+1,1)
-!       !rho(0,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       !rho(nxSub+1,0:nySub+1,0:nzSub+1)=0.0_dbl
-!       !rho(:,0,:)=0.0_dbl
-!       !rho(:,nySub+1,:)=0.0_dbl
-
-
 !------------------------------------------------
 END SUBROUTINE Macro
 !------------------------------------------------
+
+
 
 !================================================
 END MODULE LBM
