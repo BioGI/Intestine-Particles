@@ -626,70 +626,70 @@ TYPE(ParRecord), POINTER :: next
 !calculate delNBbyCV for each particle in the domain
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
-        ! Initialize Sh for this particle
-        current%pardata%sh=1.0_dbl/(1.0_dbl-current%pardata%gamma_cont)
-        ! Add container effect
-        current%pardata%sh=current%pardata%sh + (current%pardata%gamma_cont/(1.0_dbl-current%pardata%gamma_cont))
+	next => current%next ! copy pointer of next node
+	! Initialize Sh for this particle
+	current%pardata%sh=1.0_dbl/(1.0_dbl-current%pardata%gamma_cont)
+	! Add container effect
+	current%pardata%sh=current%pardata%sh + (current%pardata%gamma_cont/(1.0_dbl-current%pardata%gamma_cont))
 
-        ! Add Shear effect from Yanxing's correlations from Wang et al., (2015)
-        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+	! Add Shear effect from Yanxing's correlations from Wang et al., (2015)
+	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-        ix0=FLOOR(xp)
-        ix1=CEILING(xp)
-        iy0=FLOOR(yp)
-        iy1=CEILING(yp)
-        iz0=FLOOR(zp)
-        iz1=CEILING(zp)
-        !!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
+	ix0=FLOOR(xp)
+	ix1=CEILING(xp)
+	iy0=FLOOR(yp)
+	iy1=CEILING(yp)
+	iz0=FLOOR(zp)
+	iz1=CEILING(zp)
+	!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
 
-        IF (ix1 /= ix0) THEN
-                xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-        ELSE
-                xd = 0.0_dbl
-        END IF
-        IF (iy1 /= iy0) THEN
-                yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-        ELSE
-                yd = 0.0_dbl
-        END IF
-        IF (iz1 /= iz0) THEN
-                zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-        ELSE
-                zd = 0.0_dbl
-        END IF
+	IF (ix1 /= ix0) THEN 
+		xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
+	ELSE
+		xd = 0.0_dbl
+	END IF
+	IF (iy1 /= iy0) THEN 
+		yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
+	ELSE
+		yd = 0.0_dbl
+	END IF
+	IF (iz1 /= iz0) THEN 
+		zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+	ELSE
+		zd = 0.0_dbl
+	END IF
 
-        ib = ix0
-        jb = iy0
-        kb = iz0
-        it = ix0+1_lng
-        jt = iy0
-        kt = iz0
+	ib = ix0
+	jb = iy0
+	kb = iz0
+	it = ix0+1_lng
+	jt = iy0
+	kt = iz0
 
-        dwdz = (w(it,jt,kt)-w(ib,jb,kb))
-        S = abs(dwdz*vcf/zcf)
-        Sst = S*(current%pardata%rp**2.0)/diffm
+	dwdz = (w(it,jt,kt)-w(ib,jb,kb))
+	S = abs(dwdz*vcf/zcf)
+	Sst = S*(current%pardata%rp**2.0)/diffm
 
-        current%pardata%S = S
-        current%pardata%Sst = Sst
+	current%pardata%S = S
+	current%pardata%Sst = Sst
 
-IF (Sst.LT.5.0_dbl) THEN
-                current%pardata%sh=current%pardata%sh+0.296_dbl*(Sst**0.5_dbl)
-        ELSE
-                Sh0 = exp(0.162_dbl+0.202_dbl*log(Sst)-7.5e-6_dbl*(log(Sst)**5.4_dbl))
-                current%pardata%sh=current%pardata%sh+Sh0-1.0_dbl
-        END IF
+	IF (Sst.LT.5.0_dbl) THEN
+		current%pardata%sh=current%pardata%sh+0.296_dbl*(Sst**0.5_dbl)
+	ELSE
+		Sh0 = exp(0.162_dbl+0.202_dbl*log(Sst)-7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
+		current%pardata%sh=current%pardata%sh+Sh0-1.0_dbl
+	END IF
 
-        !IF (associated(current,ParListHead%next)) THEN
-        IF (current%pardata%parid.eq.1) THEN
-!                write(*,*) iter*tcf,S,Sst,current%pardata%sh,current%pardata%cur_part,dwdz,w(it,jt,kt),w(ib,jb,kb),ib,it,jt,kt,node(ib,jb,kb),node(it,jt,kt),zp,FLOOR(zp),CEILING(zp),w(it,jt,0),w(it,jt,nzSub+1_lng),nzSub
-        ENDIF
+	!IF (associated(current,ParListHead%next)) THEN
+	IF (current%pardata%parid.eq.1) THEN
+		write(*,*) iter*tcf,S,Sst,current%pardata%sh,current%pardata%cur_part,dwdz,w(it,jt,kt),w(ib,jb,kb),ib,it,jt,kt,node(ib,jb,kb),node(it,jt,kt),zp,FLOOR(zp),CEILING(zp),w(it,jt,0),w(it,jt,nzSub+1_lng),nzSub
+	ENDIF
 
-        ! point to next node in the list
-        current => next
+	! point to next node in the list
+	current => next
 ENDDO
 
 
