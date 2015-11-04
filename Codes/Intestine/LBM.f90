@@ -1,6 +1,7 @@
 !==================================================================================================
 MODULE LBM				! LBM Subroutines (Equilibrium, Collision, Stream, Macro, Scalar, ScalarBCs,ParticleTracking)
 !==================================================================================================
+
 USE SetPrecision
 USE Setup
 USE ICBC
@@ -9,30 +10,31 @@ IMPLICIT NONE
 
 CONTAINS
 
-!--------------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------------
 SUBROUTINE LBM_Setup	! setup the LBM simulation
-!--------------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------------
+
 IMPLICIT NONE
 
-! Initialize variables and arrays
-f		= 0.0_dbl		! distribution functions
-fplus	= 0.0_dbl		! post-collision distribution functions
-u  	= 0.0_dbl		! x-velocity
-v     = 0.0_dbl		! y-velocity
-w     = 0.0_dbl		! z-velocity
-rho   = 0.0_lng		! density
-ex    = 0.0_dbl		! lattice discretized velocity vector (x-component)
-ey    = 0.0_dbl		! lattice discretized velocity vector (x-component)
-ez    = 0.0_dbl		! lattice discretized velocity vector (x-component)
+!---- Initialize variables and arrays---------------------------------------------------------------
+f     = 0.0_dbl			! distribution functions
+fplus = 0.0_dbl			! post-collision distribution functions
+u     = 0.0_dbl			! x-velocity
+v     = 0.0_dbl			! y-velocity
+w     = 0.0_dbl			! z-velocity
+rho   = 0.0_lng			! density
+ex    = 0.0_dbl			! lattice discretized velocity vector (x-component)
+ey    = 0.0_dbl			! lattice discretized velocity vector (x-component)
+ez    = 0.0_dbl			! lattice discretized velocity vector (x-component)
 bb    = 0_lng			! bounceback directions
-wt    = 0.0_dbl		! weighting coefficients
+wt    = 0.0_dbl			! weighting coefficients
 
-! Fill out weighting coefficient array
+!---- Fill out weighting coefficient array ---------------------------------------------------------
 wt(0)    = 2.0_dbl/9.0_dbl	
 wt(1:6)  = 1.0_dbl/9.0_dbl
 wt(7:14) = 1.0_dbl/72.0_dbl
 
-! Fill out bounceback array
+!---- Fill out bounceback array --------------------------------------------------------------------
 bb(0)  = 0_lng
 bb(1)  = 2_lng
 bb(2)  = 1_lng
@@ -49,7 +51,7 @@ bb(12) = 11_lng
 bb(13) = 14_lng
 bb(14) = 13_lng
 
-! Fill out symmetry array
+!----Fill out symmetry array -----------------------------------------------------------------------
 ! iComm=2, -ZY FACE
 sym(0,2)  = 0_lng
 sym(1,2)  = 2_lng
@@ -66,6 +68,7 @@ sym(11,2) = 7_lng
 sym(12,2) = 8_lng
 sym(13,2) = 10_lng
 sym(14,2) = 9_lng
+
 ! iComm=3, -ZX FACE
 sym(0,4)  = 0_lng
 sym(1,4)  = 2_lng
@@ -82,6 +85,7 @@ sym(11,4) = 10_lng
 sym(12,4) = 9_lng
 sym(13,4) = 7_lng
 sym(14,4) = 8_lng
+
 ! iComm=8, Z AXIS
 sym(0,8)  = 0_lng
 sym(1,8)  = 2_lng
@@ -99,7 +103,7 @@ sym(12,8) = 14_lng
 sym(13,8) = 11_lng
 sym(14,8) = 12_lng 
 
-! Fill velocity direction vector arrays
+!---- Fill velocity direction vector arrays --------------------------------------------------------
 ex(0) =	 0.0_dbl		! direction 0
 ey(0) =	 0.0_dbl
 ez(0) =	 0.0_dbl
@@ -146,33 +150,46 @@ ex(14) = -1.0_dbl		! direction 14
 ey(14) =  1.0_dbl
 ez(14) = -1.0_dbl
 
-! Define other simulation parameters
+!---- Define other simulation parameters -----------------------------------------------------------
 nuL   		= (2.0_dbl*tau - 1.0_dbl)/6.0_dbl	! lattice kinematic viscosity
-denL 			= 1.0_dbl									! arbitrary lattice density (1.0 for convenience)
-oneOVERtau 	= 1.0_dbl/tau								! reciprical of tau
-cs				= (1.0_dbl)/(SQRT(3.0_dbl))			! speed of sound on the lattice
+denL 		= 1.0_dbl				! arbitrary lattice density (1.0 for convenience)
+oneOVERtau 	= 1.0_dbl/tau				! reciprical of tau
+cs		= (1.0_dbl)/(SQRT(3.0_dbl))		! speed of sound on the lattice
 
-! Initialize timestep
-iter = 0_lng												! intialize the starting timestep to 0 - will get reset in 'ICs' in ICBCM.f90
+!---- Initialize timestep --------------------------------------------------------------------------
+iter = 0_lng						! intialize the starting timestep to 0 - will get reset in 'ICs' in ICBCM.f90
 
-! Calculate feq for initial condition
+!---- Calculate feq for initial condition ----------------------------------------------------------
 CALL Equilibrium
 
-!------------------------------------------------
-END SUBROUTINE LBM_Setup
-!------------------------------------------------
+!---- Set f-from wall motion sums to zero at initial timestep --------------------------------------
+fmovingsum = 0.0_dbl
+fmovingrhosum = 0.0_dbl
 
-!------------------------------------------------
+!===================================================================================================
+END SUBROUTINE LBM_Setup
+!===================================================================================================
+
+
+
+
+
+!===================================================================================================
 SUBROUTINE Particle_Setup
-!------------------------------------------------
+!===================================================================================================
+
 IMPLICIT NONE
+
 IF (restart) THEN
 ELSE
 	CALL Interp_Parvel
 ENDIF
-!------------------------------------------------
+
+!===================================================================================================
 END SUBROUTINE Particle_Setup
-!------------------------------------------------
+!===================================================================================================
+
+
 
 
 
@@ -287,88 +304,88 @@ TYPE(ParRecord), POINTER :: next
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
+	next => current%next ! copy pointer of next node
 
-        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-        ix0=FLOOR(xp)
-        ix1=CEILING(xp)
-        iy0=FLOOR(yp)
-        iy1=CEILING(yp)
-        iz0=FLOOR(zp)
-        iz1=CEILING(zp)
-
+	ix0=FLOOR(xp)
+	ix1=CEILING(xp)
+	iy0=FLOOR(yp)
+	iy1=CEILING(yp)
+	iz0=FLOOR(zp)
+	iz1=CEILING(zp)
 !!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
-        IF (ix1 /= ix0) THEN
-           xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-        ELSE
+	IF (ix1 /= ix0) THEN 
+           xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
+	ELSE
            xd = 0.0_dbl
-        END IF
+	END IF
 
-        IF (iy1 /= iy0) THEN
-           yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-        ELSE
+	IF (iy1 /= iy0) THEN 
+           yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
+	ELSE
            yd = 0.0_dbl
-        END IF
+	END IF
 
 
-        IF (iz1 /= iz0) THEN
+	IF (iz1 /= iz0) THEN 
            zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-        ELSE
+	ELSE
            zd = 0.0_dbl
-        END IF
+	END IF
+
 
 ! u-interpolation
 ! Do first level linear interpolation in x-direction
-        c00 = u(ix0,iy0,iz0)*(1.0_dbl-xd)+u(ix1,iy0,iz0)*xd
-        c01 = u(ix0,iy0,iz1)*(1.0_dbl-xd)+u(ix1,iy0,iz1)*xd
-        c10 = u(ix0,iy1,iz0)*(1.0_dbl-xd)+u(ix1,iy1,iz0)*xd
-        c11 = u(ix0,iy1,iz1)*(1.0_dbl-xd)+u(ix1,iy1,iz1)*xd
-
+	c00 = u(ix0,iy0,iz0)*(1.0_dbl-xd)+u(ix1,iy0,iz0)*xd	
+	c01 = u(ix0,iy0,iz1)*(1.0_dbl-xd)+u(ix1,iy0,iz1)*xd	
+	c10 = u(ix0,iy1,iz0)*(1.0_dbl-xd)+u(ix1,iy1,iz0)*xd	
+	c11 = u(ix0,iy1,iz1)*(1.0_dbl-xd)+u(ix1,iy1,iz1)*xd	
+	
 ! Do second level linear interpolation in y-direction
-        c0  = c00*(1.0_dbl-yd)+c10*yd
-        c1  = c01*(1.0_dbl-yd)+c11*yd
+	c0  = c00*(1.0_dbl-yd)+c10*yd
+	c1  = c01*(1.0_dbl-yd)+c11*yd
 
 ! Do third level linear interpolation in z-direction
-        c   = c0*(1.0_dbl-zd)+c1*zd
+	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%up=c
 
 
 ! v-interpolation
 ! Do first level linear interpolation in x-direction
-        c00 = v(ix0,iy0,iz0)*(1.0_dbl-xd)+v(ix1,iy0,iz0)*xd
-        c01 = v(ix0,iy0,iz1)*(1.0_dbl-xd)+v(ix1,iy0,iz1)*xd
-        c10 = v(ix0,iy1,iz0)*(1.0_dbl-xd)+v(ix1,iy1,iz0)*xd
-        c11 = v(ix0,iy1,iz1)*(1.0_dbl-xd)+v(ix1,iy1,iz1)*xd
+	c00 = v(ix0,iy0,iz0)*(1.0_dbl-xd)+v(ix1,iy0,iz0)*xd
+	c01 = v(ix0,iy0,iz1)*(1.0_dbl-xd)+v(ix1,iy0,iz1)*xd
+	c10 = v(ix0,iy1,iz0)*(1.0_dbl-xd)+v(ix1,iy1,iz0)*xd
+	c11 = v(ix0,iy1,iz1)*(1.0_dbl-xd)+v(ix1,iy1,iz1)*xd	
 
 ! Do second level linear interpolation in y-direction
-        c0  = c00*(1.0_dbl-yd)+c10*yd
-        c1  = c01*(1.0_dbl-yd)+c11*yd
+	c0  = c00*(1.0_dbl-yd)+c10*yd
+	c1  = c01*(1.0_dbl-yd)+c11*yd
 
 ! Do third level linear interpolation in z-direction
-        c   = c0*(1.0_dbl-zd)+c1*zd
+	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%vp=c
 
 ! w-interpolation
 ! Do first level linear interpolation in x-direction
-        c00 = w(ix0,iy0,iz0)*(1.0_dbl-xd)+w(ix1,iy0,iz0)*xd
-        c01 = w(ix0,iy0,iz1)*(1.0_dbl-xd)+w(ix1,iy0,iz1)*xd
-        c10 = w(ix0,iy1,iz0)*(1.0_dbl-xd)+w(ix1,iy1,iz0)*xd
-        c11 = w(ix0,iy1,iz1)*(1.0_dbl-xd)+w(ix1,iy1,iz1)*xd
+	c00 = w(ix0,iy0,iz0)*(1.0_dbl-xd)+w(ix1,iy0,iz0)*xd	
+	c01 = w(ix0,iy0,iz1)*(1.0_dbl-xd)+w(ix1,iy0,iz1)*xd	
+	c10 = w(ix0,iy1,iz0)*(1.0_dbl-xd)+w(ix1,iy1,iz0)*xd	
+	c11 = w(ix0,iy1,iz1)*(1.0_dbl-xd)+w(ix1,iy1,iz1)*xd	
 
 ! Do second level linear interpolation in y-direction
-        c0  = c00*(1.0_dbl-yd)+c10*yd
-        c1  = c01*(1.0_dbl-yd)+c11*yd
+	c0  = c00*(1.0_dbl-yd)+c10*yd
+	c1  = c01*(1.0_dbl-yd)+c11*yd
 
 ! Do third level linear interpolation in z-direction
-        c   = c0*(1.0_dbl-zd)+c1*zd
+	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%wp=c
 
 ! point to next node in the list
-        current => next
+	current => next
 
 ENDDO
 
@@ -380,53 +397,41 @@ END SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
 
 
 
+!===================================================================================================
+SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
+!===================================================================================================
+
+IMPLICIT NONE
+INTEGER(lng)  :: i
+REAL(dbl)     :: s1,s2,s3,s4,x1,y1,a,b,c,d
+REAL(dbl)     :: xp,yp,zp
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+	next => current%next ! copy pointer of next node
+	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+	current%pardata%up=0.5*(u(FLOOR(xp),FLOOR(yp),FLOOR(zp))+u(CEILING(xp),CEILING(yp),CEILING(zp)))
+	current%pardata%vp=0.5*(v(FLOOR(xp),FLOOR(yp),FLOOR(zp))+v(CEILING(xp),CEILING(yp),CEILING(zp)))
+	current%pardata%wp=0.5*(w(FLOOR(xp),FLOOR(yp),FLOOR(zp))+w(CEILING(xp),CEILING(yp),CEILING(zp)))
+	! point to next node in the list
+	current => next
+	!write(*,*) i
+ENDDO
+
+
+!===================================================================================================
+END SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
+!===================================================================================================
 
 
 
 
 
 
-
-
-
-
-
-
-
-!!------------------------------------------------
-!SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
-!REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
-!
-!DO i=1,np
-!	ix0=FLOOR(xp(i))
-!	ix1=FLOOR(xp(i))+1_lng
-!	iy0=FLOOR(yp(i))
-!	iy1=FLOOR(yp(i))+1_lng
-!	iz0=FLOOR(zp(i))
-!	iz1=FLOOR(zp(i))+1_lng
-!	xd=(xp(i)-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
-!	yd=(yp(i)-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
-!	zd=(zp(i)-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-!
-!	! phi-interpolation
-!	! Do first level linear interpolation in x-direction
-!	c00 = phi(ix0,iy0,iz0)*(1.0_dbl-xd)+phi(ix1,iy0,iz0)*xd	
-!	c01 = phi(ix0,iy0,iz1)*(1.0_dbl-xd)+phi(ix1,iy0,iz1)*xd	
-!	c10 = phi(ix0,iy1,iz0)*(1.0_dbl-xd)+phi(ix1,iy1,iz0)*xd	
-!	c11 = phi(ix0,iy1,iz1)*(1.0_dbl-xd)+phi(ix1,iy1,iz1)*xd	
-!	! Do second level linear interpolation in y-direction
-!	c0  = c00*(1.0_dbl-yd)+c10*yd
-!	c1  = c01*(1.0_dbl-yd)+c11*yd
-!	! Do third level linear interpolation in z-direction
-!	c   = c0*(1.0_dbl-zd)+c1*zd
-!       bulk_conc(i)=c
-!ENDDO
-!!------------------------------------------------
-!END SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
-!!------------------------------------------------
 
 !===================================================================================================
 SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
@@ -441,53 +446,55 @@ TYPE(ParRecord), POINTER :: next
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
+	next => current%next ! copy pointer of next node
 
-        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-        ix0=FLOOR(xp)
-        ix1=CEILING(xp)
-        iy0=FLOOR(yp)
-        iy1=CEILING(yp)
-        iz0=FLOOR(zp)
-        iz1=CEILING(zp)
+	ix0=FLOOR(xp)
+	ix1=CEILING(xp)
+	iy0=FLOOR(yp)
+	iy1=CEILING(yp)
+	iz0=FLOOR(zp)
+	iz1=CEILING(zp)
 !!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
-        IF (ix1 /= ix0) THEN
-                xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-        ELSE
-                xd = 0.0_dbl
-        END IF
-        IF (iy1 /= iy0) THEN
-                yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-        ELSE
-                yd = 0.0_dbl
-        END IF
-        IF (iz1 /= iz0) THEN
-                zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-        ELSE
-                zd = 0.0_dbl
-        END IF
+	IF (ix1 /= ix0) THEN 
+		xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
+	ELSE
+		xd = 0.0_dbl
+	END IF
+	IF (iy1 /= iy0) THEN 
+		yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
+	ELSE
+		yd = 0.0_dbl
+	END IF
+	IF (iz1 /= iz0) THEN 
+		zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+	ELSE
+		zd = 0.0_dbl
+	END IF
+
+	!yd=0.0_dbl ! TEST: used to keep particle motion plainly 2-D ! Balaji added
 
 ! phi-interpolation
 ! Do first level linear interpolation in x-direction
-        c00 = phi(ix0,iy0,iz0)*(1.0_dbl-xd)+phi(ix1,iy0,iz0)*xd
-        c01 = phi(ix0,iy0,iz1)*(1.0_dbl-xd)+phi(ix1,iy0,iz1)*xd
-        c10 = phi(ix0,iy1,iz0)*(1.0_dbl-xd)+phi(ix1,iy1,iz0)*xd
-        c11 = phi(ix0,iy1,iz1)*(1.0_dbl-xd)+phi(ix1,iy1,iz1)*xd
+	c00 = phi(ix0,iy0,iz0)*(1.0_dbl-xd)+phi(ix1,iy0,iz0)*xd	
+	c01 = phi(ix0,iy0,iz1)*(1.0_dbl-xd)+phi(ix1,iy0,iz1)*xd	
+	c10 = phi(ix0,iy1,iz0)*(1.0_dbl-xd)+phi(ix1,iy1,iz0)*xd	
+	c11 = phi(ix0,iy1,iz1)*(1.0_dbl-xd)+phi(ix1,iy1,iz1)*xd	
 
 ! Do second level linear interpolation in y-direction
-        c0  = c00*(1.0_dbl-yd)+c10*yd
-        c1  = c01*(1.0_dbl-yd)+c11*yd
+	c0  = c00*(1.0_dbl-yd)+c10*yd
+	c1  = c01*(1.0_dbl-yd)+c11*yd
 
 ! Do third level linear interpolation in z-direction
-        c   = c0*(1.0_dbl-zd)+c1*zd
+	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%bulk_conc=c
 
 ! point to next node in the list
-        current => next
+	current => next
 ENDDO
 
 !===================================================================================================
@@ -495,8 +502,13 @@ END SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
 !===================================================================================================
 
 
+
+
+
+
+
 !===================================================================================================
-SUBROUTINE Calc_Global_Bulk_Scalar_Conc !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model
+SUBROUTINE Calc_Global_Bulk_Scalar_Conc !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
 !===================================================================================================
 
 IMPLICIT NONE
@@ -529,36 +541,8 @@ END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 
 
 
-
-
-
-!!------------------------------------------------
-!SUBROUTINE Calc_Scalar_Release! Interpolate Particle concentration release to node locations 
-!! Called by Particle_Track (LBM.f90) to get delNBbyCV, update particle radius,
-!! Sh(t)- sherwood number
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
-!REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
-!REAL(dbl)     :: deltaR,bulkVolume
-!
-!DO i=1,np
-!	rpold(i)=rp(i)
-!	sh(i)=1.0_dbl/(1.0_dbl-gamma_cont(i))
-!	rp(i)=0.5_dbl*(rpold(i)+sqrt(max(rpold(i)*rpold(i)-4.0_dbl*tcf*molarvol*diffm*sh(i)*(par_conc(i)-bulk_conc(i)),0.0_dbl)))
-!	deltaR=rpold(i)-rp(i)
-!	bulkVolume=xcf*ycf*zcf
-!	delNBbyCV(i)=4.0_dbl*PI*rp(i)*rp(i)*deltaR*par_conc(i)/(bulkVolume*(1.0_dbl-gamma_cont(i)))
-!ENDDO
-!!------------------------------------------------
-!END SUBROUTINE Calc_Scalar_Release
-!!------------------------------------------------
-
-
-
-
 !===================================================================================================
-SUBROUTINE Calc_Scalar_Release! Calculate rate of scalar release at every time step
+SUBROUTINE Calc_Scalar_Release! Calculate rate of scalar release at every time step  
 !===================================================================================================
 
 ! Called by Particle_Track (LBM.f90) to get delNBbyCV, update particle radius,
@@ -571,50 +555,57 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 
+!Cb_global = 0.0
+!bulkVolume=xcf*ycf*zcf*Cb_numFluids/num_particles
 bulkVolume=xcf*ycf*zcf
 zcf3=xcf*ycf*zcf
 
 !calculate delNBbyCV for each particle in the domain
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
+	next => current%next ! copy pointer of next node
 
-        current%pardata%rpold=current%pardata%rp
+	current%pardata%rpold=current%pardata%rp
 
-        bulkconc = Cb_global
-        temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-
+	bulkconc = Cb_global
+	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
+  
         IF (temp.GE.0.0_dbl) THEN
-                current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
-        ELSE
+		current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
+	ELSE
           temp = 0.0_dbl
           current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
-        END IF
+	END IF
 
-        deltaR=current%pardata%rpold-current%pardata%rp
+	deltaR=current%pardata%rpold-current%pardata%rp
 
-        current%pardata%delNBbyCV=(4.0_dbl/3.0_dbl)*PI*(current%pardata%rpold*current%pardata%rpold*current%pardata%rpold &
-                                -current%pardata%rp*current%pardata%rp*current%pardata%rp) &
-                                /(molarvol*bulkVolume)
+	current%pardata%delNBbyCV=(4.0_dbl/3.0_dbl)*PI*(current%pardata%rpold*current%pardata%rpold*current%pardata%rpold &
+				-current%pardata%rp*current%pardata%rp*current%pardata%rp) &
+				/(molarvol*bulkVolume)
 
-        IF (associated(current,ParListHead%next)) THEN
+	IF (associated(current,ParListHead%next)) THEN
            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
            CALL FLUSH(9)
-        ENDIF
+	ENDIF
 
 ! point to next node in the list
-        current => next
+	current => next
 ENDDO
 
 IF (myid .EQ. 0) THEN
-        open(799,file='testoutput.dat',position='append')
-        write(799,*) iter*tcf,Cb_global*zcf3*Cb_numFluids,Cb_global,Cb_numFluids
+       	open(799,file='testoutput.dat',position='append')
+	write(799,*) iter*tcf,Cb_global*zcf3*Cb_numFluids,Cb_global,Cb_numFluids
         close(799)
 ENDIF
 
 !===================================================================================================
 END SUBROUTINE Calc_Scalar_Release
 !===================================================================================================
+
+
+
+
+
 
 
 !------------------------------------------------
@@ -694,7 +685,7 @@ IF (Sst.LT.5.0_dbl) THEN
 
         !IF (associated(current,ParListHead%next)) THEN
         IF (current%pardata%parid.eq.1) THEN
-                write(*,*) iter*tcf,S,Sst,current%pardata%sh,current%pardata%cur_part,dwdz,w(it,jt,kt),w(ib,jb,kb),ib,it,jt,kt,node(ib,jb,kb),node(it,jt,kt),zp,FLOOR(zp),CEILING(zp),w(it,jt,0),w(it,jt,nzSub+1_lng),nzSub
+!                write(*,*) iter*tcf,S,Sst,current%pardata%sh,current%pardata%cur_part,dwdz,w(it,jt,kt),w(ib,jb,kb),ib,it,jt,kt,node(ib,jb,kb),node(it,jt,kt),zp,FLOOR(zp),CEILING(zp),w(it,jt,0),w(it,jt,nzSub+1_lng),nzSub
         ENDIF
 
         ! point to next node in the list
