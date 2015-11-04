@@ -118,7 +118,6 @@ DO k=1,nzSub
           STOP
           phi(i,j,k) = 0.0_dbl
         END IF
-
       END IF
 
     END DO
@@ -203,7 +202,7 @@ DO iComm=5,6
     DO j=1,nySub
       DO i=1,nxSub
 
-        IF(node(i,j,k) .NE. SOLID) THEN
+        IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN
 
           DO m=1,NumFs_face
 
@@ -212,7 +211,7 @@ DO iComm=5,6
             jm1 = j - ey(bb(f_Comps(iComm,m)))
             km1 = k - ez(bb(f_Comps(iComm,m)))
 
-            IF(node(im1,jm1,km1) .NE. SOLID) THEN
+            IF(node(im1,jm1,km1) .EQ. SOLID) THEN
               phiIN = (fplus(bb(f_Comps(iComm,m)),im1,jm1,km1)/rho(im1,jm1,km1) - wt(bb(f_Comps(iComm,m)))*Delta)	&								! scalar contribution from inlet/outlet to current node
                       *phiTemp(im1,jm1,km1)		
               phiOUT	= (fplus(f_Comps(iComm,m),i,j,k)/rho(i,j,k) - wt(f_Comps(iComm,m))*Delta)*phiTemp(i,j,k)										! scalar contribution from current node to inlet/outlet
