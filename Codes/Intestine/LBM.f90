@@ -193,102 +193,37 @@ END SUBROUTINE Particle_Setup
 
 
 
-!!------------------------------------------------
-!SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)  :: i
+!===================================================================================================
+SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
+!===================================================================================================
+
+IMPLICIT NONE
+INTEGER(lng)  :: i
 !REAL(dbl)     :: s1,s2,s3,s4,x1,y1,a,b,c,d
-!
-!DO i=1,np
-!	up(i)=0.5*(u(FLOOR(xp(i)),FLOOR(yp(i)),FLOOR(zp(i)))+u(CEILING(xp(i)),CEILING(yp(i)),CEILING(zp(i))))
-!	vp(i)=0.5*(v(FLOOR(xp(i)),FLOOR(yp(i)),FLOOR(zp(i)))+v(CEILING(xp(i)),CEILING(yp(i)),CEILING(zp(i))))
-!	wp(i)=0.5*(w(FLOOR(xp(i)),FLOOR(yp(i)),FLOOR(zp(i)))+w(CEILING(xp(i)),CEILING(yp(i)),CEILING(zp(i))))
-!ENDDO
-!!------------------------------------------------
-!END SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
-!!------------------------------------------------
+REAL(dbl)     :: xp,yp,zp
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+	next => current%next ! copy pointer of next node
+	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+	current%pardata%up=0.5*(u(FLOOR(xp),FLOOR(yp),FLOOR(zp))+u(CEILING(xp),CEILING(yp),CEILING(zp)))
+	current%pardata%vp=0.5*(v(FLOOR(xp),FLOOR(yp),FLOOR(zp))+v(CEILING(xp),CEILING(yp),CEILING(zp)))
+	current%pardata%wp=0.5*(w(FLOOR(xp),FLOOR(yp),FLOOR(zp))+w(CEILING(xp),CEILING(yp),CEILING(zp)))
+	! point to next node in the list
+	current => next
+	!write(*,*) i
+ENDDO
+
+!===================================================================================================
+END SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
+!===================================================================================================
 
 
 
-!!------------------------------------------------
-!SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
-!REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
-!
-!DO i=1,np
-!	ix0=FLOOR(xp(i))
-!	ix1=FLOOR(xp(i))+1_lng
-!	iy0=FLOOR(yp(i))
-!	iy1=FLOOR(yp(i))+1_lng
-!	iz0=FLOOR(zp(i))
-!	iz1=FLOOR(zp(i))+1_lng
-!	xd=(xp(i)-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
-!	yd=(yp(i)-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
-!	zd=(zp(i)-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-!
-!	! u-interpolation
-!	! Do first level linear interpolation in x-direction
-!	c00 = u(ix0,iy0,iz0)*(1.0_dbl-xd)+u(ix1,iy0,iz0)*xd	
-!	c01 = u(ix0,iy0,iz1)*(1.0_dbl-xd)+u(ix1,iy0,iz1)*xd	
-!	c10 = u(ix0,iy1,iz0)*(1.0_dbl-xd)+u(ix1,iy1,iz0)*xd	
-!	c11 = u(ix0,iy1,iz1)*(1.0_dbl-xd)+u(ix1,iy1,iz1)*xd	
-!	! Do second level linear interpolation in y-direction
-!	c0  = c00*(1.0_dbl-yd)+c10*yd
-!	c1  = c01*(1.0_dbl-yd)+c11*yd
-!	! Do third level linear interpolation in z-direction
-!	c   = c0*(1.0_dbl-zd)+c1*zd
-!       up(i)=c
-!
-!	! v-interpolation
-!	! Do first level linear interpolation in x-direction
-!	c00 = v(ix0,iy0,iz0)*(1.0_dbl-xd)+v(ix1,iy0,iz0)*xd	
-!	c01 = v(ix0,iy0,iz1)*(1.0_dbl-xd)+v(ix1,iy0,iz1)*xd	
-!	c10 = v(ix0,iy1,iz0)*(1.0_dbl-xd)+v(ix1,iy1,iz0)*xd	
-!	c11 = v(ix0,iy1,iz1)*(1.0_dbl-xd)+v(ix1,iy1,iz1)*xd	
-!	! Do second level linear interpolation in y-direction
-!	c0  = c00*(1.0_dbl-yd)+c10*yd
-!	c1  = c01*(1.0_dbl-yd)+c11*yd
-!	! Do third level linear interpolation in z-direction
-!	c   = c0*(1.0_dbl-zd)+c1*zd
-!       vp(i)=c
-!
-!	! w-interpolation
-!	! Do first level linear interpolation in x-direction
-!	c00 = w(ix0,iy0,iz0)*(1.0_dbl-xd)+w(ix1,iy0,iz0)*xd	
-!	c01 = w(ix0,iy0,iz1)*(1.0_dbl-xd)+w(ix1,iy0,iz1)*xd	
-!	c10 = w(ix0,iy1,iz0)*(1.0_dbl-xd)+w(ix1,iy1,iz0)*xd	
-!	c11 = w(ix0,iy1,iz1)*(1.0_dbl-xd)+w(ix1,iy1,iz1)*xd	
-!	! Do second level linear interpolation in y-direction
-!	c0  = c00*(1.0_dbl-yd)+c10*yd
-!	c1  = c01*(1.0_dbl-yd)+c11*yd
-!	! Do third level linear interpolation in z-direction
-!	c   = c0*(1.0_dbl-zd)+c1*zd
-!        wp(i)=c
-!ENDDO
-!!------------------------------------------------
-!END SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
-!!------------------------------------------------
-
-
-
-!!------------------------------------------------
-!SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)  :: i
-!REAL(dbl)     :: s1,s2,s3,s4,x1,y1,a,b,c,d
-!
-!DO i=1,np
-!	up(i)=0.5*(u(FLOOR(xp(i)),FLOOR(yp(i)),FLOOR(zp(i)))+u(CEILING(xp(i)),CEILING(yp(i)),CEILING(zp(i))))
-!	vp(i)=0.5*(v(FLOOR(xp(i)),FLOOR(yp(i)),FLOOR(zp(i)))+v(CEILING(xp(i)),CEILING(yp(i)),CEILING(zp(i))))
-!	wp(i)=0.5*(w(FLOOR(xp(i)),FLOOR(yp(i)),FLOOR(zp(i)))+w(CEILING(xp(i)),CEILING(yp(i)),CEILING(zp(i))))
-!ENDDO
-!!------------------------------------------------
-!END SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
-!!------------------------------------------------
 
 
 
@@ -1011,7 +946,10 @@ SUBROUTINE Particle_Track
 IMPLICIT NONE
 INTEGER(lng)   :: i,ipartition,ii,jj,kk
 REAL(dbl)      :: xpold(1:np),ypold(1:np),zpold(1:np) ! old particle coordinates (working coordinates are stored in xp,yp,zp)
+!REAL(dbl)      :: xp(1:np),yp(1:np),zp(1:np) 	      ! working particle coordinates (working coordinates are stored in xp,yp,zp)
+!REAL(dbl)      :: xpnew(1:np),ypnew(1:np),zpnew(1:np) ! new particle coordinates (working coordinates are stored in xp,yp,zp)
 REAL(dbl)      :: upold(1:np),vpold(1:np),wpold(1:np) ! old particle velocity components (new vales are stored in up, vp, wp)
+!REAL(dbl)      :: up(1:np),vp(1:np),wp(1:np) 	      ! working particle velocity (working coordinates are stored in xp,yp,zp)
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -1029,42 +967,57 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	next => current%next ! copy pointer of next node
 
-        current%pardata%xpold = current%pardata%xp
-        current%pardata%ypold = current%pardata%yp
-        current%pardata%zpold = current%pardata%zp
+	current%pardata%xpold = current%pardata%xp
+	current%pardata%ypold = current%pardata%yp
+	current%pardata%zpold = current%pardata%zp
+	
+	current%pardata%upold = current%pardata%up
+	current%pardata%vpold = current%pardata%vp
+	current%pardata%wpold = current%pardata%wp
+	
+	current%pardata%xp=current%pardata%xpold+current%pardata%up
+	current%pardata%yp=current%pardata%ypold+current%pardata%vp
+	current%pardata%zp=current%pardata%zpold+current%pardata%wp
+	
+	!IF(current%pardata%zp.GE.REAL(nz,dbl)) THEN
+	!	current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
+	!ENDIF
 
-        current%pardata%upold = current%pardata%up
-        current%pardata%vpold = current%pardata%vp
-        current%pardata%wpold = current%pardata%wp
+	!yp(i)=Cj ! test
 
-        current%pardata%xp=current%pardata%xpold+current%pardata%up
-        current%pardata%yp=current%pardata%ypold+current%pardata%vp
-        current%pardata%zp=current%pardata%zpold+current%pardata%wp
-
-
-        ! point to next node in the list
-        current => next
+	! point to next node in the list
+	current => next
+	!write(*,*) i
 ENDDO
 CALL Interp_Parvel
 ! Using a linked list of particle records
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
+	next => current%next ! copy pointer of next node
 
-        current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
-        current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
-        current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+	current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
+	current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
+	current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+	!xpnew(i)=current%pardata%xp
+	!ypnew(i)=current%pardata%yp
+	!zpnew(i)=current%pardata%zp
 
-        ! point to next node in the list
-        current => next
+	!write(*,*) current%parid
+	! point to next node in the list
+	current => next
+	!write(*,*) i
 ENDDO
 
+!IF (ASSOCIATED(ParListHead%next)) THEN
+!	write(*,*) 'In Particle_Track','iter= ',iter,'SUBID =',mySub,'ParID =',ParListHead%next%pardata%parid,'wp =',ParListHead%next%pardata%wp*vcf,'Transfer FLAG =',ParticleTransfer,ParListHead%next%pardata%cur_part,ParListHead%next%pardata%new_part
+!END IF
 
-CALL Interp_Parvel ! interpolate final particle velocities after the final position is ascertained.
+CALL Interp_Parvel ! interpolate final particle velocities after the final position is ascertained. 
 CALL Interp_bulkconc ! interpolate final bulk_concentration after the final position is ascertained.
-CALL Update_Sh ! Update the Sherwood number for each particle depending on the shear rate at the particle location.
-CALL Calc_Scalar_Release ! Updates particle radius, calculates new drug conc release rate delNBbyCV.
-CALL Interp_ParToNodes_Conc ! distributes released drug concentration to neightbouring nodes
+CALL Update_Sh ! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
+!delphi_particle = 0.0_dbl ! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
+CALL Calc_Scalar_Release ! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
+CALL Interp_ParToNodes_Conc ! distributes released drug concentration to neightbouring nodes 
 !drug molecules released by the particle at this new position
 ENDIF
 
