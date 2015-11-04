@@ -35,6 +35,9 @@ IF (phiPer.EQ.0.0) THEN
 	phiStart 	= NINT((phiPer*Tmix)/tcf)+1 ! Balaji changed this to add 1 as for phiPer=0, phiSTart=0. But iter never has a value 0.
 ENDIF
 
+phiInNodes = 0.0_dbl
+phiOutNodes = 0.0_dbl
+
 !------------------------------------------------
 END SUBROUTINE Scalar_Setup
 !------------------------------------------------
@@ -45,7 +48,9 @@ SUBROUTINE Scalar								! calculates the evolution of scalar in the domain
 IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k,m,im1,jm1,km1		! index variables
-REAL(dbl) :: phiBC							! scalar contribution from boundary
+REAL(dbl) :: phiBC				! scalar contribution from boundary
+REAL(dbl) :: phiOutSurf,phiInSurf		! scalar contribution coming from and going into the boundary
+REAL(dbl) :: tausgs				! contribution form tau_sgs term from particle closure
 
 CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
@@ -58,10 +63,17 @@ DO k=1,nzSub
     DO i=1,nxSub
       
       IF(node(i,j,k) .EQ. FLUID) THEN
-      
-	phiTemp(i,j,k) = phiTemp(i,j,k) + delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-        phi(i,j,k) = Delta*phiTemp(i,j,k)
-	!phi(i,j,k) = phi(i,j,k) + delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
+      	!IF (iter.lt.1200) THEN
+	!	phiTemp(i,j,k) = phiTemp(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
+	!END IF
+	!phiTemp(i,j,k) = phiTemp(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
+        phi(i,j,k) = Delta*phiTemp(i,j,k) ! 
+        !phi(i,j,k) = 0.0_dbl*Delta*phiTemp(i,j,k) ! 
+	phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
+	tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
+		 (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
+		 (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
+	phi(i,j,k) = phi(i,j,k)+ tausgs ! Balaji added - to handle SGS particle effects.
 
         DO m=0,NumDistDirs
       
@@ -73,9 +85,11 @@ DO k=1,nzSub
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
           ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN															! macro- boundary
-            CALL ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)															! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
+           CALL ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)															! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
+!            CALL ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOutSurf,phiInSurf)      ! Wang's BC  ! implement scalar boundary condition (using BB f's)    [MODULE: ICBC]
             phi(i,j,k) = phi(i,j,k) + phiBC     
-            CALL AbsorbedScalarS(i,j,k,m,phiBC)																	! measure the absorption rate
+            CALL AbsorbedScalarS2(i,j,k,m,phiOutSurf,phiInSurf)																	! measure the absorption rate
+            !CALL AbsorbedScalarS(i,j,k,m,phiBC)																	! measure the absorption rate
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
             CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)								! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
             phi(i,j,k) = phi(i,j,k) + phiBC     
@@ -100,6 +114,8 @@ DO k=1,nzSub
 	!phi(i,j,k) = phi(i,j,k) + delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
        	!  fix spurious oscillations in moment propagation method for high Sc #s
         IF(phi(i,j,k) .LT. 0.0_dbl) THEN
+          write(*,*) 'phi is negative'
+          STOP
           phi(i,j,k) = 0.0_dbl
         END IF
 
@@ -128,10 +144,27 @@ REAL(dbl) :: phiOUT, phiIN							! scalar values exchanged with the wall
 phiIN 	= phiBC																						! contribution from the wall to the crrent node (in)
 phiOUT	= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)		! contribution to the wall from the current node (out)
 
-phiAbsorbedS = phiAbsorbedS + (phiOUT - phiIN)												! add the amount of scalar that has been absorbed at the current location in the current direction
+phiAbsorbedS = phiAbsorbedS + (phiOUT - phiIN)	!- wt(m)*Delta*phiWall			! add the amount of scalar that has been absorbed at the current location in the current direction
 
 !------------------------------------------------
 END SUBROUTINE AbsorbedScalarS
+!------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE AbsorbedScalarS2(i,j,k,m,phiOutSurf,phiInSurf)		! measures the total absorbed scalar ! New method by Balaji, Dec 2014
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+INTEGER(lng), INTENT(IN) :: i,j,k,m				! index variables
+REAL(dbl), INTENT(IN) :: phiOutSurf,phiInSurf     			! scalar contribution from the boundary condition
+REAL(dbl) :: phiOUT, phiIN							! scalar values exchanged with the wall
+
+phiIN 	= phiInSurf		! contribution from the wall to the crrent node (in)
+phiOUT	= phiOutSurf		! contribution to the wall from the current node (out)
+
+phiAbsorbedS = phiAbsorbedS + (phiOUT - phiIN) !- wt(m)*Delta*phiWall											! add the amount of scalar that has been absorbed at the current location in the current direction
+
+!------------------------------------------------
+END SUBROUTINE AbsorbedScalarS2
 !------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
