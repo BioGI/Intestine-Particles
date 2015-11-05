@@ -124,9 +124,10 @@ SUBROUTINE MPI_Initialize	! initialize the MPI arrays and variables
 IMPLICIT NONE
 
 ! Define local variables
+INTEGER(lng) :: mpierr! MPI standard error object
 INTEGER(lng) :: iComm												! index variable
 INTEGER(lng) :: YZ_FaceSize, ZX_FaceSize, XY_FaceSize		! number of nodes on a subdomain face oriented on the respective faces
-INTEGER(lng) :: f_SendSize, ds_SendSize, uvw_SendSize, total_SendSize	! sizes of the distribution function, density, velocity, and scalar data transfer arrays respectively
+INTEGER(lng) :: f_SendSize, ds_SendSize, node_Sendsize, uvw_SendSize, total_SendSize	! sizes of the distribution function, density, velocity, and scalar data transfer arrays respectively
 !INTEGER(lng) :: msgSze												! size of the message send/recv arrays (maximum size)
 
 ! Opposite directions for communication - same concept as bounceback directions, but there are 26 communication directions whereas there are only 14 non-stationary distribution function directions
@@ -266,6 +267,7 @@ XY_FaceSize		= nxSub*nySub							! number of nodes on a subdomain face oriented 
 fSize 			= 0_lng									! initialize array
 dsSize 			= 0_lng									! initialize array
 uvwSize			= 0_lng									! initialize array
+nodeSize		= 0_lng									! initialize array
 
 fSize(1:2)		= YZ_FaceSize*NumFs_face			! YZ faces
 fSize(3:4)		= ZX_FaceSize*NumFs_face			! ZX faces
@@ -292,11 +294,20 @@ uvwSize(11:14)	= nxSub									! X sides
 uvwSize(15:18)	= nySub									! Y sides
 uvwSize(19:26)	= 1_lng									! corners
 
-msgSize(:)		= fSize(:) + 2_lng*(dsSize(:))+3_lng*(uvwSize(:))	! total message sizes
+nodeSize(1:2)		= YZ_FaceSize							! YZ faces
+nodeSize(3:4)		= ZX_FaceSize							! ZX faces
+nodeSize(5:6)		= XY_FaceSize							! XY faces
+nodeSize(7:10)	= nzSub									! Z sides
+nodeSize(11:14)	= nxSub									! X sides
+nodeSize(15:18)	= nySub									! Y sides
+nodeSize(19:26)	= 1_lng									! corners
+
+msgSize(:)		= fSize(:) + 2_lng*(dsSize(:))+3_lng*(uvwSize(:))+1_lng*(nodeSize(:))	! total message sizes
 
 f_SendSize	= SUM(fSize)
 ds_SendSize	= SUM(dsSize)
-uvw_SendSize	= SUM(dsSize)
+uvw_SendSize	= SUM(uvwSize)
+node_SendSize	= SUM(nodeSize)
 total_SendSize  = SUM(msgSize)
 
 ALLOCATE(msgSend(total_SendSize))						
@@ -486,12 +497,13 @@ Corner_RecvIndex(26,3) = 0_lng
 
 ! Fill out the 'CommDataStart' arrays
 ! Initialize arrays
-CommDataStart_f  		= 0_lng					! distribution functions
+CommDataStart_f  	= 0_lng					! distribution functions
 CommDataStart_rho  	= 0_lng					! density
 CommDataStart_phi  	= 0_lng					! scalar
 CommDataStart_u  	= 0_lng					! velocity
 CommDataStart_v  	= 0_lng					! velocity
 CommDataStart_w  	= 0_lng					! velocity
+CommDataStart_node  	= 0_lng					! node
 
 CommDataStart_f(1)	= 1_lng	
 CommDataStart_rho(1) = CommDataStart_f(1)	+ fSize(1)
@@ -499,14 +511,17 @@ CommDataStart_phi(1) = CommDataStart_rho(1)	+ dsSize(1)
 CommDataStart_u(1) = CommDataStart_phi(1)	+ dsSize(1)
 CommDataStart_v(1) = CommDataStart_u(1)		+ uvwSize(1)
 CommDataStart_w(1) = CommDataStart_v(1)		+ uvwSize(1)
+CommDataStart_node(1) = CommDataStart_w(1)	+ uvwSize(1)
 
 DO iComm=2,NumCommDirs							! fill out for communication directions 2-NumCommDirs
-  CommDataStart_f(iComm)	= CommDataStart_w(iComm-1) 	+ uvwSize(iComm-1)
+  CommDataStart_f(iComm)	= CommDataStart_node(iComm-1) 	+ nodeSize(iComm-1)
+  !CommDataStart_f(iComm)	= CommDataStart_w(iComm-1) 	+ uvwSize(iComm-1)
   CommDataStart_rho(iComm)	= CommDataStart_f(iComm)	+ fSize(iComm)
   CommDataStart_phi(iComm)	= CommDataStart_rho(iComm) 	+ dsSize(iComm)
   CommDataStart_u(iComm)	= CommDataStart_phi(iComm) 	+ dsSize(iComm)
   CommDataStart_v(iComm)	= CommDataStart_u(iComm) 	+ uvwSize(iComm)
   CommDataStart_w(iComm)	= CommDataStart_v(iComm) 	+ uvwSize(iComm)
+  CommDataStart_node(iComm)	= CommDataStart_w(iComm) 	+ uvwSize(iComm)
 END DO
 
 !WRITE(6678,*) 'f_SendSize', total_SendSize
@@ -521,6 +536,40 @@ END DO
 
 ! Allocate the MPI_WAITALL status array
 ALLOCATE(waitStat(MPI_STATUS_SIZE,2*NumCommDirs))
+
+ALLOCATE(partransfersend(NumParVar,NumCommDirsPar))
+ALLOCATE(partransferrecv(NumParVar,NumCommDirsPar))
+ALLOCATE(numpartransfer(NumCommDirsPar))
+ALLOCATE(parreqid(2*NumCommDirsPar))
+ALLOCATE(parwtstat(MPI_STATUS_SIZE,2*NumCommDirsPar))
+ALLOCATE(probestat(MPI_STATUS_SIZE))
+
+ParInit%parid = 0_lng
+ParInit%cur_part = 0_lng
+ParInit%new_part = 0_lng
+ParInit%xp = 0.0_dbl
+ParInit%yp = 0.0_dbl
+ParInit%zp = 0.0_dbl
+ParInit%up = 0.0_dbl
+ParInit%vp = 0.0_dbl
+ParInit%wp = 0.0_dbl
+ParInit%rp = 0.0_dbl
+ParInit%xpold = 0.0_dbl
+ParInit%ypold = 0.0_dbl
+ParInit%zpold = 0.0_dbl
+ParInit%upold = 0.0_dbl
+ParInit%vpold = 0.0_dbl
+ParInit%wpold = 0.0_dbl
+ParInit%rpold = 0.0_dbl
+ParInit%par_conc = 0.0_dbl
+ParInit%bulk_conc = 0.0_dbl
+ParInit%sh = 0.0_dbl
+ParInit%S = 0.0_dbl
+ParInit%Sst = 0.0_dbl
+ParInit%Veff = 0.0_dbl
+ParInit%Nbj = 0.0_dbl
+ParInit%gamma_cont = 0.0_dbl
+ParInit%delNBbyCV = 0.0_dbl
 
 !------------------------------------------------
 END SUBROUTINE MPI_Initialize
