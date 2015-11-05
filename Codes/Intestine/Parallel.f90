@@ -603,11 +603,12 @@ DO iComm=1,2
            + (j - 1_lng)							&		! convert 3D-coordinate into proper 1D-array coordinate
            + (k - 1_lng)*nySub							! convert 3D-coordinate into proper 1D-array coordinate
 
-        msgSend(ii) 						= rho(i,j,k)	! store the proper density in the send array
+        msgSend(ii) 			= rho(i,j,k)	! store the proper density in the send array
         msgSend(ii+dsSize(iComm))	= phi(i,j,k)	! store the proper scalar quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm))	= u(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+uvwSize(icomm))= v(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+2_lng*uvwSize(icomm))= w(i,j,k)	! store the proper velocity quantity in the send array
+        msgSend(ii+2_lng*dsSize(iComm)+3_lng*uvwSize(icomm))= REAL(node(i,j,k),dbl)	! store the proper node flag quantity in the send array
 
         ! distribution functions
         DO m=1,NumFs_face
@@ -627,6 +628,7 @@ DO iComm=1,2
   END IF
 
 END DO
+
 
 ! ZX Faces
 DO iComm=3,4
@@ -648,6 +650,7 @@ DO iComm=3,4
         msgSend(ii+2_lng*dsSize(iComm))	= u(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+uvwSize(icomm))= v(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+2_lng*uvwSize(icomm))= w(i,j,k)	! store the proper velocity quantity in the send array
+        msgSend(ii+2_lng*dsSize(iComm)+3_lng*uvwSize(icomm))= REAL(node(i,j,k),dbl)	! store the proper node flag quantity in the send array
 
         ! distribution functions
         DO m=1,NumFs_face
@@ -688,6 +691,7 @@ DO iComm=5,6
         msgSend(ii+2_lng*dsSize(iComm))	= u(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+uvwSize(icomm))= v(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+2_lng*uvwSize(icomm))= w(i,j,k)	! store the proper velocity quantity in the send array
+        msgSend(ii+2_lng*dsSize(iComm)+3_lng*uvwSize(icomm))= REAL(node(i,j,k),dbl)	! store the proper node flag quantity in the send array
       
         DO m=1,NumFs_face
       
@@ -728,6 +732,7 @@ DO iComm=7,10
         msgSend(ii+2_lng*dsSize(iComm))	= u(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+uvwSize(icomm))= v(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+2_lng*uvwSize(icomm))= w(i,j,k)	! store the proper velocity quantity in the send array
+        msgSend(ii+2_lng*dsSize(iComm)+3_lng*uvwSize(icomm))= REAL(node(i,j,k),dbl)	! store the proper node flag quantity in the send array
     
       DO m=1,NumFs_side
   
@@ -765,6 +770,7 @@ DO iComm=11,14
       msgSend(ii+2_lng*dsSize(iComm))	= u(i,j,k)	! store the proper velocity quantity in the send array
       msgSend(ii+2_lng*dsSize(iComm)+uvwSize(icomm))= v(i,j,k)	! store the proper velocity quantity in the send array
       msgSend(ii+2_lng*dsSize(iComm)+2_lng*uvwSize(icomm))= w(i,j,k)	! store the proper velocity quantity in the send array
+      msgSend(ii+2_lng*dsSize(iComm)+3_lng*uvwSize(icomm))= REAL(node(i,j,k),dbl)	! store the proper node flag quantity in the send array
     
       DO m=1,NumFs_side
 
@@ -802,6 +808,7 @@ DO iComm=15,18
         msgSend(ii+2_lng*dsSize(iComm))	= u(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+uvwSize(icomm))= v(i,j,k)	! store the proper velocity quantity in the send array
         msgSend(ii+2_lng*dsSize(iComm)+2_lng*uvwSize(icomm))= w(i,j,k)	! store the proper velocity quantity in the send array
+        msgSend(ii+2_lng*dsSize(iComm)+3_lng*uvwSize(icomm))= REAL(node(i,j,k),dbl)	! store the proper node flag quantity in the send array
     
       DO m=1,NumFs_side
 
@@ -831,11 +838,12 @@ DO iComm=19,26
     k = Corner_SendIndex(iComm,3)						! k index for assigning the proper component of the distribution function to the 1D send array
 
     ii = CommDataStart_rho(iComm)						! start location
-    msgSend(ii) 					= rho(i,j,k)			! store the proper density in the send array
+    msgSend(ii) 		= rho(i,j,k)			! store the proper density in the send array
     msgSend(ii+dsSize(iComm))	= phi(i,j,k)			! store the proper scalar quantity in the send array
     msgSend(ii+2_lng*dsSize(iComm))	= u(i,j,k)	! store the proper velocity quantity in the send array
     msgSend(ii+2_lng*dsSize(iComm)+uvwSize(icomm))= v(i,j,k)	! store the proper velocity quantity in the send array
     msgSend(ii+2_lng*dsSize(iComm)+2_lng*uvwSize(icomm))= w(i,j,k)	! store the proper velocity quantity in the send array
+    msgSend(ii+2_lng*dsSize(iComm)+3_lng*uvwSize(icomm))= REAL(node(i,j,k),dbl)	! store the proper node flag quantity in the send array
   
     ii = CommDataStart_f(iComm)							! start location
     msgSend(ii) = f(f_Comps(iComm,1),i,j,k)			! store the proper component of the distribution function in the send array
@@ -850,13 +858,12 @@ END SUBROUTINE PackData
 
 
 
-
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE  Collect_Distribute_Global_Bulk_Scalar_Conc
 ! This subroutine does the
 !parallel communication needed to collect all the bulk concentration in each of
 !the processes and computeѕ an average, which is the distributed to the various
-!process for computing the drug concentration.
+!process for computing the drug concentration. 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 REAL(dbl) :: Cb_global_temp
@@ -877,23 +884,23 @@ END SUBROUTINE  Collect_Distribute_Global_Bulk_Scalar_Conc
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE Particle_MPI_Transfer                ! transfer the particles to neighbouring partitions
+SUBROUTINE Particle_MPI_Transfer		! transfer the particles to neighbouring partitions
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 TYPE(ParRecord), POINTER :: current  => NULL()
 TYPE(ParRecord), POINTER :: next => NULL()
-INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag               ! number of send/recv requests
-INTEGER(lng) :: mpierr,commdir,iComm,par_num!,numparticlesDomain                        ! MPI standard error object
+INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag		! number of send/recv requests
+INTEGER(lng) :: mpierr,commdir,iComm,par_num!,numparticlesDomain			! MPI standard error object
 LOGICAL :: probeflag
 INTEGER(lng) :: parsendindex(NumCommDirsPar), parrecvindex(NumCommDirsPar)
 
 
-! IMPORTANT NOTE: It is important for the partransfersend and partransferrecv arrays to store the particle data in columns, i.e. of
-! dimenions NumParVar x NumCommDirsPar as against NumCommDirsPar x  NumParVar as we are planning to send packets of data
-! corresponding to an entire particle across processors. In fortran and MPI, this requires that the entire particle data
+! IMPORTANT NOTE: It is important for the partransfersend and partransferrecv arrays to store the particle data in columns, i.e. of 
+! dimenions NumParVar x NumCommDirsPar as against NumCommDirsPar x  NumParVar as we are planning to send packets of data 
+! corresponding to an entire particle across processors. In fortran and MPI, this requires that the entire particle data 
 !(all NumParVar  variables given by partransfersend(:,iComm)) need to be in column format so that they can be passed as a single array.
-! For some yet-to-be understood reason, MPI dopes not accept passing an entire row of data, say, partransfersend(iComm,:)
-!as a contiguous array into MPI_SEND or MPI_RECV. Hence the convetion used below.
+! For some yet-to-be understood reason, MPI dopes not accept passing an entire row of data, say, partransfersend(iComm,:) 
+!as a contiguous array into MPI_SEND or MPI_RECV. Hence the convetion used below. 
 
 nreqs = 0_lng
 partransfersend = 0.0_dbl
@@ -906,16 +913,16 @@ sendtag = 0_lng
 numpartransfer = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
-        IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-                DO iComm = 1,NumCommDirsPar
-                        IF (SubID(iComm).EQ.current%pardata%new_part) THEN
-                                numpartransfer(iComm) = numpartransfer(iComm)+1_lng
-                        END IF
-                END DO
-        END IF
-        ! point to next node in the list
-        current => next
+	next => current%next ! copy pointer of next node
+	IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
+		DO iComm = 1,NumCommDirsPar
+			IF (SubID(iComm).EQ.current%pardata%new_part) THEN
+				numpartransfer(iComm) = numpartransfer(iComm)+1_lng
+			END IF
+		END DO
+	END IF
+	! point to next node in the list
+	current => next
 ENDDO
 ! Now 'numpartransfer' contains the number of particles in each direction
 
@@ -924,10 +931,10 @@ ENDDO
 ALLOCATE(ParSendArray(numparticlesDomain,NumCommDirsPar))
 ALLOCATE(ParRecvArray(numparticlesDomain,NumCommDirsPar))
 DO iComm = 1,NumCommDirsPar
-        DO par_num = 1,numparticlesDomain
-                ParSendArray(par_num,iComm) = ParInit
-                ParRecvArray(par_num,iComm) = ParInit
-        END DO
+	DO par_num = 1,numparticlesDomain
+		ParSendArray(par_num,iComm) = ParInit
+		ParRecvArray(par_num,iComm) = ParInit
+	END DO
 END DO
 
 
@@ -935,58 +942,58 @@ END DO
 parsendindex = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
-        IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-                DO iComm = 1,NumCommDirsPar
-                        IF (SubID(iComm).EQ.current%pardata%new_part) THEN
-                                commdir = iComm
-                                parsendindex(commdir) = parsendindex(commdir) + 1_lng
-                                !write(*,*) 'data being packed in ',mySub,'for direction ',commdir
-                        END IF
-                END DO
-                ! PACK DATA INTO AN ARRAY
+	next => current%next ! copy pointer of next node
+	IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
+		DO iComm = 1,NumCommDirsPar
+			IF (SubID(iComm).EQ.current%pardata%new_part) THEN
+				commdir = iComm
+				parsendindex(commdir) = parsendindex(commdir) + 1_lng
+				!write(*,*) 'data being packed in ',mySub,'for direction ',commdir
+			END IF
+		END DO
+		! PACK DATA INTO AN ARRAY
 
-                ParSendArray(parsendindex(commdir),commdir)             = current%pardata
-
-
+		ParSendArray(parsendindex(commdir),commdir)		= current%pardata
 
 
-        END IF
-        ! point to next node in the list
-        current => next
-        !write(*,*) current%parid
+
+
+	END IF
+	! point to next node in the list
+	current => next
+	!write(*,*) current%parid
 ENDDO
 
 
 ! Post send
 DO iComm = 1,NumCommDirsPar
-        !write(*,*) 'In post send ',mySub,iComm,SubID(iComm)
-        IF(SubID(iComm) .NE. 0) THEN
-                nreqs   = nreqs + 1_lng
-                dest    = SubID(iComm) - 1_lng ! rank of processing unit sending message TO this processing unit
-                sendtag = iComm + 20_lng
-                CALL MPI_ISEND(ParSendArray(1:max(parsendindex(iComm),1),iComm),max(parsendindex(iComm),1),mpipartransfertype,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)       ! send data
-        END IF
+	!write(*,*) 'In post send ',mySub,iComm,SubID(iComm)
+	IF(SubID(iComm) .NE. 0) THEN
+		nreqs 	= nreqs + 1_lng
+		dest	= SubID(iComm) - 1_lng ! rank of processing unit sending message TO this processing unit
+		sendtag = iComm + 20_lng
+		CALL MPI_ISEND(ParSendArray(1:max(parsendindex(iComm),1),iComm),max(parsendindex(iComm),1),mpipartransfertype,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
+	END IF
 END DO
 
 
 ! Post receives
 parrecvindex = 0_lng
 DO iComm = 1,NumCommDirsPar
-        !write(*,*) 'In post receive ', mySub,iComm,SubID(OppCommDir(iComm))
-        IF(SubID(OppCommDir(iComm)) .NE. 0) THEN
-                nreqs   = nreqs + 1_lng
-                source  = SubID(OppCommDir(iComm)) - 1_lng ! rank of processing unit sending message TO this processing unit
-                recvtag = iComm + 20_lng
-                !recvtag = source*1000_lng + iComm*1000_lng + 20_lng
-10              CALL MPI_PROBE(source,recvtag,MPI_COMM_WORLD,probestat,mpierr)
-                CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)
-                IF (parrecvindex(iComm).LT.1_lng) THEN
-                        GOTO 10
-                END IF
+	!write(*,*) 'In post receive ', mySub,iComm,SubID(OppCommDir(iComm))
+	IF(SubID(OppCommDir(iComm)) .NE. 0) THEN
+		nreqs 	= nreqs + 1_lng
+		source	= SubID(OppCommDir(iComm)) - 1_lng ! rank of processing unit sending message TO this processing unit
+		recvtag = iComm + 20_lng
+		!recvtag = source*1000_lng + iComm*1000_lng + 20_lng
+10		CALL MPI_PROBE(source,recvtag,MPI_COMM_WORLD,probestat,mpierr)
+		CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
+		IF (parrecvindex(iComm).LT.1_lng) THEN
+			GOTO 10
+		END IF
 
-                CALL MPI_IRECV(ParRecvArray(1:parrecvindex(iComm),iComm),parrecvindex(iComm),mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-        END IF
+		CALL MPI_IRECV(ParRecvArray(1:parrecvindex(iComm),iComm),parrecvindex(iComm),mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
+	END IF
 END DO
 
 
@@ -996,45 +1003,45 @@ CALL MPI_WAITALL(nreqs,parreqid(1:nreqs),parwtstat,mpierr)
 
 ! Unpack data if recd.
 DO iComm = 1,NumCommDirsPar
-        DO par_num = 1,parrecvindex(iComm)
-                !IF (partransferrecv(1,iComm).GT.0_lng) THEN
-                IF (ParRecvArray(par_num,iComm)%parid.GT.0_lng) THEN
-                        CALL list_insert(ParListHead)
-                        current => ParListHead%next
-
-                        ! UNPACK DATA
-                        current%pardata                 =ParRecvArray(par_num,iComm)
-                        current%pardata%cur_part        = mySub!current%pardata%new_part
-                END IF
-        END DO
+	DO par_num = 1,parrecvindex(iComm)
+		!IF (partransferrecv(1,iComm).GT.0_lng) THEN
+		IF (ParRecvArray(par_num,iComm)%parid.GT.0_lng) THEN
+			CALL list_insert(ParListHead)
+			current => ParListHead%next
+	
+			! UNPACK DATA
+			current%pardata 		=ParRecvArray(par_num,iComm)
+			current%pardata%cur_part 	= mySub!current%pardata%new_part
+		END IF
+	END DO
 END DO
 
 ! If data was sent then remove sent particle from list
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
-        !write(*,*) 'traverse node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
-        !write(*,*) current%prev%next%pardata%parid,current%pardata%parid,iter
-        IF (current%pardata%cur_part .NE. current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-                !write(*,*) 'In delete node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
-                !PAUSE
-                CALL list_delete(current)
+	next => current%next ! copy pointer of next node
+	!write(*,*) 'traverse node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
+	!write(*,*) current%prev%next%pardata%parid,current%pardata%parid,iter
+	IF (current%pardata%cur_part .NE. current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
+		!write(*,*) 'In delete node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
+		!PAUSE
+		CALL list_delete(current)
 
 
-                NULLIFY(current)
-        END IF
-        ! point to next node in the list
-        current => next
+		NULLIFY(current)
+	END IF
+	! point to next node in the list
+	current => next
 ENDDO
 !write(*,*) mySub,ParListHead%next%pardata%parid
 numparticlesSub = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        numparticlesSub = numparticlesSub + 1_lng
-        next => current%next ! copy pointer of next node
-        !write(*,*) 'leftover node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part
-        ! point to next node in the list
-        current => next
+	numparticlesSub = numparticlesSub + 1_lng
+	next => current%next ! copy pointer of next node
+	!write(*,*) 'leftover node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part
+	! point to next node in the list
+	current => next
 ENDDO
 
 DEALLOCATE(ParSendArray)
@@ -1043,7 +1050,6 @@ DEALLOCATE(ParRecvArray)
 !------------------------------------------------
 END SUBROUTINE Particle_MPI_Transfer
 !------------------------------------------------
-
 
 
 
@@ -1096,6 +1102,9 @@ END DO
 END SUBROUTINE MPI_Transfer
 !------------------------------------------------
 
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE PostRecv(iComm,numReqs)	! receives information from a neighboring subdomain
 !--------------------------------------------------------------------------------------------------
@@ -1120,6 +1129,10 @@ CALL MPI_IRECV(msgRecv(msgStart:msgEnd),msgSize(OppCommDir(iComm)),MPI_DOUBLE_PR
 !------------------------------------------------
 END SUBROUTINE PostRecv
 !------------------------------------------------
+
+
+
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE SendData(iComm,numReqs)											! sends information to a neighboring subdomain
@@ -1172,6 +1185,7 @@ SELECT CASE(OppCommDir(iComm))
           u(i,j,k) = msgRecv((CommDataStart_u(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
           v(i,j,k) = msgRecv((CommDataStart_v(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
           w(i,j,k) = msgRecv((CommDataStart_w(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
+          node(i,j,k) = INT(msgRecv((CommDataStart_node(OppCommDir(iComm))-1) + ii),lng)					! store recieved node flag quantity in proper place          
         
         DO m=1,NumFs_Face
           
@@ -1200,6 +1214,7 @@ SELECT CASE(OppCommDir(iComm))
           u(i,j,k) = msgRecv((CommDataStart_u(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
           v(i,j,k) = msgRecv((CommDataStart_v(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
           w(i,j,k) = msgRecv((CommDataStart_w(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
+          node(i,j,k) = INT(msgRecv((CommDataStart_node(OppCommDir(iComm))-1) + ii),lng)					! store recieved node flag quantity in proper place          
         
         DO m=1,NumFs_Face
           
@@ -1228,6 +1243,7 @@ SELECT CASE(OppCommDir(iComm))
           u(i,j,k) = msgRecv((CommDataStart_u(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
           v(i,j,k) = msgRecv((CommDataStart_v(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
           w(i,j,k) = msgRecv((CommDataStart_w(OppCommDir(iComm))-1) + ii)						! store recieved velocity quantity in proper place          
+          node(i,j,k) = INT(msgRecv((CommDataStart_node(OppCommDir(iComm))-1) + ii),lng)					! store recieved node flag quantity in proper place          
         
         DO m=1,NumFs_Face
           
@@ -1254,6 +1270,7 @@ SELECT CASE(OppCommDir(iComm))
       u(i,j,k) = msgRecv((CommDataStart_u(OppCommDir(iComm))-1) + k)						! store recieved velocity quantity in proper place          
       v(i,j,k) = msgRecv((CommDataStart_v(OppCommDir(iComm))-1) + k)						! store recieved velocity quantity in proper place          
       w(i,j,k) = msgRecv((CommDataStart_w(OppCommDir(iComm))-1) + k)						! store recieved velocity quantity in proper place          
+      node(i,j,k) = INT(msgRecv((CommDataStart_node(OppCommDir(iComm))-1) + k),lng)					! store recieved node flag quantity in proper place          
         
       DO m=1,NumFs_Side
           
@@ -1277,6 +1294,7 @@ SELECT CASE(OppCommDir(iComm))
       u(i,j,k) = msgRecv((CommDataStart_u(OppCommDir(iComm))-1) + i)						! store recieved velocity quantity in proper place          
       v(i,j,k) = msgRecv((CommDataStart_v(OppCommDir(iComm))-1) + i)						! store recieved velocity quantity in proper place          
       w(i,j,k) = msgRecv((CommDataStart_w(OppCommDir(iComm))-1) + i)						! store recieved velocity quantity in proper place          
+      node(i,j,k) = INT(msgRecv((CommDataStart_node(OppCommDir(iComm))-1) + i),lng)					! store recieved node flag quantity in proper place          
         
       DO m=1,NumFs_Side
           
@@ -1300,6 +1318,7 @@ SELECT CASE(OppCommDir(iComm))
       u(i,j,k) = msgRecv((CommDataStart_u(OppCommDir(iComm))-1) + j)						! store recieved velocity quantity in proper place          
       v(i,j,k) = msgRecv((CommDataStart_v(OppCommDir(iComm))-1) + j)						! store recieved velocity quantity in proper place          
       w(i,j,k) = msgRecv((CommDataStart_w(OppCommDir(iComm))-1) + j)						! store recieved velocity quantity in proper place          
+      node(i,j,k) = INT(msgRecv((CommDataStart_node(OppCommDir(iComm))-1) + j),lng)					! store recieved node flag quantity in proper place          
         
       DO m=1,NumFs_Side
           
@@ -1322,6 +1341,7 @@ SELECT CASE(OppCommDir(iComm))
     u(i,j,k) = msgRecv(CommDataStart_u(OppCommDir(iComm)))						! store recieved velocity quantity in proper place          
     v(i,j,k) = msgRecv(CommDataStart_v(OppCommDir(iComm)))						! store recieved velocity quantity in proper place          
     w(i,j,k) = msgRecv(CommDataStart_w(OppCommDir(iComm)))						! store recieved velocity quantity in proper place          
+    node(i,j,k) = INT(msgRecv(CommDataStart_node(OppCommDir(iComm))),lng)					! store recieved node flag quantity in proper place          
     f(f_Comps(iComm,1),i,j,k) = msgRecv(CommDataStart_f(OppCommDir(iComm)))						! store the recieved distribution function component in the proper place in the f array
 
   CASE DEFAULT
