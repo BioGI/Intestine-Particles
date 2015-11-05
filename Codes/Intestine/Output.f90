@@ -69,14 +69,14 @@ END IF
 
 ! Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
-WRITE(2458,*) 'VARIABLES = "period", "mass_actual", "mass_theoretical"'
-WRITE(2458,*) 'ZONE F=POINT'
+WRITE(2458,'(A81)') '#VARIABLES = "period","time", "mass_actual", "mass_theoretical"," fmovingsum "," fmovingrhosum "'
+WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
 ! Scalar
 OPEN(2472,FILE='scalar-'//sub//'.dat')
-WRITE(2472,'(A100)') 'VARIABLES = "iter", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage"'
-WRITE(2472,*) 'ZONE F=POINT'
+WRITE(2472,'(A105)') '#VARIABLES = "iter","time", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage","phiInitial"'
+WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
 !------------------------------------------------
@@ -105,10 +105,13 @@ IF(myid .EQ. master) THEN
 END IF
 
 ! Mass
-!CLOSE(2458)
+CLOSE(2458)
 
 ! Scalar
 CLOSE(2472)
+
+! Test output
+CLOSE(9)
 
 !------------------------------------------------
 END SUBROUTINE CloseOutputFiles
@@ -364,9 +367,9 @@ END SUBROUTINE PrintFields
 SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
 !------------------------------------------------------------------------------------------------------------
 IMPLICIT NONE
-INTEGER(lng) :: numParticlesSub
-INTEGER(lng) :: i,j,k,ii,jj,kk,n,xaxis,yaxis			! index variables (local and global)
-CHARACTER(7) :: iter_char					! iteration stored as a character
+INTEGER(lng) 	:: numParticlesSub
+INTEGER(lng)	:: i,j,k,ii,jj,kk,n,xaxis,yaxis		! index variables (local and global)
+CHARACTER(7)	:: iter_char				! iteration stored as a character
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -423,14 +426,10 @@ ENDIF
 
 ! NEED TO MERGE THIS OUTPUT IN THE CASE OF PARALLEL
 
+
 !------------------------------------------------------------------------------------------------------------
 END SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
 !------------------------------------------------------------------------------------------------------------
-
-
-
-
-
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE PrintTime	! print time information for scalability information
@@ -582,7 +581,7 @@ END DO
 mass_theoretical = den*volume
 
 ! print the mass to a file(s)
-WRITE(2458,'(I8,2E15.5)') iter, mass_actual, mass_theoretical
+WRITE(2458,'(I8,5E15.5)') iter, iter*tcf,mass_actual, mass_theoretical,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
 CALL FLUSH(2458)  
 
 !------------------------------------------------
@@ -756,7 +755,11 @@ IMPLICIT NONE
 
 CALL MergeScalar
 CALL MergeFields
-!CALL MergeMass
+CALL MergeMass
+     IF(ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
+     		CALL MergeParticleOutput			! Merge particle output
+     ENDIF
+
 
 !------------------------------------------------
 END SUBROUTINE MergeOutput
@@ -937,7 +940,122 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)																				! synchronize all pro
 !------------------------------------------------
 END SUBROUTINE MergeFields
 !------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE MergeParticleOutput				! combines the subdomain particle output into an output file for the entire computational domain 
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
 
+REAL(dbl), ALLOCATABLE	:: ParticleData(:,:)		! data for each particle in the computational domain
+INTEGER(lng) :: ParticleDistribution(0:nt,NumSubsTotal) ! array containing numparticlesSub for each sub domain
+INTEGER(lng) :: nxSend(3),nxRecv(3),npRecv,npSend	! nx-,ny-,nzSub from each subdomain
+INTEGER(lng) :: ii,jj,kk				! neighboring indices for writing
+INTEGER(lng) :: i,j,k,n,nn,nnn				! loop variables
+INTEGER(lng) :: dest, src, tag				! send/recv variables: destination, source, message tag
+INTEGER(lng) :: stat(MPI_STATUS_SIZE)			! status object: rank and tag of the sending processing unit/message
+INTEGER(lng) :: mpierr					! MPI standard error variable
+INTEGER(lng) :: numLines,numLineStart,numLineEnd	! number of lines to read
+INTEGER(lng) :: combine1,combine2			! clock variables
+CHARACTER(7) :: iter_char				! iteration stored as a character 
+CHARACTER(5) :: nthSub					! current subdomain stored as a character
+
+! send subdomain information to the master
+tag = 63_lng																						! starting message tag (arbitrary)
+
+IF(myid .NE. master) THEN
+	dest	= master	! send to master
+	CALL MPI_SEND(numparticleSubfile(0:nt),nt+1,MPI_INTEGER,dest,tag,MPI_COMM_WORLD,mpierr)		! send num particles in each subdomain
+ELSE
+	ALLOCATE(ParticleData(numparticlesDomain,15))
+	! initialize FieldData to 0
+	ParticleData = 0.0_dbl
+
+	! print combining status...
+	CALL SYSTEM_CLOCK(combine1,rate)	! Restart the Timer
+	OPEN(5,FILE='status.dat',POSITION='APPEND')										
+	WRITE(5,*)
+	WRITE(5,*)
+	WRITE(5,*) 'Combining particle output files and deleting originials...'
+	WRITE(5,*)     
+	CALL FLUSH(5)
+
+ 	ParticleDistribution(0:nt,1) = numparticleSubfile(0:nt)
+
+	DO src = 1,(numprocs-1)
+		CALL MPI_RECV(ParticleDistribution(0:nt,src+1),nt+1,MPI_INTEGER,src,tag,MPI_COMM_WORLD,stat,mpierr) ! receive np from each subdomain for each output
+	END DO
+
+	! combine the output files from each subdomain
+	DO n = 0,(parfileCount-1)
+
+		! print combining status...
+		WRITE(5,*)
+		WRITE(5,*) 'combining particle output file',n+1,'of',parfileCount
+		WRITE(5,*) 'reading/deleting...'
+		CALL FLUSH(5)
+		numLineStart	=  0_lng
+		numLineEnd	=  0_lng
+
+		DO nn = 1,NumSubsTotal
+			WRITE(nthSub(1:5),'(I5.5)') nn	! write subdomain number to 'nthSub' for output file exentsions
+			! open the nnth output file for the nth subdomain 
+			WRITE(iter_char(1:7),'(I7.7)') parfilenum(n)	! write the file number (iteration) to a charater
+			!      OPEN(60,FILE='out-'//iter_char//'-'//nthSub//'.dat')	! open file
+			OPEN(60,FILE='pardat-'//iter_char//'-'//nthSub//'.dat')	! open file
+
+			! read the output file
+			numLines = ParticleDistribution(n,nn)				! determine number of lines to read
+			!write(*,*) numLines,nn,n
+			READ(60,*)							! first line is variable info
+			READ(60,*)							! second line is zone info
+			
+			numLineStart	=  numLineEnd 
+			numLineEnd	=  numLineStart + numLines
+			!write(*,*) numLineStart,numLineEnd
+			DO nnn = numLineStart+1_lng,numLineEnd
+				READ(60,*) ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
+				ParticleData(nnn,4),ParticleData(nnn,5),ParticleData(nnn,6), &
+				ParticleData(nnn,7),ParticleData(nnn,8),ParticleData(nnn,9), &
+				ParticleData(nnn,10),ParticleData(nnn,11),ParticleData(nnn,12) &
+				,ParticleData(nnn,13),ParticleData(nnn,14),ParticleData(nnn,15)
+				!write(*,*) nnn,' line number',INT(ParticleData(nnn,7))
+			END DO
+			CLOSE(60,STATUS='DELETE') ! close and delete current output file (subdomain)
+		END DO
+
+		! print combining status...
+		WRITE(5,*) 'writing...'
+		CALL FLUSH(5)
+		! Write to combined output file	
+		OPEN(685,FILE='pardat-'//iter_char//'.dat')
+		WRITE(685,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "ParID" "Sh" "rp" "bulk_conc" "delNBbyCV" "Sst" "S" "Veff" "Nbj"'
+		WRITE(685,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',parfilenum(n)/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
+		DO nnn=1,numLineEnd
+        		WRITE(685,'(6E15.5,1I9,8E15.5)') ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
+			ParticleData(nnn,4),ParticleData(nnn,5),ParticleData(nnn,6), &
+			INT(ParticleData(nnn,7),lng),ParticleData(nnn,8),ParticleData(nnn,9), &
+			ParticleData(nnn,10),ParticleData(nnn,11),ParticleData(nnn,12) &
+			,ParticleData(nnn,13),ParticleData(nnn,14),ParticleData(nnn,15)
+		END DO
+		CLOSE(685)	! close current output file (combined)
+
+	END DO
+	! End timer and print the amount of time it took for the combining
+	CALL SYSTEM_CLOCK(combine2,rate)	! End the Timer
+	WRITE(5,*)
+	WRITE(5,*)
+	WRITE(5,*) 'Total Time to Combine Particle Files (min.):', ((combine2-combine1)/REAL(rate))/60.0_dbl
+	WRITE(5,*)
+	WRITE(5,*)
+	CLOSE(5)
+
+	DEALLOCATE(ParticleData)
+END IF
+
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)																				! synchronize all processing units before next loop [Intrinsic]
+
+!------------------------------------------------
+END SUBROUTINE MergeParticleOutput
+!------------------------------------------------
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE StreamFunction(vz,nodeFlag,sf)					! integrates the velocity to get the streamfunction
 !--------------------------------------------------------------------------------------------------
@@ -947,7 +1065,7 @@ REAL(dbl), INTENT(IN) 		:: vz(nx,ny,nz)				! w(:,:,:) (axial velocity)
 INTEGER(lng), INTENT(IN) 	:: nodeFlag(nx,ny,nz)		! node(:,:,:) (node flags)
 REAL(dbl), INTENT(OUT) 		:: sf(nz,nx)					! streamfunction
 REAL(dbl) 		:: vz2(nz,nx)									! plane velocity
-INTEGER(dbl) 	:: nodeFlag2(nz,nx)							! plane node flags
+INTEGER(lng) 	:: nodeFlag2(nz,nx)							! plane node flags
 INTEGER(lng)	:: i,k											! index variables
 
 ! initialize the streamfunction array
@@ -1176,7 +1294,7 @@ REAL(dbl) :: SinTheta, CosTheta							! sin and cos of the angle theta
 REAL(dbl) :: phiLLb,phiULb,phiLRb,phiURb				! scalar the nodes of the cell containing point b (lower left, upper left, lower right, upper right)
 REAL(dbl) :: phiLLc,phiULc,phiLRc,phiURc				! scalar the nodes of the cell containing point c (lower left, upper left, lower right, upper right)
 REAL(dbl) :: phib, phic										! scalar at the points b and c
-REAL(dbl) :: A, B, C, DD									! coefficients of the bilinear scalar equation
+REAL(dbl) :: A, B, C, DD						! coefficients of the bilinear scalar equation
 REAL(dbl) :: fluxZb, fluxXb, fluxNb						! fluxes at point b (z,x, and normal directions)
 REAL(dbl) :: fluxZc, fluxXc, fluxNc						! fluxes at point c (z,x, and normal directions)
 REAL(dbl) :: pointsb(4,3), pointsc(4,3)				! 2D array to store the i,j locations, and scalar value of the fluid points for 
@@ -1467,12 +1585,14 @@ INTEGER(lng) :: numLines								! number of lines to read
 INTEGER(lng) :: combine1,combine2					! clock variables
 INTEGER(lng) :: mpierr									! MPI standard error variable
 CHARACTER(5) :: nthSub									! current subdomain stored as a character
+REAL(dbl), ALLOCATABLE		:: timeread(:)						! time
 
 IF(myid .EQ. master) THEN
 
   numLines = (nt-iter0) + 1_lng
 
-  ALLOCATE(MassData(numLines,2,NumSubsTotal))
+  ALLOCATE(MassData(numLines,4,NumSubsTotal))
+  ALLOCATE(timeread(numLines))
 
   ! initialize MassData to 0
   MassData = 0.0_dbl
@@ -1504,8 +1624,8 @@ IF(myid .EQ. master) THEN
     READ(2458,*)																					! second line is zone info
     DO nn = 1,numLines
 
-      READ(2458,*) i,MassData(nn,1,n),	&		
-                     MassData(nn,2,n)
+      READ(2458,*) i,timeread(nn),MassData(nn,1,n),	&		
+                     MassData(nn,2,n),MassData(nn,3,n),MassData(nn,4,n)
 
     END DO
     CLOSE(2458,STATUS='DELETE')																! close and delete current output file (subdomain)
