@@ -64,69 +64,71 @@ REAL(dbl) :: phiInNodes,phiOutNodes						! total amount of scalar leaving/enteri
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parallel (MPI) Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! Number of communication directions (3D LBM)
-INTEGER(lng), PARAMETER :: NumCommDirs		= 26_lng								! number of communication directions (6 faces + 12 sides + 8 corners = 26)
-INTEGER(lng), PARAMETER :: MaxDistFns		= 5_lng								! maximum number of transfered distribution functions (actual number: 5 for faces, 2 for sides, 1 for corners)
-INTEGER(lng), PARAMETER :: NumFs_face		= 5_lng								! number of distribution functions transferred between neighboring faces
-INTEGER(lng), PARAMETER :: NumFs_side		= 2_lng								! number of distribution functions transferred between neighboring side
-INTEGER(lng), PARAMETER :: NumFs_corner	= 1_lng								! number of distribution functions transferred between neighboring corner
+INTEGER(lng), PARAMETER :: NumCommDirs		= 26_lng			! number of communication directions (6 faces + 12 sides + 8 corners = 26)
+INTEGER(lng), PARAMETER :: MaxDistFns		= 5_lng				! maximum number of transfered distribution functions (actual number: 5 for faces, 2 for sides, 1 for corners)
+INTEGER(lng), PARAMETER :: NumFs_face		= 5_lng				! number of distribution functions transferred between neighboring faces
+INTEGER(lng), PARAMETER :: NumFs_side		= 2_lng				! number of distribution functions transferred between neighboring side
+INTEGER(lng), PARAMETER :: NumFs_corner	= 1_lng					! number of distribution functions transferred between neighboring corner
 
 ! MPI Arrays (arranged by descending size for storage efficiency)
-INTEGER(lng), ALLOCATABLE :: f_Comps(:,:)											! specifies the components of the distribution functions to transfer in each MPI communication direction
-INTEGER(lng), ALLOCATABLE :: Corner_SendIndex(:,:)								! i, j, and k indices for each corner
-INTEGER(lng), ALLOCATABLE :: Corner_RecvIndex(:,:)								! i, j, and k indices for each corner (phantom node for recieving data)
-INTEGER(lng), ALLOCATABLE :: Z_SendIndex(:,:)									! i and j indices for each Z side 
-INTEGER(lng), ALLOCATABLE :: Z_RecvIndex(:,:)									! i and j indices for each Z side (phantom node for recieving data)
-INTEGER(lng), ALLOCATABLE :: X_SendIndex(:,:)									! j and k indices for each X side 
-INTEGER(lng), ALLOCATABLE :: X_RecvIndex(:,:)									! j and k indices for each X side (phantom node for recieving data)
-INTEGER(lng), ALLOCATABLE :: Y_SendIndex(:,:)									! i and k indices for each Y side 
-INTEGER(lng), ALLOCATABLE :: Y_RecvIndex(:,:)									! i and k indices for each Y side (phantom node for recieving data)
-INTEGER(lng), ALLOCATABLE :: YZ_SendIndex(:)										! i index for each YZ face 
-INTEGER(lng), ALLOCATABLE :: YZ_RecvIndex(:)										! i index for each YZ face (phantom node for recieving data)
-INTEGER(lng), ALLOCATABLE :: ZX_SendIndex(:)										! j index for each ZX face 
-INTEGER(lng), ALLOCATABLE :: ZX_RecvIndex(:)										! j index for each ZX face (phantom node for recieving data)
-INTEGER(lng), ALLOCATABLE :: XY_SendIndex(:)										! k index for each XY face 
-INTEGER(lng), ALLOCATABLE :: XY_RecvIndex(:)										! k index for each XY face (phantom node for recieving data)
-INTEGER(lng), ALLOCATABLE :: SubID(:)												! id number of neighboring subdomains (same as rank of processing unit working on domain)
-INTEGER(lng), ALLOCATABLE :: OppCommDir(:) 										! opposite MPI communication directions (like bounceback) 
-INTEGER(lng), ALLOCATABLE :: CommDataStart_f(:)									! array of starting indices in the send arrays for the distribution functions from each communication direction 
-INTEGER(lng), ALLOCATABLE :: CommDataStart_rho(:)								! array of starting indices in the send arrays for the density from each communication direction
-INTEGER(lng), ALLOCATABLE :: CommDataStart_phi(:)								! array of starting indices in the send arrays for the scalar from each communication direction
-INTEGER(lng), ALLOCATABLE :: CommDataStart_u(:)								! array of starting indices in the send arrays for the scalar from each communication direction
-INTEGER(lng), ALLOCATABLE :: CommDataStart_v(:)								! array of starting indices in the send arrays for the scalar from each communication direction
-INTEGER(lng), ALLOCATABLE :: CommDataStart_w(:)								! array of starting indices in the send arrays for the scalar from each communication direction
-INTEGER(lng), ALLOCATABLE :: fSize(:)												! array of the number of elements sent for each communication direction (distribution functions)
-INTEGER(lng), ALLOCATABLE :: dsSize(:)												! array of the number of elements sent for each communication direction (density and scalar)
-INTEGER(lng), ALLOCATABLE :: uvwSize(:)												! array of the number of elements sent for each communication direction (density and scalar)
-INTEGER(lng), ALLOCATABLE :: msgSize(:)											! array of the number of elements sent for each communication direction (density and scalar)
-INTEGER(lng), ALLOCATABLE :: req(:)													! array of MPI send/receive requests 
-INTEGER(lng), ALLOCATABLE :: waitStat(:,:)										! array of MPI_WAITALL status objects
+INTEGER(lng), ALLOCATABLE :: f_Comps(:,:)					! specifies the components of the distribution functions to transfer in each MPI communication direction
+INTEGER(lng), ALLOCATABLE :: Corner_SendIndex(:,:)				! i, j, and k indices for each corner
+INTEGER(lng), ALLOCATABLE :: Corner_RecvIndex(:,:)				! i, j, and k indices for each corner (phantom node for recieving data)
+INTEGER(lng), ALLOCATABLE :: Z_SendIndex(:,:)					! i and j indices for each Z side 
+INTEGER(lng), ALLOCATABLE :: Z_RecvIndex(:,:)					! i and j indices for each Z side (phantom node for recieving data)
+INTEGER(lng), ALLOCATABLE :: X_SendIndex(:,:)					! j and k indices for each X side 
+INTEGER(lng), ALLOCATABLE :: X_RecvIndex(:,:)					! j and k indices for each X side (phantom node for recieving data)
+INTEGER(lng), ALLOCATABLE :: Y_SendIndex(:,:)					! i and k indices for each Y side 
+INTEGER(lng), ALLOCATABLE :: Y_RecvIndex(:,:)					! i and k indices for each Y side (phantom node for recieving data)
+INTEGER(lng), ALLOCATABLE :: YZ_SendIndex(:)					! i index for each YZ face 
+INTEGER(lng), ALLOCATABLE :: YZ_RecvIndex(:)					! i index for each YZ face (phantom node for recieving data)
+INTEGER(lng), ALLOCATABLE :: ZX_SendIndex(:)					! j index for each ZX face 
+INTEGER(lng), ALLOCATABLE :: ZX_RecvIndex(:)					! j index for each ZX face (phantom node for recieving data)
+INTEGER(lng), ALLOCATABLE :: XY_SendIndex(:)					! k index for each XY face 
+INTEGER(lng), ALLOCATABLE :: XY_RecvIndex(:)					! k index for each XY face (phantom node for recieving data)
+INTEGER(lng), ALLOCATABLE :: SubID(:)						! id number of neighboring subdomains (same as rank of processing unit working on domain)
+INTEGER(lng), ALLOCATABLE :: OppCommDir(:) 					! opposite MPI communication directions (like bounceback) 
+INTEGER(lng), ALLOCATABLE :: CommDataStart_f(:)					! array of starting indices in the send arrays for the distribution functions from each communication direction 
+INTEGER(lng), ALLOCATABLE :: CommDataStart_rho(:)				! array of starting indices in the send arrays for the density from each communication direction
+INTEGER(lng), ALLOCATABLE :: CommDataStart_phi(:)				! array of starting indices in the send arrays for the scalar from each communication direction
+INTEGER(lng), ALLOCATABLE :: CommDataStart_u(:)					! array of starting indices in the send arrays for the scalar from each communication direction
+INTEGER(lng), ALLOCATABLE :: CommDataStart_v(:)					! array of starting indices in the send arrays for the scalar from each communication direction
+INTEGER(lng), ALLOCATABLE :: CommDataStart_w(:)					! array of starting indices in the send arrays for the scalar from each communication direction
+INTEGER(lng), ALLOCATABLE :: CommDataStart_node(:)				! array of starting indices in the send arrays for the node index from each communication direction
+INTEGER(lng), ALLOCATABLE :: fSize(:)						! array of the number of elements sent for each communication direction (distribution functions)
+INTEGER(lng), ALLOCATABLE :: dsSize(:)						! array of the number of elements sent for each communication direction (density and scalar)
+INTEGER(lng), ALLOCATABLE :: uvwSize(:)						! array of the number of elements sent for each communication direction (density and scalar)
+INTEGER(lng), ALLOCATABLE :: nodeSize(:)					! array of the number of elements sent for each communication direction (density and scalar)
+INTEGER(lng), ALLOCATABLE :: msgSize(:)						! array of the number of elements sent for each communication direction (density and scalar)
+INTEGER(lng), ALLOCATABLE :: req(:)						! array of MPI send/receive requests 
+INTEGER(lng), ALLOCATABLE :: waitStat(:,:)					! array of MPI_WAITALL status objects
 
-REAL(dbl), ALLOCATABLE :: msgSend(:)												! array of ALL of the sent information (total)
-REAL(dbl), ALLOCATABLE :: msgRecv(:)												! array of ALL of the received information (total)
+REAL(dbl), ALLOCATABLE :: msgSend(:)						! array of ALL of the sent information (total)
+REAL(dbl), ALLOCATABLE :: msgRecv(:)						! array of ALL of the received information (total)
 
 ! MPI Variables
-INTEGER(lng), PARAMETER :: master = 0_lng											! rank (id) of the master processing unit
-INTEGER(lng) 				:: numprocs, myid, mySub 								! number of processing units, rank of current processing unit, subdomain of current processing unit
+INTEGER(lng), PARAMETER :: master = 0_lng					! rank (id) of the master processing unit
+INTEGER(lng) 	:: numprocs, myid, mySub 					! number of processing units, rank of current processing unit, subdomain of current processing unit
 
-REAL(dbl) 					:: CommTime_f0, CommTime_fEnd, CommTime_f			! communication time - distribution functions: start time, end time, current time
-REAL(dbl) 					:: CommTime_ds0, CommTime_dsEnd, CommTime_ds		! communication time - distribution functions: start time, end time, current time
+REAL(dbl) 	:: CommTime_f0, CommTime_fEnd, CommTime_f			! communication time - distribution functions: start time, end time, current time
+REAL(dbl) 	:: CommTime_ds0, CommTime_dsEnd, CommTime_ds			! communication time - distribution functions: start time, end time, current time
 
 ! Number of Subdomains in each direction
-INTEGER(lng) :: NumSubsX																! number of subdomains in the X direction
-INTEGER(lng) :: NumSubsY																! number of subdomains in the Y direction
-INTEGER(lng) :: NumSubsZ																! number of subdomains in the Z direction
-INTEGER(lng) :: NumSubsTotal															! total number of subdomains
+INTEGER(lng) :: NumSubsX							! number of subdomains in the X direction
+INTEGER(lng) :: NumSubsY							! number of subdomains in the Y direction
+INTEGER(lng) :: NumSubsZ							! number of subdomains in the Z direction
+INTEGER(lng) :: NumSubsTotal							! total number of subdomains
 
 ! Starting/Ending indices for each subdomain
-INTEGER(lng) :: iMin																		! starting local i index
-INTEGER(lng) :: iMax																		! ending local i index
-INTEGER(lng) :: jMin																		! starting local j index
-INTEGER(lng) :: jMax																		! ending local j index
-INTEGER(lng) :: kMin																		! starting local k index
-INTEGER(lng) :: kMax																		! ending local k index
+INTEGER(lng) :: iMin								! starting local i index
+INTEGER(lng) :: iMax								! ending local i index
+INTEGER(lng) :: jMin								! starting local j index
+INTEGER(lng) :: jMax								! ending local j index
+INTEGER(lng) :: kMin								! starting local k index
+INTEGER(lng) :: kMax								! ending local k index
 
 ! extension for output files
-CHARACTER(5) :: sub																		! rank + 1 for output file extensions
+CHARACTER(5) :: sub	! rank + 1 for output file extensions
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

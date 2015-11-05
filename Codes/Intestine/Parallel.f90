@@ -19,6 +19,7 @@ SUBROUTINE MPI_Setup	! setup the MPI (parallel) component
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
+INTEGER(lng) :: mpierr! MPI standard error object
 ! Initialize variables and arrays
 f_Comps				= 0_lng		! specifies the components of the distribution functions to transfer in each MPI communication direction
 Corner_SendIndex	= 0_lng		! i, j, and k indices for each corner
@@ -42,9 +43,73 @@ CommDataStart_phi	= 0_lng		! array of starting indices in the send arrays for th
 CommDataStart_u	= 0_lng		! array of starting indices in the send arrays for the scalar from each communication direction
 CommDataStart_v	= 0_lng		! array of starting indices in the send arrays for the scalar from each communication direction
 CommDataStart_w	= 0_lng		! array of starting indices in the send arrays for the scalar from each communication direction
+CommDataStart_node	= 0_lng		! array of starting indices in the send arrays for the scalar from each communication direction
 fSize				= 0_lng		! array of the number of elements sent for each communication direction (distribution functions)
 dsSize				= 0_lng		! array of the number of elements sent for each communication direction (density and scalar)
 uvwSize				= 0_lng		! array of the number of elements sent for each communication direction (density and scalar)
+nodeSize			= 0_lng		! array of the number of elements sent for each communication direction (density and scalar)
+
+
+der_block_len = (/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
+der_block_types=	(/ MPI_INTEGER, &
+			MPI_INTEGER, &
+			MPI_INTEGER, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION, &
+			MPI_DOUBLE_PRECISION/)
+CALL MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION,mpidblextent,mpierr)
+CALL MPI_TYPE_EXTENT(MPI_INTEGER,mpiintextent,mpierr)
+der_block_offsets=	(/ 0, &
+			mpiintextent, &
+			2*mpiintextent, &
+			3*mpiintextent+0*mpidblextent, &
+			3*mpiintextent+1*mpidblextent, &
+			3*mpiintextent+2*mpidblextent, &
+			3*mpiintextent+3*mpidblextent, &
+			3*mpiintextent+4*mpidblextent, &
+			3*mpiintextent+5*mpidblextent, &
+			3*mpiintextent+6*mpidblextent, &
+			3*mpiintextent+7*mpidblextent, &
+			3*mpiintextent+8*mpidblextent, &
+			3*mpiintextent+9*mpidblextent, &
+			3*mpiintextent+10*mpidblextent, &
+			3*mpiintextent+11*mpidblextent, &
+			3*mpiintextent+12*mpidblextent, &
+			3*mpiintextent+13*mpidblextent, &
+			3*mpiintextent+14*mpidblextent, &
+			3*mpiintextent+15*mpidblextent, &
+			3*mpiintextent+16*mpidblextent, &
+			3*mpiintextent+17*mpidblextent, &
+			3*mpiintextent+18*mpidblextent, &
+			3*mpiintextent+19*mpidblextent, &
+			3*mpiintextent+20*mpidblextent, &
+			3*mpiintextent+21*mpidblextent, &
+			3*mpiintextent+22*mpidblextent/)
+
+CALL MPI_TYPE_STRUCT(der_type_count, der_block_len, der_block_offsets, der_block_types,mpipartransfertype, mpierr)
+!CALL MPI_TYPE_CREATE_STRUCT(der_type_count, der_block_len, der_block_offsets, der_block_types,mpipartransfertype,mpierr)
+CALL MPI_TYPE_COMMIT(mpipartransfertype, mpierr)
+
 
 ! Fill out the MPI arrays
 CALL MPI_Initialize
