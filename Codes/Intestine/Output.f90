@@ -880,7 +880,8 @@ ELSE
       DO j=1,ny
         DO i=1,nx
 
-          WRITE(685,'(8E15.5,I6)') xx(i),yy(j),zz(k),															&	! x,y,z node location
+!         WRITE(685,'(8E15.5,I6)') xx(i),yy(j),zz(k),															&	! x,y,z node location
+          WRITE(685,'(8E15.5,I6)') i,j,k,															&	! x,y,z node location
                                    FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),		&	! u,v,w @ i,j,k
                                    FieldData(i,j,k,4),														&	! rho(i,j,k)
                                    FieldData(i,j,k,5),														&	! phi(i,j,k)
@@ -1000,7 +1001,8 @@ ELSE
 			! open the nnth output file for the nth subdomain 
 			WRITE(iter_char(1:7),'(I7.7)') parfilenum(n)	! write the file number (iteration) to a charater
 			!      OPEN(60,FILE='out-'//iter_char//'-'//nthSub//'.dat')	! open file
-			OPEN(60,FILE='pardat-'//iter_char//'-'//nthSub//'.dat')	! open file
+!			OPEN(60,FILE='pardat-'//iter_char//'-'//nthSub//'.dat')	! open file
+			OPEN(60,FILE='pardat-'//iter_char//'-'//nthSub//'.csv')	! open file
 
 			! read the output file
 			numLines = ParticleDistribution(n,nn)				! determine number of lines to read
@@ -1027,15 +1029,20 @@ ELSE
 		CALL FLUSH(5)
 		! Write to combined output file	
 		OPEN(685,FILE='pardat-'//iter_char//'.dat')
-		WRITE(685,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "ParID" "Sh" "rp" "bulk_conc" "delNBbyCV" "Sst" "S" "Veff" "Nbj"'
-		WRITE(685,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',parfilenum(n)/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
+!		WRITE(685,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "ParID" "Sh" "rp" "bulk_conc" "delNBbyCV" "Sst" "S" "Veff" "Nbj"'
+!		WRITE(685,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',parfilenum(n)/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
+                WRITE(685,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
+
 		DO nnn=1,numLineEnd
-        		WRITE(685,'(6E15.5,1I9,8E15.5)') ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
+!        		WRITE(685,'(6E15.5,1I9,8E15.5)') ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
+        		WRITE(685,1001) ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
 			ParticleData(nnn,4),ParticleData(nnn,5),ParticleData(nnn,6), &
 			INT(ParticleData(nnn,7),lng),ParticleData(nnn,8),ParticleData(nnn,9), &
 			ParticleData(nnn,10),ParticleData(nnn,11),ParticleData(nnn,12) &
 			,ParticleData(nnn,13),ParticleData(nnn,14),ParticleData(nnn,15)
-		END DO
+1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2)
+	
+	END DO
 		CLOSE(685)	! close current output file (combined)
 
 	END DO
