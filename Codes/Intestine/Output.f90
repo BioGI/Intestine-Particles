@@ -958,7 +958,7 @@ INTEGER(lng) :: numLines,numLineStart,numLineEnd	! number of lines to read
 INTEGER(lng) :: combine1,combine2			! clock variables
 CHARACTER(7) :: iter_char				! iteration stored as a character 
 CHARACTER(5) :: nthSub					! current subdomain stored as a character
-
+CHARACTER(2) :: tmpchar
 ! send subdomain information to the master
 tag = 63_lng																						! starting message tag (arbitrary)
 
@@ -1014,12 +1014,21 @@ ELSE
 			numLineEnd	=  numLineStart + numLines
 			!write(*,*) numLineStart,numLineEnd
 			DO nnn = numLineStart+1_lng,numLineEnd
-				READ(60,*) ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
-				ParticleData(nnn,4),ParticleData(nnn,5),ParticleData(nnn,6), &
-				ParticleData(nnn,7),ParticleData(nnn,8),ParticleData(nnn,9), &
-				ParticleData(nnn,10),ParticleData(nnn,11),ParticleData(nnn,12) &
-				,ParticleData(nnn,13),ParticleData(nnn,14),ParticleData(nnn,15)
-				!write(*,*) nnn,' line number',INT(ParticleData(nnn,7))
+       			   READ(60,*) 	ParticleData(nnn,1),	tmpchar,& 
+					ParticleData(nnn,2),	tmpchar,&	
+					ParticleData(nnn,3),	tmpchar,&
+					ParticleData(nnn,4),	tmpchar,&
+					ParticleData(nnn,5),	tmpchar,&
+					ParticleData(nnn,6),	tmpchar,&
+					ParticleData(nnn,7),	tmpchar,&
+					ParticleData(nnn,8),	tmpchar,&
+					ParticleData(nnn,9),	tmpchar,&
+					ParticleData(nnn,10),	tmpchar,&
+					ParticleData(nnn,11),	tmpchar,&
+					ParticleData(nnn,12),	tmpchar,&	
+					ParticleData(nnn,13),	tmpchar,&
+					ParticleData(nnn,14),	tmpchar,&
+					ParticleData(nnn,15)
 			END DO
 			CLOSE(60,STATUS='DELETE') ! close and delete current output file (subdomain)
 		END DO
@@ -1028,21 +1037,29 @@ ELSE
 		WRITE(5,*) 'writing...'
 		CALL FLUSH(5)
 		! Write to combined output file	
-		OPEN(685,FILE='pardat-'//iter_char//'.dat')
-!		WRITE(685,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "ParID" "Sh" "rp" "bulk_conc" "delNBbyCV" "Sst" "S" "Veff" "Nbj"'
-!		WRITE(685,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',parfilenum(n)/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
+		OPEN(685,FILE='pardat-all-'//iter_char//'.csv')
                 WRITE(685,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
 
 		DO nnn=1,numLineEnd
-!        		WRITE(685,'(6E15.5,1I9,8E15.5)') ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
-        		WRITE(685,1001) ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
-			ParticleData(nnn,4),ParticleData(nnn,5),ParticleData(nnn,6), &
-			INT(ParticleData(nnn,7),lng),ParticleData(nnn,8),ParticleData(nnn,9), &
-			ParticleData(nnn,10),ParticleData(nnn,11),ParticleData(nnn,12) &
-			,ParticleData(nnn,13),ParticleData(nnn,14),ParticleData(nnn,15)
+        		WRITE(685,1001) ParticleData(nnn,1)  		,',', &
+					ParticleData(nnn,2)		,',', &
+					ParticleData(nnn,3) 		,',', &
+					ParticleData(nnn,4)		,',', &
+					ParticleData(nnn,5)		,',', &
+					ParticleData(nnn,6) 		,',', &
+					INT(ParticleData(nnn,7),lng)	,',', &
+					ParticleData(nnn,8)		,',', &
+					ParticleData(nnn,9) 		,',', &
+					ParticleData(nnn,10)		,',', &
+					ParticleData(nnn,11)		,',', &
+					ParticleData(nnn,12) 		,',', &
+					ParticleData(nnn,13)		,',', &
+					ParticleData(nnn,14)		,',', &
+					ParticleData(nnn,15)
+
 1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2)
 	
-	END DO
+	        END DO
 		CLOSE(685)	! close current output file (combined)
 
 	END DO
