@@ -19,9 +19,9 @@ CALL RANDOM_SEED(put=seed1)
 DEALLOCATE(seed1)
 
 !------------------- Monodisperse Collection ------------------------------------------
-x_center= 	0.0
-y_center= 	0.0
-z_center=	30.0
+x_center= 	40.0
+y_center= 	40.0
+z_center=	40.0
 
 PI=3.1415926535897932384626433832
 
@@ -37,7 +37,7 @@ CALL RANDOM_NUMBER(randnomono)
 
 R0 = 0.0001_dbl ! cm
 
-open(52,file='particle-a-50.txt')
+open(52,file='particle-50.dat')
 write(52,*) np
 
 do i=1,np
