@@ -19,30 +19,6 @@ CALL RANDOM_SEED(put=seed1)
 DEALLOCATE(seed1)
 
 !------------------- Monodisperse Collection ------------------------------------------
-!zmin=1.0_dbl+2.0_dbl
-!xmin=0.2_dbl*240_dbl+2.0_dbl
-!ymin=0.2_dbl*240_dbl+2.0_dbl
-!zmax=240.0_dbl - zmin
-!xmax=240.0_dbl - xmin
-!ymax=240.0_dbl - ymin
-!np=14_lng!250_lng!200_lng
-!
-!ALLOCATE(randnomono(3_lng*np))
-!CALL RANDOM_NUMBER(randnomono)
-!
-!R0 = 0.00263008138299_dbl ! cm
-!
-!open(52,file='particle-a-14.txt')
-!write(52,*) np
-!
-!do i=1,np
-!  write(52,*) i,xmin+(xmax-xmin)*randnomono(3*(i-1)+1),ymin+(ymax-ymin)*randnomono(3*(i-1)+2),zmin+(zmax-zmin)*randnomono(3*(i-1)+3),R0
-!end do
-!
-!close(52)
-!write(*,*) np*(88.0_dbl/21.0_dbl)*(R0**3.0_dbl)
-
-!------------------- Monodisperse Collection ------------------------------------------
 x_center= 	0.0
 y_center= 	0.0
 z_center=	30.0
@@ -54,14 +30,14 @@ teta1Max= 	2*PI
 teta2Max= 	2*PI
 
 
-np=30_lng
+np=50_lng
 
 ALLOCATE(randnomono(3_lng*np))
 CALL RANDOM_NUMBER(randnomono)
 
 R0 = 0.0001_dbl ! cm
 
-open(52,file='particle-a-14.txt')
+open(52,file='particle-a-50.txt')
 write(52,*) np
 
 do i=1,np
@@ -77,7 +53,7 @@ do i=1,np
 end do
 
 close(52)
-write(*,*) np*(88.0_dbl/21.0_dbl)*(R0**3.0_dbl)
+!write(*,*) np*(88.0_dbl/21.0_dbl)*(R0**3.0_dbl)
 
 
 
