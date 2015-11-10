@@ -504,7 +504,7 @@ DO WHILE (ASSOCIATED(current))
 
 	bulkconc = Cb_global
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-  
+!        write(*,*) current%pardata%par_conc, bulkconc,temp,current%pardata%rp  
         IF (temp.GE.0.0_dbl) THEN
 		current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
 	ELSE
@@ -611,12 +611,13 @@ DO WHILE (ASSOCIATED(current))
 	current%pardata%S = S
 	current%pardata%Sst = Sst
 
-	IF (Sst.LT.5.0_dbl) THEN
-		current%pardata%sh=current%pardata%sh+0.296_dbl*(Sst**0.5_dbl)
-	ELSE
-		Sh0 = exp(0.162_dbl+0.202_dbl*log(Sst)-7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
-		current%pardata%sh=current%pardata%sh+Sh0-1.0_dbl
-	END IF
+!       Farhad removed Shear effects
+!	IF (Sst.LT.5.0_dbl) THEN
+!		current%pardata%sh=current%pardata%sh+0.296_dbl*(Sst**0.5_dbl)
+!	ELSE
+!		Sh0 = exp(0.162_dbl+0.202_dbl*log(Sst)-7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
+!		current%pardata%sh=current%pardata%sh+Sh0-1.0_dbl
+!	END IF
 
 	!IF (associated(current,ParListHead%next)) THEN
 	IF (current%pardata%parid.eq.1) THEN
