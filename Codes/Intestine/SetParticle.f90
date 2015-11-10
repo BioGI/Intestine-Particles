@@ -21,35 +21,35 @@ DEALLOCATE(seed1)
 !------------------- Monodisperse Collection ------------------------------------------
 x_center= 	40.0
 y_center= 	40.0
-z_center=	40.0
+z_center=	30.0
 
 PI=3.1415926535897932384626433832
 
-rMax= 		30.0_dbl
+rMax= 		25.0_dbl
 teta1Max= 	2*PI
 teta2Max= 	2*PI
 
 
-np=50_lng
+np=500_lng
 
 ALLOCATE(randnomono(3_lng*np))
 CALL RANDOM_NUMBER(randnomono)
 
 R0 = 0.0001_dbl ! cm
 
-open(52,file='particle-50.dat')
+open(52,file='particle.dat')
 write(52,*) np
 
 do i=1,np
-  rr= 	 randnomono(3*(i-1)+1) * rMax
-  teta1= randnomono(3*(i-1)+2) * teta1Max
-  teta2= randnomono(3*(i-1)+3) * teta2Max
+  rr=   (randnomono(3*(i-1)+1))**(1.0/3.0) * rMax
+  teta1= randnomono(3*(i-1)+2) 		   * teta1Max
+  teta2= randnomono(3*(i-1)+3) 	    	   * teta2Max
 
   x_particle = x_center + rr* sin(teta1)* cos(teta2) 
   y_particle = y_center + rr* sin(teta1)* sin(teta2)
   z_particle = z_center + rr* cos(teta1)	 
 
-  write(52,*) x_particle, y_particle, z_particle, R0
+  write(52,*) i, x_particle, y_particle, z_particle, R0
 end do
 
 close(52)
