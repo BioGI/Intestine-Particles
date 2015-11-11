@@ -33,7 +33,7 @@ numparticleSubfile = 0_lng
 ALLOCATE(radius(0:nz+1,0:500))		! 500 is an arbitrarily large number of output iterations...
 radcount = 0_lng							! initialize the output count
 
-!------------------------------------------------
+!-----------------------------------------------g
 END SUBROUTINE Output_Setup
 !------------------------------------------------
 
@@ -406,7 +406,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
 			current%pardata%wp*vcf 	  ,',',	&
                         current%pardata%parid 	  ,',',	&
 			current%pardata%sh 	  ,',',	&
-			current%pardata%rp 	  ,',',	&
+			current%pardata%rp/xcf 	  ,',',	&
 			current%pardata%bulk_conc ,',', &
 			current%pardata%delNBbyCV ,',', &
 			current%pardata%Sst 	  ,',',	&
@@ -748,6 +748,7 @@ END IF
 END SUBROUTINE PrintParams
 !------------------------------------------------
 
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE MergeOutput									! combines the subdomain output files into an output files for the entire computational domain 
 !--------------------------------------------------------------------------------------------------
@@ -755,15 +756,15 @@ IMPLICIT NONE
 
 CALL MergeScalar
 CALL MergeFields
-CALL MergeMass
-     IF(ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
-     		CALL MergeParticleOutput			! Merge particle output
-     ENDIF
-
+!CALL MergeMass
+IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
+   CALL MergeParticleOutput					! Merge particle output
+ENDIF
 
 !------------------------------------------------
 END SUBROUTINE MergeOutput
 !------------------------------------------------
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE MergeFields											! combines the subdomain output into an output file for the entire computational domain 
@@ -880,12 +881,12 @@ ELSE
       DO j=1,ny
         DO i=1,nx
 
-!         WRITE(685,'(8E15.5,I6)') xx(i),yy(j),zz(k),															&	! x,y,z node location
-          WRITE(685,'(8E15.5,I6)') i,j,k,															&	! x,y,z node location
+!         WRITE(685,'(8E15.5,I6)') xx(i),yy(j),zz(k),							&	! x,y,z node location
+          WRITE(685,'(3I6,5E15.5,I6)') i,j,k,								&	! x,y,z node location
                                    FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),		&	! u,v,w @ i,j,k
-                                   FieldData(i,j,k,4),														&	! rho(i,j,k)
-                                   FieldData(i,j,k,5),														&	! phi(i,j,k)
-                                   INT(FieldData(i,j,k,6))														! node(i,j,k)									
+                                   FieldData(i,j,k,4),							&	! rho(i,j,k)
+                                   FieldData(i,j,k,5),							&	! phi(i,j,k)
+                                   INT(FieldData(i,j,k,6))							! node(i,j,k)									
        
         END DO
       END DO
@@ -1008,27 +1009,43 @@ ELSE
 			numLines = ParticleDistribution(n,nn)				! determine number of lines to read
 			!write(*,*) numLines,nn,n
 			READ(60,*)							! first line is variable info
-			READ(60,*)							! second line is zone info
+!			READ(60,*)							! second line is zone info
 			
 			numLineStart	=  numLineEnd 
 			numLineEnd	=  numLineStart + numLines
 			!write(*,*) numLineStart,numLineEnd
 			DO nnn = numLineStart+1_lng,numLineEnd
-       			   READ(60,*) 	ParticleData(nnn,1),	tmpchar,& 
-					ParticleData(nnn,2),	tmpchar,&	
-					ParticleData(nnn,3),	tmpchar,&
-					ParticleData(nnn,4),	tmpchar,&
-					ParticleData(nnn,5),	tmpchar,&
-					ParticleData(nnn,6),	tmpchar,&
-					ParticleData(nnn,7),	tmpchar,&
-					ParticleData(nnn,8),	tmpchar,&
-					ParticleData(nnn,9),	tmpchar,&
-					ParticleData(nnn,10),	tmpchar,&
-					ParticleData(nnn,11),	tmpchar,&
-					ParticleData(nnn,12),	tmpchar,&	
-					ParticleData(nnn,13),	tmpchar,&
-					ParticleData(nnn,14),	tmpchar,&
+       			   READ(60,*) 	ParticleData(nnn,1),	& 
+					ParticleData(nnn,2),	&	
+					ParticleData(nnn,3),	&
+					ParticleData(nnn,4),	&
+					ParticleData(nnn,5),	&
+					ParticleData(nnn,6),	&
+					ParticleData(nnn,7),	&
+					ParticleData(nnn,8),	&
+					ParticleData(nnn,9),	&
+					ParticleData(nnn,10),	&
+					ParticleData(nnn,11),	&
+					ParticleData(nnn,12),	&	
+					ParticleData(nnn,13),	&
+					ParticleData(nnn,14),	&
 					ParticleData(nnn,15)
+!                          WRITE(*,*)   ParticleData(nnn,1),    tmpchar,&
+!                                       ParticleData(nnn,2),    tmpchar,&
+!                                       ParticleData(nnn,3),    tmpchar,&
+!                                       ParticleData(nnn,4),    tmpchar,&
+!                                       ParticleData(nnn,5),    tmpchar,&
+!                                       ParticleData(nnn,6),    tmpchar,&
+!                                       ParticleData(nnn,7),    tmpchar,&
+!                                       ParticleData(nnn,8),    tmpchar,&
+!                                       ParticleData(nnn,9),    tmpchar,&
+!                                       ParticleData(nnn,10),   tmpchar,&
+!                                       ParticleData(nnn,11),   tmpchar,&
+!                                       ParticleData(nnn,12),   tmpchar,&
+!                                       ParticleData(nnn,13),   tmpchar,&
+!                                       ParticleData(nnn,14),   tmpchar,&
+!                                       ParticleData(nnn,15)
+
 			END DO
 			CLOSE(60,STATUS='DELETE') ! close and delete current output file (subdomain)
 		END DO
