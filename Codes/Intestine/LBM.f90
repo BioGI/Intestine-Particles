@@ -504,7 +504,7 @@ DO WHILE (ASSOCIATED(current))
 
 	bulkconc = Cb_global
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-!        write(*,*) current%pardata%par_conc, bulkconc,temp,current%pardata%rp  
+  
         IF (temp.GE.0.0_dbl) THEN
 		current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
 	ELSE
@@ -1045,95 +1045,95 @@ ENDDO
 !IF (myid .EQ. master) THEN
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
+	next => current%next ! copy pointer of next node
+	
+	! Wrappign around in z-direction for periodic BC in z
+	IF(current%pardata%zp.GE.REAL(nz,dbl)) THEN
+		current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
+	ENDIF
+	IF(current%pardata%zp.LE.0.0_dbl) THEN
+		current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
+	ENDIF
 
-        ! Wrappign around in z-direction for periodic BC in z
-        IF(current%pardata%zp.GE.REAL(nz,dbl)) THEN
-                current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
-        ENDIF
-        IF(current%pardata%zp.LE.0.0_dbl) THEN
-                current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
-        ENDIF
-
-        ! Wrappign around in y-direction for periodic BC in y
-        IF(current%pardata%yp.GE.REAL(ny,dbl)) THEN
-                current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
-        ENDIF
-        IF(current%pardata%yp.LT.1.0_dbl) THEN
-                current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
-        ENDIF
-
-
-        ! Estimate to which partition the updated position belongs to.
-        !ParticleTransfer = .FALSE.
-        DO ipartition = 1_lng,NumSubsTotal
+	! Wrappign around in y-direction for periodic BC in y
+	IF(current%pardata%yp.GE.REAL(ny,dbl)) THEN
+		current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
+	ENDIF
+	IF(current%pardata%yp.LT.1.0_dbl) THEN
+		current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
+	ENDIF
 
 
-                IF ((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-                (current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-                (current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-                (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-                (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-                (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+	! Estimate to which partition the updated position belongs to.
+	!ParticleTransfer = .FALSE.
+	DO ipartition = 1_lng,NumSubsTotal 
 
-                        current%pardata%new_part = ipartition
-                END IF
+
+		IF ((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+		(current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+		(current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+		(current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+		(current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+		(current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+
+			current%pardata%new_part = ipartition
+		END IF
                 !write(*,*) ipartition,kMinDomain(ipartition),kMaxDomain(ipartition)
-        END DO
+	END DO
+	
 
-
-        IF ((.NOT.ParticleTransfer).AND.(current%pardata%new_part .NE. current%pardata%cur_part)) THEN
-                ParticleTransfer = .TRUE.
-        END IF
-
-
-        SELECT CASE(current%pardata%parid)
-        CASE(1_lng)
+	IF ((.NOT.ParticleTransfer).AND.(current%pardata%new_part .NE. current%pardata%cur_part)) THEN
+		ParticleTransfer = .TRUE.
+	END IF
+	
+	
+	SELECT CASE(current%pardata%parid)
+	CASE(1_lng)
       open(72,file='particle1-history.dat',position='append')
       write(72,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up*vcf,current%pardata%vp*vcf,current%pardata%wp*vcf,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(72)
-        CASE(3_lng)
+	CASE(3_lng)
       open(73,file='particle3-history.dat',position='append')
       write(73,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(73)
-        CASE(5_lng)
+      close(73) 
+	CASE(5_lng)
       open(74,file='particle5-history.dat',position='append')
       write(74,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(74)
-        CASE(7_lng)
+	CASE(7_lng)
       open(75,file='particle7-history.dat',position='append')
       write(75,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(75)
-        CASE(9_lng)
+	CASE(9_lng)
       open(76,file='particle9-history.dat',position='append')
       write(76,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(76)
-        CASE(10_lng)
+      close(76) 
+	CASE(10_lng)
       open(77,file='particle10-history.dat',position='append')
       write(77,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(77)
-        CASE(8_lng)
+	CASE(8_lng)
       open(78,file='particle8-history.dat',position='append')
       write(78,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(78)
-        CASE(6_lng)
+	CASE(6_lng)
       open(79,file='particle6-history.dat',position='append')
       write(79,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(79)
-        CASE(4_lng)
+	CASE(4_lng)
       open(80,file='particle4-history.dat',position='append')
       write(80,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(80)
-        CASE(2_lng)
+	CASE(2_lng)
       open(81,file='particle2-history.dat',position='append')
       write(81,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(81)
-        END SELECT
-        ! point to next node in the list
-        current => next
-        !write(*,*) i
+	END SELECT
+	! point to next node in the list
+	current => next
+	!write(*,*) i
 ENDDO
-!ENDIF
+!ENDIF 
 
 !------------------------------------------------
 END SUBROUTINE Particle_Track
