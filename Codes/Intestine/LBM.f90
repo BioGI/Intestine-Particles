@@ -461,6 +461,10 @@ DO k=1,nzSub
         !end if
         Cb_global = Cb_global + phi(i,j,k)
         Cb_numFluids = Cb_numFluids + 1_lng
+        IF (phi(i,j,k).GT.0.01) THEN
+           write(*,*) 'High phi:', i,j,k,phi(i,j,k)
+	END IF
+
       END IF
     END DO
   END DO
@@ -504,8 +508,7 @@ DO WHILE (ASSOCIATED(current))
 
 	bulkconc = Cb_global
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-  
-        IF (temp.GE.0.0_dbl) THEN
+	IF (temp.GE.0.0_dbl) THEN
 		current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
 	ELSE
           temp = 0.0_dbl
@@ -518,11 +521,11 @@ DO WHILE (ASSOCIATED(current))
 				-current%pardata%rp*current%pardata%rp*current%pardata%rp) &
 				/(molarvol*bulkVolume)
 
+
 	IF (associated(current,ParListHead%next)) THEN
            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
            CALL FLUSH(9)
 	ENDIF
-
 ! point to next node in the list
 	current => next
 ENDDO
@@ -1265,7 +1268,7 @@ DO k=2,nzSub-1
           ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN															! macro- boundary
             !CALL BounceBack2(m,i,j,k,im1,jm1,km1,fbb)					  										! implement the bounceback BCs [MODULE: ICBC]
 	    ! Balaji added after commenting out the earlier method
-            CALL BounceBack2New(m,i,j,k,im1,jm1,km1,fbb)					  										! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)					  					! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
             CALL BounceBackV2(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)							! implement the bounceback BCs [MODULE: ICBC]

@@ -315,21 +315,6 @@ IF(iter .EQ. phiStart) THEN
 
   END SELECT
 
-!  OPEN(6051,FILE='test-'//sub//'.dat')
-!  WRITE(6051,'(A60)') 'VARIABLES = "x" "y" "z" "phi"'
-!  WRITE(6051,'(A10,I4,A5,I4,A5,I4,A8)') 'ZONE I=',nxSub+2,' J=',nySub+2,' K=',nzSub+2,'F=POINT'
-!  
-!  DO k=0,nzSub+1
-!    DO j=0,nySub+1
-!      DO i=0,nxSub+1
-!  
-!        WRITE(6051,'(4E15.5)') x(i), y(j), z(k), phi(i,j,k)  
-!  
-!      END DO
-!    END DO 
-!  END DO
-!  
-!  CLOSE(6051)
 
   ! Calculate the intial amount of scalar
   phiTotal = 0.0_dbl
@@ -406,27 +391,15 @@ ELSE
 
   END SELECT
 
-!  OPEN(6051,FILE='test-'//sub//'.dat')
-!  WRITE(6051,'(A60)') 'VARIABLES = "x" "y" "z" "phi"'
-!  WRITE(6051,'(A10,I4,A5,I4,A5,I4,A8)') 'ZONE I=',nxSub+2,' J=',nySub+2,' K=',nzSub+2,'F=POINT'
-!  
-!  DO k=0,nzSub+1
-!    DO j=0,nySub+1
-!      DO i=0,nxSub+1
-!  
-!        WRITE(6051,'(4E15.5)') x(i), y(j), z(k), phi(i,j,k)  
-!  
-!      END DO
-!    END DO
-!  END DO
-!  
-!  CLOSE(6051)
 
 END IF	
 
 !------------------------------------------------
 END SUBROUTINE ScalarDistribution
 !------------------------------------------------
+
+
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			! implements the (moving) bounceback boundary conditions (1st order accurate - Ladd)
@@ -453,6 +426,10 @@ fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez
 !------------------------------------------------
 END SUBROUTINE BounceBackL
 !------------------------------------------------
+
+
+
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE BounceBack2(m,i,j,k,im1,jm1,km1,fbb)	! implements the (moving) bounceback boundary conditions (2nd order accurate - Lallemand)
@@ -496,12 +473,22 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
     fbb = q*(1.0_dbl + 2.0_dbl*q)*fplus(bb(m),i,j,k) 															&
         + (1.0_dbl - 4.0_dbl*q*q)*fplus(bb(m),ip1,jp1,kp1) 													& 
         - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) 													&
-        + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))
+        !+ 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))
+        + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)) ! Set rho = 1.0
+        !+ 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m))) ! use actual rho that fluctates
+
+	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
   ELSE IF((q .GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN
     fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 														&
         + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q																&
         - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1)							&
-        + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+        !+ (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+        + (6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))	! Set rho = 1.0
+        !+ (6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m))))/(q*(2.0_dbl*q + 1.0_dbl)) ! Use actual rho that fluctuateѕ
+
+	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
   ELSE
     OPEN(1000,FILE='error-'//sub//'.txt')
     WRITE(1000,*) "Error in BounceBack2() in ICBC.f90 (line 137): q is not (0<=q<=1)...? Aborting."
@@ -519,6 +506,9 @@ END IF
 !------------------------------------------------
 END SUBROUTINE BounceBack2
 !------------------------------------------------
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE BounceBack2New(m,i,j,k,im1,jm1,km1,fbb)	! implements the (moving) bounceback boundary conditions (2nd order accurate - Lallemand)
 ! Implemented by Balaji 10/28/2014 using a method similar to Yanxing
@@ -663,12 +653,21 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
     fbb = q*(1.0_dbl + 2.0_dbl*q)*fplus(bb(m),i,j,k) 															&
         + (1.0_dbl - 4.0_dbl*q*q)*fplus(bb(m),ip1,jp1,kp1) 													& 
         - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) 													&
-        + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))
+        !+ 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)) ! use actual rho
+        + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)) ! use rho = 1.0
+
+	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
   ELSE IF((q .GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN
     fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 														&
         + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q																&
         - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1)							&
-        + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+        !+ (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))	! Use actual rho
+        + (6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))		! Use rho = 1.0
+
+	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+
   ELSE
     OPEN(1000,FILE='error-'//sub//'.txt')
     WRITE(1000,*) "Error in BounceBack2() in ICBC.f90 (line 137): q is not (0<=q<=1)...? Aborting."
@@ -745,7 +744,7 @@ AP = (1.0_dbl/(2.0_dbl*term2)) * &
    + SQRT(4.0_dbl*(term1*term1 - (Ax*Ax + Ay*Ay - intercept*intercept - 2.0_dbl*Az*intercept*slope - Az*Az*slope2)*term2)))
 
 q = AP/AB													! distance ratio
-
+q = max(q,0.001_dbl)
 
 ! balaji added
 !q=0.5
@@ -1250,13 +1249,14 @@ IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1								! index variables
 REAL(dbl), INTENT(OUT) :: phiBC     											! scalar contribution from the boundary condition
-INTEGER(dbl) :: ip1,jp1,kp1 														! neighboring nodes (2 away from the wall)
+INTEGER(lng) :: ip1,jp1,kp1 														! neighboring nodes (2 away from the wall)
 REAL(dbl) :: q																			! distance ratio from the current node to the solid node
 REAL(dbl) :: rhoB,phiB																! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
 REAL(dbl) :: feq_m																	! equilibrium distribution function in the mth direction
 REAL(dbl) :: phiijk_m																! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
 REAL(dbl) :: cosTheta, sinTheta													! COS(theta), SIN(theta)
 REAL(dbl) :: ub, vb, wb																! wall velocity (x-, y-, z- components)
+REAL(dbl) :: rijk ! radius of the solid node
 
 CALL qCalc(m,i,j,k,im1,jm1,km1,q)												! calculate q	
 

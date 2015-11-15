@@ -8,7 +8,7 @@ REAl(dbl) :: R0,Rstar,sigR,sigmax,vptotal,fourbythreepi,xmax,xmin,ymax,ymin,zmax
 REAL(dbl) :: x_center, y_center, z_center
 REAL(dbl) :: rMax, teta1Max, teta2Max, rr, teta1, teta2
 REAL(dbl) :: x_particle, y_particle, z_particle
-REAL(lng) :: PI
+REAL(lng) :: PI, dR, Radius
 !--------------------------------------------------------------------------------------
 CALL DATE_AND_TIME(VALUES=seed_date1)
 CALL RANDOM_SEED(size=seed_size1)
@@ -35,21 +35,26 @@ np=500_lng
 ALLOCATE(randnomono(3_lng*np))
 CALL RANDOM_NUMBER(randnomono)
 
-R0 = 0.0001_dbl ! cm
+ALLOCATE(randno(3_lng*np))
+CALL RANDOM_NUMBER(randno)
 
+
+R0 = 0.0001_dbl ! cm
+dR = 0.0004_dbl
 open(52,file='particle.dat')
 write(52,*) np
 
 do i=1,np
-  rr=   (randnomono(3*(i-1)+1))**(1.0/3.0) * rMax
-  teta1= randnomono(3*(i-1)+2) 		   * teta1Max
-  teta2= randnomono(3*(i-1)+3) 	    	   * teta2Max
-
+  rr=    (randnomono(3*(i-1)+1))**(1.0/3.0) * rMax
+  teta1=  randnomono(3*(i-1)+2) 		   * teta1Max
+  teta2=  randnomono(3*(i-1)+3) 	    	   * teta2Max
+  Radius= randno(3*(i-1)+1)*dR + R0
+ 
   x_particle = x_center + rr* sin(teta1)* cos(teta2) 
   y_particle = y_center + rr* sin(teta1)* sin(teta2)
   z_particle = z_center + rr* cos(teta1)	 
 
-  write(52,*) i, x_particle, y_particle, z_particle, R0
+  write(52,*) i, x_particle, y_particle, z_particle, Radius
 end do
 
 close(52)

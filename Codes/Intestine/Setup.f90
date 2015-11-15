@@ -134,138 +134,139 @@ CHARACTER(5) :: sub	! rank + 1 for output file extensions
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Geometry Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-REAL(dbl), ALLOCATABLE		:: villiLoc(:,:)			! location of each villous
-REAL(dbl), ALLOCATABLE 		:: x(:),y(:),z(:)			! physical coordinate arrays
-REAL(dbl), ALLOCATABLE		:: xx(:),yy(:),zz(:)		! x,y,z arrays (global)
-REAL(dbl), ALLOCATABLE 		:: ub(:),vb(:),wb(:)		! x,y, and z components of the solid boundary velocity vector
-REAL(dbl), ALLOCATABLE 		:: rDom0(:),rDom(:),r(:)! initial, and current radius at each z-location (global), radius at each location (local)
-REAL(dbl), ALLOCATABLE		:: velDom(:),vel(:)		! global and local wall velocities 
+REAL(dbl), ALLOCATABLE		:: villiLoc(:,:)				! location of each villous
+REAL(dbl), ALLOCATABLE 		:: x(:),y(:),z(:)				! physical coordinate arrays
+REAL(dbl), ALLOCATABLE		:: xx(:),yy(:),zz(:)				! x,y,z arrays (global)
+REAL(dbl), ALLOCATABLE 		:: ub(:),vb(:),wb(:)				! x,y, and z components of the solid boundary velocity vector
+REAL(dbl), ALLOCATABLE 		:: rDom0(:),rDom(:),r(:)			! initial, and current radius at each z-location (global), radius at each location (local)
+REAL(dbl), ALLOCATABLE 		:: rDom0In(:),rDomIn(:),rIn(:)			! initial, and current radius at each z-location (global), radius at each location (local)
+REAL(dbl), ALLOCATABLE 		:: rDom0Out(:),rDomOut(:),rOut(:)		! initial, and current radius at each z-location (global), radius at each location (local)
+REAL(dbl), ALLOCATABLE		:: velDom(:),vel(:)				! global and local wall velocities 
+REAL(dbl), ALLOCATABLE		:: velDomIn(:),velIn(:)				! global and local wall velocities 
+REAL(dbl), ALLOCATABLE		:: velDomOut(:),velOut(:)			! global and local wall velocities 
 REAL(dbl), ALLOCATABLE		:: rnd(:)					! array of random numbers for random villi phase angles
-INTEGER(lng), ALLOCATABLE	:: villiGroup(:)			! array of which groups the villi are in 
-REAL(dbl)		:: xcf, ycf, zcf							! length conversion factors
-REAL(dbl)		:: dcf, vcf, pcf							! density, velocity, pressure conversion factors
-REAL(dbl)		:: tcf										! time conversion factor
-REAL(dbl)		:: nPers										! number of time periods simulated
-REAL(dbl)		:: Lv											! length of the villi
-REAL(dbl)		:: Rv											! radius of the villi
-REAL(dbl)		:: villiAngle								! maximum angle of active villous travel
-INTEGER(lng)	:: iLv										! length of the villi in lattice units
-INTEGER(lng)	:: Ci,Cj,Ck									! center node location (global)
+INTEGER(lng), ALLOCATABLE	:: villiGroup(:)				! array of which groups the villi are in 
+REAL(dbl)		:: xcf, ycf, zcf					! length conversion factors
+REAL(dbl)		:: dcf, vcf, pcf					! density, velocity, pressure conversion factors
+REAL(dbl)		:: tcf							! time conversion factor
+REAL(dbl)		:: nPers						! number of time periods simulated
+REAL(dbl)		:: Lv							! length of the villi
+REAL(dbl)		:: Rv							! radius of the villi
+REAL(dbl)		:: villiAngle						! maximum angle of active villous travel
+INTEGER(lng)	:: iLv								! length of the villi in lattice units
+INTEGER(lng)	:: Ci,Cj,Ck							! center node location (global)
 
-INTEGER(lng)	:: randORord								! flag to determine if the villous motion is random or ordered
+INTEGER(lng)	:: randORord							! flag to determine if the villous motion is random or ordered
 INTEGER(lng), PARAMETER :: RANDOM=1						! random flag for randORord
-INTEGER(lng), PARAMETER :: ORDERED=2					! ordered flag for randORord
+INTEGER(lng), PARAMETER :: ORDERED=2						! ordered flag for randORord
 
-REAL(dbl), PARAMETER :: PI = 3.1415926535897932384626433832					! Pi
-REAL(dbl) :: D, L												! diameter, length of the intestinal segment
-REAL(dbl) :: a1, a2											! half height of the passages
-REAL(dbl) :: eps1, eps2										! occlusional distances
-REAL(dbl) :: amp1, amp2										! amplitude of the waves
+REAL(dbl), PARAMETER :: PI = 3.1415926535897932384626433832			! Pi
+REAL(dbl) :: D, L								! diameter, length of the intestinal segment
+REAL(dbl) :: a1, a2								! half height of the passages
+REAL(dbl) :: eps1, eps2								! occlusional distances
+REAL(dbl) :: amp1, amp2								! amplitude of the waves
 REAL(dbl) :: epsOVERa1, epsOVERa2						! occlusional distance to half-height ratios
 REAL(dbl) :: aOVERlam1,	aOVERlam2						! half height to wavelength ratios
-REAL(dbl) :: lambda1, lambda2								! wavelengths
-REAL(dbl) :: kw1												! wave number (peristalsis)
+REAL(dbl) :: lambda1, lambda2							! wavelengths
+REAL(dbl) :: kw1								! wave number (peristalsis)
 REAL(dbl) :: s1, s2	            						! mode velocities
-REAL(dbl) :: Ts, Tp											! segmental period, peristaltic period
-REAL(dbl) :: wc1, wc2										! weighting coefficients for the different modes
-REAL(dbl) :: Re1, Re2										! weighting coefficients for the different modes
-REAL(dbl) :: shift2											! amplitude of the segmental contraction
-REAL(dbl) :: Tmix												! calculated period (mix)
-REAL(dbl) :: period											! period of current simulation
-REAL(dbl) :: freqRatioT										! villous frequency to macroscopic contraction frequency (theta, azimuthal)
-REAL(dbl) :: freqRatioZ										! villous frequency to macroscopic contraction frequency (z, axial)
-REAL(dbl) :: vFreqT											! villous frequency in the theta direction (azimuthal)
-REAL(dbl) :: vFreqZ											! villous frequency in the z direction (axial)
-REAL(dbl) :: activeVflagT									! flag to turn on or off active villous motion in the theta direction (azimuthal)
-REAL(dbl) :: activeVflagZ									! flag to turn on or off active villous motion in the z direction (axial)
-INTEGER(lng) :: nlambda2									! wavelength - number of nodes (segmental)
-INTEGER(lng) :: numw1, numw2								! number of waves
-INTEGER(lng) :: nzSL, nzSR									! left and right indicies of scalar domain
-INTEGER(lng) :: segment										! length of the segments in the portions of the segmental contractions
-INTEGER(lng) :: seg1L, seg1R								! left/right point of slope segement 1
-INTEGER(lng) :: seg2L, seg2R								! left/right point of slope segement 2
-INTEGER(lng) :: numVilliZ, numVilliTheta				! number of villi rows in the axial direction, number of villi per row
-INTEGER(lng) :: numVilli, numVilliActual				! number of total villi, actual number of total villi
+REAL(dbl) :: Ts, Tp								! segmental period, peristaltic period
+REAL(dbl) :: wc1, wc2								! weighting coefficients for the different modes
+REAL(dbl) :: Re1, Re2								! weighting coefficients for the different modes
+REAL(dbl) :: shift2								! amplitude of the segmental contraction
+REAL(dbl) :: Tmix								! calculated period (mix)
+REAL(dbl) :: period								! period of current simulation
+REAL(dbl) :: freqRatioT								! villous frequency to macroscopic contraction frequency (theta, azimuthal)
+REAL(dbl) :: freqRatioZ								! villous frequency to macroscopic contraction frequency (z, axial)
+REAL(dbl) :: vFreqT								! villous frequency in the theta direction (azimuthal)
+REAL(dbl) :: vFreqZ								! villous frequency in the z direction (axial)
+REAL(dbl) :: activeVflagT							! flag to turn on or off active villous motion in the theta direction (azimuthal)
+REAL(dbl) :: activeVflagZ							! flag to turn on or off active villous motion in the z direction (axial)
+INTEGER(lng) :: nlambda2							! wavelength - number of nodes (segmental)
+INTEGER(lng) :: numw1, numw2							! number of waves
+INTEGER(lng) :: nzSL, nzSR							! left and right indicies of scalar domain
+INTEGER(lng) :: segment								! length of the segments in the portions of the segmental contractions
+INTEGER(lng) :: seg1L, seg1R							! left/right point of slope segement 1
+INTEGER(lng) :: seg2L, seg2R							! left/right point of slope segement 2
+INTEGER(lng) :: numVilliZ, numVilliTheta					! number of villi rows in the axial direction, number of villi per row
+INTEGER(lng) :: numVilli, numVilliActual					! number of total villi, actual number of total villi
 INTEGER(lng) :: numVilliGroups							! number of groups of villi
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Output Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-REAL(dbl), ALLOCATABLE		:: radius(:,:)				! radius stored during output iterations
-INTEGER(lng), ALLOCATABLE 	:: filenum(:)				! array of output file numbers
-INTEGER(lng)    :: numOuts					! number of output files
-INTEGER(lng)	:: fileCount				! current output file number (out of total number of output files)
-INTEGER(lng)	:: outFlag					! specifies whether to output in readable format (1), binaries (2), or both (3)
-INTEGER(lng)    :: radcount					! counts the number of output iterations for storing the radius
+REAL(dbl), ALLOCATABLE		:: radius(:,:)					! radius stored during output iterations
+INTEGER(lng), ALLOCATABLE 	:: filenum(:)					! array of output file numbers
+INTEGER(lng)    :: numOuts							! number of output files
+INTEGER(lng)	:: fileCount							! current output file number (out of total number of output files)
+INTEGER(lng)	:: outFlag							! specifies whether to output in readable format (1), binaries (2), or both (3)
+INTEGER(lng)    :: radcount							! counts the number of output iterations for storing the radius
 
 ! System Clock Variables (for PrintStatus)
-INTEGER(lng)	:: start, current, final, rate				! timing varibles for SYSTEM_CLOCK()
-REAL(dbl)	:: tStart,tEnd,tTotal,tRecv,tSum,tAvg		! timing variables for parallel scalability [MPI_WTIME()]
+INTEGER(lng)	:: start, current, final, rate					! timing varibles for SYSTEM_CLOCK()
+REAL(dbl)	:: tStart,tEnd,tTotal,tRecv,tSum,tAvg				! timing variables for parallel scalability [MPI_WTIME()]
 
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Particle Tracking Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-INTEGER(lng)	:: ParticleTrack			! a flag to denote if particle track is on (1) or off (0) 
-INTEGER(lng), PARAMETER :: ParticleOn=1			! flag to signify Particle Tracking is on
-INTEGER(lng), PARAMETER :: ParticleOff=0		! flag for signify if particle tracking is off
-INTEGER(lng)    :: np					! number of particles
+INTEGER(lng)	:: ParticleTrack						! a flag to denote if particle track is on (1) or off (0) 
+INTEGER(lng), PARAMETER :: ParticleOn=1						! flag to signify Particle Tracking is on
+INTEGER(lng), PARAMETER :: ParticleOff=0					! flag for signify if particle tracking is off
+INTEGER(lng)    :: np								! number of particles
 
-REAL(dbl), PARAMETER :: molarvol=92.73_dbl,diffm=8.47e-7_dbl,R0=0.0026_dbl,Cs_mol=3.14854e-6!1.2e-6             ! drug properties
-REAL(dbl):: Cb_global           ! Global bulk scalar Concentration
-INTEGER(lng):: Cb_numFluids     ! Number of fluid nodes in the process for Global bulk scalar Concentration
-INTEGER(lng):: num_particles    ! Total number of particles in domain
+REAL(dbl), PARAMETER :: molarvol=92.73_dbl,diffm=8.47e-7_dbl,R0=0.0026_dbl,Cs_mol=3.14854e-6 !1.2e-6		! drug properties
+REAL(dbl):: Cb_global		! Global bulk scalar Concentration
+INTEGER(lng):: Cb_numFluids	! Number of fluid nodes in the process for Global bulk scalar Concentration
+INTEGER(lng):: num_particles	! Total number of particles in domain
 
 
 INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) ! List of starting/enning i indices for each subdomain
 INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) ! List of starting/enning j indices for each subdomain
 INTEGER(lng), ALLOCATABLE :: kMaxDomain(:),kMinDomain(:) ! List of starting/enning k indices for each subdomain
 REAL(dbl), ALLOCATABLE  :: partransfersend(:,:),partransferrecv(:,:)
-INTEGER(lng),ALLOCATABLE :: parreqid(:),parwtstat(:,:)          ! number of send/recv requests
-INTEGER(lng),ALLOCATABLE :: probestat(:)        ! MPI status object
-INTEGER(lng),ALLOCATABLE :: numpartransfer(:)   ! Particles to be transferred in each direction
+INTEGER(lng),ALLOCATABLE :: parreqid(:),parwtstat(:,:)		! number of send/recv requests
+INTEGER(lng),ALLOCATABLE :: probestat(:)	! MPI status object
+INTEGER(lng),ALLOCATABLE :: numpartransfer(:)	! Particles to be transferred in each direction
 INTEGER(lng) :: NumCommDirsPar = 26_lng
 INTEGER(lng) :: NumParVar = 16_lng
 
 TYPE ParRecordTransfer
-        SEQUENCE
-        INTEGER(lng)    :: parid ! particle id in the overall list - a tag that can be used to track the particle
-        INTEGER(lng)    :: cur_part     ! current sub-domain id / partition number
-        INTEGER(lng)    :: new_part     ! current sub-domain id / partition number
-        REAL(dbl)       :: xp   ! particle x-position
-        REAL(dbl)       :: yp ! particle y-position
-        REAL(dbl)       :: zp   ! particle z-position
-        REAL(dbl)       :: up   ! particle u-velocity
-        REAL(dbl)       :: vp   ! particle v-velocity
-        REAL(dbl)       :: wp   ! particle w-velocity
-        REAL(dbl)       :: rp   ! particle radius
-        REAL(dbl)       :: delNBbyCV ! particle drug release concentration
-        REAL(dbl)       :: par_conc ! particle concentration
-        REAL(dbl)       :: bulk_conc ! bulk concentration at particle location
-        REAL(dbl)       :: xpold        ! particle x-position
-        REAL(dbl)       :: ypold        ! particle y-position
-        REAL(dbl)       :: zpold        ! particle z-position
-        REAL(dbl)       :: upold        ! particle u-velocity
-        REAL(dbl)       :: vpold        ! particle v-velocity
-        REAL(dbl)       :: wpold        ! particle w-velocity
-        REAL(dbl)       :: rpold        ! old particle radius
-        REAL(dbl)       :: sh   ! Sherwood number
-        REAL(dbl)       :: gamma_cont   ! gamma - container effect
-        REAL(dbl)       :: S    ! Shear rate at particle location
-        REAL(dbl)       :: Sst  ! Shear peclet number
-        REAL(dbl)       :: Veff ! effective particle container volume
-        REAL(dbl)       :: Nbj  ! number of moles associated with the particlnumber of moles associated with the particle
+	SEQUENCE
+	INTEGER(lng)	:: parid ! particle id in the overall list - a tag that can be used to track the particle
+	INTEGER(lng)	:: cur_part	! current sub-domain id / partition number
+	INTEGER(lng)	:: new_part	! current sub-domain id / partition number
+	REAL(dbl)	:: xp	! particle x-position
+	REAL(dbl)	:: yp ! particle y-position
+	REAL(dbl)	:: zp	! particle z-position
+	REAL(dbl)	:: up	! particle u-velocity
+	REAL(dbl)	:: vp   ! particle v-velocity
+	REAL(dbl)	:: wp	! particle w-velocity
+	REAL(dbl)	:: rp	! particle radius
+	REAL(dbl)	:: delNBbyCV ! particle drug release concentration 
+	REAL(dbl)	:: par_conc ! particle concentration
+	REAL(dbl)	:: bulk_conc ! bulk concentration at particle location
+	REAL(dbl)	:: xpold	! particle x-position
+	REAL(dbl)	:: ypold 	! particle y-position
+	REAL(dbl)	:: zpold	! particle z-position
+	REAL(dbl)	:: upold	! particle u-velocity
+	REAL(dbl)	:: vpold   	! particle v-velocity
+	REAL(dbl)	:: wpold	! particle w-velocity
+	REAL(dbl)	:: rpold	! old particle radius
+	REAL(dbl)	:: sh 	! Sherwood number
+	REAL(dbl)	:: gamma_cont	! gamma - container effect
+	REAL(dbl)	:: S 	! Shear rate at particle location
+	REAL(dbl)	:: Sst 	! Shear peclet number
+	REAL(dbl)	:: Veff ! effective particle container volume
+	REAL(dbl)	:: Nbj  ! number of moles associated with the particlnumber of moles associated with the particle
 END TYPE ParRecordTransfer
 
 TYPE ParRecord
-        TYPE(ParRecord), POINTER :: prev => NULL()! pointer to prev record
-        TYPE(ParRecord), POINTER :: next => NULL()      ! pointer to next record
-        INTEGER(lng)    :: parid ! particle id in the overall list - a tag that can be used to track the particle
-        TYPE(ParRecordTransfer) :: pardata
+	TYPE(ParRecord), POINTER :: prev => NULL()! pointer to prev record
+	TYPE(ParRecord), POINTER :: next => NULL()	! pointer to next record
+	INTEGER(lng)	:: parid ! particle id in the overall list - a tag that can be used to track the particle
+	TYPE(ParRecordTransfer) :: pardata
 END TYPE ParRecord
 
-TYPE(ParRecordTransfer),ALLOCATABLE :: ParSendArray(:,:),ParRecvArray(:,:)
-TYPE(ParRecord), POINTER :: ParListHead,ParListEnd
+TYPE(ParRecordTransfer),ALLOCATABLE	:: ParSendArray(:,:),ParRecvArray(:,:)
+TYPE(ParRecord), POINTER	:: ParListHead,ParListEnd
 TYPE(ParRecordTransfer) :: ParInit
 LOGICAL :: ParticleTransfer
 INTEGER :: mpipartransfertype
@@ -274,19 +275,9 @@ INTEGER(lng), PARAMETER :: der_type_count = 26_lng,numparticlesDomain = 1000_lng
 INTEGER :: mpidblextent,mpiintextent
 INTEGER(lng), DIMENSION(der_type_count) :: der_block_len,der_block_types,der_block_offsets
 REAL(dbl) :: fmovingsum,fmovingrhosum
-INTEGER(lng), ALLOCATABLE  :: parfilenum(:),numparticleSubfile(:) 	! array of particle output file numbers and number of particles in each of these files
-INTEGER(lng) :: parfileCount                         			! current output file number (out of total number of output files)
+INTEGER(lng), ALLOCATABLE 	:: parfilenum(:),numparticleSubfile(:) ! array of particle output file numbers and number of particles in each of these files
+INTEGER(lng)	:: parfileCount				! current output file number (out of total number of output files)
 
-
-
-
-!----OLD
-!REAL(dbl), ALLOCATABLE		:: xp(:),yp(:),zp(:)				! particle physical location coordinates
-!INTEGER(lng), ALLOCATABLE 	:: ipar(:),jpar(:),kpar(:)			! particle computational nodal coordinates
-!REAL(dbl), ALLOCATABLE		:: up(:),vp(:),wp(:)				! particle velocities
-!REAL(dbl), ALLOCATABLE		:: rp(:),delNBbyCV(:),par_conc(:),bulk_conc(:),rpold(:)		! particle radius and drug release rate
-!REAL(dbl), ALLOCATABLE		:: sh(:),gamma_cont(:)					! particle sherwood number
-!REAL(dbl), PARAMETER :: molarvol=2.65e-4_dbl,diffm=2.4e-7_dbl!1.2e-6		! drug properties
 
 !************************************************
 
@@ -365,7 +356,7 @@ READ(10,*) restart			! use restart file? (0 if no, 1 if yes)
 READ(10,*) ParticleTrack		! A flag to indicate if particle is on or off (0 if off, 1 if on)
 CLOSE(10)
 
-tau=1.0_dbl
+!tau=1.0_dbl
 
 ! Check to make sure the number of processors (numprocs) and the number of subdomains are equal
 NumSubsTotal = NumSubsX*NumSubsY*NumSubsZ
@@ -681,8 +672,8 @@ CDx(1) =   1_lng
 CDy(1) =   0_lng
 CDz(1) =   0_lng
 
-CDx(2) =	 -1_lng
-CDy(2) =	  0_lng
+CDx(2) =  -1_lng
+CDy(2) =   0_lng
 CDz(2) =   0_lng
 
 CDx(3) =   0_lng
@@ -978,13 +969,6 @@ END IF
 END SUBROUTINE SetSubID
 !------------------------------------------------
 
-
-
-
-
-
-
-
 !-------------------------------------------------------------------------------------------------
 !!!!!!! SUBROUTINES TO HANDLE POINTERS AND LINKED LISTS FOR PARTICLES
 !-------------------------------------------------------------------------------------------------
@@ -996,8 +980,8 @@ SUBROUTINE list_init(self)
 !------------------------------------------------
   TYPE(ParRecord), POINTER :: self
 
-  ALLOCATE(self) ! Note: When self is allocated, all the
-
+  ALLOCATE(self) ! Note: When self is allocated, all the 
+  
 !  ALLOCATE(self%next)
 !  ALLOCATE(self%prev)
 !  ALLOCATE(self%xp)
@@ -1036,10 +1020,10 @@ SUBROUTINE list_insert(self)
   NULLIFY(new%prev)
 
   IF (ASSOCIATED(self%next)) THEN
-        new%next => self%next
-        self%next%prev => new
-  ELSE
-        NULLIFY(new%next)
+	new%next => self%next
+	self%next%prev => new
+  ELSE 
+	NULLIFY(new%next)
   END IF
   new%prev => self
   self%next => new
@@ -1058,7 +1042,7 @@ SUBROUTINE list_delete(self)
   !ALLOCATE(next)
   self%prev%next => self%next
   IF (ASSOCIATED(self%next)) THEN
-        self%next%prev => self%prev
+	self%next%prev => self%prev
   ENDIF
 
   !self%prev => NULL()
@@ -1091,22 +1075,6 @@ SUBROUTINE list_free(self)
 !------------------------------------------------
 end subroutine list_free
 !------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1163,9 +1131,11 @@ ALLOCATE(CommDataStart_phi(NumCommDirs))					! array of starting indices in the 
 ALLOCATE(CommDataStart_u(NumCommDirs))					! array of starting indices in the send arrays for the scalar from each communication direction
 ALLOCATE(CommDataStart_v(NumCommDirs))					! array of starting indices in the send arrays for the scalar from each communication direction
 ALLOCATE(CommDataStart_w(NumCommDirs))					! array of starting indices in the send arrays for the scalar from each communication direction
+ALLOCATE(CommDataStart_node(NumCommDirs))					! array of starting indices in the send arrays for the node index from each communication direction
 ALLOCATE(fSize(NumCommDirs))									! array of the number of elements sent for each communication direction (distribution functions)
 ALLOCATE(dsSize(NumCommDirs))									! array of the number of elements sent for each communication direction (density and scalar)
 ALLOCATE(uvwSize(NumCommDirs))									! array of the number of elements sent for each communication direction (density and scalar)
+ALLOCATE(nodeSize(NumCommDirs))									! array of the number of elements sent for each communication direction (density and scalar)
 ALLOCATE(msgSize(NumCommDirs))								! array of the number of elements sent for each communication direction (total)
 ALLOCATE(req(2*NumCommDirs))									! allocate the MPI send request array
 
@@ -1191,7 +1161,7 @@ DEALLOCATE(f,fplus)
 DEALLOCATE(u,v,w,rho)
 
 ! Scalar
-DEALLOCATE(phi,phiTemp,delphi_particle)
+DEALLOCATE(phi,phiTemp,delphi_particle,tausgs_particle_x,tausgs_particle_y,tausgs_particle_z)
 
 ! Node Flags
 DEALLOCATE(node)
@@ -1202,7 +1172,7 @@ DEALLOCATE(bb,sym)
 DEALLOCATE(wt)
 
 ! MPI Communication Arrays
-DEALLOCATE(f_Comps)					! specifies the components of the distribution functions to transfer in each MPI communication direction
+DEALLOCATE(f_Comps)	! specifies the components of the distribution functions to transfer in each MPI communication direction
 DEALLOCATE(Corner_SendIndex)		! i, j, and k indices for each corner
 DEALLOCATE(Corner_RecvIndex)		! i, j, and k indices for each corner (phantom node for recieving data)
 DEALLOCATE(Z_SendIndex)				! i and j indices for each Z side 
@@ -1224,12 +1194,15 @@ DEALLOCATE(CommDataStart_phi)		! array of starting indices in the send arrays fo
 DEALLOCATE(CommDataStart_u)		! array of starting indices in the send arrays for the scalar from each communication direction
 DEALLOCATE(CommDataStart_v)		! array of starting indices in the send arrays for the scalar from each communication direction
 DEALLOCATE(CommDataStart_w)		! array of starting indices in the send arrays for the scalar from each communication direction
+DEALLOCATE(CommDataStart_node)		! array of starting indices in the send arrays for the scalar from each communication direction
 DEALLOCATE(fSize)						! array of the number of elements sent for each communication direction (distribution functions)
 DEALLOCATE(dsSize)					! array of the number of elements sent for each communication direction (density and scalar)
 DEALLOCATE(uvwSize)					! array of the number of elements sent for each communication direction (density and scalar)
+DEALLOCATE(nodeSize)					! array of the number of elements sent for each communication direction (density and scalar)
 DEALLOCATE(msgSize)					! array of the number of elements sent for each communication direction (density and scalar)
 DEALLOCATE(req)						! array of MPI send/receive requests
 DEALLOCATE(waitStat)					! array of MPI_WAITALL requests
+DEALLOCATE(SubID)
 
 ! Geometry Arrays
 DEALLOCATE(rDom0,rDom,r)			! intial and current radius (global), current radius (local)
