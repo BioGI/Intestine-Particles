@@ -40,7 +40,7 @@ CALL RANDOM_NUMBER(randno)
 
 
 R0 = 0.0001_dbl ! cm
-dR = 0.0004_dbl
+dR = 0.0010_dbl
 open(52,file='particle.dat')
 write(52,*) np
 
