@@ -461,10 +461,6 @@ DO k=1,nzSub
         !end if
         Cb_global = Cb_global + phi(i,j,k)
         Cb_numFluids = Cb_numFluids + 1_lng
-        IF (phi(i,j,k).GT.0.01) THEN
-           write(*,*) 'High phi:', i,j,k,phi(i,j,k)
-	END IF
-
       END IF
     END DO
   END DO
