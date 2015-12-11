@@ -119,13 +119,17 @@ DO k=1,nzSub
         END DO
 
 	!phi(i,j,k) = phi(i,j,k) + delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-       	!  fix spurious oscillations in moment propagation method for high Sc #s
-        IF(phi(i,j,k) .LT. 0.0_dbl) THEN
-          write(*,*) 'phi is negative'
-          STOP
-          phi(i,j,k) = 0.0_dbl
+       	!fix spurious oscillations in moment propagation method for high Sc #s
+
+        IF (phi(i,j,k).LT. -1.0e-9) THEN
+           write(*,*) 'Negative phi: ',i,j,k,(phi(i,j,k)
         END IF
-      END IF
+
+        IF (phi(i,j,k) .LT. 0.0_dbl) THEN
+!          write(*,*) 'phi is negative'
+!          STOP
+           phi(i,j,k) = 0.0_dbl
+        END IF
 
     END DO
   END DO
