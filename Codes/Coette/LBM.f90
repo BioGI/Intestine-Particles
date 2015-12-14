@@ -891,6 +891,8 @@ REAL(dbl)     		  :: c000,c010,c100,c110,c001,c011,c101,c111,csum
 REAL(dbl) 		  :: xd,yd,zd
 REAL(dbl)     		  :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
+REAL(dbl)                 :: N_d         					!Modeling parameter to extend the volume of influence around 
+REAL(dbl)                 :: R_P, Sh_P, delta_P, R_influence_P
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
@@ -905,17 +907,33 @@ DO WHILE (ASSOCIATED(current))
 !------ Copy pointer of next node
 	next => current%next 
 
-!------ Finding particle location in this processor
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-
-!------ Calculate length scale for jth particle:    delta_j = R_j/Sh_j  
-!------ Calculate effective radius:	delta_par = delta_j + R_j 
+!------ Calculate length scale for jth particle:  delta = R / Sh
+!------ Calculate effective radius: R_influence_P = R + (N_d *delta)
 !------ Note: need to convert this into Lattice units and not use the physical length units
 !------ Then compute equivalent cubic mesh length scale
-        delta_par = ((current%pardata%rp/xcf)/current%pardata%sh)+(current%pardata%rp/xcf) 
-        delta_par = ((88.0_dbl/21.0_dbl)*((delta_par)**3.0_dbl))**(1.0_dbl/3.0_dbl) 
+
+	N_d = 1.0
+        R_P  = current%pardata%rp
+	Sh_P = current%pardata%sh
+        delta_P = R_P / Sh_P
+        R_influence_P = R_P + (N_d * delta_P)
+        R_influence_P = R_influence_P/ xcf 
+
+!------ Computing equivalent cubic mesh length scale
+        R_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
+ 
+!------ Finding particle location in this processor
+	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+
+!------ Boundaries of the volume of influence of the particle
+        ax0= xp - 0.5_dbl * R_influence_P
+        ax1= xp + 0.5_dbl * R_influence_P
+        ay0= yp - 0.5_dbl * R_influence_P
+        ay1= yp + 0.5_dbl * R_influence_P
+        az0= zp - 0.5_dbl * R_influence_P
+        az1= zp + 0.5_dbl * R_influence_P
 
 !------ Finding the lattice nodes surrounding the particle
 	ix0= FLOOR(xp)
@@ -925,52 +943,44 @@ DO WHILE (ASSOCIATED(current))
 	iz0= FLOOR(zp)
 	iz1= CEILING(zp)
 
-!------ Boundaries of the volume of influence of the particle
-	ax0= xp - 0.5_dbl * delta_par
-	ax1= xp + 0.5_dbl * delta_par
-	ay0= yp - 0.5_dbl * delta_par
-	ay1= yp + 0.5_dbl * delta_par
-	az0= zp - 0.5_dbl * delta_par
-	az1= zp + 0.5_dbl * delta_par
-
 !------ Temporarily avoiding communication with other processors
 !------ Should be fixed soon
 
-	if (iz0.GT.nzSub) then
-	   iz0 = iz0-1_lng
-	elseif (iz0.LT.1_lng) then
-	   iz0 = iz0 +1_lng
-	endif
+        if (ix0.GT.nxSub) then
+           ix0 = ix0-1_lng
+        elseif (ix0.LT.1) then
+           ix0 = ix0 +1_lng
+        endif
 
-	if (ix0.GT.nxSub) then
-	   ix0 = ix0-1_lng
-	elseif (ix0.LT.1) then
-	   ix0 = ix0 +1_lng
-	endif
+        if (ix1.GT.nxSub) then
+           ix1 = ix1-1_lng
+        elseif (ix1.LT.1) then
+           ix1 = ix1 +1_lng
+        endif
 
-	if (iy0.GT.nySub) then
-	   iy0 = iy0-1_lng
-	elseif (iy0.LT.1) then
-	   iy0 = iy0 +1_lng
-	endif
+        if (iy0.GT.nySub) then
+           iy0 = iy0-1_lng
+        elseif (iy0.LT.1) then
+           iy0 = iy0 +1_lng
+        endif
 
-	if (iz1.GT.nzSub) then
-	   iz1 = iz1-1_lng
-	elseif (iz1.LT.1_lng) then
-	   iz1 = iz1 +1_lng
-	endif
+        if (iy1.GT.nySub) then
+           iy1 = iy1-1_lng
+        elseif (iy1.LT.1) then
+           iy1 = iy1 +1_lng
+        endif
 
-	if (ix1.GT.nxSub) then
-	   ix1 = ix1-1_lng
-	elseif (ix1.LT.1) then
-	   ix1 = ix1 +1_lng
-	endif
+        if (iz0.GT.nzSub) then
+           iz0 = iz0-1_lng
+        elseif (iz0.LT.1_lng) then
+           iz0 = iz0 +1_lng
+        endif
 
-	if (iy1.GT.nySub) then
-	   iy1 = iy1-1_lng
-	elseif (iy1.LT.1) then
-	   iy1 = iy1 +1_lng
-	endif
+        if (iz1.GT.nzSub) then
+           iz1 = iz1-1_lng
+        elseif (iz1.LT.1_lng) then
+           iz1 = iz1 +1_lng
+        endif
 
 !------ Finding the overlapping of particle effetive colume with the lattice nodes
 
@@ -1244,7 +1254,7 @@ IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first ste
    CALL Interp_bulkconc 						! interpolate final bulk_concentration after the final position is ascertained.
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
-   CALL Interp_ParToNodes_Conc 						! distributes released drug concentration to neightbouring nodes 
+   CALL Interp_ParToNodes_Conc_New 						! distributes released drug concentration to neightbouring nodes 
 									!drug molecules released by the particle at this new position
 ENDIF
 
