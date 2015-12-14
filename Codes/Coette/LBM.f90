@@ -655,10 +655,8 @@ END SUBROUTINE Compute_shear
 
 
 
-
-
 !------------------------------------------------
-SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
+SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
 ! Called by Particle_Track (LBM.f90) to get delphi_particle
 !------------------------------------------------
 IMPLICIT NONE
@@ -677,63 +675,304 @@ zcf3=xcf*ycf*zcf
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
+        next => current%next ! copy pointer of next node
 
-	!write(*,*) current%pardata%parid,iter,mySub,current%pardata%new_part,xp,iMin,yp,jMin,zp,kMin
+        !write(*,*) current%pardata%parid,iter,mySub,current%pardata%new_part,xp,iMin,yp,jMin,zp,kMin
 
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
         delta_par = ((current%pardata%rp/xcf)/current%pardata%sh)+(current%pardata%rp/xcf) ! calculate length scale delta_j = R_j/Sh_j for jth particle and effective radius delta_par = delta_j + R_j (note: need to convert this into Lattice units and not use the physical length units)
         delta_par = ((88.0_dbl/21.0_dbl)*((delta_par)**3.0_dbl))**(1.0_dbl/3.0_dbl) ! compute equivalent cubic mesh length scale
         !delta_par = delta_mesh
 
-	ix0=FLOOR(xp)
-	ix1=CEILING(xp)
-	iy0=FLOOR(yp)
-	iy1=CEILING(yp)
-	iz0=FLOOR(zp)
-	iz1=CEILING(zp)
+        ix0=FLOOR(xp)
+        ix1=CEILING(xp)
+        iy0=FLOOR(yp)
+        iy1=CEILING(yp)
+        iz0=FLOOR(zp)
+        iz1=CEILING(zp)
 
 ! Boundaries of the volume of influence of the particle
-	ax0 = xp - 0.5_dbl*delta_par
-	ax1 = xp + 0.5_dbl*delta_par
-	ay0 = yp - 0.5_dbl*delta_par
-	ay1 = yp + 0.5_dbl*delta_par
-	az0 = zp - 0.5_dbl*delta_par
-	az1 = zp + 0.5_dbl*delta_par
+        ax0 = xp - 0.5_dbl*delta_par
+        ax1 = xp + 0.5_dbl*delta_par
+        ay0 = yp - 0.5_dbl*delta_par
+        ay1 = yp + 0.5_dbl*delta_par
+        az0 = zp - 0.5_dbl*delta_par
+        az1 = zp + 0.5_dbl*delta_par
+
+        if (iz0.GT.nzSub) then
+                iz0 = iz0-1_lng
+        elseif (iz0.LT.1_lng) then
+                iz0 = iz0 +1_lng
+        endif
+        if (ix0.GT.nxSub) then
+                ix0 = ix0-1_lng
+        elseif (ix0.LT.1) then
+                ix0 = ix0 +1_lng
+        endif
+        if (iy0.GT.nySub) then
+                iy0 = iy0-1_lng
+        elseif (iy0.LT.1) then
+                iy0 = iy0 +1_lng
+        endif
+        if (iz1.GT.nzSub) then
+                iz1 = iz1-1_lng
+        elseif (iz1.LT.1_lng) then
+                iz1 = iz1 +1_lng
+        endif
+        if (ix1.GT.nxSub) then
+                ix1 = ix1-1_lng
+        elseif (ix1.LT.1) then
+                ix1 = ix1 +1_lng
+        endif
+        if (iy1.GT.nySub) then
+                iy1 = iy1-1_lng
+        elseif (iy1.LT.1) then
+                iy1 = iy1 +1_lng
+        endif
+
+       bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c110 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
+        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c111 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
+        csum = c000 + c010 + c100 + c110 + c001 + c011 + c101 + c111
+
+        Nbj = 0.0_dbl ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+        Veff = 0.0_dbl ! initialize Veff - the eff. volume of each particle
+        bulkconc = Cb_global
+        !bulkconc = current%pardata%bulk_conc
+        ! Need to solve an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
+        CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
+                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
+        current%pardata%Veff = Veff ! store Veff in particle record
+        current%pardata%Nbj = Nbj       ! store Nbj in particle record
+        Nbj = Nbj/zcf3 ! convert Nbj (number of moles) to a conc by division with cell volume (dimensional)
+
+        IF (csum.EQ.0.0) THEN ! csum = 0 then dump the drug molecules to the nearest fluid node
+                delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+                tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
+                tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
+                tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
+
+        ELSE ! if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
+
+                c000 = c000/csum
+                c010 = c010/csum
+                c100 = c100/csum
+                c110 = c110/csum
+                c001 = c001/csum
+                c011 = c011/csum
+                c101 = c101/csum
+                c111 = c111/csum
+
+                !delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+
+     delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
+                delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
+                delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
+                delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
+                delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
+                delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
+                delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
+                delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
+
+                tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
+                tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
+                tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
+                tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
+                tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
+                tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
+                tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
+                tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
+
+                tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
+                tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
+                tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
+                tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
+                tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
+                tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
+                tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
+                tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
+
+                tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
+                tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
+                tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
+                tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
+                tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
+                tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
+                tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
+                tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
+
+        END IF
+
+
+        ! point to next node in the list
+        current => next
+ENDDO
+
+!------------------------------------------------
+END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
+!------------------------------------------------
+
+
+
+
+
+
+!------------------------------------------------
+SUBROUTINE Interp_ParToNodes_Conc_New 
+!------------------------------------------------
+!--- Interpolate Particle concentration release to node locations 
+!--- Called by Particle_Track (LBM.f90) to get delphi_particle
+
+IMPLICIT NONE
+INTEGER(lng)  		  :: i
+INTEGER(lng)		  :: ix0,ix1,iy0,iy1,iz0,iz1
+REAL(dbl)  		  :: ax0,ax1,ay0,ay1,az0,az1
+REAL(dbl) 		  :: bx0,bx1,by0,by1,bz0,bz1
+REAL(dbl)    		  :: c00,c01,c10,c11,c0,c1,c
+REAL(dbl)     		  :: c000,c010,c100,c110,c001,c011,c101,c111,csum
+REAL(dbl) 		  :: xd,yd,zd
+REAL(dbl)     		  :: xp,yp,zp
+REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
+TYPE(ParRecord), POINTER  :: current
+TYPE(ParRecord), POINTER  :: next
+
+
+delta_mesh = 1.0_dbl
+zcf3=xcf*ycf*zcf
+
+current => ParListHead%next
+
+DO WHILE (ASSOCIATED(current))
+
+!------ Copy pointer of next node
+	next => current%next 
+
+!------ Finding particle location in this processor
+	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+
+!------ Calculate length scale for jth particle:    delta_j = R_j/Sh_j  
+!------ Calculate effective radius:	delta_par = delta_j + R_j 
+!------ Note: need to convert this into Lattice units and not use the physical length units
+!------ Then compute equivalent cubic mesh length scale
+        delta_par = ((current%pardata%rp/xcf)/current%pardata%sh)+(current%pardata%rp/xcf) 
+        delta_par = ((88.0_dbl/21.0_dbl)*((delta_par)**3.0_dbl))**(1.0_dbl/3.0_dbl) 
+
+!------ Finding the lattice nodes surrounding the particle
+	ix0= FLOOR(xp)
+	ix1= CEILING(xp)
+	iy0= FLOOR(yp)
+	iy1= CEILING(yp)
+	iz0= FLOOR(zp)
+	iz1= CEILING(zp)
+
+!------ Boundaries of the volume of influence of the particle
+	ax0= xp - 0.5_dbl * delta_par
+	ax1= xp + 0.5_dbl * delta_par
+	ay0= yp - 0.5_dbl * delta_par
+	ay1= yp + 0.5_dbl * delta_par
+	az0= zp - 0.5_dbl * delta_par
+	az1= zp + 0.5_dbl * delta_par
+
+!------ Temporarily avoiding communication with other processors
+!------ Should be fixed soon
 
 	if (iz0.GT.nzSub) then
-		iz0 = iz0-1_lng
+	   iz0 = iz0-1_lng
 	elseif (iz0.LT.1_lng) then
-		iz0 = iz0 +1_lng
+	   iz0 = iz0 +1_lng
 	endif
+
 	if (ix0.GT.nxSub) then
-		ix0 = ix0-1_lng
+	   ix0 = ix0-1_lng
 	elseif (ix0.LT.1) then
-		ix0 = ix0 +1_lng
+	   ix0 = ix0 +1_lng
 	endif
+
 	if (iy0.GT.nySub) then
-		iy0 = iy0-1_lng
+	   iy0 = iy0-1_lng
 	elseif (iy0.LT.1) then
-		iy0 = iy0 +1_lng
+	   iy0 = iy0 +1_lng
 	endif
+
 	if (iz1.GT.nzSub) then
-		iz1 = iz1-1_lng
+	   iz1 = iz1-1_lng
 	elseif (iz1.LT.1_lng) then
-		iz1 = iz1 +1_lng
+	   iz1 = iz1 +1_lng
 	endif
+
 	if (ix1.GT.nxSub) then
-		ix1 = ix1-1_lng
+	   ix1 = ix1-1_lng
 	elseif (ix1.LT.1) then
-		ix1 = ix1 +1_lng
+	   ix1 = ix1 +1_lng
 	endif
+
 	if (iy1.GT.nySub) then
-		iy1 = iy1-1_lng
+	   iy1 = iy1-1_lng
 	elseif (iy1.LT.1) then
-		iy1 = iy1 +1_lng
+	   iy1 = iy1 +1_lng
 	endif
+
+!------ Finding the overlapping of particle effetive colume with the lattice nodes
 
 	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
 	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
@@ -742,6 +981,7 @@ DO WHILE (ASSOCIATED(current))
 	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
 	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
 	c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
 	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
 	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
 	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
@@ -749,6 +989,7 @@ DO WHILE (ASSOCIATED(current))
 	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
 	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
 	c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
 	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
 	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
 	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
@@ -756,6 +997,7 @@ DO WHILE (ASSOCIATED(current))
 	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
 	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
 	c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
 	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
 	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
 	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
@@ -771,6 +1013,7 @@ DO WHILE (ASSOCIATED(current))
 	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
 	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
 	c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
 	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
 	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
 	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
@@ -778,6 +1021,7 @@ DO WHILE (ASSOCIATED(current))
 	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
 	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
 	c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
 	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
 	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
 	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
@@ -785,6 +1029,7 @@ DO WHILE (ASSOCIATED(current))
 	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
 	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
 	c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+
 	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
 	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
 	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
@@ -795,81 +1040,83 @@ DO WHILE (ASSOCIATED(current))
 
         csum = c000 + c010 + c100 + c110 + c001 + c011 + c101 + c111
 
-	Nbj = 0.0_dbl ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-	Veff = 0.0_dbl ! initialize Veff - the eff. volume of each particle
-	bulkconc = Cb_global
-	!bulkconc = current%pardata%bulk_conc
-	! Need to solve an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
+!------ Computing NB_j and Veff for each particle
+
+	Nbj = 0.0_dbl 								! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+	Veff = 0.0_dbl 								! initialize Veff - the eff. volume of each particle
+	bulkconc = Cb_global  							! It should be changed to bulkconc = current%pardata%bulk_conc
+
+!------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
 	CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
 		      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-	current%pardata%Veff = Veff ! store Veff in particle record
-	current%pardata%Nbj = Nbj	! store Nbj in particle record
-	Nbj = Nbj/zcf3 ! convert Nbj (number of moles) to a conc by division with cell volume (dimensional) 
+	current%pardata%Veff = Veff 						! store Veff in particle record
+	current%pardata%Nbj = Nbj						! store Nbj in particle record
+	Nbj = Nbj/zcf3 								! convert Nbj (number of moles) to a conc by division with cell volume (dimensional) 
 
-        IF (csum.EQ.0.0) THEN ! csum = 0 then dump the drug molecules to the nearest fluid node
-	        delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-		tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
-		tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
-		tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
+!------ csum = 0 then dump the drug molecules to the nearest fluid node
+        IF (csum.EQ.0.0) THEN
+           delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+           tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
+	   tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
+	   tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
 
-        ELSE ! if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
+!------ if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
+        ELSE
+           c000 = c000/csum
+           c010 = c010/csum
+           c100 = c100/csum
+           c110 = c110/csum
+           c001 = c001/csum
+           c011 = c011/csum
+           c101 = c101/csum
+           c111 = c111/csum
 
-                c000 = c000/csum
-        	c010 = c010/csum
-        	c100 = c100/csum
-        	c110 = c110/csum
-        	c001 = c001/csum
-        	c011 = c011/csum
-        	c101 = c101/csum
-        	c111 = c111/csum
+!--------- Computing particle release contribution to scalar field at each lattice node                
+           delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
+           delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
+           delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
+           delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
+           delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
+           delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
+           delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
+           delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
 
-        	!delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-                
-        	delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
-        	delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
-        	delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
-        	delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
-        	delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
-        	delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
-        	delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
-        	delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
+!--------- Computing subgrid contribution at each lattice node
+           tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
+	   tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
+	   tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
+           tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
+           tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
+           tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
+           tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
+           tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
 
-        	tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
-		tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
-		tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
-        	tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
-        	tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
-        	tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
-        	tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
-        	tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
-
-        	tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
-        	tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
-        	tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
-        	tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
-        	tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
-        	tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
-        	tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
-        	tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
-
-        	tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
-        	tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
-        	tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
-        	tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
-        	tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
-        	tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
-        	tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
-        	tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
-
+           tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
+           tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
+           tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
+           tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
+           tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
+           tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
+           tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
+           tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
+   
+           tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
+           tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
+           tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
+           tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
+           tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
+           tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
+           tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
+           tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
         END IF
 
 
-	! point to next node in the list
+!------ point to next node in the list
 	current => next
 ENDDO
 
 !------------------------------------------------
-END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
+END SUBROUTINE Interp_ParToNodes_Conc_New ! Interpolate Particle concentration release to node locations 
 !------------------------------------------------
 
 
@@ -944,145 +1191,121 @@ END SUBROUTINE Find_Root
 SUBROUTINE Particle_Track
 !------------------------------------------------
 IMPLICIT NONE
-INTEGER(lng)   :: i,ipartition,ii,jj,kk
-REAL(dbl)      :: xpold(1:np),ypold(1:np),zpold(1:np) ! old particle coordinates (working coordinates are stored in xp,yp,zp)
-!REAL(dbl)      :: xp(1:np),yp(1:np),zp(1:np) 	      ! working particle coordinates (working coordinates are stored in xp,yp,zp)
-!REAL(dbl)      :: xpnew(1:np),ypnew(1:np),zpnew(1:np) ! new particle coordinates (working coordinates are stored in xp,yp,zp)
-REAL(dbl)      :: upold(1:np),vpold(1:np),wpold(1:np) ! old particle velocity components (new vales are stored in up, vp, wp)
-!REAL(dbl)      :: up(1:np),vp(1:np),wp(1:np) 	      ! working particle velocity (working coordinates are stored in xp,yp,zp)
+INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
+REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np) 	! old particle coordinates (working coordinates are stored in xp,yp,zp)
+REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 	! old particle velocity components (new vales are stored in up, vp, wp)
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-ParticleTransfer = .FALSE. ! AT this time we do not know if any particles need to be transferred.
-delphi_particle = 0.0_dbl ! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
+ParticleTransfer = .FALSE. 						! AT this time we do not know if any particles need to be transferred.
+delphi_particle = 0.0_dbl 						! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
+
 tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
 tausgs_particle_z = 0.0_dbl
 	
-IF (iter.GT.iter0+0_lng) THEN ! IF condition ensures that at the first step, the only part of this subroutine that operates is computing the partitions the particles belong to without releasing any drug.  
-! Second order interpolation in time
-!Backup particle data from previous time step
-! Using a linked list of particle records
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
+IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first step, the only part of this subroutine that operates is computing the partitions the particles belong to without releasing any drug.  
 
-	current%pardata%xpold = current%pardata%xp
-	current%pardata%ypold = current%pardata%yp
-	current%pardata%zpold = current%pardata%zp
+!--Second order interpolation in time
+!--Backup particle data from previous time step using a linked list of particle records
+
+   current => ParListHead%next
+   DO WHILE (ASSOCIATED(current))
+      next => current%next 						! copy pointer of next node
+
+      current%pardata%xpold = current%pardata%xp
+      current%pardata%ypold = current%pardata%yp
+      current%pardata%zpold = current%pardata%zp
 	
-	current%pardata%upold = current%pardata%up
-	current%pardata%vpold = current%pardata%vp
-	current%pardata%wpold = current%pardata%wp
+      current%pardata%upold = current%pardata%up
+      current%pardata%vpold = current%pardata%vp
+      current%pardata%wpold = current%pardata%wp
 	
-	current%pardata%xp=current%pardata%xpold+current%pardata%up
-	current%pardata%yp=current%pardata%ypold+current%pardata%vp
-	current%pardata%zp=current%pardata%zpold+current%pardata%wp
+      current%pardata%xp=current%pardata%xpold+current%pardata%up
+      current%pardata%yp=current%pardata%ypold+current%pardata%vp
+      current%pardata%zp=current%pardata%zpold+current%pardata%wp
 	
-	!IF(current%pardata%zp.GE.REAL(nz,dbl)) THEN
-	!	current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
-	!ENDIF
+      current => next
+   ENDDO
 
-	!yp(i)=Cj ! test
+   CALL Interp_Parvel
 
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-CALL Interp_Parvel
-! Using a linked list of particle records
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
+!--Using a linked list of particle records
+   current => ParListHead%next
+   DO WHILE (ASSOCIATED(current))
+      next => current%next 						! copy pointer of next node
+      current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
+      current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
+      current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+      current => next
+   ENDDO
 
-	current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
-	current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
-	current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
-	!xpnew(i)=current%pardata%xp
-	!ypnew(i)=current%pardata%yp
-	!zpnew(i)=current%pardata%zp
-
-	!write(*,*) current%parid
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-
-!IF (ASSOCIATED(ParListHead%next)) THEN
-!	write(*,*) 'In Particle_Track','iter= ',iter,'SUBID =',mySub,'ParID =',ParListHead%next%pardata%parid,'wp =',ParListHead%next%pardata%wp*vcf,'Transfer FLAG =',ParticleTransfer,ParListHead%next%pardata%cur_part,ParListHead%next%pardata%new_part
-!END IF
-
-CALL Interp_Parvel ! interpolate final particle velocities after the final position is ascertained. 
-CALL Interp_bulkconc ! interpolate final bulk_concentration after the final position is ascertained.
-CALL Update_Sh ! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
-!delphi_particle = 0.0_dbl ! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
-CALL Calc_Scalar_Release ! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
-CALL Interp_ParToNodes_Conc ! distributes released drug concentration to neightbouring nodes 
-!drug molecules released by the particle at this new position
+   CALL Interp_Parvel 							! interpolate final particle velocities after the final position is ascertained. 
+   CALL Interp_bulkconc 						! interpolate final bulk_concentration after the final position is ascertained.
+   CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
+   CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
+   CALL Interp_ParToNodes_Conc 						! distributes released drug concentration to neightbouring nodes 
+									!drug molecules released by the particle at this new position
 ENDIF
 
 
-! Now update tausgs only for those cells that have non-zero values of tausgs
+!---- Now update tausgs only for those cells that have non-zero values of tausgs
 DO kk=0,nzSub+1
-        DO jj=0,nySub+1
-                DO ii=0,nxSub+1
-			if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
-                        	tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
-			endif
-			if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
-                        	tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
-			endif
-			if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
-                        	tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
-			endif
-                ENDDO
-        ENDDO
+   DO jj=0,nySub+1
+      DO ii=0,nxSub+1
+         if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
+            tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
+	 endif
+	 if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
+            tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
+	 endif
+	 if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
+            tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
+	 endif
+      ENDDO
+   ENDDO
 ENDDO
 
 
 
-!IF (myid .EQ. master) THEN
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	next => current%next ! copy pointer of next node
 	
-	! Wrappign around in z-direction for periodic BC in z
-	IF(current%pardata%zp.GE.REAL(nz,dbl)) THEN
-		current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
+	!------- Wrappign around in z-direction for periodic BC in z
+	IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
+	   current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
 	ENDIF
-	IF(current%pardata%zp.LE.0.0_dbl) THEN
-		current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
-	ENDIF
-
-	! Wrappign around in y-direction for periodic BC in y
-	IF(current%pardata%yp.GE.REAL(ny,dbl)) THEN
-		current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
-	ENDIF
-	IF(current%pardata%yp.LT.1.0_dbl) THEN
-		current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
+	IF (current%pardata%zp.LE.0.0_dbl) THEN
+	   current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
 	ENDIF
 
+	!------- Wrappign around in y-direction for periodic BC in y
+	IF (current%pardata%yp.GE.REAL(ny,dbl)) THEN
+	   current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
+	ENDIF
+	IF (current%pardata%yp.LT.1.0_dbl) THEN
+	   current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
+	ENDIF
 
-	! Estimate to which partition the updated position belongs to.
-	!ParticleTransfer = .FALSE.
+
+	!------- Estimate to which partition the updated position belongs to.
 	DO ipartition = 1_lng,NumSubsTotal 
-
-
-		IF ((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-		(current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-		(current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-		(current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-		(current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-		(current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
-
-			current%pardata%new_part = ipartition
-		END IF
-                !write(*,*) ipartition,kMinDomain(ipartition),kMaxDomain(ipartition)
+           IF ((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+	      (current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	      (current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	      (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	      (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	      (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+              
+              current%pardata%new_part = ipartition
+	    END IF
+            !write(*,*) ipartition,kMinDomain(ipartition),kMaxDomain(ipartition)
 	END DO
 	
 
 	IF ((.NOT.ParticleTransfer).AND.(current%pardata%new_part .NE. current%pardata%cur_part)) THEN
-		ParticleTransfer = .TRUE.
+	   ParticleTransfer = .TRUE.
 	END IF
 	
 	
@@ -1127,12 +1350,11 @@ DO WHILE (ASSOCIATED(current))
       open(81,file='particle2-history.dat',position='append')
       write(81,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(81)
-	END SELECT
-	! point to next node in the list
-	current => next
-	!write(*,*) i
+     
+      END SELECT
+	
+      current => next   				! point to next node in the list
 ENDDO
-!ENDIF 
 
 !------------------------------------------------
 END SUBROUTINE Particle_Track
