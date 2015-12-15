@@ -891,13 +891,14 @@ REAL(dbl)     		  :: c000,c010,c100,c110,c001,c011,c101,c111,csum
 REAL(dbl) 		  :: xd,yd,zd
 REAL(dbl)     		  :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)                 :: N_d         		! Modeling parameter to extend the volume of influence around 
+REAL(dbl)                 :: N_d         				! Modeling parameter to extend the volume of influence around 
 REAL(dbl)                 :: R_P, Sh_P, delta_P
 REAL(dbl)                 :: R_influence_P, L_influence_P
-REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z
-REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z
-REAL(dbL),DIMENSION(2)    :: LN_x,  LN_y,  LN_z
-REAL(dbl),DIMENSION(2,2,2):: Overlap
+REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z 			! Volume of Influence's Borders
+REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
+INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
+INTEGER  ,DIMENSION(2)    :: NEP_x, NEP_y, NEP_z                        ! Lattice Nodes Surronding the particle
+REAL(dbl),DIMENSION(2,2,2):: Overlap					
 REAL(dbl)		  :: Overlap_sum
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
@@ -947,6 +948,34 @@ DO WHILE (ASSOCIATED(current))
         LN_y(2)= CEILING(yp)
         LN_z(1)= FLOOR(zp)
         LN_z(2)= CEILING(zp)
+
+!------ NEW: Finding the lattice "Nodes Effected by Particle" 
+        NEP_x(1)= FLOOR(VIB_x(1))
+        NEP_x(2)= CEILING(VIB_x(2))
+        NEP_y(1)= FLOOR(VIB_y(1))
+        NEP_y(2)= CEILING(VIB_y(2))
+        NEP_z(1)= FLOOR(VIB_z(1))
+        NEP_z(2)= CEILING(VIB_z(2))
+
+!------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
+        Overlap_sum = 0.0_dbl
+        DO i= NEP_x(1),NEP_x(2) 
+           DO j= NEP_y(1),NEP_y(2)
+              DO k= NEP_z(1),NEP_z(2)
+                 NVB_x(1) = REAL(LN_x(i),dbl) - 0.5_dbl*delta_mesh
+                 NVB_x(2) = REAL(LN_x(i),dbl) + 0.5_dbl*delta_mesh
+                 NVB_y(1) = REAL(LN_y(j),dbl) - 0.5_dbl*delta_mesh
+                 NVB_y(2) = REAL(LN_y(j),dbl) + 0.5_dbl*delta_mesh
+                 NVB_z(1) = REAL(LN_z(k),dbl) - 0.5_dbl*delta_mesh
+                 NVB_z(2) = REAL(LN_z(k),dbl) + 0.5_dbl*delta_mesh
+                 Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
+                                  MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
+                                  MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
+                 Overlap_sum= Overlap_sum + Overlap(i,j,k)
+              END DO
+           END DO
+        END DO
+
 
 !------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
         Overlap_sum = 0.0_dbl
