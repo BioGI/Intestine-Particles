@@ -882,7 +882,7 @@ SUBROUTINE Interp_ParToNodes_Conc_New
 !--- Called by Particle_Track (LBM.f90) to get delphi_particle
 
 IMPLICIT NONE
-INTEGER(lng)  		  :: i
+INTEGER(lng)  		  :: i,j,k
 INTEGER(lng)		  :: ix0,ix1,iy0,iy1,iz0,iz1
 REAL(dbl)  		  :: ax0,ax1,ay0,ay1,az0,az1
 REAL(dbl) 		  :: bx0,bx1,by0,by1,bz0,bz1
@@ -894,6 +894,11 @@ REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
 REAL(dbl)                 :: N_d         		! Modeling parameter to extend the volume of influence around 
 REAL(dbl)                 :: R_P, Sh_P, delta_P
 REAL(dbl)                 :: R_influence_P, L_influence_P
+REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z
+REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z
+REAL(dbL),DIMENSION(2)    :: LN_x,  LN_y,  LN_z
+REAL(dbl),DIMENSION(2,2,2):: Overlap
+REAL(dbl)		  :: Overlap_sum
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
@@ -926,6 +931,41 @@ DO WHILE (ASSOCIATED(current))
 	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
 	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
 	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+
+!------ NEW: Volume of Influence Border (VIB) for this particle
+        VIB_x(1)= xp - 0.5_dbl * L_influence_P
+        VIB_x(2)= xp + 0.5_dbl * L_influence_P
+        VIB_y(1)= yp - 0.5_dbl * L_influence_P
+        VIB_y(2)= yp + 0.5_dbl * L_influence_P
+        VIB_z(1)= zp - 0.5_dbl * L_influence_P
+        VIB_z(2)= zp + 0.5_dbl * L_influence_P
+
+!------ NEW: Finding the lattice nodes surrounding the particle
+        LN_x(1)= FLOOR(xp)
+        LN_x(2)= CEILING(xp)
+        LN_y(1)= FLOOR(yp)
+        LN_y(2)= CEILING(yp)
+        LN_z(1)= FLOOR(zp)
+        LN_z(2)= CEILING(zp)
+
+!------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
+        Overlap_sum = 0.0_dbl
+        DO i= 0,1
+           DO j= 0,1
+              DO k= 0,1
+                 NVB_x(1) = REAL(LN_x(1),dbl) - 0.5_dbl*delta_mesh
+                 NVB_x(2) = REAL(LN_x(2),dbl) + 0.5_dbl*delta_mesh
+                 NVB_y(1) = REAL(LN_y(1),dbl) - 0.5_dbl*delta_mesh
+                 NVB_y(2) = REAL(LN_y(2),dbl) + 0.5_dbl*delta_mesh
+                 NVB_z(1) = REAL(LN_z(1),dbl) - 0.5_dbl*delta_mesh
+                 NVB_z(2) = REAL(LN_z(2),dbl) + 0.5_dbl*delta_mesh
+                 Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
+			          MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &	
+			          MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
+                 Overlap_sum= Overlap_sum + Overlap(i,j,k)
+              END DO
+	   END DO  
+        END DO
 
 !------ Boundaries of the volume of influence of this particle
         ax0= xp - 0.5_dbl * L_influence_P
