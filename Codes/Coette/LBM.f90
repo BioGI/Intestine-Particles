@@ -962,12 +962,12 @@ DO WHILE (ASSOCIATED(current))
         DO i= NEP_x(1),NEP_x(2) 
            DO j= NEP_y(1),NEP_y(2)
               DO k= NEP_z(1),NEP_z(2)
-                 NVB_x(1) = REAL(LN_x(i),dbl) - 0.5_dbl*delta_mesh
-                 NVB_x(2) = REAL(LN_x(i),dbl) + 0.5_dbl*delta_mesh
-                 NVB_y(1) = REAL(LN_y(j),dbl) - 0.5_dbl*delta_mesh
-                 NVB_y(2) = REAL(LN_y(j),dbl) + 0.5_dbl*delta_mesh
-                 NVB_z(1) = REAL(LN_z(k),dbl) - 0.5_dbl*delta_mesh
-                 NVB_z(2) = REAL(LN_z(k),dbl) + 0.5_dbl*delta_mesh
+                 NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
+                 NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
+                 NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
+                 NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
+                 NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
+                 NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
                  Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
                                   MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
                                   MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
@@ -976,161 +976,84 @@ DO WHILE (ASSOCIATED(current))
            END DO
         END DO
 
-        Overlap = Overlap/Overlap_sum
+!------ Computing particle release contribution to scalar field at each lattice node
+        DO i= NEP_x(1),NEP_x(2)
+           DO j= NEP_y(1),NEP_y(2)
+              DO k= NEP_z(1),NEP_z(2)
+                 delphi_particle(i,j,k) = delphi_particle(i,j,k) + current%pardata%delNBbyCV* (Overlap(i,j,k)/Overlap_sum)
+              END DO
+           END DO
+        END DO
 
-!------ Boundaries of the volume of influence of this particle
-        ax0= xp - 0.5_dbl * L_influence_P
-        ax1= xp + 0.5_dbl * L_influence_P
-        ay0= yp - 0.5_dbl * L_influence_P
-        ay1= yp + 0.5_dbl * L_influence_P
-        az0= zp - 0.5_dbl * L_influence_P
-        az1= zp + 0.5_dbl * L_influence_P
-
-!------ Finding the lattice nodes surrounding the particle
-	ix0= FLOOR(xp)
-	ix1= CEILING(xp)
-	iy0= FLOOR(yp)
-	iy1= CEILING(yp)
-	iz0= FLOOR(zp)
-	iz1= CEILING(zp)
-
-!------ Finding the overlapping of particle effetive colume with the lattice nodes
-
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c110 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c111 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-        csum = c000 + c010 + c100 + c110 + c001 + c011 + c101 + c111
 
 !------ Computing NB_j and Veff for each particle
-
-	Nbj = 0.0_dbl 								! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-	Veff = 0.0_dbl 								! initialize Veff - the eff. volume of each particle
-	bulkconc = Cb_global  							! It should be changed to bulkconc = current%pardata%bulk_conc
+!	Nbj = 0.0_dbl 								! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+!	Veff = 0.0_dbl 								! initialize Veff - the eff. volume of each particle
+!	bulkconc = Cb_global  							! It should be changed to bulkconc = current%pardata%bulk_conc
 
 !------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-	CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
-		      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-	current%pardata%Veff = Veff 						! store Veff in particle record
-	current%pardata%Nbj = Nbj						! store Nbj in particle record
-	Nbj = Nbj/zcf3 								! convert Nbj (number of moles) to a conc by division with cell volume (dimensional) 
+!	CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
+!		      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
+!	current%pardata%Veff = Veff 						! store Veff in particle record
+!	current%pardata%Nbj = Nbj						! store Nbj in particle record
+!	Nbj = Nbj/zcf3 								! convert Nbj (number of moles) to a conc by division with cell volume (dimensional) 
 
 !------ csum = 0 then dump the drug molecules to the nearest fluid node
-        IF (csum.EQ.0.0) THEN
-           delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-           tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
-	   tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
-	   tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
+!        IF (csum.EQ.0.0) THEN
+!           delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+!           tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
+!	   tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
+!	   tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
 
 !------ if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
-        ELSE
-           c000 = c000/csum
-           c010 = c010/csum
-           c100 = c100/csum
-           c110 = c110/csum
-           c001 = c001/csum
-           c011 = c011/csum
-           c101 = c101/csum
-           c111 = c111/csum
+!        ELSE
+!           c000 = c000/csum
+!           c010 = c010/csum
+!           c100 = c100/csum
+!           c110 = c110/csum
+!           c001 = c001/csum
+!           c011 = c011/csum
+!           c101 = c101/csum
+!           c111 = c111/csum
 
 !--------- Computing particle release contribution to scalar field at each lattice node                
-           delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
-           delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
-           delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
-           delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
-           delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
-           delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
-           delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
-           delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
+!           delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
+!           delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
+!           delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
+!           delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
+!           delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
+!           delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
+!           delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
+!           delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
 
 !--------- Computing subgrid contribution at each lattice node
-           tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
-	   tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
-	   tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
-           tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
-           tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
-           tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
-           tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
-           tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
-
-           tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
-           tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
-           tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
-           tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
-           tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
-           tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
-           tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
-           tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
-   
-           tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
-           tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
-           tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
-           tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
-           tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
-           tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
-           tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
-           tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
-        END IF
+!           tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
+!	   tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
+!	   tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
+!          tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
+!           tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
+!           tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
+!           tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
+!           tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
+!
+!          tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
+!           tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
+!          tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
+!           tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
+!           tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
+!           tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
+!           tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
+!           tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
+!   
+!           tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
+!           tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
+!           tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
+!           tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
+!           tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
+!           tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
+!           tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
+!           tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
+!        END IF
 
 
 !------ point to next node in the list
