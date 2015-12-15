@@ -950,15 +950,15 @@ DO WHILE (ASSOCIATED(current))
 
 !------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
         Overlap_sum = 0.0_dbl
-        DO i= 0,1
-           DO j= 0,1
-              DO k= 0,1
-                 NVB_x(1) = REAL(LN_x(1),dbl) - 0.5_dbl*delta_mesh
-                 NVB_x(2) = REAL(LN_x(2),dbl) + 0.5_dbl*delta_mesh
-                 NVB_y(1) = REAL(LN_y(1),dbl) - 0.5_dbl*delta_mesh
-                 NVB_y(2) = REAL(LN_y(2),dbl) + 0.5_dbl*delta_mesh
-                 NVB_z(1) = REAL(LN_z(1),dbl) - 0.5_dbl*delta_mesh
-                 NVB_z(2) = REAL(LN_z(2),dbl) + 0.5_dbl*delta_mesh
+        DO i= 1,2
+           DO j= 1,2
+              DO k= 1,2
+                 NVB_x(1) = REAL(LN_x(i),dbl) - 0.5_dbl*delta_mesh
+                 NVB_x(2) = REAL(LN_x(i),dbl) + 0.5_dbl*delta_mesh
+                 NVB_y(1) = REAL(LN_y(j),dbl) - 0.5_dbl*delta_mesh
+                 NVB_y(2) = REAL(LN_y(j),dbl) + 0.5_dbl*delta_mesh
+                 NVB_z(1) = REAL(LN_z(k),dbl) - 0.5_dbl*delta_mesh
+                 NVB_z(2) = REAL(LN_z(k),dbl) + 0.5_dbl*delta_mesh
                  Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
 			          MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &	
 			          MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
