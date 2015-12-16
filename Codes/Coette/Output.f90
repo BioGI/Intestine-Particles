@@ -410,7 +410,24 @@ DO WHILE (ASSOCIATED(current))
 !         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (current%pardata%xp-1_lng))*xcf,((jMin - Cj) + (current%pardata%yp-1_lng))*ycf,(((kMin - 1_lng) + &
 !	 MOD(current%pardata%zp,REAL(nz,dbl))) - 0.5_dbl)*zcf, current%pardata%up*vcf, current%pardata%vp*vcf, current%pardata%wp*vcf,current%pardata%parid,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV
 
-         WRITE(160,'(6E15.5,1I9,8E15.5)') ((current%pardata%xp-xaxis))*xcf,((current%pardata%yp-yaxis))*ycf,((MOD(current%pardata%zp,REAL(nz,dbl))) - 0.5_dbl)*zcf, current%pardata%up*vcf, current%pardata%vp*vcf, current%pardata%wp*vcf,current%pardata%parid,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%Sst,current%pardata%S,current%pardata%Veff,current%pardata%Nbj
+!         WRITE(160,'(6E15.5,1I9,8E15.5)') ((current%pardata%xp-xaxis))*xcf,((current%pardata%yp-yaxis))*ycf,((MOD(current%pardata%zp,REAL(nz,dbl))) - 0.5_dbl)*zcf, current%pardata%up*vcf, current%pardata%vp*vcf, current%pardata%wp*vcf,current%pardata%parid,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%Sst,current%pardata%S,current%pardata%Veff,current%pardata%Nbj
+
+       WRITE(160,1001) 	current%pardata%xp 	  ,',',	&
+			current%pardata%yp  	  ,',',	&
+			current%pardata%zp 	  ,',',	&
+                        current%pardata%up*vcf 	  ,',',	&
+		       	current%pardata%vp*vcf 	  ,',',	&
+			current%pardata%wp*vcf 	  ,',',	&
+                        current%pardata%parid 	  ,',',	&
+			current%pardata%sh 	  ,',',	&
+			current%pardata%rp/xcf 	  ,',',	&
+			current%pardata%bulk_conc ,',', &
+			current%pardata%delNBbyCV ,',', &
+			current%pardata%Sst 	  ,',',	&
+			current%pardata%S 	  ,',',	&
+			current%pardata%Veff 	  ,',',	&
+			current%pardata%Nbj
+1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2)
 
 	! point to next node in the list
 	current => next
