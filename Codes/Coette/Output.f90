@@ -44,6 +44,12 @@ IMPLICIT NONE
 
 IF(myid .EQ. master) THEN
 
+  ! Monitoring negative phi
+   OPEN(2118,FILE='Negative-phi.dat',POSITION='APPEND')
+   WRITE(2118,'(A120)') 'VARIABLES = iter,  Number of Negative phi Nodes,  Total Sum of Negative phi,  Worst Negative phi,  Average of Negative phi'
+   CALL FLUSH(2118)
+
+
   ! Status
   OPEN(5,FILE='status.dat')										
   CALL FLUSH(5)													
@@ -93,6 +99,8 @@ SUBROUTINE CloseOutputFiles			! opens output files
 IMPLICIT NONE
 
 IF(myid .EQ. master) THEN
+  ! Monitoring negative phi
+  CLOSE(2118)
 
   ! Status
   CLOSE(5)													

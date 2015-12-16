@@ -48,15 +48,22 @@ SUBROUTINE Scalar								! calculates the evolution of scalar in the domain
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k,m,im1,jm1,km1		! index variables
-REAL(dbl) :: phiBC				! scalar contribution from boundary
-REAL(dbl) :: phiOutSurf,phiInSurf		! scalar contribution coming from and going into the boundary
-REAL(dbl) :: tausgs				! contribution form tau_sgs term from particle closure
+INTEGER(lng) :: i,j,k,m,im1,jm1,km1				! index variables
+REAL(dbl) :: phiBC						! scalar contribution from boundary
+REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
+REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
+INTEGER   :: Negative_phi_Counter				! Monitoring the negative concentration
+REAL(dbl) :: Negative_phi_Total,Negative_phi_Worst 		! Monitoring the negative concentration
 
 CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
 ! store the previous scalar values
 phiTemp = phi
+
+Negative_phi_Total = 0
+Negative_phi_Counter = 0
+Negative_phi_Worst= 0
+
 
 ! Stream the scalar
 DO k=1,nzSub
@@ -84,6 +91,9 @@ DO k=1,nzSub
           km1 = k - ez(m)
 
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
+            ! IF ( (i.eq.30) .and. (j.eq.30) .and. (k.eq.30) .and. (m.eq.0) ) THEN
+            !    write (*,*) phi(i,j,k), fplus(m,im1,jm1,km1), rho(im1,jm1,km1), wt(m), Delta, phiTemp(im1,jm1,km1)
+            ! END IF 
             phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
             !phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1) &
 	    !								     + wt(m)*Delta*phiTemp(i,j,k)
@@ -121,19 +131,23 @@ DO k=1,nzSub
 	!phi(i,j,k) = phi(i,j,k) + delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
        	!fix spurious oscillations in moment propagation method for high Sc #s
 
-        IF (phi(i,j,k).LT. -1.0) THEN
-           write(*,*) 'Negative phi: ',i,j,k,phi(i,j,k)
-        END IF
-
+!------ Monitoring the negative phi
         IF (phi(i,j,k) .LT. 0.0_dbl) THEN
-!          write(*,*) 'phi is negative'
-!          STOP
-           phi(i,j,k) = 0.0_dbl
-        END IF
+           Negative_phi_Counter = Negative_phi_Counter +1.0
+           Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) 
+           IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
+              Negative_phi_Worst = phi(i,j,k)
+           ENDIF
+	   phi(i,j,k) = 0.0_dbl
+         END IF
+
      END IF
     END DO
   END DO
 END DO
+
+! Monitorin the Negative phi issue
+write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
 
 ! Add the amount of scalar absorbed through the outer and villous surfaces
 phiAbsorbed = 	phiAbsorbedS + phiAbsorbedV																		! total amount of scalar absorbed up to current time
