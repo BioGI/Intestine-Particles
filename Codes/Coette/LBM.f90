@@ -875,9 +875,10 @@ END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration relea
 
 
 
-!------------------------------------------------
+!--------------------------------------------------------------------------------------------------
 SUBROUTINE Interp_ParToNodes_Conc_New 
-!------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+
 !--- Interpolate Particle concentration release to node locations 
 !--- Called by Particle_Track (LBM.f90) to get delphi_particle
 
@@ -898,15 +899,14 @@ REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z 			! Volume of Influence's Bord
 REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER  ,DIMENSION(2)    :: NEP_x, NEP_y, NEP_z                        ! Lattice Nodes Surronding the particle
-REAL(dbl),DIMENSION(2,2,2):: Overlap					
+REAL(dbl),DIMENSION(100,100,100):: Overlap					
 REAL(dbl)		  :: Overlap_sum
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
 
 delta_mesh = 1.0_dbl
-zcf3=xcf*ycf*zcf
-
+zcf3 = xcf*ycf*zcf
 current => ParListHead%next
 
 DO WHILE (ASSOCIATED(current))
@@ -918,7 +918,6 @@ DO WHILE (ASSOCIATED(current))
 !------ Calculate effective radius: R_influence_P = R + (N_d *delta)
 !------ Note: need to convert this into Lattice units and not use the physical length units
 !------ Then compute equivalent cubic mesh length scale
-
 	N_d = 1.0
         R_P  = current%pardata%rp
 	Sh_P = current%pardata%sh
@@ -941,14 +940,6 @@ DO WHILE (ASSOCIATED(current))
         VIB_z(1)= zp - 0.5_dbl * L_influence_P
         VIB_z(2)= zp + 0.5_dbl * L_influence_P
 
-!------ NEW: Finding the lattice nodes surrounding the particle
-        LN_x(1)= FLOOR(xp)
-        LN_x(2)= CEILING(xp)
-        LN_y(1)= FLOOR(yp)
-        LN_y(2)= CEILING(yp)
-        LN_z(1)= FLOOR(zp)
-        LN_z(2)= CEILING(zp)
-
 !------ NEW: Finding the lattice "Nodes Effected by Particle" 
         NEP_x(1)= FLOOR(VIB_x(1))
         NEP_x(2)= CEILING(VIB_x(2))
@@ -959,6 +950,8 @@ DO WHILE (ASSOCIATED(current))
 
 !------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
         Overlap_sum = 0.0_dbl
+        Overlap= 0.0
+ 
         DO i= NEP_x(1),NEP_x(2) 
            DO j= NEP_y(1),NEP_y(2)
               DO k= NEP_z(1),NEP_z(2)
@@ -976,93 +969,37 @@ DO WHILE (ASSOCIATED(current))
            END DO
         END DO
 
+!------ Computing NB_j and Veff for each particle
+        Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+        Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
+        bulkconc = Cb_global                                                    ! It should be changed to bulkconc = current%pardata%bulk_conc
+
+!------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
+        CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
+                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
+        current%pardata%Veff = Veff                                             ! store Veff in particle record
+        current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
+        Nbj = Nbj/zcf3  
+
 !------ Computing particle release contribution to scalar field at each lattice node
         DO i= NEP_x(1),NEP_x(2)
            DO j= NEP_y(1),NEP_y(2)
               DO k= NEP_z(1),NEP_z(2)
-                 delphi_particle(i,j,k) = delphi_particle(i,j,k) + current%pardata%delNBbyCV* (Overlap(i,j,k)/Overlap_sum)
+                 delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV* (Overlap(i,j,k)/Overlap_sum)
+                 tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                 tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                 tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
               END DO
            END DO
         END DO
-
-
-!------ Computing NB_j and Veff for each particle
-!	Nbj = 0.0_dbl 								! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-!	Veff = 0.0_dbl 								! initialize Veff - the eff. volume of each particle
-!	bulkconc = Cb_global  							! It should be changed to bulkconc = current%pardata%bulk_conc
-
-!------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-!	CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
-!		      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-!	current%pardata%Veff = Veff 						! store Veff in particle record
-!	current%pardata%Nbj = Nbj						! store Nbj in particle record
-!	Nbj = Nbj/zcf3 								! convert Nbj (number of moles) to a conc by division with cell volume (dimensional) 
-
-!------ csum = 0 then dump the drug molecules to the nearest fluid node
-!        IF (csum.EQ.0.0) THEN
-!           delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-!           tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
-!	   tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
-!	   tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
-
-!------ if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
-!        ELSE
-!           c000 = c000/csum
-!           c010 = c010/csum
-!           c100 = c100/csum
-!           c110 = c110/csum
-!           c001 = c001/csum
-!           c011 = c011/csum
-!           c101 = c101/csum
-!           c111 = c111/csum
-
-!--------- Computing particle release contribution to scalar field at each lattice node                
-!           delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
-!           delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
-!           delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
-!           delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
-!           delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
-!           delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
-!           delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
-!           delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
-
-!--------- Computing subgrid contribution at each lattice node
-!           tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
-!	   tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
-!	   tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
-!          tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
-!           tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
-!           tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
-!           tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
-!           tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
-!
-!          tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
-!           tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
-!          tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
-!           tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
-!           tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
-!           tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
-!           tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
-!           tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
-!   
-!           tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
-!           tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
-!           tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
-!           tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
-!           tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
-!           tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
-!           tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
-!           tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
-!        END IF
-
 
 !------ point to next node in the list
 	current => next
 ENDDO
 
-!------------------------------------------------
-END SUBROUTINE Interp_ParToNodes_Conc_New ! Interpolate Particle concentration release to node locations 
-!------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+END SUBROUTINE Interp_ParToNodes_Conc_New  		 
+!--------------------------------------------------------------------------------------------------
 
 
 
