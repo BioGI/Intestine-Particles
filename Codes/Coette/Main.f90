@@ -1,4 +1,4 @@
-!==================================================================================================
+	!==================================================================================================
 PROGRAM LBM3D	! 3D Parallelized LBM Simulation
                 ! Gino Banco (2008-2010) - original LBM method parallelization for intestine
                 ! Balaji Jayaraman (2014-2015) - Improved LBM method , particle tracking in parallel and drug release model
@@ -103,7 +103,7 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
       CALL PrintFinalRestart						! print a final set of restart files to continue if desired [MODULE: Output]
       CALL DEAllocateArrays						! clean up the memory [MODULE: Setup]
       CALL CloseOutputFiles						! closes output files [MODULE: Output.f90]
-      CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
+!     CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
       CALL MPI_TYPE_FREE(mpipartransfertype,mpierr)
       CALL MPI_FINALIZE(mpierr)						! end the MPI simulation [Intrinsic]
 
