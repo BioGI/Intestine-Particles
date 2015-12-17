@@ -81,7 +81,8 @@ CALL FLUSH(2458)
 
 ! Scalar
 OPEN(2472,FILE='scalar-'//sub//'.dat')
-WRITE(2472,'(A105)') '#VARIABLES = "iter","time", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage","phiInitial"'
+!WRITE(2472,'(A105)') '#VARIABLES = "iter","time", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage","phiInitial"'
+WRITE(2472,'(A62)') '#VARIABLES = "iter","phiDomain","phiAverage","phiInitial"'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -686,8 +687,11 @@ zcf3 = zcf*zcf*zcf
 !write(*,*) zcf3
 !WRITE(2472,'(I8,8E25.15)') iter, 4.0_dbl*phiAbsorbed*zcf3, 4.0_dbl*phiAbsorbedS*zcf3, 4.0_dbl*phiAbsorbedV*zcf3,				&
 !   (phiTotal-phiDomain)*zcf3, 4.0_dbl*phiDomain*zcf3, (phiAbsorbed+phiDomain)*zcf3, phiAverage*zcf3,phiTotal*zcf3
-WRITE(2472,'(I8,9E25.15)') iter,iter*tcf,phiAbsorbed*zcf3, phiAbsorbedS*zcf3, phiAbsorbedV*zcf3,				&
-   (phiTotal-phiDomain)*zcf3, phiDomain*zcf3, (phiAbsorbed+phiDomain)*zcf3, phiAverage*zcf3,phiTotal*zcf3
+!WRITE(2472,'(I8,9E25.15)') iter,iter*tcf,phiAbsorbed*zcf3, phiAbsorbedS*zcf3, phiAbsorbedV*zcf3,				&
+!   (phiTotal-phiDomain)*zcf3, phiDomain*zcf3, (phiAbsorbed+phiDomain)*zcf3, phiAverage*zcf3,phiTotal*zcf3
+
+
+WRITE(2472,'(I8,3E25.15)') iter, phiDomain*zcf3, phiAverage*zcf3, phiTotal*zcf3
 
 CALL FLUSH(2472)
 
