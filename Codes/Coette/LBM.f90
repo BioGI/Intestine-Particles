@@ -884,12 +884,6 @@ SUBROUTINE Interp_ParToNodes_Conc_New
 
 IMPLICIT NONE
 INTEGER(lng)  		  :: i,j,k
-INTEGER(lng)		  :: ix0,ix1,iy0,iy1,iz0,iz1
-REAL(dbl)  		  :: ax0,ax1,ay0,ay1,az0,az1
-REAL(dbl) 		  :: bx0,bx1,by0,by1,bz0,bz1
-REAL(dbl)    		  :: c00,c01,c10,c11,c0,c1,c
-REAL(dbl)     		  :: c000,c010,c100,c110,c001,c011,c101,c111,csum
-REAL(dbl) 		  :: xd,yd,zd
 REAL(dbl)     		  :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
 REAL(dbl)                 :: N_d         				! Modeling parameter to extend the volume of influence around 
