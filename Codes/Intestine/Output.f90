@@ -302,7 +302,7 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
          jj = ((jMin - 1_lng) + j)
          kk = ((kMin - 1_lng) + k)
 
-         IF (phi(i,j,k) .LT. 1.0e-10) THEN
+         IF (phi(i,j,k) .LT. 1.0e-25) THEN
             phi(i,j,k)=0.0_lng
          END IF   
 
