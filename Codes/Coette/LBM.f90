@@ -490,7 +490,7 @@ INTEGER,DIMENSION(2)   		:: NEP_x, NEP_y, NEP_z                  	! Lattice Node
 REAL(dbl)     			:: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
 REAL(dbl)  	   		:: xp,yp,zp
 REAL(dbl)			:: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)       	        :: N_d         					! Modeling parameter to extend the volume of influence around 
+REAL(dbl)       	        :: N_b         					! Modeling parameter to extend the volume of influence  
 REAL(dbl)    	        	:: R_P, Sh_P, delta_P
 REAl(dbl)               	:: R_influence_p, L_influence_p			! Parameters related to particle's volume of influence
 REAl(dbl)               	:: V_influence_P, V_eff_Ratio			! Parameters related to particle's volume of influence
@@ -516,11 +516,11 @@ DO WHILE (ASSOCIATED(current))
 !------ Calculate effective radius: R_influence_P = R + (N_d *delta)
 !------ Note: need to convert this into Lattice units and not use the physical length units
 !------ Then compute equivalent cubic mesh length scale
-	N_d = 1.0
+	N_b = 1.0
         R_P  = current%pardata%rp
 	Sh_P = current%pardata%sh
         delta_P = R_P / Sh_P
-        R_influence_P = (R_P + N_d * delta_P) / xcf
+        R_influence_P = (R_P + N_b * delta_P) / xcf
 
 !------ Computing equivalent cubic mesh length scale
         V_influence_P= (4.0_dbl/3.0_dbl) * PI * R_influence_P**3.0_dbl
@@ -533,8 +533,10 @@ DO WHILE (ASSOCIATED(current))
 	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
 
         V_eff_Ratio = V_influence_P / zcf3 
-  
-        IF (V_eff_Ratio .LE. 1.0) THEN 					! Veff is smalle than mesh volume --> Trilinear interpolation of the concentration at the location of the particle is used as C_b
+
+!------ Veff is smalle than mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
+!----------------------------------------------------------------------------------------------------------------- 
+        IF (V_eff_Ratio .LE. 1.0) THEN 					
            ix0 =FLOOR(xp)
            ix1 =CEILING(xp)
            iy0 =FLOOR(yp)
@@ -577,7 +579,8 @@ DO WHILE (ASSOCIATED(current))
            current%pardata%bulk_conc = c
 
 !------ Veff is slightly larger than mesh volume --> Volume of influence is discretized 
-!------ Concentration is interpolated on each of the descritized nodes inside volume of influence and tehir average is used for C_b
+!------ Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence 
+!------------------------------------------------------------------------------------------------------------
  	ELSE IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 64.0 ) ) THEN		
 
 !--------- NEW: Volume of Influence Border (VIB) for this particle
@@ -596,10 +599,9 @@ DO WHILE (ASSOCIATED(current))
            NEP_z(1)= FLOOR(VIB_z(1))
            NEP_z(2)= CEILING(VIB_z(2))
 
-!------ Veff is much larger than mesh volume --> Average concentration based on the all nodes inside volume of influence is used for C_b
-!------ Calculates the bulk Conc = total number of moles in volume of influence / volume of influence 
-        ELSE IF (V_eff_Ratio .GT. 1.0) THEN                             
-
+!------ Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
+!----------------------------------------------------------------------------------------------------------------------
+        ELSE IF (V_eff_Ratio .GE. 64.0) THEN                             
 
 !--------- NEW: Volume of Influence Border (VIB) for this particle
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
