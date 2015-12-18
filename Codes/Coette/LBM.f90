@@ -497,6 +497,8 @@ REAl(dbl)               	:: V_influence_P, V_eff_Ratio			! Parameters related to
 REAL(dbl)			:: Cb_Total_Veff
 REAL(dbl),DIMENSION(2)   	:: VIB_x, VIB_y, VIB_z	 			! Volume of Influence's Borders
 REAL(dbl),DIMENSION(2)    	:: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
+REAL(dbl)                       :: Delta_X, Delta_Y, Delta_Z
+REAL(dbl)                       :: x_DP, y_DP, z_DP				! Coordinates of "Discretized Point" (DP)
 REAL(dbl),DIMENSION(200,200,200):: Overlap					
 REAL(dbl)		  	:: Overlap_sum
 
@@ -526,16 +528,17 @@ DO WHILE (ASSOCIATED(current))
         V_influence_P= (4.0_dbl/3.0_dbl) * PI * R_influence_P**3.0_dbl
         L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
 
+        V_eff_Ratio = V_influence_P / zcf3 					! Ratio of the effective volume to cell size 
 
 !------ Finding particle location in this processor
 	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
 	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
 	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-        V_eff_Ratio = V_influence_P / zcf3 
 
+!----------------------------------------------------------------------------------------------------------------------
 !------ Veff is smalle than mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
-!----------------------------------------------------------------------------------------------------------------- 
+!----------------------------------------------------------------------------------------------------------------------
         IF (V_eff_Ratio .LE. 1.0) THEN 					
            ix0 =FLOOR(xp)
            ix1 =CEILING(xp)
@@ -578,9 +581,10 @@ DO WHILE (ASSOCIATED(current))
        
            current%pardata%bulk_conc = c
 
+!----------------------------------------------------------------------------------------------------------------------
 !------ Veff is slightly larger than mesh volume --> Volume of influence is discretized 
 !------ Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence 
-!------------------------------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------------------------------------
  	ELSE IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 64.0 ) ) THEN		
 
 !--------- NEW: Volume of Influence Border (VIB) for this particle
@@ -591,14 +595,66 @@ DO WHILE (ASSOCIATED(current))
            VIB_z(1)= zp - 0.5_dbl * L_influence_P
            VIB_z(2)= zp + 0.5_dbl * L_influence_P
 
-!--------- NEW: Finding the lattice "Nodes Effected by Particle"
-           NEP_x(1)= FLOOR(VIB_x(1))
-           NEP_x(2)= CEILING(VIB_x(2))
-           NEP_y(1)= FLOOR(VIB_y(1))
-           NEP_y(2)= CEILING(VIB_y(2))
-           NEP_z(1)= FLOOR(VIB_z(1))
-           NEP_z(2)= CEILING(VIB_z(2))
+!--------- Discretizing the volume of influence to  make sure at least 64 points are available
+           Delta_X = (VIB_x(2)-VIB_x(1)) / 3.0 
+	   Delta_Y = (VIB_y(2)-VIB_y(1)) / 3.0
+	   Delta_Z = (VIB_z(2)-VIB_z(1)) / 3.0 
 
+!--------- Loop over discretized points and averaging the concentration
+           DO i= 0, 3
+              DO j= 0, 3
+                 DO k= 0, 3
+                    x_DP = VIB_x(1) + (i * Delta_X) 
+                    y_DP = VIB_y(1) + (j * Delta_Y)
+                    z_DP = VIB_z(1) + (k * Delta_Z)
+
+!------------------ Finding Lattice nodes surrounding this point (This point is discretized and is not a lattice node))
+                    ix0 = FLOOR(x_DP)
+                    ix1 = CEILING(x_DP)
+                    iy0 = FLOOR(y_DP)
+                    iy1 = CEILING(y_DP)
+                    iz0 = FLOOR(z_DP)
+                    iz1 = CEILING(z_DP)
+
+!------------------ TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
+                    IF (ix1 /= ix0) THEN
+                       xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+                    ELSE
+                       xd = 0.0_dbl
+                    END IF
+
+                    IF (iy1 /= iy0) THEN
+                        yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+                    ELSE
+                        yd = 0.0_dbl
+                    END IF
+       
+                    IF (iz1 /= iz0) THEN
+                       zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                    ELSE
+                       zd = 0.0_dbl
+                    END IF
+
+!------------------ Concentration Trilinear Iinterpolation
+!------------------ Interpolation in x-direction
+                    c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
+                    c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
+                    c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
+                    c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+!------------------ Interpolation in y-direction
+                    c0  = c00 * (1.0_dbl-yd) + c10 * yd
+                    c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------------------ Interpolation in z-direction
+                    c   = c0 * (1.0_dbl-zd) + c1 * zd
+
+                    Cb_Total_Veff  = Cb_Total_Veff  + c
+                    NumFluids_Veff = NumFluids_Veff + 1_lng
+                 END DO
+             END DO
+          END DO
+          current%pardata%bulk_conc = Cb_Total_Veff / NumFluids_Veff
+
+!----------------------------------------------------------------------------------------------------------------------
 !------ Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
 !----------------------------------------------------------------------------------------------------------------------
         ELSE IF (V_eff_Ratio .GE. 64.0) THEN                             
