@@ -588,15 +588,41 @@ DO WHILE (ASSOCIATED(current))
            VIB_z(1)= zp - 0.5_dbl * L_influence_P
            VIB_z(2)= zp + 0.5_dbl * L_influence_P
 
+!--------- NEW: Finding the lattice "Nodes Effected by Particle"
+           NEP_x(1)= FLOOR(VIB_x(1))
+           NEP_x(2)= CEILING(VIB_x(2))
+           NEP_y(1)= FLOOR(VIB_y(1))
+           NEP_y(2)= CEILING(VIB_y(2))
+           NEP_z(1)= FLOOR(VIB_z(1))
+           NEP_z(2)= CEILING(VIB_z(2))
+
 !------ Veff is much larger than mesh volume --> Average concentration based on the all nodes inside volume of influence is used for C_b
 !------ Calculates the bulk Conc = total number of moles in volume of influence / volume of influence 
         ELSE IF (V_eff_Ratio .GT. 1.0) THEN                             
 
+
+!--------- NEW: Volume of Influence Border (VIB) for this particle
+           VIB_x(1)= xp - 0.5_dbl * L_influence_P
+           VIB_x(2)= xp + 0.5_dbl * L_influence_P
+           VIB_y(1)= yp - 0.5_dbl * L_influence_P
+           VIB_y(2)= yp + 0.5_dbl * L_influence_P
+           VIB_z(1)= zp - 0.5_dbl * L_influence_P
+           VIB_z(2)= zp + 0.5_dbl * L_influence_P
+
+!--------- NEW: Finding the lattice "Nodes Effected by Particle"
+           NEP_x(1)= FLOOR(VIB_x(1))
+           NEP_x(2)= CEILING(VIB_x(2))
+           NEP_y(1)= FLOOR(VIB_y(1))
+           NEP_y(2)= CEILING(VIB_y(2))
+           NEP_z(1)= FLOOR(VIB_z(1))
+           NEP_z(2)= CEILING(VIB_z(2))
+
            Cb_Total_Veff = 0.0_dbl
            NumFluids_Veff = 0_lng
-           DO k= 1,nzSub
-              DO j= 1,nySub
-                 DO i= 1,nxSub
+
+           DO i= NEP_x(1),NEP_x(2) 
+              DO j= NEP_y(1),NEP_y(2)
+                 DO k= NEP_z(1),NEP_z(2)
                     IF (node(i,j,k) .EQ. FLUID) THEN
                        Cb_Total_Veff  = Cb_Total_Veff  + phi(i,j,k)
                        NumFluids_Veff = NumFluids_Veff + 1_lng
@@ -604,8 +630,7 @@ DO WHILE (ASSOCIATED(current))
                  END DO
              END DO
           END DO
-          c = Cb_Total_Veff / NumFluids_Veff 
-          current%pardata%bulk_conc = c
+          current%pardata%bulk_conc = Cb_Total_Veff / NumFluids_Veff 
  
        END IF
 END DO
