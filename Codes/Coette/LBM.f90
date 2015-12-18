@@ -475,6 +475,79 @@ END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 
 
 
+!===================================================================================================
+SUBROUTINE Compute_Cb            ! Computes the mesh-independent bulk concentration
+!===================================================================================================
+
+! Computes the mesh-independent bulk concentration
+ 
+IMPLICIT NONE
+INTEGER(lng)  			:: i,j,k
+REAL(dbl)  	   		:: xp,yp,zp
+REAL(dbl)			:: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
+REAL(dbl)       	        :: N_d         					! Modeling parameter to extend the volume of influence around 
+REAL(dbl)    	        	:: R_P, Sh_P, delta_P
+REAl(dbl)               	:: R_influence_p, L_influence_p			! Parameters related to particle's volume of influence
+REAl(dbl)               	:: V_influence_P, V_eff_Ratio			! Parameters related to particle's volume of influence
+REAL(dbl),DIMENSION(2)   	:: VIB_x, VIB_y, VIB_z	 			! Volume of Influence's Borders
+REAL(dbl),DIMENSION(2)    	:: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
+INTEGER  ,DIMENSION(2)   	:: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
+INTEGER  ,DIMENSION(2)   	:: NEP_x, NEP_y, NEP_z                  	! Lattice Nodes Surronding the particle
+REAL(dbl),DIMENSION(200,200,200):: Overlap					
+REAL(dbl)		  	:: Overlap_sum
+TYPE(ParRecord), POINTER  	:: current
+TYPE(ParRecord), POINTER  	:: next
+
+delta_mesh = 1.0_dbl
+zcf3 = xcf*ycf*zcf
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+
+!------ Copy pointer of next node
+	next => current%next
+
+!------ Calculate length scale for jth particle:  delta = R / Sh
+!------ Calculate effective radius: R_influence_P = R + (N_d *delta)
+!------ Note: need to convert this into Lattice units and not use the physical length units
+!------ Then compute equivalent cubic mesh length scale
+	N_d = 1.0
+        R_P  = current%pardata%rp
+	Sh_P = current%pardata%sh
+        delta_P = R_P / Sh_P
+        R_influence_P = (R_P + N_d * delta_P) / xcf
+
+!------ Computing equivalent cubic mesh length scale
+        V_influence_P= (4.0_dbl/3.0_dbl) * PI * R_influence_P**3.0_dbl
+        L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
+
+
+!------ Finding particle location in this processor
+	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+
+        V_eff_Ratio = V_influence_P / zcf3 
+  
+        IF (V_eff_Ratio .LE. 1.0) THEN
+           CALL Interp_bulkconc 
+	ELSE IF (V_eff_Ratio .GT. 1.0) THEN
+!--------- NEW: Volume of Influence Border (VIB) for this particle
+           VIB_x(1)= xp - 0.5_dbl * L_influence_P
+           VIB_x(2)= xp + 0.5_dbl * L_influence_P
+           VIB_y(1)= yp - 0.5_dbl * L_influence_P
+           VIB_y(2)= yp + 0.5_dbl * L_influence_P
+           VIB_z(1)= zp - 0.5_dbl * L_influence_P
+           VIB_z(2)= zp + 0.5_dbl * L_influence_P
+        END IF
+END DO
+
+!===================================================================================================
+END SUBROUTINE Compute_Cb
+!===================================================================================================
+
+
+
 
 !===================================================================================================
 SUBROUTINE Calc_Scalar_Release! Calculate rate of scalar release at every time step  
