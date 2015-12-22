@@ -506,7 +506,9 @@ TYPE(ParRecord), POINTER  	:: current
 TYPE(ParRecord), POINTER  	:: next
 
 delta_mesh = 1.0_dbl
-zcf3 = xcf*ycf*zcf
+
+!zcf3 = xcf*ycf*zcf
+zcf3 = 1.0
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
@@ -537,7 +539,7 @@ DO WHILE (ASSOCIATED(current))
 
 
 !----------------------------------------------------------------------------------------------------------------------
-!------ Veff is smalle than mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
+!------ Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
 !----------------------------------------------------------------------------------------------------------------------
         IF (V_eff_Ratio .LE. 1.0) THEN 					
            ix0 =FLOOR(xp)
@@ -726,7 +728,10 @@ DO WHILE (ASSOCIATED(current))
 
 	current%pardata%rpold=current%pardata%rp
 
-	bulkconc = Cb_global
+        CALL Compute_Cb
+        bulkconc = current%pardata%bulk_conc
+!	bulkconc = Cb_global
+
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
   
         IF (temp.GE.0.0_dbl) THEN
