@@ -693,6 +693,8 @@ DO WHILE (ASSOCIATED(current))
           current%pardata%bulk_conc = Cb_Total_Veff / NumFluids_Veff 
  
        END IF
+       current => next
+
 END DO
 
 !===================================================================================================
@@ -728,7 +730,6 @@ DO WHILE (ASSOCIATED(current))
 
 	current%pardata%rpold=current%pardata%rp
 
-        CALL Compute_Cb
         bulkconc = current%pardata%bulk_conc
 !	bulkconc = Cb_global
 
@@ -1347,6 +1348,7 @@ IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first ste
 
    CALL Interp_Parvel 							! interpolate final particle velocities after the final position is ascertained. 
    CALL Interp_bulkconc 						! interpolate final bulk_concentration after the final position is ascertained.
+   CALL Compute_Cb 
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
    CALL Interp_ParToNodes_Conc_New 						! distributes released drug concentration to neightbouring nodes 
