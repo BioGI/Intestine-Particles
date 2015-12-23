@@ -369,13 +369,14 @@ END SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
 
 
 !===================================================================================================
-SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
+SUBROUTINE Interp_bulkconc(Cb_Local) ! Using Trilinear interpolation
 !===================================================================================================
 
 IMPLICIT NONE
 INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
 REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
 REAL(dbl)     :: xp,yp,zp
+REAL(dbl)     :: Cb_Local
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -426,14 +427,15 @@ DO WHILE (ASSOCIATED(current))
 
 ! Do third level linear interpolation in z-direction
 	c   = c0*(1.0_dbl-zd)+c1*zd
-        current%pardata%bulk_conc=c
+!       current%pardata%bulk_conc=c
+        Cb_Local= c        
 
 ! point to next node in the list
 	current => next
 ENDDO
 
 !===================================================================================================
-END SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
+END SUBROUTINE Interp_bulkconc  ! Using Trilinear interpolation
 !===================================================================================================
 
 
@@ -443,12 +445,12 @@ END SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
 
 
 !===================================================================================================
-SUBROUTINE Calc_Global_Bulk_Scalar_Conc !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
+SUBROUTINE Calc_Global_Bulk_Scalar_Conc(Cb_Domain)  !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
 !===================================================================================================
 
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
-
+REAL(dbl)     :: Cb_Domain
 ! Calculate the bulk Conc = total number of moles/total domain size or it is the average conc in the domain
 Cb_global = 0.0_dbl
 Cb_numFluids = 0_lng
@@ -466,6 +468,8 @@ DO k=1,nzSub
   END DO
 END DO
 
+Cb_Domain = Cb_global/ Cb_numFluids
+
 !===================================================================================================
 END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 !===================================================================================================
@@ -476,7 +480,7 @@ END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 
 
 !===================================================================================================
-SUBROUTINE Compute_Cb            ! Computes the mesh-independent bulk concentration
+SUBROUTINE Compute_Cb(Cb_Hybrid) ! Computes the mesh-independent bulk concentration
 !===================================================================================================
 
 IMPLICIT NONE
@@ -501,6 +505,7 @@ REAL(dbl)                       :: Delta_X, Delta_Y, Delta_Z
 REAL(dbl)                       :: x_DP, y_DP, z_DP				! Coordinates of "Discretized Point" (DP)
 REAL(dbl),DIMENSION(200,200,200):: Overlap					
 REAL(dbl)		  	:: Overlap_sum
+REAL(dbl)                       :: Cb_Hybrid
 
 TYPE(ParRecord), POINTER  	:: current
 TYPE(ParRecord), POINTER  	:: next
@@ -580,8 +585,8 @@ DO WHILE (ASSOCIATED(current))
            c1  = c01 * (1.0_dbl-yd) + c11 * yd
 !--------- Interpolation in z-direction
            c   = c0 * (1.0_dbl-zd) + c1 * zd
-       
-           current%pardata%bulk_conc = c
+
+           Cb_Hybrid= c 
 
 !----------------------------------------------------------------------------------------------------------------------
 !------ Veff is slightly larger than mesh volume --> Volume of influence is discretized 
@@ -654,7 +659,8 @@ DO WHILE (ASSOCIATED(current))
                  END DO
              END DO
           END DO
-          current%pardata%bulk_conc = Cb_Total_Veff / NumFluids_Veff
+          
+          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
 
 !----------------------------------------------------------------------------------------------------------------------
 !------ Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
@@ -690,9 +696,13 @@ DO WHILE (ASSOCIATED(current))
                  END DO
              END DO
           END DO
-          current%pardata%bulk_conc = Cb_Total_Veff / NumFluids_Veff 
- 
+          
+          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+
        END IF
+ 
+       current%pardata%bulk_conc = Cb_Hybrid
+       
        current => next
 
 END DO
@@ -1300,6 +1310,7 @@ IMPLICIT NONE
 INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
 REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np) 	! old particle coordinates (working coordinates are stored in xp,yp,zp)
 REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 	! old particle velocity components (new vales are stored in up, vp, wp)
+REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -1347,11 +1358,17 @@ IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first ste
    ENDDO
 
    CALL Interp_Parvel 							! interpolate final particle velocities after the final position is ascertained. 
-   CALL Interp_bulkconc 						! interpolate final bulk_concentration after the final position is ascertained.
-   CALL Compute_Cb 
+   
+   CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
+   CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
+   CALL Compute_Cb(Cb_Hybrid) 
+   
+   open(172,file='Cb-history.dat',position='append')
+   write(172,*) iter, Cb_Local, Cb_Domain, Cb_Hybrid
+
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
-   CALL Interp_ParToNodes_Conc_New 						! distributes released drug concentration to neightbouring nodes 
+   CALL Interp_ParToNodes_Conc_New 					! distributes released drug concentration to neightbouring nodes 
 									!drug molecules released by the particle at this new position
 ENDIF
 
