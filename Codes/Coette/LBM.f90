@@ -480,12 +480,12 @@ END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 
 
 !===================================================================================================
-SUBROUTINE Compute_Cb(Cb_Hybrid,V_eff_Ratio) ! Computes the mesh-independent bulk concentration
+SUBROUTINE Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid) ! Computes the mesh-independent bulk concentration
 !===================================================================================================
 
 IMPLICIT NONE
 
-INTEGER(lng)  			:: i,j,k
+INTEGER(lng)  			:: i,j,k, CaseNo
 INTEGER(lng)  			:: ix0,ix1,iy0,iy1,iz0,iz1			! Trilinear interpolation parameters
 INTEGER(lng)			:: NumFluids_Veff = 0_lng
 INTEGER,DIMENSION(2)   		:: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
@@ -547,7 +547,8 @@ DO WHILE (ASSOCIATED(current))
 !------ Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
 !----------------------------------------------------------------------------------------------------------------------
         IF (V_eff_Ratio .LE. 1.0) THEN 					
-           ix0 =FLOOR(xp)
+           CaseNo = 1
+	   ix0 =FLOOR(xp)
            ix1 =CEILING(xp)
            iy0 =FLOOR(yp)
            iy1 =CEILING(yp)
@@ -593,7 +594,7 @@ DO WHILE (ASSOCIATED(current))
 !------ Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence 
 !----------------------------------------------------------------------------------------------------------------------
  	ELSE IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 64.0 ) ) THEN		
-
+           CaseNo = 2
 !--------- NEW: Volume of Influence Border (VIB) for this particle
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
            VIB_x(2)= xp + 0.5_dbl * L_influence_P
@@ -666,7 +667,7 @@ DO WHILE (ASSOCIATED(current))
 !------ Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
 !----------------------------------------------------------------------------------------------------------------------
         ELSE IF (V_eff_Ratio .GE. 64.0) THEN                             
-
+           CaseNo = 3
 !--------- NEW: Volume of Influence Border (VIB) for this particle
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
            VIB_x(2)= xp + 0.5_dbl * L_influence_P
@@ -1307,7 +1308,7 @@ END SUBROUTINE Find_Root
 SUBROUTINE Particle_Track
 !------------------------------------------------
 IMPLICIT NONE
-INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
+INTEGER(lng)   		 :: i,ipartition,ii,jj,kk, CaseNo
 REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np) 	! old particle coordinates (working coordinates are stored in xp,yp,zp)
 REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 	! old particle velocity components (new vales are stored in up, vp, wp)
 REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid, V_eff_Ratio
@@ -1361,10 +1362,10 @@ IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first ste
    
    CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
    CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
-   CALL Compute_Cb(Cb_Hybrid,V_eff_Ratio) 
+   CALL Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid)  
    
    open(172,file='Cb-history.dat',position='append')
-   write(172,*) iter, V_eff_Ratio, Cb_Local, Cb_Domain, Cb_Hybrid
+   write(172,*) iter, V_eff_Ratio, CaseNo, Cb_Local, Cb_Domain, Cb_Hybrid
 
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
