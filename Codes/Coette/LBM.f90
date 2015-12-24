@@ -480,7 +480,7 @@ END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 
 
 !===================================================================================================
-SUBROUTINE Compute_Cb(Cb_Hybrid) ! Computes the mesh-independent bulk concentration
+SUBROUTINE Compute_Cb(Cb_Hybrid,V_eff_Ratio) ! Computes the mesh-independent bulk concentration
 !===================================================================================================
 
 IMPLICIT NONE
@@ -522,7 +522,7 @@ DO WHILE (ASSOCIATED(current))
 	next => current%next
 
 !------ Calculate length scale for jth particle:  delta = R / Sh
-!------ Calculate effective radius: R_influence_P = R + (N_d *delta)
+!------ Calculate effective radius: R_influence_P = R + (N_b *delta)
 !------ Note: need to convert this into Lattice units and not use the physical length units
 !------ Then compute equivalent cubic mesh length scale
 	N_b = 1.0
@@ -1310,7 +1310,7 @@ IMPLICIT NONE
 INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
 REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np) 	! old particle coordinates (working coordinates are stored in xp,yp,zp)
 REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 	! old particle velocity components (new vales are stored in up, vp, wp)
-REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid
+REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid, V_eff_Ratio
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -1361,10 +1361,10 @@ IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first ste
    
    CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
    CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
-   CALL Compute_Cb(Cb_Hybrid) 
+   CALL Compute_Cb(Cb_Hybrid,V_eff_Ratio) 
    
    open(172,file='Cb-history.dat',position='append')
-   write(172,*) iter, Cb_Local, Cb_Domain, Cb_Hybrid
+   write(172,*) iter, V_eff_Ratio, Cb_Local, Cb_Domain, Cb_Hybrid
 
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
