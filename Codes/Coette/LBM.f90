@@ -608,6 +608,9 @@ DO WHILE (ASSOCIATED(current))
 	   Delta_Y = (VIB_y(2)-VIB_y(1)) / 3.0
 	   Delta_Z = (VIB_z(2)-VIB_z(1)) / 3.0 
 
+           Cb_Total_Veff = 0
+           NumFluids_Veff = 0
+
 !--------- Loop over discretized points and averaging the concentration
            DO i= 0, 3
               DO j= 0, 3
