@@ -629,19 +629,19 @@ DO WHILE (ASSOCIATED(current))
 
 !------------------ TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
                     IF (ix1 /= ix0) THEN
-                       xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+                       xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
                     ELSE
                        xd = 0.0_dbl
                     END IF
 
                     IF (iy1 /= iy0) THEN
-                        yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+                        yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
                     ELSE
                         yd = 0.0_dbl
                     END IF
        
                     IF (iz1 /= iz0) THEN
-                       zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                       zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
                     ELSE
                        zd = 0.0_dbl
                     END IF
