@@ -593,7 +593,7 @@ DO WHILE (ASSOCIATED(current))
 !------ Veff is slightly larger than mesh volume --> Volume of influence is discretized 
 !------ Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence 
 !----------------------------------------------------------------------------------------------------------------------
- 	ELSE IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 64.0 ) ) THEN		
+ 	ELSE IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 27.0 ) ) THEN		
            CaseNo = 2
 !--------- NEW: Volume of Influence Border (VIB) for this particle
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
@@ -669,7 +669,7 @@ DO WHILE (ASSOCIATED(current))
 !----------------------------------------------------------------------------------------------------------------------
 !------ Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
 !----------------------------------------------------------------------------------------------------------------------
-        ELSE IF (V_eff_Ratio .GE. 64.0) THEN                             
+        ELSE IF (V_eff_Ratio .GE. 27.0) THEN                             
            CaseNo = 3
 !--------- NEW: Volume of Influence Border (VIB) for this particle
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
