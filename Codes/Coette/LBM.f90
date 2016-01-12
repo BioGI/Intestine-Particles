@@ -680,12 +680,12 @@ DO WHILE (ASSOCIATED(current))
            VIB_z(2)= zp + 0.5_dbl * L_influence_P
 
 !--------- NEW: Finding the lattice "Nodes Effected by Particle"
-           NEP_x(1)= FLOOR(VIB_x(1))
-           NEP_x(2)= CEILING(VIB_x(2))
-           NEP_y(1)= FLOOR(VIB_y(1))
-           NEP_y(2)= CEILING(VIB_y(2))
-           NEP_z(1)= FLOOR(VIB_z(1))
-           NEP_z(2)= CEILING(VIB_z(2))
+           NEP_x(1)= CEILING(VIB_x(1))
+           NEP_x(2)= FLOOR  (VIB_x(2))
+           NEP_y(1)= CEILING(VIB_y(1))
+           NEP_y(2)= FLOOR  (VIB_y(2))
+           NEP_z(1)= CEILING(VIB_z(1))
+           NEP_z(2)= FLOOR  (VIB_z(2))
 
            Cb_Total_Veff = 0.0_dbl
            NumFluids_Veff = 0_lng
