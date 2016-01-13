@@ -1193,16 +1193,18 @@ DO WHILE (ASSOCIATED(current))
         DO i= NEP_x(1),NEP_x(2) 
            DO j= NEP_y(1),NEP_y(2)
               DO k= NEP_z(1),NEP_z(2)
-                 NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
-                 NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
-                 NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
-                 NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
-                 NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
-                 NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
-                 Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
-                                  MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
-                                  MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
-                 Overlap_sum= Overlap_sum + Overlap(i,j,k)
+                 IF (node(i,j,k) .EQ. FLUID) THEN
+	            NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
+                    NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
+                    NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
+                    NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
+                    NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
+                    NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+                    Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
+                                     MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
+                                     MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
+                    Overlap_sum= Overlap_sum + Overlap(i,j,k)
+                 END IF
               END DO
            END DO
         END DO
