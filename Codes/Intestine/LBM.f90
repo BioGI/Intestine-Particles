@@ -873,6 +873,131 @@ END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration relea
 !------------------------------------------------
 
 
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE Interp_ParToNodes_Conc_New 
+!--------------------------------------------------------------------------------------------------
+
+!--- Interpolate Particle concentration release to node locations 
+!--- Called by Particle_Track (LBM.f90) to get delphi_particle
+
+IMPLICIT NONE
+INTEGER(lng)  		  :: i,j,k
+REAL(dbl)     		  :: xp,yp,zp
+REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
+REAL(dbl)                 :: N_d         				! Modeling parameter to extend the volume of influence around 
+REAL(dbl)                 :: R_P, Sh_P, delta_P
+REAL(dbl)                 :: R_influence_P, L_influence_P
+REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z 			! Volume of Influence's Borders
+REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
+INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
+INTEGER  ,DIMENSION(2)    :: NEP_x, NEP_y, NEP_z                        ! Lattice Nodes Surronding the particle
+REAL(dbl),DIMENSION(100,100,100):: Overlap					
+REAL(dbl)		  :: Overlap_sum
+TYPE(ParRecord), POINTER  :: current
+TYPE(ParRecord), POINTER  :: next
+
+
+delta_mesh = 1.0_dbl
+zcf3 = xcf*ycf*zcf
+current => ParListHead%next
+
+DO WHILE (ASSOCIATED(current))
+
+!------ Copy pointer of next node
+	next => current%next 
+
+!------ Calculate length scale for jth particle:  delta = R / Sh
+!------ Calculate effective radius: R_influence_P = R + (N_d *delta)
+!------ Note: need to convert this into Lattice units and not use the physical length units
+!------ Then compute equivalent cubic mesh length scale
+	N_d = 1.0
+        R_P  = current%pardata%rp
+	Sh_P = current%pardata%sh
+        delta_P = R_P / Sh_P
+        R_influence_P = (R_P + N_d * delta_P) / xcf
+
+!------ Computing equivalent cubic mesh length scale
+        L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
+ 
+!------ Finding particle location in this processor
+	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+
+!------ NEW: Volume of Influence Border (VIB) for this particle
+        VIB_x(1)= xp - 0.5_dbl * L_influence_P
+        VIB_x(2)= xp + 0.5_dbl * L_influence_P
+        VIB_y(1)= yp - 0.5_dbl * L_influence_P
+        VIB_y(2)= yp + 0.5_dbl * L_influence_P
+        VIB_z(1)= zp - 0.5_dbl * L_influence_P
+        VIB_z(2)= zp + 0.5_dbl * L_influence_P
+
+!------ NEW: Finding the lattice "Nodes Effected by Particle" 
+        NEP_x(1)= FLOOR(VIB_x(1))
+        NEP_x(2)= CEILING(VIB_x(2))
+        NEP_y(1)= FLOOR(VIB_y(1))
+        NEP_y(2)= CEILING(VIB_y(2))
+        NEP_z(1)= FLOOR(VIB_z(1))
+        NEP_z(2)= CEILING(VIB_z(2))
+
+!------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
+        Overlap_sum = 0.0_dbl
+        Overlap= 0.0
+ 
+        DO i= NEP_x(1),NEP_x(2) 
+           DO j= NEP_y(1),NEP_y(2)
+              DO k= NEP_z(1),NEP_z(2)
+                 IF (node(i,j,k) .EQ. FLUID) THEN
+	         NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
+        	    NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
+		    NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
+		    NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
+		    NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
+		    NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+		    Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
+                                     MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
+                                     MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
+                    Overlap_sum= Overlap_sum + Overlap(i,j,k)
+                 END IF
+              END DO
+           END DO
+        END DO
+
+!------ Computing NB_j and Veff for each particle
+        Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+        Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
+        bulkconc = Cb_global                                                    ! It should be changed to bulkconc = current%pardata%bulk_conc
+
+!------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
+        CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
+                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
+        current%pardata%Veff = Veff                                             ! store Veff in particle record
+        current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
+        Nbj = Nbj/zcf3  
+
+!------ Computing particle release contribution to scalar field at each lattice node
+        DO i= NEP_x(1),NEP_x(2)
+           DO j= NEP_y(1),NEP_y(2)
+              DO k= NEP_z(1),NEP_z(2)
+                 IF (node(i,j,k) .EQ. FLUID) THEN                 
+                    delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV* (Overlap(i,j,k)/Overlap_sum)
+                    tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                    tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                    tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                 END IF 
+              END DO
+           END DO
+        END DO
+
+!------ point to next node in the list
+	current => next
+ENDDO
+
+!--------------------------------------------------------------------------------------------------
+END SUBROUTINE Interp_ParToNodes_Conc_New  		 
+!--------------------------------------------------------------------------------------------------
+
+
 
 
 
