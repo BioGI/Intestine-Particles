@@ -762,7 +762,6 @@ DO WHILE (ASSOCIATED(current))
 				-current%pardata%rp*current%pardata%rp*current%pardata%rp) &
 				/(molarvol*bulkVolume)
 
-
 	IF (associated(current,ParListHead%next)) THEN
            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
            CALL FLUSH(9)
@@ -941,101 +940,101 @@ DO WHILE (ASSOCIATED(current))
         iz1=CEILING(zp)
 
 ! Boundaries of the volume of influence of the particle
-	ax0 = xp - 0.5_dbl*delta_par
-	ax1 = xp + 0.5_dbl*delta_par
-	ay0 = yp - 0.5_dbl*delta_par
-	ay1 = yp + 0.5_dbl*delta_par
-	az0 = zp - 0.5_dbl*delta_par
-	az1 = zp + 0.5_dbl*delta_par
+        ax0 = xp - 0.5_dbl*delta_par
+        ax1 = xp + 0.5_dbl*delta_par
+        ay0 = yp - 0.5_dbl*delta_par
+        ay1 = yp + 0.5_dbl*delta_par
+        az0 = zp - 0.5_dbl*delta_par
+        az1 = zp + 0.5_dbl*delta_par
 
-	if (iz0.GT.nzSub) then
-		iz0 = iz0-1_lng
-	elseif (iz0.LT.1_lng) then
-		iz0 = iz0 +1_lng
-	endif
-	if (ix0.GT.nxSub) then
-		ix0 = ix0-1_lng
-	elseif (ix0.LT.1) then
-		ix0 = ix0 +1_lng
-	endif
-	if (iy0.GT.nySub) then
-		iy0 = iy0-1_lng
-	elseif (iy0.LT.1) then
-		iy0 = iy0 +1_lng
-	endif
-	if (iz1.GT.nzSub) then
-		iz1 = iz1-1_lng
-	elseif (iz1.LT.1_lng) then
-		iz1 = iz1 +1_lng
-	endif
-	if (ix1.GT.nxSub) then
-		ix1 = ix1-1_lng
-	elseif (ix1.LT.1) then
-		ix1 = ix1 +1_lng
-	endif
-	if (iy1.GT.nySub) then
-		iy1 = iy1-1_lng
-	elseif (iy1.LT.1) then
-		iy1 = iy1 +1_lng
-	endif
+        if (iz0.GT.nzSub) then
+                iz0 = iz0-1_lng
+        elseif (iz0.LT.1_lng) then
+                iz0 = iz0 +1_lng
+        endif
+        if (ix0.GT.nxSub) then
+                ix0 = ix0-1_lng
+        elseif (ix0.LT.1) then
+                ix0 = ix0 +1_lng
+        endif
+        if (iy0.GT.nySub) then
+                iy0 = iy0-1_lng
+        elseif (iy0.LT.1) then
+                iy0 = iy0 +1_lng
+        endif
+        if (iz1.GT.nzSub) then
+                iz1 = iz1-1_lng
+        elseif (iz1.LT.1_lng) then
+                iz1 = iz1 +1_lng
+        endif
+        if (ix1.GT.nxSub) then
+                ix1 = ix1-1_lng
+        elseif (ix1.LT.1) then
+                ix1 = ix1 +1_lng
+        endif
+        if (iy1.GT.nySub) then
+                iy1 = iy1-1_lng
+        elseif (iy1.LT.1) then
+                iy1 = iy1 +1_lng
+        endif
 
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-	c110 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+       bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
+        c110 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
 
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-	bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-	bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-	bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-	by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-	by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-	bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-	bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-	c111 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
+        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
+        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
+        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
+        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
+        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
+        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
+        c111 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
 
         csum = c000 + c010 + c100 + c110 + c001 + c011 + c101 + c111
 
@@ -1059,51 +1058,51 @@ DO WHILE (ASSOCIATED(current))
         ELSE ! if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
 
                 c000 = c000/csum
-        	c010 = c010/csum
-        	c100 = c100/csum
-        	c110 = c110/csum
-        	c001 = c001/csum
-        	c011 = c011/csum
-        	c101 = c101/csum
-        	c111 = c111/csum
+                c010 = c010/csum
+                c100 = c100/csum
+                c110 = c110/csum
+                c001 = c001/csum
+                c011 = c011/csum
+                c101 = c101/csum
+                c111 = c111/csum
 
-        	!delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-                
-        	delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
-        	delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
-        	delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
-        	delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
-        	delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
-        	delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
-        	delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
-        	delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
+                !delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
 
-        	tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
-		tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
-		tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
-        	tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
-        	tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
-        	tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
-        	tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
-        	tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
+     delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
+                delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
+                delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
+                delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
+                delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
+                delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
+                delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
+                delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
 
-        	tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
-        	tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
-        	tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
-        	tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
-        	tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
-        	tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
-        	tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
-        	tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
+                tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
+                tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
+                tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
+                tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
+                tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
+                tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
+                tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
+                tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
 
-        	tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
-        	tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
-        	tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
-        	tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
-        	tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
-        	tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
-        	tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
-        	tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
+                tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
+                tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
+                tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
+                tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
+                tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
+                tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
+                tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
+                tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
+
+                tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
+                tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
+                tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
+                tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
+                tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
+                tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
+                tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
+                tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
 
         END IF
 
@@ -1331,66 +1330,55 @@ tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
 tausgs_particle_z = 0.0_dbl
 	
-IF (iter.GT.iter0+0_lng) THEN ! IF condition ensures that at the first step, the only part of this subroutine that operates is computing the partitions the particles belong to without releasing any drug.  
-! Second order interpolation in time
-!Backup particle data from previous time step
-! Using a linked list of particle records
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
+IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first step, the only part of this subroutine that operates is computing the partitions the particles belong to without releasing any drug.  
 
-	current%pardata%xpold = current%pardata%xp
-	current%pardata%ypold = current%pardata%yp
-	current%pardata%zpold = current%pardata%zp
+!--Second order interpolation in time
+!--Backup particle data from previous time step using a linked list of particle records
+
+   current => ParListHead%next
+   DO WHILE (ASSOCIATED(current))
+      next => current%next 						! copy pointer of next node
+
+      current%pardata%xpold = current%pardata%xp
+      current%pardata%ypold = current%pardata%yp
+      current%pardata%zpold = current%pardata%zp
 	
-	current%pardata%upold = current%pardata%up
-	current%pardata%vpold = current%pardata%vp
-	current%pardata%wpold = current%pardata%wp
+      current%pardata%upold = current%pardata%up
+      current%pardata%vpold = current%pardata%vp
+      current%pardata%wpold = current%pardata%wp
 	
-	current%pardata%xp=current%pardata%xpold+current%pardata%up
-	current%pardata%yp=current%pardata%ypold+current%pardata%vp
-	current%pardata%zp=current%pardata%zpold+current%pardata%wp
+      current%pardata%xp=current%pardata%xpold+current%pardata%up
+      current%pardata%yp=current%pardata%ypold+current%pardata%vp
+      current%pardata%zp=current%pardata%zpold+current%pardata%wp
 	
-	!IF(current%pardata%zp.GE.REAL(nz,dbl)) THEN
-	!	current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
-	!ENDIF
+      current => next
+   ENDDO
 
-	!yp(i)=Cj ! test
+   CALL Interp_Parvel
 
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-CALL Interp_Parvel
-! Using a linked list of particle records
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
+!--Using a linked list of particle records
+   current => ParListHead%next
+   DO WHILE (ASSOCIATED(current))
+      next => current%next 						! copy pointer of next node
+      current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
+      current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
+      current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+      current => next
+   ENDDO
 
-	current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
-	current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
-	current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
-	!xpnew(i)=current%pardata%xp
-	!ypnew(i)=current%pardata%yp
-	!zpnew(i)=current%pardata%zp
+   CALL Interp_Parvel 							! interpolate final particle velocities after the final position is ascertained. 
+   
+   CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
+   CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
+   CALL Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid)  
+   
+   open(172,file='Cb-history.dat',position='append')
+   write(172,*) iter, V_eff_Ratio, CaseNo, Cb_Local, Cb_Domain, Cb_Hybrid
 
-	!write(*,*) current%parid
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-
-!IF (ASSOCIATED(ParListHead%next)) THEN
-!	write(*,*) 'In Particle_Track','iter= ',iter,'SUBID =',mySub,'ParID =',ParListHead%next%pardata%parid,'wp =',ParListHead%next%pardata%wp*vcf,'Transfer FLAG =',ParticleTransfer,ParListHead%next%pardata%cur_part,ParListHead%next%pardata%new_part
-!END IF
-
-CALL Interp_Parvel ! interpolate final particle velocities after the final position is ascertained. 
-CALL Interp_bulkconc ! interpolate final bulk_concentration after the final position is ascertained.
-CALL Update_Sh ! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
-!delphi_particle = 0.0_dbl ! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
-CALL Calc_Scalar_Release ! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
-CALL Interp_ParToNodes_Conc ! distributes released drug concentration to neightbouring nodes 
-!drug molecules released by the particle at this new position
+   CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
+   CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
+   CALL Interp_ParToNodes_Conc_New 					! distributes released drug concentration to neightbouring nodes 
+									!drug molecules released by the particle at this new position
 ENDIF
 
 
@@ -1436,18 +1424,16 @@ DO WHILE (ASSOCIATED(current))
 
 	!------- Estimate to which partition the updated position belongs to.
 	DO ipartition = 1_lng,NumSubsTotal 
-
-
-		IF ((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-		(current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-		(current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-		(current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-		(current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-		(current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
-
-			current%pardata%new_part = ipartition
-		END IF
-                !write(*,*) ipartition,kMinDomain(ipartition),kMaxDomain(ipartition)
+           IF ((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+	      (current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	      (current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	      (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	      (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	      (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+              
+              current%pardata%new_part = ipartition
+	    END IF
+            !write(*,*) ipartition,kMinDomain(ipartition),kMaxDomain(ipartition)
 	END DO
 	
 
@@ -1631,13 +1617,11 @@ DO k=2,nzSub-1
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN															! macro- boundary
-            !CALL BounceBack2(m,i,j,k,im1,jm1,km1,fbb)					  										! implement the bounceback BCs [MODULE: ICBC]
 	    ! Balaji added after commenting out the earlier method
             CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)					  					! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
             CALL BounceBackV2(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)							! implement the bounceback BCs [MODULE: ICBC]
-            !CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)							! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
@@ -1683,8 +1667,8 @@ DO k=1,nzSub,(nzSub-1)
           ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN															! macro- boundary
             CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  												! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
             f(m,i,j,k) = fbb
-          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)							! implement the bounceback BCs [MODULE: ICBC]
+          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi
+            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)						! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
@@ -1730,7 +1714,7 @@ DO j=1,nySub,(nySub-1)
             CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  						! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)							! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
