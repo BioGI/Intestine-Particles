@@ -369,13 +369,14 @@ END SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
 
 
 !===================================================================================================
-SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
+SUBROUTINE Interp_bulkconc(Cb_Local) ! Using Trilinear interpolation
 !===================================================================================================
 
 IMPLICIT NONE
 INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
 REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
 REAL(dbl)     :: xp,yp,zp
+REAL(dbl)     :: Cb_Local
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -426,14 +427,15 @@ DO WHILE (ASSOCIATED(current))
 
 ! Do third level linear interpolation in z-direction
 	c   = c0*(1.0_dbl-zd)+c1*zd
-        current%pardata%bulk_conc=c
+!       current%pardata%bulk_conc=c
+        Cb_Local= c        
 
 ! point to next node in the list
 	current => next
 ENDDO
 
 !===================================================================================================
-END SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
+END SUBROUTINE Interp_bulkconc  ! Using Trilinear interpolation
 !===================================================================================================
 
 
@@ -443,12 +445,12 @@ END SUBROUTINE Interp_bulkconc ! Using Trilinear interpolation
 
 
 !===================================================================================================
-SUBROUTINE Calc_Global_Bulk_Scalar_Conc !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
+SUBROUTINE Calc_Global_Bulk_Scalar_Conc(Cb_Domain)  !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
 !===================================================================================================
 
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
-
+REAL(dbl)     :: Cb_Domain
 ! Calculate the bulk Conc = total number of moles/total domain size or it is the average conc in the domain
 Cb_global = 0.0_dbl
 Cb_numFluids = 0_lng
@@ -466,12 +468,252 @@ DO k=1,nzSub
   END DO
 END DO
 
+Cb_Domain = Cb_global/ Cb_numFluids
+
 !===================================================================================================
 END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 !===================================================================================================
 
 
 
+
+
+
+!===================================================================================================
+SUBROUTINE Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid) ! Computes the mesh-independent bulk concentration
+!===================================================================================================
+
+IMPLICIT NONE
+
+INTEGER(lng)  			:: i,j,k, CaseNo
+INTEGER(lng)  			:: ix0,ix1,iy0,iy1,iz0,iz1			! Trilinear interpolation parameters
+INTEGER(lng)			:: NumFluids_Veff = 0_lng
+INTEGER,DIMENSION(2)   		:: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
+INTEGER,DIMENSION(2)   		:: NEP_x, NEP_y, NEP_z                  	! Lattice Nodes Surronding the particle
+
+REAL(dbl)     			:: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
+REAL(dbl)  	   		:: xp,yp,zp
+REAL(dbl)			:: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
+REAL(dbl)       	        :: N_b         					! Modeling parameter to extend the volume of influence  
+REAL(dbl)    	        	:: R_P, Sh_P, delta_P
+REAl(dbl)               	:: R_influence_p, L_influence_p			! Parameters related to particle's volume of influence
+REAl(dbl)               	:: V_influence_P, V_eff_Ratio			! Parameters related to particle's volume of influence
+REAL(dbl)			:: Cb_Total_Veff
+REAL(dbl),DIMENSION(2)   	:: VIB_x, VIB_y, VIB_z	 			! Volume of Influence's Borders
+REAL(dbl),DIMENSION(2)    	:: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
+REAL(dbl)                       :: Delta_X, Delta_Y, Delta_Z
+REAL(dbl)                       :: x_DP, y_DP, z_DP				! Coordinates of "Discretized Point" (DP)
+REAL(dbl),DIMENSION(200,200,200):: Overlap					
+REAL(dbl)		  	:: Overlap_sum
+REAL(dbl)                       :: Cb_Hybrid
+
+TYPE(ParRecord), POINTER  	:: current
+TYPE(ParRecord), POINTER  	:: next
+
+delta_mesh = 1.0_dbl
+
+!zcf3 = xcf*ycf*zcf
+zcf3 = 1.0
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+
+!------ Copy pointer of next node
+	next => current%next
+
+!------ Calculate length scale for jth particle:  delta = R / Sh
+!------ Calculate effective radius: R_influence_P = R + (N_b *delta)
+!------ Note: need to convert this into Lattice units and not use the physical length units
+!------ Then compute equivalent cubic mesh length scale
+	N_b = 1.0
+        R_P  = current%pardata%rp
+	Sh_P = current%pardata%sh
+        delta_P = R_P / Sh_P
+        R_influence_P = (R_P + N_b * delta_P) / xcf
+
+!------ Computing equivalent cubic mesh length scale
+        V_influence_P= (4.0_dbl/3.0_dbl) * PI * R_influence_P**3.0_dbl
+        L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
+
+        V_eff_Ratio = V_influence_P / zcf3 					! Ratio of the effective volume to cell size 
+
+!------ Finding particle location in this processor
+	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+
+
+!----------------------------------------------------------------------------------------------------------------------
+!------ Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
+!----------------------------------------------------------------------------------------------------------------------
+        IF (V_eff_Ratio .LE. 1.0) THEN 					
+           CaseNo = 1
+	   ix0 =FLOOR(xp)
+           ix1 =CEILING(xp)
+           iy0 =FLOOR(yp)
+           iy1 =CEILING(yp)
+           iz0 =FLOOR(zp)
+           iz1 =CEILING(zp)
+
+!----------TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
+
+           IF (ix1 /= ix0) THEN
+              xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+           ELSE
+              xd = 0.0_dbl
+           END IF
+          
+           IF (iy1 /= iy0) THEN
+              yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+           ELSE
+              yd = 0.0_dbl
+           END IF
+       
+           IF (iz1 /= iz0) THEN
+              zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+           ELSE
+              zd = 0.0_dbl
+           END IF
+
+!--------- Concentration Trilinear Iinterpolation
+!--------- Interpolation in x-direction
+           c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
+           c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
+           c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
+           c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+!--------- Interpolation in y-direction
+           c0  = c00 * (1.0_dbl-yd) + c10 * yd
+           c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!--------- Interpolation in z-direction
+           c   = c0 * (1.0_dbl-zd) + c1 * zd
+
+           Cb_Hybrid= c 
+
+!----------------------------------------------------------------------------------------------------------------------
+!------ Veff is slightly larger than mesh volume --> Volume of influence is discretized 
+!------ Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence 
+!----------------------------------------------------------------------------------------------------------------------
+ 	ELSE IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 27.0 ) ) THEN		
+           CaseNo = 2
+!--------- NEW: Volume of Influence Border (VIB) for this particle
+           VIB_x(1)= xp - 0.5_dbl * L_influence_P
+           VIB_x(2)= xp + 0.5_dbl * L_influence_P
+           VIB_y(1)= yp - 0.5_dbl * L_influence_P
+           VIB_y(2)= yp + 0.5_dbl * L_influence_P
+           VIB_z(1)= zp - 0.5_dbl * L_influence_P
+           VIB_z(2)= zp + 0.5_dbl * L_influence_P
+
+!--------- Discretizing the volume of influence to  make sure at least 64 points are available
+           Delta_X = (VIB_x(2)-VIB_x(1)) / 3.0 
+	   Delta_Y = (VIB_y(2)-VIB_y(1)) / 3.0
+	   Delta_Z = (VIB_z(2)-VIB_z(1)) / 3.0 
+
+           Cb_Total_Veff = 0
+           NumFluids_Veff = 0
+
+!--------- Loop over discretized points and averaging the concentration
+           DO i= 0, 3
+              DO j= 0, 3
+                 DO k= 0, 3
+                    x_DP = VIB_x(1) + (i * Delta_X) 
+                    y_DP = VIB_y(1) + (j * Delta_Y)
+                    z_DP = VIB_z(1) + (k * Delta_Z)
+
+!------------------ Finding Lattice nodes surrounding this point (This point is discretized and is not a lattice node))
+                    ix0 = FLOOR(x_DP)
+                    ix1 = CEILING(x_DP)
+                    iy0 = FLOOR(y_DP)
+                    iy1 = CEILING(y_DP)
+                    iz0 = FLOOR(z_DP)
+                    iz1 = CEILING(z_DP)
+
+!------------------ TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
+                    IF (ix1 /= ix0) THEN
+                       xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+                    ELSE
+                       xd = 0.0_dbl
+                    END IF
+
+                    IF (iy1 /= iy0) THEN
+                        yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+                    ELSE
+                        yd = 0.0_dbl
+                    END IF
+       
+                    IF (iz1 /= iz0) THEN
+                       zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                    ELSE
+                       zd = 0.0_dbl
+                    END IF
+
+!------------------ Concentration Trilinear Iinterpolation
+!------------------ Interpolation in x-direction
+                    c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
+                    c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
+                    c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
+                    c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+!------------------ Interpolation in y-direction
+                    c0  = c00 * (1.0_dbl-yd) + c10 * yd
+                    c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------------------ Interpolation in z-direction
+                    c   = c0 * (1.0_dbl-zd) + c1 * zd
+
+                    Cb_Total_Veff  = Cb_Total_Veff  + c
+                    NumFluids_Veff = NumFluids_Veff + 1_lng
+                 END DO
+             END DO
+          END DO
+          
+          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+
+!----------------------------------------------------------------------------------------------------------------------
+!------ Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
+!----------------------------------------------------------------------------------------------------------------------
+        ELSE IF (V_eff_Ratio .GE. 27.0) THEN                             
+           CaseNo = 3
+!--------- NEW: Volume of Influence Border (VIB) for this particle
+           VIB_x(1)= xp - 0.5_dbl * L_influence_P
+           VIB_x(2)= xp + 0.5_dbl * L_influence_P
+           VIB_y(1)= yp - 0.5_dbl * L_influence_P
+           VIB_y(2)= yp + 0.5_dbl * L_influence_P
+           VIB_z(1)= zp - 0.5_dbl * L_influence_P
+           VIB_z(2)= zp + 0.5_dbl * L_influence_P
+
+!--------- NEW: Finding the lattice "Nodes Effected by Particle"
+           NEP_x(1)= CEILING(VIB_x(1))
+           NEP_x(2)= FLOOR  (VIB_x(2))
+           NEP_y(1)= CEILING(VIB_y(1))
+           NEP_y(2)= FLOOR  (VIB_y(2))
+           NEP_z(1)= CEILING(VIB_z(1))
+           NEP_z(2)= FLOOR  (VIB_z(2))
+
+           Cb_Total_Veff = 0.0_dbl
+           NumFluids_Veff = 0_lng
+
+           DO i= NEP_x(1),NEP_x(2) 
+              DO j= NEP_y(1),NEP_y(2)
+                 DO k= NEP_z(1),NEP_z(2)
+                    IF (node(i,j,k) .EQ. FLUID) THEN
+                       Cb_Total_Veff  = Cb_Total_Veff  + phi(i,j,k)
+                       NumFluids_Veff = NumFluids_Veff + 1_lng
+                    END IF
+                 END DO
+             END DO
+          END DO
+          
+          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+
+       END IF
+ 
+       current%pardata%bulk_conc = Cb_Hybrid
+       
+       current => next
+
+END DO
+
+!===================================================================================================
+END SUBROUTINE Compute_Cb
+!===================================================================================================
 
 
 
@@ -502,9 +744,12 @@ DO WHILE (ASSOCIATED(current))
 
 	current%pardata%rpold=current%pardata%rp
 
-	bulkconc = Cb_global
+        bulkconc = current%pardata%bulk_conc
+!	bulkconc = Cb_global
+
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-	IF (temp.GE.0.0_dbl) THEN
+  
+        IF (temp.GE.0.0_dbl) THEN
 		current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
 	ELSE
           temp = 0.0_dbl
@@ -522,6 +767,7 @@ DO WHILE (ASSOCIATED(current))
            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
            CALL FLUSH(9)
 	ENDIF
+
 ! point to next node in the list
 	current => next
 ENDDO
@@ -655,10 +901,8 @@ END SUBROUTINE Compute_shear
 
 
 
-
-
 !------------------------------------------------
-SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
+SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
 ! Called by Particle_Track (LBM.f90) to get delphi_particle
 !------------------------------------------------
 IMPLICIT NONE
@@ -677,24 +921,24 @@ zcf3=xcf*ycf*zcf
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
+        next => current%next ! copy pointer of next node
 
-	!write(*,*) current%pardata%parid,iter,mySub,current%pardata%new_part,xp,iMin,yp,jMin,zp,kMin
+        !write(*,*) current%pardata%parid,iter,mySub,current%pardata%new_part,xp,iMin,yp,jMin,zp,kMin
 
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
         delta_par = ((current%pardata%rp/xcf)/current%pardata%sh)+(current%pardata%rp/xcf) ! calculate length scale delta_j = R_j/Sh_j for jth particle and effective radius delta_par = delta_j + R_j (note: need to convert this into Lattice units and not use the physical length units)
         delta_par = ((88.0_dbl/21.0_dbl)*((delta_par)**3.0_dbl))**(1.0_dbl/3.0_dbl) ! compute equivalent cubic mesh length scale
         !delta_par = delta_mesh
 
-	ix0=FLOOR(xp)
-	ix1=CEILING(xp)
-	iy0=FLOOR(yp)
-	iy1=CEILING(yp)
-	iz0=FLOOR(zp)
-	iz1=CEILING(zp)
+        ix0=FLOOR(xp)
+        ix1=CEILING(xp)
+        iy0=FLOOR(yp)
+        iy1=CEILING(yp)
+        iz0=FLOOR(zp)
+        iz1=CEILING(zp)
 
 ! Boundaries of the volume of influence of the particle
 	ax0 = xp - 0.5_dbl*delta_par
@@ -795,22 +1039,22 @@ DO WHILE (ASSOCIATED(current))
 
         csum = c000 + c010 + c100 + c110 + c001 + c011 + c101 + c111
 
-	Nbj = 0.0_dbl ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-	Veff = 0.0_dbl ! initialize Veff - the eff. volume of each particle
-	bulkconc = Cb_global
-	!bulkconc = current%pardata%bulk_conc
-	! Need to solve an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-	CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
-		      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-	current%pardata%Veff = Veff ! store Veff in particle record
-	current%pardata%Nbj = Nbj	! store Nbj in particle record
-	Nbj = Nbj/zcf3 ! convert Nbj (number of moles) to a conc by division with cell volume (dimensional) 
+        Nbj = 0.0_dbl ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+        Veff = 0.0_dbl ! initialize Veff - the eff. volume of each particle
+        bulkconc = Cb_global
+        !bulkconc = current%pardata%bulk_conc
+        ! Need to solve an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
+        CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
+                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
+        current%pardata%Veff = Veff ! store Veff in particle record
+        current%pardata%Nbj = Nbj       ! store Nbj in particle record
+        Nbj = Nbj/zcf3 ! convert Nbj (number of moles) to a conc by division with cell volume (dimensional)
 
         IF (csum.EQ.0.0) THEN ! csum = 0 then dump the drug molecules to the nearest fluid node
-	        delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-		tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
-		tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
-		tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
+                delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
+                tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
+                tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
+                tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
 
         ELSE ! if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
 
@@ -864,13 +1108,17 @@ DO WHILE (ASSOCIATED(current))
         END IF
 
 
-	! point to next node in the list
-	current => next
+        ! point to next node in the list
+        current => next
 ENDDO
 
 !------------------------------------------------
-END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations 
+END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
 !------------------------------------------------
+
+
+
+
 
 
 !--------------------------------------------------------------------------------------------------
@@ -1069,17 +1317,16 @@ END SUBROUTINE Find_Root
 SUBROUTINE Particle_Track
 !------------------------------------------------
 IMPLICIT NONE
-INTEGER(lng)   :: i,ipartition,ii,jj,kk
-REAL(dbl)      :: xpold(1:np),ypold(1:np),zpold(1:np) ! old particle coordinates (working coordinates are stored in xp,yp,zp)
-!REAL(dbl)      :: xp(1:np),yp(1:np),zp(1:np) 	      ! working particle coordinates (working coordinates are stored in xp,yp,zp)
-!REAL(dbl)      :: xpnew(1:np),ypnew(1:np),zpnew(1:np) ! new particle coordinates (working coordinates are stored in xp,yp,zp)
-REAL(dbl)      :: upold(1:np),vpold(1:np),wpold(1:np) ! old particle velocity components (new vales are stored in up, vp, wp)
-!REAL(dbl)      :: up(1:np),vp(1:np),wp(1:np) 	      ! working particle velocity (working coordinates are stored in xp,yp,zp)
+INTEGER(lng)   		 :: i,ipartition,ii,jj,kk, CaseNo
+REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np) 	! old particle coordinates (working coordinates are stored in xp,yp,zp)
+REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 	! old particle velocity components (new vales are stored in up, vp, wp)
+REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid, V_eff_Ratio
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-ParticleTransfer = .FALSE. ! AT this time we do not know if any particles need to be transferred.
-delphi_particle = 0.0_dbl ! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
+ParticleTransfer = .FALSE. 						! AT this time we do not know if any particles need to be transferred.
+delphi_particle = 0.0_dbl 						! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
+
 tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
 tausgs_particle_z = 0.0_dbl
@@ -1147,49 +1394,47 @@ CALL Interp_ParToNodes_Conc ! distributes released drug concentration to neightb
 ENDIF
 
 
-! Now update tausgs only for those cells that have non-zero values of tausgs
+!---- Now update tausgs only for those cells that have non-zero values of tausgs
 DO kk=0,nzSub+1
-        DO jj=0,nySub+1
-                DO ii=0,nxSub+1
-			if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
-                        	tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
-			endif
-			if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
-                        	tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
-			endif
-			if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
-                        	tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
-			endif
-                ENDDO
-        ENDDO
+   DO jj=0,nySub+1
+      DO ii=0,nxSub+1
+         if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
+            tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
+	 endif
+	 if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
+            tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
+	 endif
+	 if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
+            tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
+	 endif
+      ENDDO
+   ENDDO
 ENDDO
 
 
 
-!IF (myid .EQ. master) THEN
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	next => current%next ! copy pointer of next node
 	
-	! Wrappign around in z-direction for periodic BC in z
-	IF(current%pardata%zp.GE.REAL(nz,dbl)) THEN
-		current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
+	!------- Wrappign around in z-direction for periodic BC in z
+	IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
+	   current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
 	ENDIF
-	IF(current%pardata%zp.LE.0.0_dbl) THEN
-		current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
-	ENDIF
-
-	! Wrappign around in y-direction for periodic BC in y
-	IF(current%pardata%yp.GE.REAL(ny,dbl)) THEN
-		current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
-	ENDIF
-	IF(current%pardata%yp.LT.1.0_dbl) THEN
-		current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
+	IF (current%pardata%zp.LE.0.0_dbl) THEN
+	   current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
 	ENDIF
 
+	!------- Wrappign around in y-direction for periodic BC in y
+	IF (current%pardata%yp.GE.REAL(ny,dbl)) THEN
+	   current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
+	ENDIF
+	IF (current%pardata%yp.LT.1.0_dbl) THEN
+	   current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
+	ENDIF
 
-	! Estimate to which partition the updated position belongs to.
-	!ParticleTransfer = .FALSE.
+
+	!------- Estimate to which partition the updated position belongs to.
 	DO ipartition = 1_lng,NumSubsTotal 
 
 
@@ -1207,7 +1452,7 @@ DO WHILE (ASSOCIATED(current))
 	
 
 	IF ((.NOT.ParticleTransfer).AND.(current%pardata%new_part .NE. current%pardata%cur_part)) THEN
-		ParticleTransfer = .TRUE.
+	   ParticleTransfer = .TRUE.
 	END IF
 	
 	
@@ -1252,12 +1497,11 @@ DO WHILE (ASSOCIATED(current))
       open(81,file='particle2-history.dat',position='append')
       write(81,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
       close(81)
-	END SELECT
-	! point to next node in the list
-	current => next
-	!write(*,*) i
+     
+      END SELECT
+	
+      current => next   				! point to next node in the list
 ENDDO
-!ENDIF 
 
 !------------------------------------------------
 END SUBROUTINE Particle_Track
@@ -1433,7 +1677,6 @@ DO k=1,nzSub,(nzSub-1)
           km1 = k - ez(m)
 
           !IF(km1.eq.0) km1=nzSub ! Balaji added
-          !IF(km1.eq.nzSub+1) km1=1 ! Balaji added
 
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
