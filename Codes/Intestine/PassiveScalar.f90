@@ -47,15 +47,22 @@ SUBROUTINE Scalar								! calculates the evolution of scalar in the domain
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k,m,im1,jm1,km1		! index variables
-REAL(dbl) :: phiBC				! scalar contribution from boundary
-REAL(dbl) :: phiOutSurf,phiInSurf		! scalar contribution coming from and going into the boundary
-REAL(dbl) :: tausgs				! contribution form tau_sgs term from particle closure
+INTEGER(lng) :: i,j,k,m,im1,jm1,km1				! index variables
+REAL(dbl) :: phiBC						! scalar contribution from boundary
+REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
+REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
+INTEGER   :: Negative_phi_Counter				! Monitoring the negative concentration
+REAL(dbl) :: Negative_phi_Total,Negative_phi_Worst 		! Monitoring the negative concentration
 
 CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
 ! store the previous scalar values
 phiTemp = phi
+
+Negative_phi_Total = 0
+Negative_phi_Counter = 0
+Negative_phi_Worst= 0
+
 
 ! Stream the scalar
 DO k=1,nzSub
@@ -85,11 +92,10 @@ DO k=1,nzSub
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
           ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN															! macro- boundary
-           CALL ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)															! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
-!            CALL ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOutSurf,phiInSurf)      ! Wang's BC  ! implement scalar boundary condition (using BB f's)    [MODULE: ICBC]
+          CALL ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)															! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
+!         CALL ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOutSurf,phiInSurf)      ! Wang's BC  ! implement scalar boundary condition (using BB f's)    [MODULE: ICBC]
             phi(i,j,k) = phi(i,j,k) + phiBC     
             CALL AbsorbedScalarS2(i,j,k,m,phiOutSurf,phiInSurf)																	! measure the absorption rate
-            !CALL AbsorbedScalarS(i,j,k,m,phiBC)																	! measure the absorption rate
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
             CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)								! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
             phi(i,j,k) = phi(i,j,k) + phiBC     
@@ -112,17 +118,25 @@ DO k=1,nzSub
         END DO
 
 	!phi(i,j,k) = phi(i,j,k) + delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-       	!  fix spurious oscillations in moment propagation method for high Sc #s
-        IF(phi(i,j,k) .LT. 0.0_dbl) THEN
-!          write(*,*) 'phi is negative at',i,j,k, phi(i,j,k)
-!          STOP
-          phi(i,j,k) = 0.0_dbl
-        END IF
-      END IF
+       	!fix spurious oscillations in moment propagation method for high Sc #s
 
+!------ Monitoring the negative phi
+        IF (phi(i,j,k) .LT. 0.0_dbl) THEN
+           Negative_phi_Counter = Negative_phi_Counter +1.0
+           Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) 
+           IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
+              Negative_phi_Worst = phi(i,j,k)
+           ENDIF
+	   phi(i,j,k) = 0.0_dbl
+         END IF
+
+     END IF
     END DO
   END DO
 END DO
+
+! Monitorin the Negative phi issue
+write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
 
 ! Add the amount of scalar absorbed through the outer and villous surfaces
 phiAbsorbed = 	phiAbsorbedS + phiAbsorbedV																		! total amount of scalar absorbed up to current time

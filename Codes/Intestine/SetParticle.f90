@@ -39,8 +39,8 @@ ALLOCATE(randno(3_lng*np))
 CALL RANDOM_NUMBER(randno)
 
 
-R0 = 0.0001_dbl ! cm
-dR = 0.0010_dbl
+R0 = 0.00001875_dbl 
+dR = 0.00013125_dbl
 open(52,file='particle.dat')
 write(52,*) np
 

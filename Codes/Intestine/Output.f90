@@ -33,7 +33,7 @@ numparticleSubfile = 0_lng
 ALLOCATE(radius(0:nz+1,0:500))		! 500 is an arbitrarily large number of output iterations...
 radcount = 0_lng							! initialize the output count
 
-!-----------------------------------------------g
+!------------------------------------------------
 END SUBROUTINE Output_Setup
 !------------------------------------------------
 
@@ -43,6 +43,12 @@ SUBROUTINE OpenOutputFiles				! opens output files
 IMPLICIT NONE
 
 IF(myid .EQ. master) THEN
+
+  ! Monitoring negative phi
+   OPEN(2118,FILE='Negative-phi.dat',POSITION='APPEND')
+   WRITE(2118,'(A120)') 'VARIABLES = iter,  Number of Negative phi Nodes,  Total Sum of Negative phi,  Worst Negative phi,  Average of Negative phi'
+   CALL FLUSH(2118)
+
 
   ! Status
   OPEN(5,FILE='status.dat')										
@@ -79,6 +85,10 @@ WRITE(2472,'(A105)') '#VARIABLES = "iter","time", "phiA", "phiAS", "phiAV", "phi
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
+! test output
+OPEN(9,FILE='testoutput-'//sub//'.dat',POSITION='append')
+CALL FLUSH(9)
+
 !------------------------------------------------
 END SUBROUTINE OpenOutputFiles
 !------------------------------------------------
@@ -89,6 +99,8 @@ SUBROUTINE CloseOutputFiles			! opens output files
 IMPLICIT NONE
 
 IF(myid .EQ. master) THEN
+  ! Monitoring negative phi
+  CLOSE(2118)
 
   ! Status
   CLOSE(5)													
@@ -401,6 +413,9 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
    DO WHILE (ASSOCIATED(current))
       numParticlesSub = numParticlesSub + 1_lng
       next => current%next 					! copy pointer of next node
+
+
+
 
       WRITE(160,1001) 	current%pardata%xp 	  ,',',	&
 			current%pardata%yp  	  ,',',	&

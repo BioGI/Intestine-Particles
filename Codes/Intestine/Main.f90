@@ -66,8 +66,8 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
 	ENDIF
 
 	IF(ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
-	   CALL Calc_Global_Bulk_Scalar_Conc				! Estimate bluk	scalar concentration in each partition
-	   CALL Collect_Distribute_Global_Bulk_Scalar_Conc		! Collect Cb_Global from different processors, average it and distribute it to all the processors.  
+!	   CALL Calc_Global_Bulk_Scalar_Conc				! Estimate bluk	scalar concentration in each partition
+!	   CALL Collect_Distribute_Global_Bulk_Scalar_Conc		! Collect Cb_Global from different processors, average it and distribute it to all the processors.  
 	   CALL Particle_Track
 	   CALL Particle_MPI_Transfer
 	ENDIF
@@ -103,7 +103,7 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
       CALL PrintFinalRestart						! print a final set of restart files to continue if desired [MODULE: Output]
       CALL DEAllocateArrays						! clean up the memory [MODULE: Setup]
       CALL CloseOutputFiles						! closes output files [MODULE: Output.f90]
-!      CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
+!     CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
       CALL MPI_TYPE_FREE(mpipartransfertype,mpierr)
       CALL MPI_FINALIZE(mpierr)						! end the MPI simulation [Intrinsic]
 
