@@ -36,6 +36,7 @@ LOGICAL :: restart								! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
+REAL(dbl), ALLOCATABLE :: overlap(:,:,:)                                        ! Partitioning for drug dissolution model
 REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)				! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_x(:,:,:)				! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_y(:,:,:)				! passive scalar contribution from particles
@@ -1095,6 +1096,7 @@ ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ! Scalar
 ALLOCATE(phi(0:nxSub+1,0:nySub+1,0:nzSub+1), 						&
          phiTemp(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(overlap(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_y(0:nxSub+1,0:nySub+1,0:nzSub+1))
@@ -1161,7 +1163,7 @@ DEALLOCATE(f,fplus)
 DEALLOCATE(u,v,w,rho)
 
 ! Scalar
-DEALLOCATE(phi,phiTemp,delphi_particle,tausgs_particle_x,tausgs_particle_y,tausgs_particle_z)
+DEALLOCATE(phi,phiTemp,overlap,delphi_particle,tausgs_particle_x,tausgs_particle_y,tausgs_particle_z)
 
 ! Node Flags
 DEALLOCATE(node)
