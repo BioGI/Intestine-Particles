@@ -1213,10 +1213,9 @@ DO WHILE (ASSOCIATED(current))
 !------ Computing NB_j and Veff for each particle
         Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
         Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
-        bulkconc = Cb_global                                                    ! It should be changed to bulkconc = current%pardata%bulk_conc
 
 !------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-        CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
+        CALL Find_Root(current%pardata%parid, current%pardata%bulk_conc, current%pardata%par_conc &
                       ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
         current%pardata%Veff = Veff                                             ! store Veff in particle record
         current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
