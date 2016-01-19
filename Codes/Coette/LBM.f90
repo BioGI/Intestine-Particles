@@ -503,8 +503,6 @@ REAL(dbl),DIMENSION(2)   	:: VIB_x, VIB_y, VIB_z	 			! Volume of Influence's Bor
 REAL(dbl),DIMENSION(2)    	:: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
 REAL(dbl)                       :: Delta_X, Delta_Y, Delta_Z
 REAL(dbl)                       :: x_DP, y_DP, z_DP				! Coordinates of "Discretized Point" (DP)
-REAL(dbl),DIMENSION(200,200,200):: Overlap					
-REAL(dbl)		  	:: Overlap_sum
 REAL(dbl)                       :: Cb_Hybrid
 
 TYPE(ParRecord), POINTER  	:: current
@@ -921,15 +919,12 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
         next => current%next ! copy pointer of next node
 
-        !write(*,*) current%pardata%parid,iter,mySub,current%pardata%new_part,xp,iMin,yp,jMin,zp,kMin
-
         xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
         yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
         zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
         delta_par = ((current%pardata%rp/xcf)/current%pardata%sh)+(current%pardata%rp/xcf) ! calculate length scale delta_j = R_j/Sh_j for jth particle and effective radius delta_par = delta_j + R_j (note: need to convert this into Lattice units and not use the physical length units)
         delta_par = ((88.0_dbl/21.0_dbl)*((delta_par)**3.0_dbl))**(1.0_dbl/3.0_dbl) ! compute equivalent cubic mesh length scale
-        !delta_par = delta_mesh
 
         ix0=FLOOR(xp)
         ix1=CEILING(xp)
@@ -1137,7 +1132,6 @@ REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z 			! Volume of Influence's Bord
 REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER  ,DIMENSION(2)    :: NEP_x, NEP_y, NEP_z                        ! Lattice Nodes Surronding the particle
-REAL(dbl),DIMENSION(100,100,100):: Overlap					
 REAL(dbl)		  :: Overlap_sum
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
