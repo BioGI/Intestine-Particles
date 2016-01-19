@@ -36,6 +36,7 @@ LOGICAL :: restart								! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
+REAL(dbl), ALLOCATABLE :: overlap(:,:,:)                                        ! Partitioning for drug dissolution model
 REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)				! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_x(:,:,:)				! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_y(:,:,:)				! passive scalar contribution from particles
@@ -212,19 +213,11 @@ INTEGER(lng), PARAMETER :: ParticleOn=1						! flag to signify Particle Tracking
 INTEGER(lng), PARAMETER :: ParticleOff=0					! flag for signify if particle tracking is off
 INTEGER(lng)    :: np								! number of particles
 
-!REAL(dbl), PARAMETER :: molarvol=2.65e-10,diffm=6.7e-10			! drug properties
-!REAL(dbl), PARAMETER :: molarvol=92.73_dbl,diffm=4.235e-6_dbl,R0=0.0026_dbl,Cs_mol=3.14854e-6!1.2e-6		! drug properties
-REAL(dbl), PARAMETER :: molarvol=92.73_dbl,diffm=8.47e-7_dbl,R0=0.0026_dbl,Cs_mol=3.14854e-6!1.2e-6		! drug properties
+REAL(dbl), PARAMETER :: molarvol=92.73_dbl,diffm=8.47e-7_dbl,R0=0.0026_dbl,Cs_mol=3.14854e-6 !1.2e-6		! drug properties
 REAL(dbl):: Cb_global		! Global bulk scalar Concentration
 INTEGER(lng):: Cb_numFluids	! Number of fluid nodes in the process for Global bulk scalar Concentration
 INTEGER(lng):: num_particles	! Total number of particles in domain
 
-!REAL(dbl), ALLOCATABLE		:: xp(:),yp(:),zp(:)				! particle physical location coordinates
-!INTEGER(lng), ALLOCATABLE 	:: ipar(:),jpar(:),kpar(:)			! particle computational nodal coordinates
-!REAL(dbl), ALLOCATABLE		:: up(:),vp(:),wp(:)				! particle velocities
-!REAL(dbl), ALLOCATABLE		:: rp(:),delNBbyCV(:),par_conc(:),bulk_conc(:),rpold(:)		! particle radius and drug release rate
-!REAL(dbl), ALLOCATABLE		:: sh(:),gamma_cont(:)					! particle sherwood number
-! Particle tracking parallel variables
 
 INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) ! List of starting/enning i indices for each subdomain
 INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) ! List of starting/enning j indices for each subdomain
@@ -235,33 +228,6 @@ INTEGER(lng),ALLOCATABLE :: probestat(:)	! MPI status object
 INTEGER(lng),ALLOCATABLE :: numpartransfer(:)	! Particles to be transferred in each direction
 INTEGER(lng) :: NumCommDirsPar = 26_lng
 INTEGER(lng) :: NumParVar = 16_lng
-
-!TYPE ParRecord
-!	TYPE(ParRecord), POINTER :: prev => NULL()! pointer to prev record
-!	TYPE(ParRecord), POINTER :: next => NULL()	! pointer to next record
-!	INTEGER(lng)	:: parid ! particle id in the overall list - a tag that can be used to track the particle
-!	INTEGER(lng)	:: cur_part	! current sub-domain id / partition number
-!	INTEGER(lng)	:: new_part	! current sub-domain id / partition number
-!	REAL(dbl)	:: xp	! particle x-position
-!	REAL(dbl)	:: yp ! particle y-position
-!	REAL(dbl)	:: zp	! particle z-position
-!	REAL(dbl)	:: up	! particle u-velocity
-!	REAL(dbl)	:: vp   ! particle v-velocity
-!	REAL(dbl)	:: wp	! particle w-velocity
-!	REAL(dbl)	:: rp	! particle radius
-!	REAL(dbl)	:: delNBbyCV ! particle drug release concentration 
-!	REAL(dbl)	:: par_conc ! particle concentration
-!	REAL(dbl)	:: bulk_conc ! bulk concentration at particle location
-!	REAL(dbl)	:: xpold	! particle x-position
-!	REAL(dbl)	:: ypold 	! particle y-position
-!	REAL(dbl)	:: zpold	! particle z-position
-!	REAL(dbl)	:: upold	! particle u-velocity
-!	REAL(dbl)	:: vpold   	! particle v-velocity
-!	REAL(dbl)	:: wpold	! particle w-velocity
-!	REAL(dbl)	:: rpold	! old particle radius
-!	REAL(dbl)	:: sh 	! Sherwood number
-!	REAL(dbl)	:: gamma_cont	! gamma - container effect
-!END TYPE ParRecord
 
 TYPE ParRecordTransfer
 	SEQUENCE
@@ -300,7 +266,6 @@ TYPE ParRecord
 	TYPE(ParRecordTransfer) :: pardata
 END TYPE ParRecord
 
-!TYPE(ParRecord),ALLOCATABLE	:: ParList(:)
 TYPE(ParRecordTransfer),ALLOCATABLE	:: ParSendArray(:,:),ParRecvArray(:,:)
 TYPE(ParRecord), POINTER	:: ParListHead,ParListEnd
 TYPE(ParRecordTransfer) :: ParInit
@@ -1131,6 +1096,7 @@ ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ! Scalar
 ALLOCATE(phi(0:nxSub+1,0:nySub+1,0:nzSub+1), 						&
          phiTemp(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(overlap(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_y(0:nxSub+1,0:nySub+1,0:nzSub+1))
@@ -1176,10 +1142,8 @@ ALLOCATE(msgSize(NumCommDirs))								! array of the number of elements sent for
 ALLOCATE(req(2*NumCommDirs))									! allocate the MPI send request array
 
 ! Geometry Arrays
-!ALLOCATE(rDom0(0:nz+1),rDom(0:nz+1),r(0:nzSub+1))		! intial and current radius (global), current radius (local)
 ALLOCATE(rDom0In(0:nz+1),rDomIn(0:nz+1),rIn(0:nzSub+1))		! intial and current radius (global), current radius (local)
 ALLOCATE(rDom0Out(0:nz+1),rDomOut(0:nz+1),rOut(0:nzSub+1))	! intial and current radius (global), current radius (local)
-!ALLOCATE(velDom(0:nz+1),vel(0:nzSub+1))					! global and local wall velocities
 ALLOCATE(velDomIn(0:nz+1),velIn(0:nzSub+1))					! global and local wall velocities
 ALLOCATE(velDomOut(0:nz+1),velOut(0:nzSub+1))					! global and local wall velocities
 ALLOCATE(x(0:nxSub+1),y(0:nySub+1),z(0:nzSub+1))		! x, y, z, physical coordinate arrays (local)
@@ -1201,7 +1165,7 @@ DEALLOCATE(f,fplus)
 DEALLOCATE(u,v,w,rho)
 
 ! Scalar
-DEALLOCATE(phi,phiTemp,delphi_particle,tausgs_particle_x,tausgs_particle_y,tausgs_particle_z)
+DEALLOCATE(phi,phiTemp,overlap,delphi_particle,tausgs_particle_x,tausgs_particle_y,tausgs_particle_z)
 
 ! Node Flags
 DEALLOCATE(node)
@@ -1245,10 +1209,8 @@ DEALLOCATE(waitStat)					! array of MPI_WAITALL requests
 DEALLOCATE(SubID)
 
 ! Geometry Arrays
-!DEALLOCATE(rDom0,rDom,r)			! intial and current radius (global), current radius (local)
 DEALLOCATE(rDom0In,rDomIn,rIn)			! intial and current radius (global), current radius (local)
 DEALLOCATE(rDom0Out,rDomOut,rOut)			! intial and current radius (global), current radius (local)
-!DEALLOCATE(velDom,vel)				! global and local wall velocities
 DEALLOCATE(velDomIn,velIn)				! global and local wall velocities
 DEALLOCATE(velDomOut,velOut)				! global and local wall velocities
 DEALLOCATE(x,y,z)						! x, y, z, physical coordinate arrays (local)
