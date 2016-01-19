@@ -21,7 +21,6 @@ phiTemp		= 0.0_dbl								! temporary scalar
 ! scalar parameters
 Dm   			= nuL/Sc									! binary molecular diffusivity (scalar in fluid)
 Dmcf			= (zcf*zcf)/tcf						! conversion factor for diffusivity
-!Delta			= 1.0_dbl - 6.0_dbl*Dm				! scalar diffusion parameter
 Delta			= 1.0_dbl - 6.0_dbl*Dm				! scalar diffusion parameter
 
 ! set scalar values at sources/sinks
@@ -71,17 +70,15 @@ DO k=1,nzSub
     DO i=1,nxSub
       
       IF(node(i,j,k) .EQ. FLUID) THEN
-      	!IF (iter.lt.1200) THEN
-	!	phiTemp(i,j,k) = phiTemp(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-	!END IF
-	!phiTemp(i,j,k) = phiTemp(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-        phi(i,j,k) = Delta*phiTemp(i,j,k) ! 
-        !phi(i,j,k) = 0.0_dbl*Delta*phiTemp(i,j,k) ! 
-	phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-	tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
-		 (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
-		 (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
-	phi(i,j,k) = phi(i,j,k)+ tausgs ! Balaji added - to handle SGS particle effects.
+        phi(i,j,k) = Delta*phiTemp(i,j,k)  
+	phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) 	! Balaji added to introduce drug concentration release
+
+! 	Farhad Removed SGS effects
+!	tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
+!		 (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
+!		 (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
+!
+!	phi(i,j,k) = phi(i,j,k)+ tausgs 			! Balaji added - to handle SGS particle effects.
 
         DO m=0,NumDistDirs
       
@@ -91,22 +88,11 @@ DO k=1,nzSub
           km1 = k - ez(m)
 
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
-            ! IF ( (i.eq.30) .and. (j.eq.30) .and. (k.eq.30) .and. (m.eq.0) ) THEN
-            !    write (*,*) phi(i,j,k), fplus(m,im1,jm1,km1), rho(im1,jm1,km1), wt(m), Delta, phiTemp(im1,jm1,km1)
-            ! END IF 
             phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
-            !phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1) &
-	    !								     + wt(m)*Delta*phiTemp(i,j,k)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
-            !CALL ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)! Gino's BC															! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
-            !phi(i,j,k) = phi(i,j,k) + phiBC     
-            !CALL AbsorbedScalarS(i,j,k,m,phiBC)																	! measure the absorption rate
-
             CALL ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOutSurf,phiInSurf)	! Wang's BC														! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
-	    !phiBC =(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
             phi(i,j,k) = phi(i,j,k) + phiBC     
             CALL AbsorbedScalarS2(i,j,k,m,phiOutSurf,phiInSurf)																	! measure the absorption rate
-            !CALL AbsorbedScalarS(i,j,k,m,phiBC)																	! measure the absorption rate
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
             CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)								! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
             phi(i,j,k) = phi(i,j,k) + phiBC     
