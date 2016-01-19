@@ -82,7 +82,7 @@ CALL FLUSH(2458)
 ! Scalar
 OPEN(2472,FILE='scalar-'//sub//'.dat')
 !WRITE(2472,'(A105)') '#VARIABLES = "iter","time", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage","phiInitial"'
-WRITE(2472,'(A62)') '#VARIABLES = "iter","phiDomain","phiAverage","phiInitial"'
+WRITE(2472,'(A62)') '#VARIABLES = "iter","time","phiDomain","phiAverage","phiInitial"'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -315,9 +315,9 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
          jj = ((jMin - 1_lng) + j)
          kk = ((kMin - 1_lng) + k)
 
-         IF (phi(i,j,k) .LT. 1.0E-25) THEN
-             phi(i,j,k)= 0.0
-         END IF
+         IF (phi(i,j,k) .LT. 1.0e-25) THEN
+            phi(i,j,k)=0.0_lng
+         END IF   
 
          WRITE(60,'(3I4,5E15.5,I6)') ii, jj, kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, (rho(i,j,k)-denL)*dcf*pcf,	&
                                      phi(i,j,k), node(i,j,k)
@@ -379,6 +379,8 @@ END IF
 END SUBROUTINE PrintFields
 !------------------------------------------------
 
+
+
 !------------------------------------------------------------------------------------------------------------
 SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
 !------------------------------------------------------------------------------------------------------------
@@ -395,37 +397,28 @@ yaxis=ANINT(0.5_dbl*(ny+1))
 IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)	&
                                                    .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
 
-  ! scale the iteration by 1/10 such that the numbers used in the output file aren't too large
-  WRITE(iter_char(1:7),'(I7.7)') iter
+   !------ scale the iteration by 1/10 such that the numbers used in the output file aren't too large
+   WRITE(iter_char(1:7),'(I7.7)') iter
 
-  ! store the current iteration in "parfilenum"
-  parfilenum(parfileCount) = iter
-  !numparticleSubfile(parfileCount) = numParticlesSub
-  numParticlesSub  = 0_lng
- !parfileCount = parfileCount + 1_lng
+   !------ store the current iteration in "parfilenum"
+   parfilenum(parfileCount) = iter
+   numParticlesSub  = 0_lng
 
-  ! open the proper output file
-  OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.dat')
-  WRITE(160,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "ParID" "Sh" "rp" "bulk_conc" "delNBbyCV" "Sst" "S" "Veff" "Nbj"'
-  WRITE(160,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
-  !WRITE(160,'(A10,E15.5,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',np,'F=POINT'
+   !------ open the proper output file
+   OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
+   WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
 
-! Using linked lists
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	numParticlesSub = numParticlesSub + 1_lng
-	next => current%next ! copy pointer of next node
+   !------ Using linked lists
+   current => ParListHead%next
 
-         !WRITE(160,'(6E15.5,1I4,2E15.5)') xp(i)*xcf,yp(i)*ycf,MOD(zp(i),REAL(nz,dbl))*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,rp(i),par_conc(i)
-!         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (xp(i)-1_lng))*xcf,((jMin - Cj) + (yp(i)-1_lng))*ycf,(((kMin - 1_lng) + &
-!	 MOD(zp(i),REAL(nz,dbl))) - 0.5_dbl)*zcf, up(i)*vcf, vp(i)*vcf, wp(i)*vcf,i,sh(i),rp(i),bulk_conc(i),delNBbyCV(i)
+   DO WHILE (ASSOCIATED(current))
+      numParticlesSub = numParticlesSub + 1_lng
+      next => current%next 					! copy pointer of next node
 
-!         WRITE(160,'(6E15.5,1I4,4E15.5)') ((iMin - Ci) + (current%pardata%xp-1_lng))*xcf,((jMin - Cj) + (current%pardata%yp-1_lng))*ycf,(((kMin - 1_lng) + &
-!	 MOD(current%pardata%zp,REAL(nz,dbl))) - 0.5_dbl)*zcf, current%pardata%up*vcf, current%pardata%vp*vcf, current%pardata%wp*vcf,current%pardata%parid,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV
 
-!         WRITE(160,'(6E15.5,1I9,8E15.5)') ((current%pardata%xp-xaxis))*xcf,((current%pardata%yp-yaxis))*ycf,((MOD(current%pardata%zp,REAL(nz,dbl))) - 0.5_dbl)*zcf, current%pardata%up*vcf, current%pardata%vp*vcf, current%pardata%wp*vcf,current%pardata%parid,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%Sst,current%pardata%S,current%pardata%Veff,current%pardata%Nbj
 
-       WRITE(160,1001) 	current%pardata%xp 	  ,',',	&
+
+      WRITE(160,1001) 	current%pardata%xp 	  ,',',	&
 			current%pardata%yp  	  ,',',	&
 			current%pardata%zp 	  ,',',	&
                         current%pardata%up*vcf 	  ,',',	&
@@ -440,13 +433,13 @@ DO WHILE (ASSOCIATED(current))
 			current%pardata%S 	  ,',',	&
 			current%pardata%Veff 	  ,',',	&
 			current%pardata%Nbj
+
 1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2)
 
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-   CLOSE(160)
+     current => next   						! point to next node in the list
+  ENDDO
+
+  CLOSE(160)
   numparticleSubfile(parfileCount) = numParticlesSub	
   parfileCount = parfileCount + 1_lng
 ENDIF
@@ -630,8 +623,6 @@ IF(myid .EQ. master) THEN
 
   ! cacluate volume in the system
   DO k=1,nz
-    !volume = volume + rDom(k)*rDom(k)*zcf
-    !volume = volume + (rDomOut(k)*rDomOut(k)-rDomIn(k)*rDomIn(k))*zcf
     volume = volume + (ny-1)*ycf*zcf*(rDomOut(k)-rDomIn(k))
   END DO
 
@@ -688,12 +679,6 @@ END IF
 
 ! node volume in physical units
 zcf3 = zcf*zcf*zcf
-!write(*,*) zcf3
-!WRITE(2472,'(I8,8E25.15)') iter, 4.0_dbl*phiAbsorbed*zcf3, 4.0_dbl*phiAbsorbedS*zcf3, 4.0_dbl*phiAbsorbedV*zcf3,				&
-!   (phiTotal-phiDomain)*zcf3, 4.0_dbl*phiDomain*zcf3, (phiAbsorbed+phiDomain)*zcf3, phiAverage*zcf3,phiTotal*zcf3
-!WRITE(2472,'(I8,9E25.15)') iter,iter*tcf,phiAbsorbed*zcf3, phiAbsorbedS*zcf3, phiAbsorbedV*zcf3,				&
-!   (phiTotal-phiDomain)*zcf3, phiDomain*zcf3, (phiAbsorbed+phiDomain)*zcf3, phiAverage*zcf3,phiTotal*zcf3
-
 
 WRITE(2472,'(I8,3E25.15)') iter, phiDomain*zcf3, phiAverage*zcf3, phiTotal*zcf3
 
@@ -783,6 +768,7 @@ END IF
 END SUBROUTINE PrintParams
 !------------------------------------------------
 
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE MergeOutput									! combines the subdomain output files into an output files for the entire computational domain 
 !--------------------------------------------------------------------------------------------------
@@ -791,14 +777,15 @@ IMPLICIT NONE
 CALL MergeScalar
 CALL MergeFields
 CALL MergeMass
-     IF(ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
-     		CALL MergeParticleOutput			! Merge particle output
-     ENDIF
+IF(ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
+	CALL MergeParticleOutput			! Merge particle output
+ENDIF
 
 
 !------------------------------------------------
 END SUBROUTINE MergeOutput
 !------------------------------------------------
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE MergeFields											! combines the subdomain output into an output file for the entire computational domain 
@@ -917,9 +904,9 @@ ELSE
 
           WRITE(685,'(8E15.5,I6)') xx(i),yy(j),zz(k),															&	! x,y,z node location
                                    FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),		&	! u,v,w @ i,j,k
-                                   FieldData(i,j,k,4),														&	! rho(i,j,k)
-                                   FieldData(i,j,k,5),														&	! phi(i,j,k)
-                                   INT(FieldData(i,j,k,6))														! node(i,j,k)									
+                                   FieldData(i,j,k,4),							&	! rho(i,j,k)
+                                   FieldData(i,j,k,5),							&	! phi(i,j,k)
+                                   INT(FieldData(i,j,k,6))							! node(i,j,k)									
        
         END DO
       END DO
@@ -1679,7 +1666,7 @@ IF(myid .EQ. master) THEN
 
     ! initialize the summations
     mass1 = 0.0_dbl
-    mass2 = 0.0_dbl
+    mass2 = 0.0_dbl 
     mass3 = 0.0_dbl 
     mass4 = 0.0_dbl 
 
