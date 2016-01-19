@@ -31,7 +31,7 @@ FCFLAGS += -I/opt/local/include
 #MODULES = setup.o algorithm.o output.o
 #SRCOBJS = 3d.o
 PARFILES = SetParticle.o
-PROGRAMS = Intestine3D.exe
+PROGRAMS = Couette3D.exe
 #OBJS = SetPrecision.o Setup.o LBM.o PassiveScalar.o \
        Parallel.o Geometry.o ICBC.o Output.o \
        Main.o
@@ -46,7 +46,7 @@ OBJS= $(SRCOBJS)
 
 all: 	
 	@$(MAKE) $(MODULES)
-	@$(MAKE) Intestine3D.exe
+	@$(MAKE) Couette3D.exe
 	@$(MAKE) genparticles
 
 genparticles: $(PARFILES)
@@ -55,9 +55,9 @@ genparticles: $(PARFILES)
 
 
 
-Intestine3D.exe: $(OBJS)
-	     $(FC) -o Intestine3D.exe $(FCFLAGS) $(OBJS) $(MODULES)
-	     cp Intestine3D.exe ../
+Couette3D.exe: $(OBJS)
+	     $(FC) -o Couette3D.exe $(FCFLAGS) $(OBJS) $(MODULES)
+	     cp Couette3D.exe ../
 
 $(OBJS): $(MODULES)
 
@@ -181,6 +181,6 @@ veryclean: clean
 #	$(FC) -o redim $(FFLAGS) $(REDIMOBJS) $(FLIBS)
 #
 #clean:
-#	rm -f *.o *.mod Intestine3D.exe
+#	rm -f *.o *.mod Couette3D.exe
 
 
