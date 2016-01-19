@@ -70,17 +70,15 @@ DO k=1,nzSub
     DO i=1,nxSub
       
       IF(node(i,j,k) .EQ. FLUID) THEN
-      	!IF (iter.lt.1200) THEN
-	!	phiTemp(i,j,k) = phiTemp(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-	!END IF
-	!phiTemp(i,j,k) = phiTemp(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-        phi(i,j,k) = Delta*phiTemp(i,j,k) ! 
-        !phi(i,j,k) = 0.0_dbl*Delta*phiTemp(i,j,k) ! 
-	phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
-	tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
-		 (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
-		 (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
-	phi(i,j,k) = phi(i,j,k)+ tausgs ! Balaji added - to handle SGS particle effects.
+        phi(i,j,k) = Delta*phiTemp(i,j,k)  
+	phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) 	! Balaji added to introduce drug concentration release
+
+! 	Farhad Removed SGS effects
+!	tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
+!		 (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
+!		 (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
+!
+!	phi(i,j,k) = phi(i,j,k)+ tausgs 			! Balaji added - to handle SGS particle effects.
 
         DO m=0,NumDistDirs
       
