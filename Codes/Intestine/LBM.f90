@@ -485,7 +485,7 @@ SUBROUTINE Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid) ! Computes the mesh-independ
 
 IMPLICIT NONE
 
-INTEGER(lng)  			:: i,j,k, CaseNo
+INTEGER(lng)  			:: i,j,k, kk, CaseNo
 INTEGER(lng)  			:: ix0,ix1,iy0,iy1,iz0,iz1			! Trilinear interpolation parameters
 INTEGER(lng)			:: NumFluids_Veff = 0_lng
 INTEGER,DIMENSION(2)   		:: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
@@ -691,8 +691,17 @@ DO WHILE (ASSOCIATED(current))
            DO i= NEP_x(1),NEP_x(2) 
               DO j= NEP_y(1),NEP_y(2)
                  DO k= NEP_z(1),NEP_z(2)
-                    IF (node(i,j,k) .EQ. FLUID) THEN
-                       Cb_Total_Veff  = Cb_Total_Veff  + phi(i,j,k)
+
+                    !---- Taking care of the periodic BC in Z-dir
+                    kk = k
+		    IF (k .gt. nz) THEN
+                       kk = k - (nz - 1)  
+           	    ELSE IF (k .lt. 1) THEN
+                       kk = k + (nz-1)
+		    END IF   
+
+                    IF (node(i,j,kk) .EQ. FLUID) THEN
+                       Cb_Total_Veff  = Cb_Total_Veff  + phi(i,j,kk)
                        NumFluids_Veff = NumFluids_Veff + 1_lng
                     END IF
                  END DO

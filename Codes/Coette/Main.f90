@@ -1,4 +1,4 @@
-	!==================================================================================================
+!==================================================================================================
 PROGRAM LBM3D	! 3D Parallelized LBM Simulation
                 ! Gino Banco (2008-2010) - original LBM method parallelization for intestine
                 ! Balaji Jayaraman (2014-2015) - Improved LBM method , particle tracking in parallel and drug release model
