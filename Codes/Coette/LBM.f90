@@ -486,7 +486,7 @@ SUBROUTINE Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid) ! Computes the mesh-independ
 IMPLICIT NONE
 
 INTEGER(lng)  			:: i,j,k, kk, CaseNo
-INTEGER(lng)  			:: ix0,ix1,iy0,iy1,iz0,iz1			! Trilinear interpolation parameters
+INTEGER(lng)  			:: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11			! Trilinear interpolation parameters
 INTEGER(lng)			:: NumFluids_Veff = 0_lng
 INTEGER,DIMENSION(2)   		:: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER,DIMENSION(2)   		:: NEP_x, NEP_y, NEP_z                  	! Lattice Nodes Surronding the particle
@@ -644,12 +644,27 @@ DO WHILE (ASSOCIATED(current))
                        zd = 0.0_dbl
                     END IF
 
+!------------------ Taking care of the periodic BC in Z-dir
+                    iz00 = iz0
+                    IF (iz0 .gt. nz) THEN
+                       iz00 = iz0 - (nz - 1)
+                    ELSE IF (iz0 .lt. 1) THEN
+                       iz00 = iz0 + (nz-1)
+                    END IF
+
+                    iz11 = iz1         
+                    IF (iz1 .gt. nz) THEN
+                       iz11 = iz1 - (nz-1)
+                    ELSE IF (iz1 .lt. 1) THEN
+                       iz11 = iz1 + (nz-1)
+                    END IF
+
 !------------------ Concentration Trilinear Iinterpolation
 !------------------ Interpolation in x-direction
-                    c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
-                    c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
-                    c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
-                    c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+                    c00 = phi(ix0,iy0,iz00) * (1.0_dbl-xd) + phi(ix1,iy0,iz00) * xd
+                    c01 = phi(ix0,iy0,iz11) * (1.0_dbl-xd) + phi(ix1,iy0,iz11) * xd
+                    c10 = phi(ix0,iy1,iz00) * (1.0_dbl-xd) + phi(ix1,iy1,iz00) * xd
+                    c11 = phi(ix0,iy1,iz11) * (1.0_dbl-xd) + phi(ix1,iy1,iz11) * xd
 !------------------ Interpolation in y-direction
                     c0  = c00 * (1.0_dbl-yd) + c10 * yd
                     c1  = c01 * (1.0_dbl-yd) + c11 * yd
