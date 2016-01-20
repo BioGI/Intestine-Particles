@@ -695,7 +695,7 @@ DO WHILE (ASSOCIATED(current))
                     !---- Taking care of the periodic BC in Z-dir
                     IF (k .gt. nz) THEN
                        kk = k - (nz - 1)  
-           	    ELSE IF (nz .lt. 1) THEN
+           	    ELSE IF (k .lt. 1) THEN
                        kk = k + (nz-1)
 		    END IF   
 
