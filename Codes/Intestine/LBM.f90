@@ -1132,7 +1132,7 @@ SUBROUTINE Interp_ParToNodes_Conc_New
 !--- Called by Particle_Track (LBM.f90) to get delphi_particle
 
 IMPLICIT NONE
-INTEGER(lng)  		  :: i,j,k
+INTEGER(lng)  		  :: i,j,k,kk
 REAL(dbl)     		  :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
 REAL(dbl)                 :: N_d         				! Modeling parameter to extend the volume of influence around 
@@ -1142,7 +1142,7 @@ REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z 			! Volume of Influence's Bord
 REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER  ,DIMENSION(2)    :: NEP_x, NEP_y, NEP_z                        ! Lattice Nodes Surronding the particle
-REAL(dbl)		  :: Overlap_sum
+REAL(dbl)		  :: tmp, Overlap_sum
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
@@ -1197,42 +1197,62 @@ DO WHILE (ASSOCIATED(current))
         DO i= NEP_x(1),NEP_x(2) 
            DO j= NEP_y(1),NEP_y(2)
               DO k= NEP_z(1),NEP_z(2)
-                 IF (node(i,j,k) .EQ. FLUID) THEN
 	         NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
-        	    NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
-		    NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
-		    NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
-		    NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
-		    NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
-		    Overlap(i,j,k) = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
-                                     MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
-                                     MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
-                    Overlap_sum= Overlap_sum + Overlap(i,j,k)
+        	 NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
+		 NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
+		 NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
+		 NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
+		 NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+
+		 tmp = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
+                       MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
+                       MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
+                
+		!---- Taking care of the periodic BC in Z-dir
+                kk = k 
+      		IF (k .gt. nz) THEN
+                    kk = k - (nz - 1)
+                ELSE IF (k .lt. 1) THEN
+                    kk = k + (nz-1)
+                END IF
+
+                IF (node(i,j,kk) .EQ. FLUID) THEN
+                    Overlap(i,j,kk)= tmp
+                    Overlap_sum= Overlap_sum + Overlap(i,j,kk)
                  END IF
               END DO
            END DO
         END DO
 
 !------ Computing NB_j and Veff for each particle
-        Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-        Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
-
+!        Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
+!        Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
+!
 !------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-        CALL Find_Root(current%pardata%parid, current%pardata%bulk_conc, current%pardata%par_conc &
-                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-        current%pardata%Veff = Veff                                             ! store Veff in particle record
-        current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
-        Nbj = Nbj/zcf3  
-
+!        CALL Find_Root(current%pardata%parid, current%pardata%bulk_conc, current%pardata%par_conc &
+!                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
+!        current%pardata%Veff = Veff                                             ! store Veff in particle record
+!        current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
+!        Nbj = Nbj/zcf3  
+!
 !------ Computing particle release contribution to scalar field at each lattice node
         DO i= NEP_x(1),NEP_x(2)
            DO j= NEP_y(1),NEP_y(2)
               DO k= NEP_z(1),NEP_z(2)
-                 IF (node(i,j,k) .EQ. FLUID) THEN                 
-                    delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV* (Overlap(i,j,k)/Overlap_sum)
-                    tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-                    tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-                    tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                
+		 !---- Taking care of the periodic BC in Z-dir
+                 kk = k 
+                 IF (k .gt. nz) THEN
+                     kk = k - (nz - 1)
+                 ELSE IF (k .lt. 1) THEN
+                     kk = k + (nz-1)
+                 END IF
+ 
+                IF (node(i,j,kk) .EQ. FLUID) THEN                 
+                    delphi_particle(i,j,kk)  = delphi_particle(i,j,kk)  + current%pardata%delNBbyCV* (Overlap(i,j,kk)/Overlap_sum)
+!                   tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+!                   tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+!                   tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
                  END IF 
               END DO
            END DO
