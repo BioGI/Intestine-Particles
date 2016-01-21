@@ -1207,7 +1207,7 @@ DO WHILE (ASSOCIATED(current))
 
 !------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
         Overlap_sum = 0.0_dbl
-        Overlap= 0.0na v
+        Overlap= 0.0
  
         DO i= NEP_x(1),NEP_x(2) 
            DO j= NEP_y(1),NEP_y(2)
