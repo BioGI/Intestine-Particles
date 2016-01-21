@@ -1207,7 +1207,7 @@ DO WHILE (ASSOCIATED(current))
 
 !------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
         Overlap_sum = 0.0_dbl
-        Overlap= 0.0
+        Overlap= 0.0na v
  
         DO i= NEP_x(1),NEP_x(2) 
            DO j= NEP_y(1),NEP_y(2)
@@ -1255,25 +1255,24 @@ DO WHILE (ASSOCIATED(current))
            DO j= NEP_y(1),NEP_y(2)
               DO k= NEP_z(1),NEP_z(2)
                  
-         
-		 !---- Taking care of the periodic BC in Z-dir
+		 !----- Taking care of the periodic BC in Z-dir
                  kk = k 
                  IF (k .gt. nz) THEN
-                     kk = k - (nz - 1)
+                     kk = k - (nz-1)
                  ELSE IF (k .lt. 1) THEN
                      kk = k + (nz-1)
                  END IF
  
-                IF (node(i,j,kk) .EQ. FLUID) THEN                 
-                   !----- Overlap_sum going to zero when the particle is disapearing
-		   IF (Overlap_sum.lt.1e-36)THEN
-                      Overlap(i,j,kk) = 0.0
-                   ELSE
-                      Overlap(i,j,kk) = Overlap(i,j,kk) / Overlap_sum
-                   END IF
+                 IF (node(i,j,kk) .EQ. FLUID) THEN                 
+                 
+		    !----- Overlap_sum going to zero when the particle is disapearing
+		    IF (Overlap_sum .gt. 1e-40) THEN
+                       Overlap(i,j,kk) = Overlap(i,j,kk) / Overlap_sum
+                    ELSE
+                       Overlap(i,j,kk) = 0.0
+                    END IF
 
-
-                   delphi_particle(i,j,kk)  = delphi_particle(i,j,kk)  + current%pardata%delNBbyCV * Overlap(i,j,kk) 
+                    delphi_particle(i,j,kk)  = delphi_particle(i,j,kk)  + current%pardata%delNBbyCV * Overlap(i,j,kk) 
 
 !                   tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
 !                   tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
