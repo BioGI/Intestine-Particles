@@ -318,7 +318,7 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
             phi(i,j,k)=0.0_lng
          END IF   
 
-         WRITE(60,'(3I4,5E15.5,I6)') ii, jj, kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, (rho(i,j,k)-denL)*dcf*pcf,	&
+         WRITE(60,'(3I4, 3F10.5, 2F12.8, I2)') ii, jj, kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, (rho(i,j,k)-denL)*dcf*pcf,	&
                                      phi(i,j,k), node(i,j,k)
 
       END DO
