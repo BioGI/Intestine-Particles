@@ -433,7 +433,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
 			current%pardata%Veff 	  ,',',	&
 			current%pardata%Nbj
 
-1001 format (E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,1I4,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2,E15.5,a2)
+1001 format (F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
 
      current => next   						! point to next node in the list
   ENDDO
