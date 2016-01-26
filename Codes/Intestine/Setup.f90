@@ -208,24 +208,28 @@ REAL(dbl)	:: tStart,tEnd,tTotal,tRecv,tSum,tAvg				! timing variables for parall
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Particle Tracking Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-INTEGER(lng)	:: ParticleTrack						! a flag to denote if particle track is on (1) or off (0) 
-INTEGER(lng), PARAMETER :: ParticleOn=1						! flag to signify Particle Tracking is on
-INTEGER(lng), PARAMETER :: ParticleOff=0					! flag for signify if particle tracking is off
-INTEGER(lng)    :: np								! number of particles
+INTEGER(lng) :: ParticleTrack							! a flag to denote if particle track is on (1) or off (0) 
+INTEGER(lng), PARAMETER :: ParticleOn= 1					! flag to signify Particle Tracking is on
+INTEGER(lng), PARAMETER :: ParticleOff= 0					! flag for signify if particle tracking is off
+INTEGER(lng) :: np								! number of particles
 
-REAL(dbl), PARAMETER :: molarvol=92.73_dbl,diffm=8.47e-7_dbl,R0=0.0026_dbl,Cs_mol=3.14854e-6 !1.2e-6		! drug properties
-REAL(dbl):: Cb_global		! Global bulk scalar Concentration
-INTEGER(lng):: Cb_numFluids	! Number of fluid nodes in the process for Global bulk scalar Concentration
-INTEGER(lng):: num_particles	! Total number of particles in domain
+REAL(dbl), PARAMETER :: molarvol = 92.73_dbl					! (cm^3/mole) drug properties
+REAL(dbl), PARAMETER :: diffm = 8.47e-7_dbl	
+REAL(dbl), PARAMETER :: R0 = 0.0026_dbl		
+REAL(dbl), PARAMETER :: Cs_mol = 3.14854e-6 					! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
+REAL(dbl):: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global bulk scalar Concentration
+
+INTEGER(lng):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
+INTEGER(lng):: num_particles							! Total number of particles in domain
 
 
-INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) ! List of starting/enning i indices for each subdomain
-INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) ! List of starting/enning j indices for each subdomain
-INTEGER(lng), ALLOCATABLE :: kMaxDomain(:),kMinDomain(:) ! List of starting/enning k indices for each subdomain
+INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) 			! List of starting/enning i indices for each subdomain
+INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) 			! List of starting/enning j indices for each subdomain
+INTEGER(lng), ALLOCATABLE :: kMaxDomain(:),kMinDomain(:) 			! List of starting/enning k indices for each subdomain
 REAL(dbl), ALLOCATABLE  :: partransfersend(:,:),partransferrecv(:,:)
-INTEGER(lng),ALLOCATABLE :: parreqid(:),parwtstat(:,:)		! number of send/recv requests
-INTEGER(lng),ALLOCATABLE :: probestat(:)	! MPI status object
-INTEGER(lng),ALLOCATABLE :: numpartransfer(:)	! Particles to be transferred in each direction
+INTEGER(lng),ALLOCATABLE :: parreqid(:),parwtstat(:,:)				! number of send/recv requests
+INTEGER(lng),ALLOCATABLE :: probestat(:)					! MPI status object
+INTEGER(lng),ALLOCATABLE :: numpartransfer(:)					! Particles to be transferred in each direction
 INTEGER(lng) :: NumCommDirsPar = 26_lng
 INTEGER(lng) :: NumParVar = 16_lng
 
