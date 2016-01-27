@@ -191,42 +191,6 @@ END SUBROUTINE Particle_Setup
 
 
 
-
-
-!===================================================================================================
-SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
-!===================================================================================================
-
-IMPLICIT NONE
-INTEGER(lng)  :: i
-!REAL(dbl)     :: s1,s2,s3,s4,x1,y1,a,b,c,d
-REAL(dbl)     :: xp,yp,zp
-TYPE(ParRecord), POINTER :: current
-TYPE(ParRecord), POINTER :: next
-
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-	current%pardata%up=0.5*(u(FLOOR(xp),FLOOR(yp),FLOOR(zp))+u(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%vp=0.5*(v(FLOOR(xp),FLOOR(yp),FLOOR(zp))+v(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%wp=0.5*(w(FLOOR(xp),FLOOR(yp),FLOOR(zp))+w(CEILING(xp),CEILING(yp),CEILING(zp)))
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-
-!===================================================================================================
-END SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
-!===================================================================================================
-
-
-
-
-
-
 !===================================================================================================
 SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
 !===================================================================================================
@@ -327,43 +291,6 @@ ENDDO
 !===================================================================================================
 END SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
 !===================================================================================================
-
-
-
-
-
-!===================================================================================================
-SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
-!===================================================================================================
-
-IMPLICIT NONE
-INTEGER(lng)  :: i
-REAL(dbl)     :: s1,s2,s3,s4,x1,y1,a,b,c,d
-REAL(dbl)     :: xp,yp,zp
-TYPE(ParRecord), POINTER :: current
-TYPE(ParRecord), POINTER :: next
-
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-	current%pardata%up=0.5*(u(FLOOR(xp),FLOOR(yp),FLOOR(zp))+u(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%vp=0.5*(v(FLOOR(xp),FLOOR(yp),FLOOR(zp))+v(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%wp=0.5*(w(FLOOR(xp),FLOOR(yp),FLOOR(zp))+w(CEILING(xp),CEILING(yp),CEILING(zp)))
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-
-
-!===================================================================================================
-END SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
-!===================================================================================================
-
-
-
 
 
 
@@ -807,12 +734,11 @@ END SUBROUTINE Calc_Scalar_Release
 
 
 
-
-
-!------------------------------------------------
+!===================================================================================================
 SUBROUTINE Update_Sh! Incporate hierarchical mdoel to Sh(t) to include effect of shear/hydrodynamics and container effect
 ! Called by Particle_Track (LBM.f90) to get Calc_SCalar_Release, delNBbyCV, update particle radius
-!------------------------------------------------
+!===================================================================================================
+
 IMPLICIT NONE
 INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
 INTEGER(lng)  :: it,jt,kt,ib,jb,kb
@@ -894,28 +820,25 @@ DO WHILE (ASSOCIATED(current))
 ENDDO
 
 
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Update_Sh
-!------------------------------------------------
+!===================================================================================================
 
 
 
-
-
-
-!------------------------------------------------
+!===================================================================================================
 SUBROUTINE Compute_shear
-!------------------------------------------------
 ! The goal of this is subroutine is to compute a shear field
+!===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
 REAL(dbl)  :: temp
 
 ! Notes: We will compute the components of the strain rate tensor using central difference everywhere except near the processor boundaries where we will use one sided difference. 
 
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Compute_shear
-!------------------------------------------------
+!===================================================================================================
 
 
 
