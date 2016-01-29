@@ -288,8 +288,9 @@ SUBROUTINE PrintFields	! print velocity, density, and scalar to output files
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
+INTEGER(lng)	:: i,j,k,ii,jj,kk,n			! index variables (local and global)
 CHARACTER(7)	:: iter_char				! iteration stored as a character
+REAL(lng)       :: pressure				
 
 IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)	&
                                                    .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
@@ -315,38 +316,22 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
          jj = ((jMin - 1_lng) + j)
          kk = ((kMin - 1_lng) + k)
 
-         IF (phi(i,j,k) .LT. 1.0e-25) THEN
+         IF (phi(i,j,k) .LT. 1.0e-18) THEN
             phi(i,j,k)=0.0_lng
          END IF   
-
-         WRITE(60,'(3I4,5E15.5,I6)') ii, jj, kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, (rho(i,j,k)-denL)*dcf*pcf,	&
+         pressure= (rho(i,j,k)-denL)*dcf*pcf
+      
+         IF ( pressure .LT. 1.0e-18) THEN
+            pressure=0.0_lng
+         END IF
+ 
+         WRITE(60,'(I3,2I4,3F8.4,E12.3,E11.3,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure,	&
                                      phi(i,j,k), node(i,j,k)
-
       END DO
     END DO
   END DO
 
   CLOSE(60)
-
-!  ! print villi locations
-!  IF(myid .EQ. master) THEN
-!
-!    OPEN(607,FILE='villi-'//iter_char//'.dat')
-!    OPEN(608,FILE='villi2-'//iter_char//'.dat')
-!    WRITE(607,'(A60)') 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
-!    WRITE(608,'(A60)') 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
-!
-!    DO n=1,numVilli
-!
-!      WRITE(607,'(3E15.5,6I4)') villiLoc(n,1), villiLoc(n,2), villiLoc(n,3), 0, 0, 0, 0, 0, 0
-!      WRITE(608,'(3E15.5,6I4)') villiLoc(n,6), villiLoc(n,7), villiLoc(n,8), 0, 0, 0, 0, 0, 0
-!
-!    END DO
-!
-!    CLOSE(607)
-!    CLOSE(608)
-!
-!  END IF
 
   IF(myid .EQ. master) THEN  ! Store radius at this iteration     
 
