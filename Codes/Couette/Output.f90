@@ -80,9 +80,8 @@ WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
 ! Scalar
-OPEN(2472,FILE='scalar-'//sub//'.dat')
-!WRITE(2472,'(A105)') '#VARIABLES = "iter","time", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage","phiInitial"'
-WRITE(2472,'(A62)') '#VARIABLES = "iter","time","phiDomain","phiAverage","phiInitial"'
+OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
+WRITE(2472,'(A120)') '#VARIABLES = "iter","time", "Drug-Released-Total", "Drug-Remined-in-Domain", "Drug-Absorbed", "Drug-Lost-Gained"'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -288,7 +287,7 @@ SUBROUTINE PrintFields	! print velocity, density, and scalar to output files
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng)	:: i,j,k,ii,jj,kk,n			! index variables (local and global)
+INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
 CHARACTER(7)	:: iter_char				! iteration stored as a character
 REAL(lng)       :: pressure				
 
@@ -327,6 +326,7 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
  
          WRITE(60,'(I3,2I4,3F8.4,E12.3,E11.3,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure,	&
                                      phi(i,j,k), node(i,j,k)
+
       END DO
     END DO
   END DO
@@ -336,7 +336,6 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
   IF(myid .EQ. master) THEN  ! Store radius at this iteration     
 
     DO k=0,nz+1
-!      radius(k,radcount) = rDom(k)
       radius(k,radcount) = rDomOut(k)
     END DO
   
@@ -627,7 +626,7 @@ END SUBROUTINE PrintVolume
 !------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE PrintScalar		! prints the total amount of scalar absorbed through the walls 
+SUBROUTINE PrintScalar(Drug_Released_Total)		! prints the total amount of scalar absorbed through the walls 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -635,7 +634,12 @@ INTEGER(lng) :: i,j,k		! index variables
 INTEGER(lng) :: numFluids	! number of fluid nodes in the domain
 REAL(dbl) :: phiDomain		! current amount of scalar in the domain
 REAL(dbl) :: phiAverage		! average scalar in the domain
-REAL(dbl) :: zcf3				! node volume in physical units
+REAL(dbl) :: zcf3		! node volume in physical units
+REAL(lng) :: Drug_Released_Total
+
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+
 
 ! Calculate the amount of scalar that entered/left through the inlet/outlet
 CALL ScalarInOut
@@ -662,11 +666,22 @@ ELSE
   phiAverage = 0.0_dbl
 END IF
 
-! node volume in physical units
-zcf3 = zcf*zcf*zcf
 
-WRITE(2472,'(I8,3E25.15)') iter, phiDomain*zcf3, phiAverage*zcf3, phiTotal*zcf3
+zcf3 = zcf*zcf*zcf				! node volume in physical units (m^3)
+zcf3=  1000000.0_lng * zcf3                     ! Changing units to cm^3 so when printing the units are "mole"  
+      
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next
+   Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+   current => next
+ENDDO
 
+IF (phiAbsorbed .lt. 1.0e-42) THEN
+   phiAbsorbed =0.0_lng
+ENDIF
+
+WRITE(2472,'(I8, F15.4, 4E13.4)') iter, iter*tcf, Drug_Released_Total, phiDomain*zcf3, phiAbsorbed*zcf3, Drug_Released_Total-(phiDomain-phiAbsorbed)*zcf3
 CALL FLUSH(2472)
 
 !------------------------------------------------
@@ -761,9 +776,9 @@ IMPLICIT NONE
 
 CALL MergeScalar
 CALL MergeFields
-CALL MergeMass
-IF(ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
-	CALL MergeParticleOutput			! Merge particle output
+!CALL MergeMass
+IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
+   CALL MergeParticleOutput					! Merge particle output
 ENDIF
 
 
@@ -1007,24 +1022,50 @@ ELSE
 			! open the nnth output file for the nth subdomain 
 			WRITE(iter_char(1:7),'(I7.7)') parfilenum(n)	! write the file number (iteration) to a charater
 			!      OPEN(60,FILE='out-'//iter_char//'-'//nthSub//'.dat')	! open file
-			OPEN(60,FILE='pardat-'//iter_char//'-'//nthSub//'.dat')	! open file
+!			OPEN(60,FILE='pardat-'//iter_char//'-'//nthSub//'.dat')	! open file
+			OPEN(60,FILE='pardat-'//iter_char//'-'//nthSub//'.csv')	! open file
 
 			! read the output file
 			numLines = ParticleDistribution(n,nn)				! determine number of lines to read
 			!write(*,*) numLines,nn,n
 			READ(60,*)							! first line is variable info
-			READ(60,*)							! second line is zone info
+!			READ(60,*)							! second line is zone info
 			
 			numLineStart	=  numLineEnd 
 			numLineEnd	=  numLineStart + numLines
 			!write(*,*) numLineStart,numLineEnd
 			DO nnn = numLineStart+1_lng,numLineEnd
-				READ(60,*) ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
-				ParticleData(nnn,4),ParticleData(nnn,5),ParticleData(nnn,6), &
-				ParticleData(nnn,7),ParticleData(nnn,8),ParticleData(nnn,9), &
-				ParticleData(nnn,10),ParticleData(nnn,11),ParticleData(nnn,12) &
-				,ParticleData(nnn,13),ParticleData(nnn,14),ParticleData(nnn,15)
-				!write(*,*) nnn,' line number',INT(ParticleData(nnn,7))
+       			   READ(60,*) 	ParticleData(nnn,1),	& 
+					ParticleData(nnn,2),	&	
+					ParticleData(nnn,3),	&
+					ParticleData(nnn,4),	&
+					ParticleData(nnn,5),	&
+					ParticleData(nnn,6),	&
+					ParticleData(nnn,7),	&
+					ParticleData(nnn,8),	&
+					ParticleData(nnn,9),	&
+					ParticleData(nnn,10),	&
+					ParticleData(nnn,11),	&
+					ParticleData(nnn,12),	&	
+					ParticleData(nnn,13),	&
+					ParticleData(nnn,14),	&
+					ParticleData(nnn,15)
+!                          WRITE(*,*)   ParticleData(nnn,1),    tmpchar,&
+!                                       ParticleData(nnn,2),    tmpchar,&
+!                                       ParticleData(nnn,3),    tmpchar,&
+!                                       ParticleData(nnn,4),    tmpchar,&
+!                                       ParticleData(nnn,5),    tmpchar,&
+!                                       ParticleData(nnn,6),    tmpchar,&
+!                                       ParticleData(nnn,7),    tmpchar,&
+!                                       ParticleData(nnn,8),    tmpchar,&
+!                                       ParticleData(nnn,9),    tmpchar,&
+!                                       ParticleData(nnn,10),   tmpchar,&
+!                                       ParticleData(nnn,11),   tmpchar,&
+!                                       ParticleData(nnn,12),   tmpchar,&
+!                                       ParticleData(nnn,13),   tmpchar,&
+!                                       ParticleData(nnn,14),   tmpchar,&
+!                                       ParticleData(nnn,15)
+
 			END DO
 			CLOSE(60,STATUS='DELETE') ! close and delete current output file (subdomain)
 		END DO
@@ -1033,16 +1074,29 @@ ELSE
 		WRITE(5,*) 'writing...'
 		CALL FLUSH(5)
 		! Write to combined output file	
-		OPEN(685,FILE='pardat-'//iter_char//'.dat')
-		WRITE(685,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "ParID" "Sh" "rp" "bulk_conc" "delNBbyCV" "Sst" "S" "Veff" "Nbj"'
-		WRITE(685,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',parfilenum(n)/(nt/nPers),'" I=',np,' J=',1,' K=',1,'F=POINT'
+		OPEN(685,FILE='pardat-all-'//iter_char//'.csv')
+                WRITE(685,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
+
 		DO nnn=1,numLineEnd
-        		WRITE(685,'(6E15.5,1I9,8E15.5)') ParticleData(nnn,1),ParticleData(nnn,2),ParticleData(nnn,3), &
-			ParticleData(nnn,4),ParticleData(nnn,5),ParticleData(nnn,6), &
-			INT(ParticleData(nnn,7),lng),ParticleData(nnn,8),ParticleData(nnn,9), &
-			ParticleData(nnn,10),ParticleData(nnn,11),ParticleData(nnn,12) &
-			,ParticleData(nnn,13),ParticleData(nnn,14),ParticleData(nnn,15)
-		END DO
+        		WRITE(685,1001) ParticleData(nnn,1)  		,',', &
+					ParticleData(nnn,2)		,',', &
+					ParticleData(nnn,3) 		,',', &
+					ParticleData(nnn,4)		,',', &
+					ParticleData(nnn,5)		,',', &
+					ParticleData(nnn,6) 		,',', &
+					INT(ParticleData(nnn,7),lng)	,',', &
+					ParticleData(nnn,8)		,',', &
+					ParticleData(nnn,9) 		,',', &
+					ParticleData(nnn,10)		,',', &
+					ParticleData(nnn,11)		,',', &
+					ParticleData(nnn,12) 		,',', &
+					ParticleData(nnn,13)		,',', &
+					ParticleData(nnn,14)		,',', &
+					ParticleData(nnn,15)
+
+1001 format (F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+	
+	        END DO
 		CLOSE(685)	! close current output file (combined)
 
 	END DO

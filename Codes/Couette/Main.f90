@@ -19,7 +19,7 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
 	REAL(dbl) :: phidomf,phidomfs					! current amount of scalar in the domain
 	INTEGER, allocatable :: seed(:)
 	INTEGER :: seed_size
-
+        REAL(lng) :: Drug_Released_Total
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MPI Setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CALL MPI_INIT(mpierr)						! initialize parallelization [Intrinsic]
 	CALL MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs,mpierr)		! get the size of the parallel "world" (number of processing units) [Intrinsic]
@@ -91,7 +91,7 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
      	   CALL PrintParticles						! output the particle velocity, radius, position and con. [MODULE: Output]
         ENDIF
 
-    	CALL PrintScalar						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
+    	CALL PrintScalar(Drug_Released_Total)						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
      	CALL PrintMass							! print the total mass in the system (TEST)
      	CALL PrintVolume						! print the volume in the system (TEST)
 	CALL PrintStatus 						! print current status [MODULE: Output]

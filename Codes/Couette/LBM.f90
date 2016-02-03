@@ -698,7 +698,6 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 
-!Cb_global = 0.0
 !bulkVolume=xcf*ycf*zcf*Cb_numFluids/num_particles
 bulkVolume=xcf*ycf*zcf
 zcf3=xcf*ycf*zcf
@@ -711,7 +710,6 @@ DO WHILE (ASSOCIATED(current))
 	current%pardata%rpold=current%pardata%rp
 
         bulkconc = current%pardata%bulk_conc
-!	bulkconc = Cb_global
 
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
   
@@ -732,10 +730,11 @@ DO WHILE (ASSOCIATED(current))
            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
            CALL FLUSH(9)
 	ENDIF
-
+        
 ! point to next node in the list
 	current => next
 ENDDO
+
 
 IF (myid .EQ. 0) THEN
        	open(799,file='testoutput.dat',position='append')
@@ -753,12 +752,10 @@ END SUBROUTINE Calc_Scalar_Release
 
 
 
-
-!===================================================================================================
+!------------------------------------------------
 SUBROUTINE Update_Sh! Incporate hierarchical mdoel to Sh(t) to include effect of shear/hydrodynamics and container effect
 ! Called by Particle_Track (LBM.f90) to get Calc_SCalar_Release, delNBbyCV, update particle radius
-!===================================================================================================
-
+!------------------------------------------------
 IMPLICIT NONE
 INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
 INTEGER(lng)  :: it,jt,kt,ib,jb,kb
@@ -840,13 +837,9 @@ DO WHILE (ASSOCIATED(current))
 ENDDO
 
 
-!===================================================================================================
+!------------------------------------------------
 END SUBROUTINE Update_Sh
-!===================================================================================================
-
-
-
-
+!------------------------------------------------
 
 
 
