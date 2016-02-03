@@ -79,9 +79,9 @@ WRITE(2458,'(A81)') '#VARIABLES = "period","time", "mass_actual", "mass_theoreti
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
-! Scalar
+! Drug Conservation
 OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-WRITE(2472,'(A120)') '#VARIABLES = "iter","time", "Drug-Released-Total", "Drug-Remined-in-Domain", "Drug-Absorbed", "Drug-Lost-Gained"'
+WRITE(2472,'(A120)') '#VARIABLES = "iter","time","Drug_Released_Total","Drug_Absorbed","Drug_Remained_in_Domain","Drug_Lost_Gained","Drug_Lost_Gained_Percentage"'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -627,50 +627,50 @@ END SUBROUTINE PrintVolume
 !------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE PrintScalar(Drug_Released_Total)		! prints the total amount of scalar absorbed through the walls 
+SUBROUTINE PrintDrugConservation(Drug_Released_Total)		! prints the total amount of scalar absorbed through the walls 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k		! index variables
-INTEGER(lng) :: numFluids	! number of fluid nodes in the domain
-REAL(dbl) :: phiDomain		! current amount of scalar in the domain
-REAL(dbl) :: phiAverage		! average scalar in the domain
-REAL(dbl) :: zcf3		! node volume in physical units
-REAL(lng) :: Drug_Released_Total
-
+INTEGER(lng) :: i,j,k					! index variables
+INTEGER(lng) :: numFluids				! number of fluid nodes in the domain
+REAL(dbl)    :: phiDomain				! current amount of scalar in the domain
+REAL(dbl)    :: phiAverage				! average scalar in the domain
+REAL(dbl)    :: zcf3					! node volume in physical units
+REAL(dbl)    :: Drug_Absorbed 
+REAL(dbl)    :: Drug_Remained_in_Domain
+REAL(dbl)    :: Drug_Lost_Gained
+REAL(dbl)    :: Drug_Lost_Gained_Percentage
+REAL(lng)    :: Drug_Released_Total
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
+CALL ScalarInOut    	 				! Calculate the amount of scalar that entered/left through the inlet/outlet
 
-! Calculate the amount of scalar that entered/left through the inlet/outlet
-CALL ScalarInOut
-
-! Calculate the amount of scalar in the domain
+!----- Calculate the amount of scalar in the domain
 numFluids = 0_lng
 phiDomain = 0.0_dbl
 DO k=1,nzSub
-  DO j=1,nySub
-    DO i=1,nxSub
-
-      IF(node(i,j,k) .EQ. FLUID) THEN
-        phiDomain = phiDomain + phi(i,j,k)
-        numFluids = numFluids + 1_lng
-      END IF
-
-    END DO
-  END DO
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i,j,k) .EQ. FLUID) THEN
+            phiDomain = phiDomain + phi(i,j,k)
+            numFluids = numFluids + 1_lng
+         END IF
+      END DO
+   END DO
 END DO
 
-IF(numFluids .GT. 1e-8) THEN
-  phiAverage = phiDomain/numFluids		! average scalar in the domain
+!------ average scalar in the domain
+IF (numFluids .GT. 1e-8) THEN
+   phiAverage = phiDomain/numFluids		
 ELSE
-  phiAverage = 0.0_dbl
+   phiAverage = 0.0_dbl
 END IF
 
+!------ node volume in physical units (cm^3) so when printing the drung units are "mole
+zcf3 = 1000000.0_lng * zcf*zcf*zcf				
 
-zcf3 = zcf*zcf*zcf				! node volume in physical units (m^3)
-zcf3=  1000000.0_lng * zcf3                     ! Changing units to cm^3 so when printing the units are "mole"  
-      
+!------ Computing the total drug released from particles      
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
@@ -682,11 +682,17 @@ IF (phiAbsorbed .lt. 1.0e-42) THEN
    phiAbsorbed =0.0_lng
 ENDIF
 
-WRITE(2472,'(I8, F15.4, 4E13.4)') iter, iter*tcf, Drug_Released_Total, phiDomain*zcf3, phiAbsorbed*zcf3, Drug_Released_Total-(phiDomain-phiAbsorbed)*zcf3
+
+Drug_Absorbed = phiAbsorbed * zcf3
+Drug_Remained_in_Domain = phiDomain * zcf3
+Drug_Lost_Gained = Drug_Released_Total + Drug_Absorbed - Drug_Remained_in_Domain  
+Drug_Lost_Gained_Percentage = (Drug_Lost_Gained / Drug_Released_Total) * 100.0_lng
+
+WRITE(2472,'(I8, F15.4, 4E13.4)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Lost_Gained, Drug_Lost_Gained_Percentage 
 CALL FLUSH(2472)
 
 !------------------------------------------------
-END SUBROUTINE PrintScalar
+END SUBROUTINE PrintDrugConservation 
 !------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
