@@ -688,7 +688,7 @@ Drug_Remained_in_Domain = phiDomain * zcf3
 Drug_Lost_Gained = Drug_Released_Total + Drug_Absorbed - Drug_Remained_in_Domain  
 Drug_Lost_Gained_Percentage = (Drug_Lost_Gained / Drug_Released_Total) * 100.0_lng
 
-WRITE(2472,'(I8, F15.4, 4E13.4)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Lost_Gained, Drug_Lost_Gained_Percentage 
+WRITE(2472,'(I8, F15.4, 5E13.4)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Lost_Gained, Drug_Lost_Gained_Percentage 
 CALL FLUSH(2472)
 
 !------------------------------------------------
