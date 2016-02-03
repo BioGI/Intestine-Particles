@@ -80,8 +80,8 @@ WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
 ! Scalar
-OPEN(2472,FILE='scalar-'//sub//'.dat')
-WRITE(2472,'(A105)') '#VARIABLES = "iter","time", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage","phiInitial"'
+OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
+WRITE(2472,'(A120)') '#VARIABLES = "iter","time", "Drug-Released-Total", "Drug-Remined-in-Domain", "Drug-Absorbed", "Drug-Lost-Gained"'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -289,6 +289,7 @@ IMPLICIT NONE
 
 INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
 CHARACTER(7)	:: iter_char				! iteration stored as a character
+REAL(lng)       :: pressure				
 
 IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)	&
                                                    .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
@@ -314,11 +315,16 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
          jj = ((jMin - 1_lng) + j)
          kk = ((kMin - 1_lng) + k)
 
-         IF (phi(i,j,k) .LT. 1.0e-25) THEN
+         IF (phi(i,j,k) .LT. 1.0e-18) THEN
             phi(i,j,k)=0.0_lng
          END IF   
-
-         WRITE(60,'(3I4, 3F7.4,2F9.6,I2)') ii, jj, kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, (rho(i,j,k)-denL)*dcf*pcf,	&
+         pressure= (rho(i,j,k)-denL)*dcf*pcf
+      
+         IF ( pressure .LT. 1.0e-18) THEN
+            pressure=0.0_lng
+         END IF
+ 
+         WRITE(60,'(I3,2I4,3F8.4,E12.3,E11.3,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure,	&
                                      phi(i,j,k), node(i,j,k)
 
       END DO
@@ -326,26 +332,6 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
   END DO
 
   CLOSE(60)
-
-!  ! print villi locations
-!  IF(myid .EQ. master) THEN
-!
-!    OPEN(607,FILE='villi-'//iter_char//'.dat')
-!    OPEN(608,FILE='villi2-'//iter_char//'.dat')
-!    WRITE(607,'(A60)') 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
-!    WRITE(608,'(A60)') 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
-!
-!    DO n=1,numVilli
-!
-!      WRITE(607,'(3E15.5,6I4)') villiLoc(n,1), villiLoc(n,2), villiLoc(n,3), 0, 0, 0, 0, 0, 0
-!      WRITE(608,'(3E15.5,6I4)') villiLoc(n,6), villiLoc(n,7), villiLoc(n,8), 0, 0, 0, 0, 0, 0
-!
-!    END DO
-!
-!    CLOSE(607)
-!    CLOSE(608)
-!
-!  END IF
 
   IF(myid .EQ. master) THEN  ! Store radius at this iteration     
 
@@ -641,7 +627,7 @@ END SUBROUTINE PrintVolume
 !------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE PrintScalar		! prints the total amount of scalar absorbed through the walls 
+SUBROUTINE PrintScalar(Drug_Released_Total)		! prints the total amount of scalar absorbed through the walls 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -649,7 +635,12 @@ INTEGER(lng) :: i,j,k		! index variables
 INTEGER(lng) :: numFluids	! number of fluid nodes in the domain
 REAL(dbl) :: phiDomain		! current amount of scalar in the domain
 REAL(dbl) :: phiAverage		! average scalar in the domain
-REAL(dbl) :: zcf3				! node volume in physical units
+REAL(dbl) :: zcf3		! node volume in physical units
+REAL(lng) :: Drug_Released_Total
+
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+
 
 ! Calculate the amount of scalar that entered/left through the inlet/outlet
 CALL ScalarInOut
@@ -676,11 +667,22 @@ ELSE
   phiAverage = 0.0_dbl
 END IF
 
-! node volume in physical units
-zcf3 = zcf*zcf*zcf
 
-WRITE(2472,'(I8,7E25.15)') iter, 4.0_dbl*phiAbsorbed*zcf3, 4.0_dbl*phiAbsorbedS*zcf3, 4.0_dbl*phiAbsorbedV*zcf3,				&
-                           (phiTotal-phiDomain)*zcf3, 4.0_dbl*phiDomain*zcf3, (phiAbsorbed+phiDomain)*zcf3, phiAverage*zcf3
+zcf3 = zcf*zcf*zcf				! node volume in physical units (m^3)
+zcf3=  1000000.0_lng * zcf3                     ! Changing units to cm^3 so when printing the units are "mole"  
+      
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next
+   Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+   current => next
+ENDDO
+
+IF (phiAbsorbed .lt. 1.0e-42) THEN
+   phiAbsorbed =0.0_lng
+ENDIF
+
+WRITE(2472,'(I8, F15.4, 4E13.4)') iter, iter*tcf, Drug_Released_Total, phiDomain*zcf3, phiAbsorbed*zcf3, Drug_Released_Total-(phiDomain-phiAbsorbed)*zcf3
 CALL FLUSH(2472)
 
 !------------------------------------------------
@@ -779,6 +781,7 @@ CALL MergeFields
 IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
    CALL MergeParticleOutput					! Merge particle output
 ENDIF
+
 
 !------------------------------------------------
 END SUBROUTINE MergeOutput

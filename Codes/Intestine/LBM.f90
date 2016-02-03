@@ -174,6 +174,8 @@ END SUBROUTINE LBM_Setup
 
 
 
+
+
 !===================================================================================================
 SUBROUTINE Particle_Setup
 !===================================================================================================
@@ -189,38 +191,6 @@ ENDIF
 END SUBROUTINE Particle_Setup
 !===================================================================================================
 
-
-
-
-
-!===================================================================================================
-SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
-!===================================================================================================
-
-IMPLICIT NONE
-INTEGER(lng)  :: i
-!REAL(dbl)     :: s1,s2,s3,s4,x1,y1,a,b,c,d
-REAL(dbl)     :: xp,yp,zp
-TYPE(ParRecord), POINTER :: current
-TYPE(ParRecord), POINTER :: next
-
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-	current%pardata%up=0.5*(u(FLOOR(xp),FLOOR(yp),FLOOR(zp))+u(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%vp=0.5*(v(FLOOR(xp),FLOOR(yp),FLOOR(zp))+v(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%wp=0.5*(w(FLOOR(xp),FLOOR(yp),FLOOR(zp))+w(CEILING(xp),CEILING(yp),CEILING(zp)))
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-
-!===================================================================================================
-END SUBROUTINE Interp_Parvel_1 ! Using a crude interpolation approach
-!===================================================================================================
 
 
 
@@ -332,38 +302,6 @@ END SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
 
 
 
-!===================================================================================================
-SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
-!===================================================================================================
-
-IMPLICIT NONE
-INTEGER(lng)  :: i
-REAL(dbl)     :: s1,s2,s3,s4,x1,y1,a,b,c,d
-REAL(dbl)     :: xp,yp,zp
-TYPE(ParRecord), POINTER :: current
-TYPE(ParRecord), POINTER :: next
-
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-	current%pardata%up=0.5*(u(FLOOR(xp),FLOOR(yp),FLOOR(zp))+u(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%vp=0.5*(v(FLOOR(xp),FLOOR(yp),FLOOR(zp))+v(CEILING(xp),CEILING(yp),CEILING(zp)))
-	current%pardata%wp=0.5*(w(FLOOR(xp),FLOOR(yp),FLOOR(zp))+w(CEILING(xp),CEILING(yp),CEILING(zp)))
-	! point to next node in the list
-	current => next
-	!write(*,*) i
-ENDDO
-
-
-!===================================================================================================
-END SUBROUTINE Interp_Parvel_Crude ! Using a crde interpolation approach
-!===================================================================================================
-
-
-
 
 
 
@@ -444,6 +382,7 @@ END SUBROUTINE Interp_bulkconc  ! Using Trilinear interpolation
 
 
 
+
 !===================================================================================================
 SUBROUTINE Calc_Global_Bulk_Scalar_Conc(Cb_Domain)  !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
 !===================================================================================================
@@ -473,6 +412,8 @@ Cb_Domain = Cb_global/ Cb_numFluids
 !===================================================================================================
 END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 !===================================================================================================
+
+
 
 
 
@@ -740,6 +681,9 @@ END SUBROUTINE Compute_Cb
 
 
 
+
+
+
 !===================================================================================================
 SUBROUTINE Calc_Scalar_Release! Calculate rate of scalar release at every time step  
 !===================================================================================================
@@ -754,7 +698,6 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 
-!Cb_global = 0.0
 !bulkVolume=xcf*ycf*zcf*Cb_numFluids/num_particles
 bulkVolume=xcf*ycf*zcf
 zcf3=xcf*ycf*zcf
@@ -767,7 +710,6 @@ DO WHILE (ASSOCIATED(current))
 	current%pardata%rpold=current%pardata%rp
 
         bulkconc = current%pardata%bulk_conc
-!	bulkconc = Cb_global
 
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
   
@@ -788,10 +730,11 @@ DO WHILE (ASSOCIATED(current))
            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
            CALL FLUSH(9)
 	ENDIF
-
+        
 ! point to next node in the list
 	current => next
 ENDDO
+
 
 IF (myid .EQ. 0) THEN
        	open(799,file='testoutput.dat',position='append')
@@ -902,246 +845,30 @@ END SUBROUTINE Update_Sh
 
 
 
+!===================================================================================================
+SUBROUTINE Compute_shear                
+!===================================================================================================
+! Computing components of strain rate tensor using central difference everywhere except near the
+! processor boundaries where sided difference is used. 
 
-
-!------------------------------------------------
-SUBROUTINE Compute_shear
-!------------------------------------------------
-! The goal of this is subroutine is to compute a shear field
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
 REAL(dbl)  :: temp
 
-! Notes: We will compute the components of the strain rate tensor using central difference everywhere except near the processor boundaries where we will use one sided difference. 
-
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Compute_shear
-!------------------------------------------------
-
-
-
-
-
-!------------------------------------------------
-SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
-! Called by Particle_Track (LBM.f90) to get delphi_particle
-!------------------------------------------------
-IMPLICIT NONE
-INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
-REAL(dbl)  :: ax0,ax1,ay0,ay1,az0,az1
-REAL(dbl)  :: bx0,bx1,by0,by1,bz0,bz1
-REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
-REAL(dbl)     :: c000,c010,c100,c110,c001,c011,c101,c111,csum
-REAL(dbl)     :: xp,yp,zp,delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-TYPE(ParRecord), POINTER :: current
-TYPE(ParRecord), POINTER :: next
-
-
-delta_mesh = 1.0_dbl
-zcf3=xcf*ycf*zcf
-
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-        next => current%next ! copy pointer of next node
-
-        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-
-        delta_par = ((current%pardata%rp/xcf)/current%pardata%sh)+(current%pardata%rp/xcf) ! calculate length scale delta_j = R_j/Sh_j for jth particle and effective radius delta_par = delta_j + R_j (note: need to convert this into Lattice units and not use the physical length units)
-        delta_par = ((88.0_dbl/21.0_dbl)*((delta_par)**3.0_dbl))**(1.0_dbl/3.0_dbl) ! compute equivalent cubic mesh length scale
-
-        ix0=FLOOR(xp)
-        ix1=CEILING(xp)
-        iy0=FLOOR(yp)
-        iy1=CEILING(yp)
-        iz0=FLOOR(zp)
-        iz1=CEILING(zp)
-
-! Boundaries of the volume of influence of the particle
-        ax0 = xp - 0.5_dbl*delta_par
-        ax1 = xp + 0.5_dbl*delta_par
-        ay0 = yp - 0.5_dbl*delta_par
-        ay1 = yp + 0.5_dbl*delta_par
-        az0 = zp - 0.5_dbl*delta_par
-        az1 = zp + 0.5_dbl*delta_par
-
-        if (iz0.GT.nzSub) then
-                iz0 = iz0-1_lng
-        elseif (iz0.LT.1_lng) then
-                iz0 = iz0 +1_lng
-        endif
-        if (ix0.GT.nxSub) then
-                ix0 = ix0-1_lng
-        elseif (ix0.LT.1) then
-                ix0 = ix0 +1_lng
-        endif
-        if (iy0.GT.nySub) then
-                iy0 = iy0-1_lng
-        elseif (iy0.LT.1) then
-                iy0 = iy0 +1_lng
-        endif
-        if (iz1.GT.nzSub) then
-                iz1 = iz1-1_lng
-        elseif (iz1.LT.1_lng) then
-                iz1 = iz1 +1_lng
-        endif
-        if (ix1.GT.nxSub) then
-                ix1 = ix1-1_lng
-        elseif (ix1.LT.1) then
-                ix1 = ix1 +1_lng
-        endif
-        if (iy1.GT.nySub) then
-                iy1 = iy1-1_lng
-        elseif (iy1.LT.1) then
-                iy1 = iy1 +1_lng
-        endif
-
-       bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c000 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c010 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c100 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz0,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz0,dbl) + 0.5_dbl*delta_mesh
-        c110 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c001 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix0,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix0,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c011 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy0,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy0,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c101 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-        bx0 = REAL(ix1,dbl) - 0.5_dbl*delta_mesh
-        bx1 = REAL(ix1,dbl) + 0.5_dbl*delta_mesh
-        by0 = REAL(iy1,dbl) - 0.5_dbl*delta_mesh
-        by1 = REAL(iy1,dbl) + 0.5_dbl*delta_mesh
-        bz0 = REAL(iz1,dbl) - 0.5_dbl*delta_mesh
-        bz1 = REAL(iz1,dbl) + 0.5_dbl*delta_mesh
-        c111 = MAX(MIN(ax1,bx1)-MAX(ax0,bx0),0.0_dbl)*MAX(MIN(ay1,by1)-MAX(ay0,by0),0.0_dbl)*MAX(MIN(az1,bz1)-MAX(az0,bz0),0.0_dbl)
-
-        csum = c000 + c010 + c100 + c110 + c001 + c011 + c101 + c111
-
-        Nbj = 0.0_dbl ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-        Veff = 0.0_dbl ! initialize Veff - the eff. volume of each particle
-        bulkconc = Cb_global
-        !bulkconc = current%pardata%bulk_conc
-        ! Need to solve an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-        CALL Find_Root(current%pardata%parid,bulkconc,current%pardata%par_conc &
-                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-        current%pardata%Veff = Veff ! store Veff in particle record
-        current%pardata%Nbj = Nbj       ! store Nbj in particle record
-        Nbj = Nbj/zcf3 ! convert Nbj (number of moles) to a conc by division with cell volume (dimensional)
-
-        IF (csum.EQ.0.0) THEN ! csum = 0 then dump the drug molecules to the nearest fluid node
-                delphi_particle(ix0,iy0,iz0)   = delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-                tausgs_particle_x(ix0,iy0,iz0) = tausgs_particle_x(ix0,iy0,iz0) - current%pardata%up*Nbj*1.0_dbl
-                tausgs_particle_y(ix0,iy0,iz0) = tausgs_particle_y(ix0,iy0,iz0) - current%pardata%vp*Nbj*1.0_dbl
-                tausgs_particle_z(ix0,iy0,iz0) = tausgs_particle_z(ix0,iy0,iz0) - current%pardata%wp*Nbj*1.0_dbl
-
-        ELSE ! if not, then distribute it according to the model. This helps us to conserve the total number of drug molecules
-
-                c000 = c000/csum
-                c010 = c010/csum
-                c100 = c100/csum
-                c110 = c110/csum
-                c001 = c001/csum
-                c011 = c011/csum
-                c101 = c101/csum
-                c111 = c111/csum
-
-                !delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV!(phi(ix0,iy0,iz0)/bulk_conc(i))
-
-     delphi_particle(ix0,iy0,iz0)=delphi_particle(ix0,iy0,iz0)+current%pardata%delNBbyCV*c000
-                delphi_particle(ix0,iy1,iz0)=delphi_particle(ix0,iy1,iz0)+current%pardata%delNBbyCV*c010
-                delphi_particle(ix1,iy0,iz0)=delphi_particle(ix1,iy0,iz0)+current%pardata%delNBbyCV*c100
-                delphi_particle(ix1,iy1,iz0)=delphi_particle(ix1,iy1,iz0)+current%pardata%delNBbyCV*c110
-                delphi_particle(ix0,iy0,iz1)=delphi_particle(ix0,iy0,iz1)+current%pardata%delNBbyCV*c001
-                delphi_particle(ix0,iy1,iz1)=delphi_particle(ix0,iy1,iz1)+current%pardata%delNBbyCV*c011
-                delphi_particle(ix1,iy0,iz1)=delphi_particle(ix1,iy0,iz1)+current%pardata%delNBbyCV*c101
-                delphi_particle(ix1,iy1,iz1)=delphi_particle(ix1,iy1,iz1)+current%pardata%delNBbyCV*c111
-
-                tausgs_particle_x(ix0,iy0,iz0)=tausgs_particle_x(ix0,iy0,iz0)- current%pardata%up*Nbj*c000
-                tausgs_particle_x(ix0,iy1,iz0)=tausgs_particle_x(ix0,iy1,iz0)- current%pardata%up*Nbj*c010
-                tausgs_particle_x(ix1,iy0,iz0)=tausgs_particle_x(ix1,iy0,iz0)- current%pardata%up*Nbj*c100
-                tausgs_particle_x(ix1,iy1,iz0)=tausgs_particle_x(ix1,iy1,iz0)- current%pardata%up*Nbj*c110
-                tausgs_particle_x(ix0,iy0,iz1)=tausgs_particle_x(ix0,iy0,iz1)- current%pardata%up*Nbj*c001
-                tausgs_particle_x(ix0,iy1,iz1)=tausgs_particle_x(ix0,iy1,iz1)- current%pardata%up*Nbj*c011
-                tausgs_particle_x(ix1,iy0,iz1)=tausgs_particle_x(ix1,iy0,iz1)- current%pardata%up*Nbj*c101
-                tausgs_particle_x(ix1,iy1,iz1)=tausgs_particle_x(ix1,iy1,iz1)- current%pardata%up*Nbj*c111
-
-                tausgs_particle_y(ix0,iy0,iz0)=tausgs_particle_y(ix0,iy0,iz0)- current%pardata%vp*Nbj*c000
-                tausgs_particle_y(ix0,iy1,iz0)=tausgs_particle_y(ix0,iy1,iz0)- current%pardata%vp*Nbj*c010
-                tausgs_particle_y(ix1,iy0,iz0)=tausgs_particle_y(ix1,iy0,iz0)- current%pardata%vp*Nbj*c100
-                tausgs_particle_y(ix1,iy1,iz0)=tausgs_particle_y(ix1,iy1,iz0)- current%pardata%vp*Nbj*c110
-                tausgs_particle_y(ix0,iy0,iz1)=tausgs_particle_y(ix0,iy0,iz1)- current%pardata%vp*Nbj*c001
-                tausgs_particle_y(ix0,iy1,iz1)=tausgs_particle_y(ix0,iy1,iz1)- current%pardata%vp*Nbj*c011
-                tausgs_particle_y(ix1,iy0,iz1)=tausgs_particle_y(ix1,iy0,iz1)- current%pardata%vp*Nbj*c101
-                tausgs_particle_y(ix1,iy1,iz1)=tausgs_particle_y(ix1,iy1,iz1)- current%pardata%vp*Nbj*c111
-
-                tausgs_particle_z(ix0,iy0,iz0)=tausgs_particle_z(ix0,iy0,iz0)- current%pardata%wp*Nbj*c000
-                tausgs_particle_z(ix0,iy1,iz0)=tausgs_particle_z(ix0,iy1,iz0)- current%pardata%wp*Nbj*c010
-                tausgs_particle_z(ix1,iy0,iz0)=tausgs_particle_z(ix1,iy0,iz0)- current%pardata%wp*Nbj*c100
-                tausgs_particle_z(ix1,iy1,iz0)=tausgs_particle_z(ix1,iy1,iz0)- current%pardata%wp*Nbj*c110
-                tausgs_particle_z(ix0,iy0,iz1)=tausgs_particle_z(ix0,iy0,iz1)- current%pardata%wp*Nbj*c001
-                tausgs_particle_z(ix0,iy1,iz1)=tausgs_particle_z(ix0,iy1,iz1)- current%pardata%wp*Nbj*c011
-                tausgs_particle_z(ix1,iy0,iz1)=tausgs_particle_z(ix1,iy0,iz1)- current%pardata%wp*Nbj*c101
-                tausgs_particle_z(ix1,iy1,iz1)=tausgs_particle_z(ix1,iy1,iz1)- current%pardata%wp*Nbj*c111
-
-        END IF
-
-
-        ! point to next node in the list
-        current => next
-ENDDO
-
-!------------------------------------------------
-END SUBROUTINE Interp_ParToNodes_Conc ! Interpolate Particle concentration release to node locations
-!------------------------------------------------
+!===================================================================================================
 
 
 
 
 
 
-!--------------------------------------------------------------------------------------------------
+
+
+!===================================================================================================
 SUBROUTINE Interp_ParToNodes_Conc_New 
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 
 !--- Interpolate Particle concentration release to node locations 
 !--- Called by Particle_Track (LBM.f90) to get delphi_particle
@@ -1286,17 +1013,20 @@ DO WHILE (ASSOCIATED(current))
 	current => next
 ENDDO
 
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Interp_ParToNodes_Conc_New  		 
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 
 
 
 
 
-!------------------------------------------------
+
+
+!===================================================================================================
 SUBROUTINE Find_Root(parid,conc,cs,gammaj,Rj,Nbj,Veff)
-!------------------------------------------------
+!===================================================================================================
+
 IMPLICIT NONE
 INTEGER(lng)   :: iter,nmax
 REAL(dbl),intent(in) :: conc,cs,gammaj,Rj
@@ -1348,11 +1078,11 @@ xnew = max(min(xnew,1.0_dbl),0.01) ! Limit xnew (radius ratio) to values that ar
 Reff = Rj/xnew
 Veff = (88.0_dbl/21.0_dbl)*(Reff**3.0_dbl)
 Nbj = conc*Veff
-!write(*,*) 'test code', iter,parid,Nbj,conc,Veff,xnew,Rj,iter,error
-!write(*,*) parid,iter,error,Rj,Reff,Nbj
-!------------------------------------------------
+
+!===================================================================================================
 END SUBROUTINE Find_Root
-!------------------------------------------------
+!===================================================================================================
+
 
 
 
