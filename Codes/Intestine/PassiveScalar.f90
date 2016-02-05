@@ -52,7 +52,7 @@ REAL(dbl) :: phiBC						! scalar contribution from boundary
 REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
 REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
 INTEGER   :: Negative_phi_Counter				! Monitoring the negative concentration
-REAL(dbl) :: Negative_phi_Total,Negative_phi_Worst 		! Monitoring the negative concentration
+REAL(dbl) :: Negative_phi_Total,Negative_phi_Worst,zcf3		! Monitoring the negative concentration
 
 CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
@@ -118,10 +118,13 @@ DO k=1,nzSub
 	!phi(i,j,k) = phi(i,j,k) + delphi_particle(i,j,k) ! Balaji added to introduce drug concentration release
        	!fix spurious oscillations in moment propagation method for high Sc #s
 
+!------ node volume in physical units (cm^3) so when printing the drung units are "mole
+zcf3 = 1000000.0_lng * zcf*zcf*zcf
+
 !------ Monitoring the negative phi
         IF (phi(i,j,k) .LT. 0.0_dbl) THEN
            Negative_phi_Counter = Negative_phi_Counter +1.0
-           Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) 
+           Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) * zcf3 
            IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
               Negative_phi_Worst = phi(i,j,k)
            ENDIF
