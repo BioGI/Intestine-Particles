@@ -678,15 +678,14 @@ DO WHILE (ASSOCIATED(current))
    current => next
 ENDDO
 
-IF (abs(phiAbsorbed) .lt. 1.0e-98) THEN
-   phiAbsorbed =0.0_lng
-ENDIF
-
-
 Drug_Absorbed = phiAbsorbed * zcf3
 Drug_Remained_in_Domain = phiDomain * zcf3
 Drug_Lost_Gained = Drug_Released_Total - Drug_Absorbed - Drug_Remained_in_Domain  
 Drug_Lost_Gained_Percentage = (Drug_Lost_Gained / Drug_Released_Total) * 100.0_lng
+
+IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
+   Drug_Absorbed = 0.0_lng
+ENDIF
 
 WRITE(2472,'(I8, F15.4, 5E20.5)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Lost_Gained, Drug_Lost_Gained_Percentage 
 CALL FLUSH(2472)
