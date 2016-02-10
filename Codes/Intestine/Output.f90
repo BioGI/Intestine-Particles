@@ -627,20 +627,15 @@ END SUBROUTINE PrintVolume
 !------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE PrintDrugConservation(Drug_Released_Total)		! prints the total amount of scalar absorbed through the walls 
+SUBROUTINE PrintDrugConservation		! prints the total amount of scalar absorbed through the walls 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k					! index variables
 INTEGER(lng) :: numFluids				! number of fluid nodes in the domain
-REAL(dbl)    :: phiDomain				! current amount of scalar in the domain
-REAL(dbl)    :: phiAverage				! average scalar in the domain
-REAL(dbl)    :: zcf3					! node volume in physical units
-REAL(dbl)    :: Drug_Absorbed 
-REAL(dbl)    :: Drug_Remained_in_Domain
-REAL(dbl)    :: Drug_Lost_Gained
-REAL(dbl)    :: Drug_Lost_Gained_Percentage
-REAL(lng)    :: Drug_Released_Total
+REAL(lng)    :: phiDomain				! current amount of scalar in the domain
+REAL(lng)    :: phiAverage				! average scalar in the domain
+REAL(lng)    :: zcf3					! node volume in physical units
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -678,9 +673,9 @@ DO WHILE (ASSOCIATED(current))
    current => next
 ENDDO
 
-Drug_Absorbed = phiAbsorbed * zcf3
+Drug_Absorbed = Drug_Absorbed + (phiAbsorbed * zcf3)
 Drug_Remained_in_Domain = phiDomain * zcf3
-Drug_Lost_Gained = Drug_Released_Total - Drug_Absorbed - Drug_Remained_in_Domain  
+Drug_Lost_Gained = Drug_Released_Total + Drug_Absorbed - Drug_Remained_in_Domain  
 Drug_Lost_Gained_Percentage = (Drug_Lost_Gained / Drug_Released_Total) * 100.0_lng
 
 IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN

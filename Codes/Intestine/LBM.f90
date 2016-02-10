@@ -1323,9 +1323,9 @@ SUBROUTINE Collision		! calculates equilibrium distribution function AND collisi
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng)	:: i,j,k,m					! index variables
-REAL(dbl)		:: UU,ue,ve,we,Usum		! precalculated quantities for use in the feq equation
-REAL(dbl)		:: feq						! equilibrium distribution function
+INTEGER(lng)	:: i,j,k,m				! index variables
+REAL(dbl)	:: UU,ue,ve,we,Usum			! precalculated quantities for use in the feq equation
+REAL(dbl)	:: feq					! equilibrium distribution function
 
 ! Balaji modified to change indices form 0 to nzSub+1
 DO k=1,nzSub+0
@@ -1338,14 +1338,14 @@ DO k=1,nzSub+0
       
         DO m=0,NumDistDirs
         
-          ue	= u(i,j,k)*ex(m)																			! u . e
-          ve	= v(i,j,k)*ey(m)																			! v . e
-          we	= w(i,j,k)*ez(m)																			! w . e
+          ue	= u(i,j,k)*ex(m)										! u . e
+          ve	= v(i,j,k)*ey(m)										! v . e
+          we	= w(i,j,k)*ez(m)										! w . e
 
-          Usum	= ue + ve + we																				! U . e
+          Usum	= ue + ve + we											! U . e
         
           feq	= (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5*Usum*Usum - 1.5*uu)	! equilibrium distribution function
-          f(m,i,j,k)		= f(m,i,j,k) - oneOVERtau*(f(m,i,j,k) - feq)							! collision
+          f(m,i,j,k)		= f(m,i,j,k) - oneOVERtau*(f(m,i,j,k) - feq)					! collision
 	!write(*,*) 0.5_dbl*s1/vcf,s1,vcf,xcf,nu,nuL,tau!m,i,j,k,f(m,i,j,k),w(i,j,k)
         
         END DO 

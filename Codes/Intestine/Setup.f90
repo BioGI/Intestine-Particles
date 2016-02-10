@@ -51,6 +51,11 @@ REAL(dbl) :: phiAbsorbedS							! total amount of scalar absorbed up to current 
 REAL(dbl) :: phiAbsorbedV							! total amount of scalar absorbed up to current time - through the villi
 REAL(dbl) :: phiInOut								! total amount of scalar leaving/entering the domain
 REAL(dbl) :: phiTotal								! total intial amount of scalar in the domain
+REAL(lng) :: Drug_Absorbed							! Total moles of drug absorbed at domains boundary
+REAL(lng) :: Drug_Remained_in_Domain						! total moles of drug remaind in the domain
+REAL(lng) :: Drug_Lost_Gained							! Total moles of drug gained indicating error in mass conservation
+REAL(lng) :: Drug_Lost_Gained_Percentage					! Percentage of the drug gained indicating the percentage of error in mass conservation	
+REAL(lng) :: Drug_Released_Total						! Total moles of drug released from all particles in the domain summed up in all time steps
 REAL(dbl) :: sigma								! standard deviation for scalar distributions
 REAL(dbl) :: phiPer								! period at which to start the scalar
 INTEGER(lng) :: phiStart							! iteration to start scalar calculation scalar
