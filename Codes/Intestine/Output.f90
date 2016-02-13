@@ -81,7 +81,7 @@ CALL FLUSH(2458)
 
 ! Drug Conservation
 OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-WRITE(2472,'(A120)') '#VARIABLES = "iter","time","Drug_Released_Total","Drug_Absorbed","Drug_Remained_in_Domain","Drug_Lost_Gained","Drug_Lost_Gained_Percentage"'
+WRITE(2472,'(A120)') '#VARIABLES = "iter","time","Drug_Released_Total","Drug_Absorbed","Drug_Remained_in_Domain","Drug_Loss_Percent", "Drug_Loss_Modified_Percent"'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -673,16 +673,20 @@ DO WHILE (ASSOCIATED(current))
    current => next
 ENDDO
 
-Drug_Absorbed = Drug_Absorbed + (phiAbsorbed * zcf3)
+Drug_Absorbed = phiAbsorbed * zcf3
 Drug_Remained_in_Domain = phiDomain * zcf3
-Drug_Lost_Gained = Drug_Released_Total + Drug_Absorbed - Drug_Remained_in_Domain  
-Drug_Lost_Gained_Percentage = (Drug_Lost_Gained / Drug_Released_Total) * 100.0_lng
+Drug_Loss = Drug_Released_Total - (Drug_Absorbed + Drug_Remained_in_Domain)  
+Drug_Loss_Modified = (Drug_Released_Total- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
+
+Drug_Loss_Percent = (Drug_Loss / Drug_Released_Total) * 100.0_lng
+Drug_Loss_Modified_Percent = (Drug_Loss_Modified / Drug_Released_Total) * 100.0_lng  
 
 IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
    Drug_Absorbed = 0.0_lng
 ENDIF
 
-WRITE(2472,'(I8, F15.4, 5E14.5)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Lost_Gained, Drug_Lost_Gained_Percentage 
+
+WRITE(2472,'(I8, F15.4, 5E14.5)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
 CALL FLUSH(2472)
 
 !------------------------------------------------

@@ -51,15 +51,13 @@ INTEGER(lng) :: i,j,k,m,im1,jm1,km1				! index variables
 REAL(dbl) :: phiBC						! scalar contribution from boundary
 REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
 REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
-INTEGER   :: Negative_phi_Counter				! Monitoring the negative concentration
-REAL(dbl) :: Negative_phi_Total,Negative_phi_Worst,zcf3		! Monitoring the negative concentration
+REAL(dbl) :: zcf3						! Cell volume
 
 CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
 ! store the previous scalar values
 phiTemp = phi
 
-Negative_phi_Total = 0
 Negative_phi_Counter = 0
 Negative_phi_Worst= 0
 
