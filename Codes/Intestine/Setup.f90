@@ -54,13 +54,13 @@ REAL(dbl) :: Negative_phi_Total							! Total negative scalar which was fixed by
 REAL(dbl) :: Negative_phi_Worst	 			        		! Worst Negative scalar ine ach time step
 REAL(dbl) :: phiInOut								! total amount of scalar leaving/entering the domain
 REAL(dbl) :: phiTotal								! total intial amount of scalar in the domain
-REAL(lng) :: Drug_Released_Total						! Total moles of drug released from all particles in the domain summed up in all time steps
-REAL(lng) :: Drug_Absorbed							! Total moles of drug absorbed at domains boundary summed up in all time steps 
-REAL(lng) :: Drug_Remained_in_Domain						! Total moles of drug remaind in the domain
-REAL(lng) :: Drug_Loss								! Total moles of drug lost indicating the error in mass conservation
-REAL(lng) :: Drug_Loss_Percent							! Percentage of the drug lost indicating the percentage of the error in mass conservation	
-REAL(lng) :: Drug_Loss_Modified							! Total moles of drug lost and the negative-phi substituted by zero (gained)
-REAL(lng) :: Drug_Loss_Modified_Percent                                         ! Percentage of the error in drug-loss modified 
+REAL(dbl) :: Drug_Released_Total						! Total moles of drug released from all particles in the domain summed up in all time steps
+REAL(dbl) :: Drug_Absorbed							! Total moles of drug absorbed at domains boundary summed up in all time steps 
+REAL(dbl) :: Drug_Remained_in_Domain						! Total moles of drug remaind in the domain
+REAL(dbl) :: Drug_Loss								! Total moles of drug lost indicating the error in mass conservation
+REAL(dbl) :: Drug_Loss_Percent							! Percentage of the drug lost indicating the percentage of the error in mass conservation	
+REAL(dbl) :: Drug_Loss_Modified							! Total moles of drug lost and the negative-phi substituted by zero (gained)
+REAL(dbl) :: Drug_Loss_Modified_Percent                                         ! Percentage of the error in drug-loss modified 
 REAL(dbl) :: sigma								! standard deviation for scalar distributions
 REAL(dbl) :: phiPer								! period at which to start the scalar
 INTEGER(lng) :: phiStart							! iteration to start scalar calculation scalar
@@ -229,8 +229,8 @@ REAL(dbl), PARAMETER :: R0 = 0.0026_dbl
 REAL(dbl), PARAMETER :: Cs_mol = 3.30000e-7 					! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
 REAL(dbl):: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global bulk scalar Concentration
 
-INTEGER(lng):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
-INTEGER(lng):: num_particles							! Total number of particles in domain
+INTEGER(dbl):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
+INTEGER(dbl):: num_particles							! Total number of particles in domain
 
 
 INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) 			! List of starting/enning i indices for each subdomain
