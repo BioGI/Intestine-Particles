@@ -49,8 +49,18 @@ REAL(dbl) :: phiIC, phiWall							! values of scalar: initial, wall, contributio
 REAL(dbl) :: phiAbsorbed							! total amount of scalar absorbed up to current time
 REAL(dbl) :: phiAbsorbedS							! total amount of scalar absorbed up to current time - through the macroscopic surface
 REAL(dbl) :: phiAbsorbedV							! total amount of scalar absorbed up to current time - through the villi
+INTEGER   :: Negative_phi_Counter                               		! Monitoring the negative concentration
+REAL(dbl) :: Negative_phi_Total							! Total negative scalar which was fixed by setting it to zero
+REAL(dbl) :: Negative_phi_Worst	 			        		! Worst Negative scalar ine ach time step
 REAL(dbl) :: phiInOut								! total amount of scalar leaving/entering the domain
 REAL(dbl) :: phiTotal								! total intial amount of scalar in the domain
+REAL(lng) :: Drug_Released_Total						! Total moles of drug released from all particles in the domain summed up in all time steps
+REAL(lng) :: Drug_Absorbed							! Total moles of drug absorbed at domains boundary summed up in all time steps 
+REAL(lng) :: Drug_Remained_in_Domain						! Total moles of drug remaind in the domain
+REAL(lng) :: Drug_Loss								! Total moles of drug lost indicating the error in mass conservation
+REAL(lng) :: Drug_Loss_Percent							! Percentage of the drug lost indicating the percentage of the error in mass conservation	
+REAL(lng) :: Drug_Loss_Modified							! Total moles of drug lost and the negative-phi substituted by zero (gained)
+REAL(lng) :: Drug_Loss_Modified_Percent                                         ! Percentage of the error in drug-loss modified 
 REAL(dbl) :: sigma								! standard deviation for scalar distributions
 REAL(dbl) :: phiPer								! period at which to start the scalar
 INTEGER(lng) :: phiStart							! iteration to start scalar calculation scalar

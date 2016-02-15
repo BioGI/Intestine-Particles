@@ -81,7 +81,7 @@ CALL FLUSH(2458)
 
 ! Drug Conservation
 OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-WRITE(2472,'(A120)') '#VARIABLES = "iter","time","Drug_Released_Total","Drug_Absorbed","Drug_Remained_in_Domain","Drug_Lost_Gained","Drug_Lost_Gained_Percentage"'
+WRITE(2472,'(A120)') '#VARIABLES = "iter","time","Drug_Released_Total","Drug_Absorbed","Drug_Remained_in_Domain","Drug_Loss_Percent", "Drug_Loss_Modified_Percent"'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -626,7 +626,7 @@ END SUBROUTINE PrintVolume
 !------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE PrintDrugConservation(Drug_Released_Total)		! prints the total amount of scalar absorbed through the walls 
+SUBROUTINE PrintDrugConservation		! prints the total amount of scalar absorbed through the walls 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -635,11 +635,6 @@ INTEGER(lng) :: numFluids				! number of fluid nodes in the domain
 REAL(dbl)    :: phiDomain				! current amount of scalar in the domain
 REAL(dbl)    :: phiAverage				! average scalar in the domain
 REAL(dbl)    :: zcf3					! node volume in physical units
-REAL(dbl)    :: Drug_Absorbed 
-REAL(dbl)    :: Drug_Remained_in_Domain
-REAL(dbl)    :: Drug_Lost_Gained
-REAL(dbl)    :: Drug_Lost_Gained_Percentage
-REAL(lng)    :: Drug_Released_Total
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -677,17 +672,20 @@ DO WHILE (ASSOCIATED(current))
    current => next
 ENDDO
 
-IF (phiAbsorbed .lt. 1.0e-42) THEN
-   phiAbsorbed =0.0_lng
+Drug_Absorbed = phiAbsorbed * zcf3
+Drug_Remained_in_Domain = phiDomain * zcf3
+Drug_Loss = Drug_Released_Total - (Drug_Absorbed + Drug_Remained_in_Domain)  
+Drug_Loss_Modified = (Drug_Released_Total- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
+
+Drug_Loss_Percent = (Drug_Loss / Drug_Released_Total) * 100.0_lng
+Drug_Loss_Modified_Percent = (Drug_Loss_Modified / Drug_Released_Total) * 100.0_lng  
+
+IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
+   Drug_Absorbed = 0.0_lng
 ENDIF
 
 
-Drug_Absorbed = phiAbsorbed * zcf3
-Drug_Remained_in_Domain = phiDomain * zcf3
-Drug_Lost_Gained = Drug_Released_Total + Drug_Absorbed - Drug_Remained_in_Domain  
-Drug_Lost_Gained_Percentage = (Drug_Lost_Gained / Drug_Released_Total) * 100.0_lng
-
-WRITE(2472,'(I8, F15.4, 5E13.4)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Lost_Gained, Drug_Lost_Gained_Percentage 
+WRITE(2472,'(I8, F15.4, 5E14.5)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
 CALL FLUSH(2472)
 
 !------------------------------------------------
