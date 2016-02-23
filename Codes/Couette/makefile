@@ -51,13 +51,13 @@ all:
 
 genparticles: $(PARFILES)
 	      $(FC) -o genparticles $(FCFLAGS) $(PARFILES)
-	      cp genparticles ../
+#	      cp genparticles ../
 
 
 
 Couette3D.exe: $(OBJS)
 	     $(FC) -o Couette3D.exe $(FCFLAGS) $(OBJS) $(MODULES)
-	     cp Couette3D.exe ../
+#	     cp Couette3D.exe ../
 
 $(OBJS): $(MODULES)
 
