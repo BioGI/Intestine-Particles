@@ -211,6 +211,7 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	next => current%next ! copy pointer of next node
+        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
 	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
@@ -289,6 +290,7 @@ DO WHILE (ASSOCIATED(current))
 ! Do third level linear interpolation in z-direction
 	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%wp=c
+      END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ! point to next node in the list
 	current => next
@@ -322,6 +324,7 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	next => current%next ! copy pointer of next node
+        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
 	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
@@ -369,6 +372,7 @@ DO WHILE (ASSOCIATED(current))
 !       current%pardata%bulk_conc=c
         Cb_Local= c        
 
+      END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! point to next node in the list
 	current => next
 ENDDO
@@ -460,6 +464,7 @@ DO WHILE (ASSOCIATED(current))
 
 !------ Copy pointer of next node
 	next => current%next
+        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 !------ Calculate length scale for jth particle:  delta = R / Sh
 !------ Calculate effective radius: R_influence_P = R + (N_b *delta)
@@ -671,6 +676,7 @@ DO WHILE (ASSOCIATED(current))
  
        current%pardata%bulk_conc = Cb_Hybrid
 
+       END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
        current => next
 
 END DO
@@ -705,6 +711,7 @@ zcf3=xcf*ycf*zcf
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next ! copy pointer of next node
+   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	current%pardata%rpold=current%pardata%rp
         bulkconc = current%pardata%bulk_conc
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
@@ -726,6 +733,7 @@ DO WHILE (ASSOCIATED(current))
            CALL FLUSH(9)
 	ENDIF
 
+   END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    current => next
 ENDDO
 
@@ -765,6 +773,7 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	next => current%next ! copy pointer of next node
+        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	! Initialize Sh for this particle
 	current%pardata%sh=1.0_dbl/(1.0_dbl-current%pardata%gamma_cont)
 	! Add container effect
@@ -822,6 +831,7 @@ DO WHILE (ASSOCIATED(current))
 	END IF
 
 
+        END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	current => next
 ENDDO
 
@@ -885,6 +895,7 @@ DO WHILE (ASSOCIATED(current))
 
 !------ Copy pointer of next node
 	next => current%next 
+        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 !------ Calculate length scale for jth particle:  delta = R / Sh
 !------ Calculate effective radius: R_influence_P = R + (N_d *delta)
@@ -997,6 +1008,7 @@ DO WHILE (ASSOCIATED(current))
            END DO
         END DO
 
+END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 current => next
 ENDDO
 
@@ -1103,6 +1115,7 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
    current => ParListHead%next     
    DO WHILE (ASSOCIATED(current)) 
       next => current%next 	
+      IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       current%pardata%xpold = current%pardata%xp
       current%pardata%ypold = current%pardata%yp
       current%pardata%zpold = current%pardata%zp
@@ -1114,6 +1127,7 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
       current%pardata%xp=current%pardata%xpold+current%pardata%up
       current%pardata%yp=current%pardata%ypold+current%pardata%vp
       current%pardata%zp=current%pardata%zpold+current%pardata%wp
+      END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       current => next
    ENDDO
 
@@ -1122,9 +1136,11 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
    current => ParListHead%next
    DO WHILE (ASSOCIATED(current))
       next => current%next 						! copy pointer of next node
+      IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
       current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
       current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+      END IF   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       current => next
    ENDDO
 
@@ -1162,6 +1178,7 @@ ENDIF
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next ! copy pointer of next node
+   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	!------- Wrappign around in z-direction for periodic BC in z
 	IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
 	   current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
@@ -1238,46 +1255,47 @@ DO WHILE (ASSOCIATED(current))
       close(81)
      
       END SELECT
+   END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    current => next 
 ENDDO
 
 
+!---- Parallel communication between all processors
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 
+	RANKK= current%pardata%cur_part - 1
+        current%pardata%cur_part = current%pardata%new_part 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
+	CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%up,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%vp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%wp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%xpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%ypold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%zpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%upold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%vpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%wpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%rpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%par_conc,  1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%bulk_conc, 1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%gamma_cont,1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%Nbj,       1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%S,         1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+        
+        write(*,*) iter,'CPU, cur_P, Rank, z', mySub, current%pardata%cur_part, RANKK, current%pardata%zp
+   current => next  
+ENDDO
 
 
 !===================================================================================================

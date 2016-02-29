@@ -162,7 +162,7 @@ ELSE
 	   END DO
  
          !----- Create a particle element in the linked list only if the particles belongs to this partition
-	 IF (particle_partition.EQ.mySub) THEN
+!        IF (particle_partition.EQ.mySub) THEN
 	    CALL list_init(CurPar%next)		
 			CurPar%next%prev => CurPar
 			CurPar%next%next => null()
@@ -190,10 +190,10 @@ ELSE
 			CurPar%next%pardata%Nbj = 0.0_dbl
 			CurPar%next%pardata%bulk_conc = 0.0000_dbl
 			CurPar%next%pardata%delNBbyCV= 0.00000_dbl
-			CurPar%next%pardata%cur_part= mySub
-			CurPar%next%pardata%new_part= mySub
+			CurPar%next%pardata%cur_part= particle_partition
+			CurPar%next%pardata%new_part= particle_partition
 	   CurPar => CurPar%next
-		END IF
+!	END IF
      END DO
 	
  CLOSE(60)
