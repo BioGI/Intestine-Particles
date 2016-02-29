@@ -939,1030 +939,178 @@ END DO
 !------------------------------------------------
 END SUBROUTINE PackData
 !------------------------------------------------
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE  Collect_Distribute_Global_Bulk_Scalar_Conc
-! This subroutine does the
-!parallel communication needed to collect all the bulk concentration in each of
-!the processes and computeѕ an average, which is the distributed to the various
-!process for computing the drug concentration. 
+! This subroutine does the parallel communication needed to collect all the bulk concentration in
+! each of the processes and computeѕ an average, which is the distributed to the various
+! process for computing the drug concentration. 
 !--------------------------------------------------------------------------------------------------
+
 IMPLICIT NONE
-REAL(dbl) :: Cb_global_temp
-INTEGER(lng):: Cb_numFluids_temp,mpierr
-!CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processing units before next loop [Intrinsic]
-!CALL MPI_GATHER......
-!write(*,*)  'In Collect and Distribute before reduce', iter,mySub,Cb_global,Cb_numFluids
+REAL(dbl)   :: Cb_global_temp
+INTEGER(lng):: Cb_numFluids_temp, mpierr
+
 Cb_global_temp = 0.0_dbl
 Cb_numFluids_temp = 0_lng
+
 CALL MPI_REDUCE(Cb_global,Cb_global_temp,1,MPI_DOUBLE_PRECISION,MPI_SUM,master,MPI_COMM_WORLD,mpierr)
 CALL MPI_REDUCE(Cb_numFluids,Cb_numFluids_temp,1,MPI_INTEGER,MPI_SUM,master,MPI_COMM_WORLD,mpierr)
+
 Cb_global = Cb_global_temp/Cb_numFluids_temp
 Cb_numFLuids = Cb_numFluids_temp
-!write(*,*) 'In Collect and Distribute before bcas',iter,mySub,Cb_global,Cb_global_temp,Cb_numFluids,Cb_numFluids_temp
+
 CALL MPI_BCast(Cb_global,1,MPI_DOUBLE_PRECISION,master,MPI_COMM_WORLD,mpierr)
 CALL MPI_BCast(Cb_numFluids,1,MPI_INTEGER,master,MPI_COMM_WORLD,mpierr)
-!CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processing units before next loop [Intrinsic]
-!write(*,*) 'In Collect and Distribute after Bcast',iter,mySub,Cb_global,Cb_numFluids,Cb_numFluids*xcf*ycf*zcf,Cb_numFluids_temp
 
 !--------------------------------------------------------------------------------------------------
 END SUBROUTINE  Collect_Distribute_Global_Bulk_Scalar_Conc
 !--------------------------------------------------------------------------------------------------
+
+
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE Particle_MPI_Transfer		! transfer the particles to neighbouring partitions
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 TYPE(ParRecord), POINTER :: current  => NULL()
 TYPE(ParRecord), POINTER :: next => NULL()
-INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag		! number of send/recv requests
+INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag					! number of send/recv requests
 INTEGER(lng) :: mpierr,commdir,iComm,par_num!,numparticlesDomain			! MPI standard error object
-LOGICAL :: probeflag
 INTEGER(lng) :: parsendindex(NumCommDirsPar), parrecvindex(NumCommDirsPar)
-
-!write(*,*) 'In Particle_MPI	','FLAG=',ParticleTransfer,'SUBID = ',mySub,'iter = ',iter
+LOGICAL      :: probeflag
 
 ! IMPORTANT NOTE: It is important for the partransfersend and partransferrecv arrays to store the particle data in columns, i.e. of 
 ! dimenions NumParVar x NumCommDirsPar as against NumCommDirsPar x  NumParVar as we are planning to send packets of data 
 ! corresponding to an entire particle across processors. In fortran and MPI, this requires that the entire particle data 
-!(all NumParVar  variables given by partransfersend(:,iComm)) need to be in column format so that they can be passed as a single array.
+! (all NumParVar  variables given by partransfersend(:,iComm)) need to be in column format so that they can be passed as a single array.
 ! For some yet-to-be understood reason, MPI dopes not accept passing an entire row of data, say, partransfersend(iComm,:) 
-!as a contiguous array into MPI_SEND or MPI_RECV. Hence the convetion used below. 
+! as a contiguous array into MPI_SEND or MPI_RECV. Hence the convetion used below. 
 
 nreqs = 0_lng
 partransfersend = 0.0_dbl
 partransferrecv = 0.0_dbl
 sendtag = 0_lng
 
-
-
-!Identify how many particles need to be transfererd in each direction
+!----- Identify how many particles need to be transfererd in each direction
 numpartransfer = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-		DO iComm = 1,NumCommDirsPar
-			IF (SubID(iComm).EQ.current%pardata%new_part) THEN
-				numpartransfer(iComm) = numpartransfer(iComm)+1_lng
-			END IF
-		END DO
-	END IF
-	! point to next node in the list
-	current => next
-	!write(*,*) current%parid
+   next => current%next 							! copy pointer of next node
+   IF (current%pardata%cur_part /= current%pardata%new_part) THEN 		! Transfer only if the particle has moved to another partition
+      DO iComm = 1,NumCommDirsPar
+         IF (SubID(iComm).EQ.current%pardata%new_part) THEN
+	    numpartransfer(iComm) = numpartransfer(iComm)+1_lng
+	 END IF
+      END DO
+   END IF
+   current => next								! point to next node in the list
 ENDDO
-! Now 'numpartransfer' contains the number of particles in each direction
 
-
-!numparticlesDomain = 1_lng!MAXVAL(numpartransfer)
+!----- Now 'numpartransfer' contains the number of particles in each direction
 ALLOCATE(ParSendArray(numparticlesDomain,NumCommDirsPar))
 ALLOCATE(ParRecvArray(numparticlesDomain,NumCommDirsPar))
-!ALLOCATE(ParSendArray(1,NumCommDirsPar))
-!ALLOCATE(ParRecvArray(1,NumCommDirsPar))
+
 DO iComm = 1,NumCommDirsPar
-	DO par_num = 1,numparticlesDomain
-		ParSendArray(par_num,iComm) = ParInit
-		ParRecvArray(par_num,iComm) = ParInit
-	END DO
+   DO par_num = 1,numparticlesDomain
+      ParSendArray(par_num,iComm) = ParInit
+      ParRecvArray(par_num,iComm) = ParInit
+   END DO
 END DO
 
-!write(*,*) 'In MPI_Particle_transfer - allocated particle send and recv arrays',mySub,iter
-!CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processing units before next loop [Intrinsic]
-
-! Pack data
+!----- Pack data
 parsendindex = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-		DO iComm = 1,NumCommDirsPar
-			IF (SubID(iComm).EQ.current%pardata%new_part) THEN
-				commdir = iComm
-				parsendindex(commdir) = parsendindex(commdir) + 1_lng
-				!write(*,*) 'data being packed in ',mySub,'for direction ',commdir
-			END IF
-		END DO
-		! PACK DATA INTO AN ARRAY
-
-!		ParSendArray(parsendindex(commdir),commdir)%parid 	= current%pardata%parid
-!		ParSendArray(parsendindex(commdir),commdir)%cur_part 	= current%pardata%cur_part
-!		ParSendArray(parsendindex(commdir),commdir)%new_part 	= current%pardata%new_part
-!		ParSendArray(parsendindex(commdir),commdir)%xp 		= current%pardata%xp
-!		ParSendArray(parsendindex(commdir),commdir)%yp 		= current%pardata%yp
-!		ParSendArray(parsendindex(commdir),commdir)%zp 		= current%pardata%zp
-!		ParSendArray(parsendindex(commdir),commdir)%up 		= current%pardata%up
-!		ParSendArray(parsendindex(commdir),commdir)%vp 		= current%pardata%vp
-!		ParSendArray(parsendindex(commdir),commdir)%wp 		= current%pardata%wp
-!		ParSendArray(parsendindex(commdir),commdir)%rp 		= current%pardata%rp
-!		ParSendArray(parsendindex(commdir),commdir)%delNBbyCV 	= current%pardata%delNBbyCV
-!		ParSendArray(parsendindex(commdir),commdir)%par_conc 	= current%pardata%par_conc
-!		ParSendArray(parsendindex(commdir),commdir)%bulk_conc 	= current%pardata%bulk_conc
-!		ParSendArray(parsendindex(commdir),commdir)%xpold 	= current%pardata%xpold
-!		ParSendArray(parsendindex(commdir),commdir)%ypold 	= current%pardata%ypold
-!		ParSendArray(parsendindex(commdir),commdir)%zpold 	= current%pardata%zpold
-!		ParSendArray(parsendindex(commdir),commdir)%upold 	= current%pardata%upold
-!		ParSendArray(parsendindex(commdir),commdir)%vpold 	= current%pardata%vpold
-!		ParSendArray(parsendindex(commdir),commdir)%wpold 	= current%pardata%wpold
-!		ParSendArray(parsendindex(commdir),commdir)%rpold 	= current%pardata%rpold
-!		ParSendArray(parsendindex(commdir),commdir)%sh 		= current%pardata%sh
-!		ParSendArray(parsendindex(commdir),commdir)%gamma_cont 	= current%pardata%gamma_cont
-!		!write(*,*) 'data being packed in ',mySub,'for direction ',commdir
-
-		ParSendArray(parsendindex(commdir),commdir)		= current%pardata
-
-
-
-
-!		!sendtag = current%parid
-!		partransfersend(1,commdir) = REAL(current%pardata%parid,dbl)
-!		partransfersend(2,commdir) = REAL(current%pardata%xp,dbl)
-!		partransfersend(3,commdir) = REAL(current%pardata%yp,dbl)
-!		partransfersend(4,commdir) = REAL(current%pardata%zp,dbl)
-!		partransfersend(5,commdir) = REAL(current%pardata%up,dbl)
-!		partransfersend(6,commdir) = REAL(current%pardata%vp,dbl)
-!		partransfersend(7,commdir) = REAL(current%pardata%wp,dbl)
-!		partransfersend(8,commdir) = REAL(current%pardata%rp,dbl)
-!		partransfersend(9,commdir) = REAL(current%pardata%delNBbyCV,dbl)
-!		partransfersend(10,commdir) = REAL(current%pardata%par_conc,dbl)
-!		partransfersend(11,commdir) = REAL(current%pardata%bulk_conc,dbl)
-!		partransfersend(12,commdir) = REAL(current%pardata%rpold,dbl)
-!		partransfersend(13,commdir) = REAL(current%pardata%sh,dbl)
-!		partransfersend(14,commdir) = REAL(current%pardata%gamma_cont,dbl)
-!		partransfersend(15,commdir) = REAL(current%pardata%cur_part,dbl)
-!		partransfersend(16,commdir) = REAL(current%pardata%new_part,dbl)
-!		!write(*,*) current%pardata%parid,current%pardata%cur_part,current%pardata%new_part
-!		!write(*,*) 'data being packed in ',mySub,'for direction ',commdir
-	END IF
-	! point to next node in the list
-	current => next
-	!write(*,*) current%parid
+   next => current%next ! copy pointer of next node
+   IF (current%pardata%cur_part /= current%pardata%new_part) THEN 			! Transfer only if the particle has moved to another partition
+      DO iComm = 1,NumCommDirsPar
+         IF (SubID(iComm).EQ.current%pardata%new_part) THEN
+	    commdir = iComm
+	    parsendindex(commdir) = parsendindex(commdir) + 1_lng
+	 END IF
+      END DO
+      
+      ParSendArray(parsendindex(commdir),commdir)= current%pardata      		! PACK DATA INTO AN ARRAY
+   END IF
+   current => next
 ENDDO
 
-!write(*,*) 'In MPI_Particle_transfer - packed data into send array',mySub,iter
-!CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processing units before next loop [Intrinsic]
-
-!! Post receives
-!parrecvindex = 0_lng
-!DO iComm = 1,NumCommDirsPar
-!	!write(*,*) 'In post receive ', mySub,iComm,SubID(OppCommDir(iComm))
-!	IF(SubID(OppCommDir(iComm)) .NE. 0) THEN
-!		nreqs 	= nreqs + 1_lng
-!		source	= SubID(OppCommDir(iComm)) - 1_lng ! rank of processing unit sending message TO this processing unit
-!		recvtag = iComm + 20_lng
-!10		CALL MPI_IPROBE(source,recvtag,MPI_COMM_WORLD,probeflag,probestat,mpierr)
-!		CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
-!		IF (parrecvindex(iComm).LT.1_lng) THEN
-!			GOTO 10
-!		END IF
-!
-!		!!CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,probeflag,probestat,mpierr)	
-!		!!nreqs = nreqs + 1_lng
-!		!!recvtag = probestat(MPI_TAG)
-!		!!source =  probestat(MPI_SOURCE)
-!!10		CALL MPI_IPROBE(source,recvtag,MPI_COMM_WORLD,probeflag,probestat,mpierr)
-!!		CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
-!!		IF (parrecvindex(iComm).LT.1_lng) THEN
-!!			GOTO 10
-!!		END IF
-!
-!		!write(*,*) 'what we get from direction iComm ',parrecvindex(iComm),iComm,mySub,source,iter
-!
-!		!CALL MPI_IRECV(recvarray,NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		!CALL MPI_IRECV(partransferrecv(1:NumParVar,iComm),NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		!CALL MPI_IRECV(partransferrecv(:,iComm),NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		!CALL MPI_IRECV(ParRecvArray(1,iComm),1,mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		CALL MPI_IRECV(ParRecvArray(1:parrecvindex(iComm),iComm),parrecvindex(iComm),mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		!partransferrecv(iComm,:) = recvarray
-!		write(*,*) '********recd  ','with tag ',recvtag,'from ',source+1_lng,'to ',mySub,'at iter ',iter,parrecvindex(iComm),' items'
-!		!write(*,*) iComm,partransferrecv(iComm,1),recvarray(1)
-!	END IF
-!END DO
-
-! Post send
+!----- Post send
 DO iComm = 1,NumCommDirsPar
-	!write(*,*) 'In post send ',mySub,iComm,SubID(iComm)
-	IF(SubID(iComm) .NE. 0) THEN
-		nreqs 	= nreqs + 1_lng
-		dest	= SubID(iComm) - 1_lng ! rank of processing unit sending message TO this processing unit
-		sendtag = iComm + 20_lng
-		!sendtag = mySub*1000_lng + iComm*100_lng + 20_lng
-		!sendarray = partransfersend(iComm,:)
-		!CALL MPI_ISEND(sendarray,NumParVar,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-		!CALL MPI_ISEND(partransfersend(1:NumParVar,iComm),NumParVar,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-		!CALL MPI_ISEND(partransfersend(:,iComm),NumParVar,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-		!CALL MPI_ISEND(ParSendArray(1,iComm),1,mpipartransfertype,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-		CALL MPI_ISEND(ParSendArray(1:max(parsendindex(iComm),1),iComm),max(parsendindex(iComm),1),mpipartransfertype,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-		!write(*,*) '**********sent   ','with tag ',sendtag,'from ',mySub,'to ',dest+1_lng,'at iter ',iter,parsendindex(iComm),' items'
-		!write(*,*) iComm,partransfersend(iComm,1),sendarray(1)
-	END IF
+   IF (SubID(iComm) .NE. 0) THEN
+      nreqs 	= nreqs + 1_lng
+      dest	= SubID(iComm) - 1_lng 						! rank of processing unit sending message TO this processing unit
+      sendtag = iComm + 20_lng
+      CALL MPI_ISEND(ParSendArray(1:max(parsendindex(iComm),1),iComm),max(parsendindex(iComm),1),mpipartransfertype,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
+   END IF
 END DO
 
-!write(*,*) 'In MPI_Particle_transfer - post send',mySub,iter
-!CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processing units before next loop [Intrinsic]
-
-
-
-! Post receives
+!----- Post receives
 parrecvindex = 0_lng
 DO iComm = 1,NumCommDirsPar
-	!write(*,*) 'In post receive ', mySub,iComm,SubID(OppCommDir(iComm))
-	IF(SubID(OppCommDir(iComm)) .NE. 0) THEN
-		nreqs 	= nreqs + 1_lng
-		source	= SubID(OppCommDir(iComm)) - 1_lng ! rank of processing unit sending message TO this processing unit
-		recvtag = iComm + 20_lng
-		!recvtag = source*1000_lng + iComm*1000_lng + 20_lng
-!10		CALL MPI_IPROBE(source,recvtag,MPI_COMM_WORLD,probeflag,probestat,mpierr)
-10		CALL MPI_PROBE(source,recvtag,MPI_COMM_WORLD,probestat,mpierr)
-		CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
-		IF (parrecvindex(iComm).LT.1_lng) THEN
-			GOTO 10
-		END IF
-
-		!!CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,probeflag,probestat,mpierr)	
-		!!nreqs = nreqs + 1_lng
-		!!recvtag = probestat(MPI_TAG)
-		!!source =  probestat(MPI_SOURCE)
-!10		CALL MPI_IPROBE(source,recvtag,MPI_COMM_WORLD,probeflag,probestat,mpierr)
-!		CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
-!		IF (parrecvindex(iComm).LT.1_lng) THEN
-!			GOTO 10
-!		END IF
-
-		!write(*,*) 'what we get from direction iComm ',parrecvindex(iComm),iComm,mySub,source,iter
-
-		!CALL MPI_IRECV(recvarray,NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-		!CALL MPI_IRECV(partransferrecv(1:NumParVar,iComm),NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-		!CALL MPI_IRECV(partransferrecv(:,iComm),NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-		!CALL MPI_IRECV(ParRecvArray(1,iComm),1,mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-		CALL MPI_IRECV(ParRecvArray(1:parrecvindex(iComm),iComm),parrecvindex(iComm),mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-		!partransferrecv(iComm,:) = recvarray
-		!write(*,*) '********recd  ','with tag ',recvtag,'from ',source+1_lng,'to ',mySub,'at iter ',iter,parrecvindex(iComm),' items'
-		!write(*,*) iComm,partransferrecv(iComm,1),recvarray(1)
-	END IF
+   IF (SubID(OppCommDir(iComm)) .NE. 0) THEN
+      nreqs 	= nreqs + 1_lng
+      source	= SubID(OppCommDir(iComm)) - 1_lng 				! rank of processing unit sending message TO this processing unit
+      recvtag = iComm + 20_lng
+10    CALL MPI_PROBE(source,recvtag,MPI_COMM_WORLD,probestat,mpierr)
+      CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
+      IF (parrecvindex(iComm).LT.1_lng) THEN
+         GOTO 10
+      END IF
+      CALL MPI_IRECV(ParRecvArray(1:parrecvindex(iComm),iComm),parrecvindex(iComm),mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
+   END IF
 END DO
 
-!write(*,*) 'In MPI_Particle_transfer - post receives',mySub,iter
-!CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processing units before next loop [Intrinsic]
-
-! Wait for all communication to complete
+!----- Wait for all communication to complete
 CALL MPI_WAITALL(nreqs,parreqid(1:nreqs),parwtstat,mpierr)
 
-
-! Unpack data if recd.
+!----- Unpack data if recd.
 DO iComm = 1,NumCommDirsPar
-	DO par_num = 1,parrecvindex(iComm)
-		!IF (partransferrecv(1,iComm).GT.0_lng) THEN
-		IF (ParRecvArray(par_num,iComm)%parid.GT.0_lng) THEN
-			CALL list_insert(ParListHead)
-			current => ParListHead%next
-	
-			! UNPACK DATA
- 
-!			current%pardata%parid 		=ParRecvArray(par_num,iComm)%parid
-!			current%pardata%cur_part 	=ParRecvArray(par_num,iComm)%cur_part
-!			current%pardata%new_part 	=ParRecvArray(par_num,iComm)%new_part
-!			current%pardata%xp 		=ParRecvArray(par_num,iComm)%xp
-!			current%pardata%yp 		=ParRecvArray(par_num,iComm)%yp
-!			current%pardata%zp 		=ParRecvArray(par_num,iComm)%zp
-!			current%pardata%up 		=ParRecvArray(par_num,iComm)%up
-!			current%pardata%vp 		=ParRecvArray(par_num,iComm)%vp
-!			current%pardata%wp 		=ParRecvArray(par_num,iComm)%wp
-!			current%pardata%rp 		=ParRecvArray(par_num,iComm)%rp
-!			current%pardata%delNBbyCV 	=ParRecvArray(par_num,iComm)%delNBbyCV
-!			current%pardata%par_conc 	=ParRecvArray(par_num,iComm)%par_conc
-!			current%pardata%bulk_conc 	=ParRecvArray(par_num,iComm)%bulk_conc
-!			current%pardata%xpold 		=ParRecvArray(par_num,iComm)%xpold
-!			current%pardata%ypold 		=ParRecvArray(par_num,iComm)%ypold
-!			current%pardata%zpold 		=ParRecvArray(par_num,iComm)%zpold
-!			current%pardata%upold 		=ParRecvArray(par_num,iComm)%upold
-!			current%pardata%vpold 		=ParRecvArray(par_num,iComm)%vpold
-!			current%pardata%wpold 		=ParRecvArray(par_num,iComm)%wpold
-!			current%pardata%rpold 		=ParRecvArray(par_num,iComm)%rpold
-!			current%pardata%sh 		=ParRecvArray(par_num,iComm)%sh
-!			current%pardata%gamma_cont 	=ParRecvArray(par_num,iComm)%gamma_cont
-!			!write(*,*) 'unpacking data ',mySub,current%pardata%parid,iComm,current%pardata%cur_part,current%pardata%new_part
-!			!PAUSE
-	
-			current%pardata 		=ParRecvArray(par_num,iComm)
-
-	
-!			current%parid 		= INT(partransferrecv(1,iComm),lng)
-!			!write(*,*) 'unpacking data ',mySub,current%pardata%parid
-!			!PAUSE
-!			current%pardata%xp 		= partransferrecv(2,iComm)
-!			current%pardata%yp 		= partransferrecv(3,iComm)
-!			current%pardata%zp		= partransferrecv(4,iComm)
-!			current%pardata%up 		= partransferrecv(5,iComm)
-!			current%pardata%vp 		= partransferrecv(6,iComm)
-!			current%pardata%wp 		= partransferrecv(7,iComm)
-!			current%pardata%rp 		= partransferrecv(8,iComm)
-!			current%pardata%delNBbyCV 	= partransferrecv(9,iComm)
-!			current%pardata%par_conc 	= partransferrecv(10,iComm)
-!			current%pardata%bulk_conc 	= partransferrecv(11,iComm)
-!			current%pardata%rpold 		= partransferrecv(12,iComm)
-!			current%pardata%sh 		= partransferrecv(13,iComm)
-!			current%pardata%gamma_cont 	= partransferrecv(14,iComm)
-!			current%pardata%cur_part 	= INT(partransferrecv(15,iComm),lng)
-!			current%pardata%new_part 	= INT(partransferrecv(16,iComm),lng)
-	
-			current%pardata%cur_part 	= mySub!current%pardata%new_part
-		END IF
-	END DO
+   DO par_num = 1,parrecvindex(iComm)
+      IF (ParRecvArray(par_num,iComm)%parid.GT.0_lng) THEN
+         CALL list_insert(ParListHead)
+	 current => ParListHead%next
+	 !----- UNPACK DATA
+	 current%pardata = ParRecvArray(par_num,iComm)
+	 current%pardata%cur_part = mySub		
+      END IF
+  END DO
 END DO
 
-! If data was sent then remove sent particle from list
+!----- If data was sent then remove sent particle from list
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	!write(*,*) 'traverse node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
-	!write(*,*) current%prev%next%pardata%parid,current%pardata%parid,iter
-	IF (current%pardata%cur_part .NE. current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-		!write(*,*) 'In delete node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
-		!PAUSE
-		CALL list_delete(current)
-
-		!current%prev%next => next
-		!IF (ASSOCIATED(next)) THEN
-		!	write(*,*) 'current%next is associated'
-		!	next%prev => current%prev
-		!ENDIF
-		!NULLIFY(current%prev)
-		!NULLIFY(current%next)
-		!DEALLOCATE(current)
-
-		NULLIFY(current)
-	END IF
-	! point to next node in the list
-	current => next
-	!IF (ASSOCIATED(current)) THEN
-	!	write(*,*) 'test association prev ',ASSOCIATED(current%prev),iter
-	!	write(*,*) 'test association next ',ASSOCIATED(current%next),iter
-	!END IF
-	!write(*,*) current%pardata%parid
+   next => current%next 							! copy pointer of next node
+   IF (current%pardata%cur_part .NE. current%pardata%new_part) THEN 		! Transfer only if the particle has moved to another partition
+      CALL list_delete(current)
+      NULLIFY(current)
+   END IF
+   current => next 								! point to next node in the list
 ENDDO
-!write(*,*) mySub,ParListHead%next%pardata%parid
+
 numparticlesSub = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	numparticlesSub = numparticlesSub + 1_lng
-	next => current%next ! copy pointer of next node
-	!write(*,*) 'leftover node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part
-	! point to next node in the list
+	next => current%next 
 	current => next
-	!write(*,*) current%pardata%parid
 ENDDO
-!write(*,*) 'In MPIParticleTransfer  ',iter,mySub,numparticlesSub
 
 DEALLOCATE(ParSendArray)
 DEALLOCATE(ParRecvArray)
 
-!write(*,*) mySub,'____________________________________________________________________'
-
-
-
-! Rough outline of the algorithm
-! PACK DATA INTO OPTIMAL NUMBER OF PACKETS
-! POST RECEIVE
-! SEND DATA
-! MPI_WAITALL - make sure all the data transfer is completed
-! UNPACK DATA AND ADD DATA TO THE PARTICLE LINKED LIST
-
 !------------------------------------------------
 END SUBROUTINE Particle_MPI_Transfer
 !------------------------------------------------
-!! Working for single particle
-!!--------------------------------------------------------------------------------------------------
-!SUBROUTINE Particle_MPI_Transfer		! transfer the particles to neighbouring partitions
-!!--------------------------------------------------------------------------------------------------
-!IMPLICIT NONE
-!TYPE(ParRecord), POINTER :: current
-!TYPE(ParRecord), POINTER :: next
-!INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag		! number of send/recv requests
-!INTEGER(lng) :: mpierr,commdir,iComm			! MPI standard error object
-!LOGICAL :: probeflag
-!REAL(dbl) :: sendarray(NumParVar),recvarray(NumParVar)
-!
-!
-!nreqs = 0_lng
-!partransfersend = 0.0_dbl
-!partransferrecv = 0.0_dbl
-!sendarray = 0.0_dbl
-!recvarray = 0.0_dbl
-!sendtag = 0_lng
-!!write(*,*) 'In Particle_MPI	','FLAG=',ParticleTransfer,'SUBID = ',mySub,'iter = ',iter
-!
-!! IMPORTANT NOTE: It is important for the partransfersend and partransferrecv arrays to store the particle data in columns, i.e. of 
-!! dimenions NumParVar x NumCommDirsPar as against NumCommDirsPar x  NumParVar as we are planning to send packets of data 
-!! corresponding to an entire particle across processors. In fortran and MPI, this requires that the entire particle data 
-!!(all NumParVar  variables given by partransfersend(:,iComm)) need to be in column format so that they can be passed as a single array.
-!! For some yet-to-be understood reason, MPI dopes not accept passing an entire row of data, say, partransfersend(iComm,:) 
-!!as a contiguous array into MPI_SEND or MPI_RECV. Hence the convetion used below. 
-!
-!
-!! Pack data
-!current => ParListHead%next
-!DO WHILE (ASSOCIATED(current))
-!	next => current%next ! copy pointer of next node
-!	IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!		DO iComm = 1,NumCommDirsPar
-!			IF (SubID(iComm).EQ.current%new_part) THEN
-!				commdir = iComm	
-!			END IF
-!		END DO
-!		! PACK DATA INTO AN ARRAY
-!		!sendtag = current%parid
-!		partransfersend(1,commdir) = REAL(current%parid,dbl)
-!		partransfersend(2,commdir) = REAL(current%xp,dbl)
-!		partransfersend(3,commdir) = REAL(current%yp,dbl)
-!		partransfersend(4,commdir) = REAL(current%zp,dbl)
-!		partransfersend(5,commdir) = REAL(current%up,dbl)
-!		partransfersend(6,commdir) = REAL(current%vp,dbl)
-!		partransfersend(7,commdir) = REAL(current%wp,dbl)
-!		partransfersend(8,commdir) = REAL(current%rp,dbl)
-!		partransfersend(9,commdir) = REAL(current%delNBbyCV,dbl)
-!		partransfersend(10,commdir) = REAL(current%par_conc,dbl)
-!		partransfersend(11,commdir) = REAL(current%bulk_conc,dbl)
-!		partransfersend(12,commdir) = REAL(current%rpold,dbl)
-!		partransfersend(13,commdir) = REAL(current%sh,dbl)
-!		partransfersend(14,commdir) = REAL(current%gamma_cont,dbl)
-!		partransfersend(15,commdir) = REAL(current%cur_part,dbl)
-!		partransfersend(16,commdir) = REAL(current%new_part,dbl)
-!		!write(*,*) current%parid,current%cur_part,current%new_part
-!		!write(*,*) 'data being packed in ',mySub,'for direction ',commdir
-!	END IF
-!	! point to next node in the list
-!	current => next
-!	!write(*,*) current%parid
-!ENDDO
-!
-!! Post receives
-!DO iComm = 1,NumCommDirsPar
-!	!write(*,*) 'In post receive ', mySub,iComm,SubID(OppCommDir(iComm))
-!	IF(SubID(OppCommDir(iComm)) .NE. 0) THEN
-!		nreqs 	= nreqs + 1_lng
-!		source	= SubID(OppCommDir(iComm)) - 1_lng ! rank of processing unit sending message TO this processing unit
-!		recvtag = iComm + 20_lng
-!		!CALL MPI_IRECV(recvarray,NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		!CALL MPI_IRECV(partransferrecv(1:NumParVar,iComm),NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		CALL MPI_IRECV(partransferrecv(:,iComm),NumParVar,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		!partransferrecv(iComm,:) = recvarray
-!		!write(*,*) '********recd  ','with tag ',recvtag,'from ',source+1_lng,'to ',mySub,'at iter ',iter
-!		!write(*,*) iComm,partransferrecv(iComm,1),recvarray(1)
-!	END IF
-!END DO
-!! Post send
-!DO iComm = 1,NumCommDirsPar
-!	!write(*,*) 'In post send ',mySub,iComm,SubID(iComm)
-!	IF(SubID(iComm) .NE. 0) THEN
-!		nreqs 	= nreqs + 1_lng
-!		dest	= SubID(iComm) - 1_lng ! rank of processing unit sending message TO this processing unit
-!		sendtag = iComm + 20_lng
-!		!sendarray = partransfersend(iComm,:)
-!		!CALL MPI_ISEND(sendarray,NumParVar,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-!		!CALL MPI_ISEND(partransfersend(1:NumParVar,iComm),NumParVar,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-!		CALL MPI_ISEND(partransfersend(:,iComm),NumParVar,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-!		!write(*,*) '**********sent   ','with tag ',sendtag,'from ',mySub,'to ',dest+1_lng,'at iter ',iter
-!		!write(*,*) iComm,partransfersend(iComm,1),sendarray(1)
-!	END IF
-!END DO
-!
-!! Wait for all communication to complete
-!CALL MPI_WAITALL(nreqs,parreqid(1:nreqs),parwtstat,mpierr)
-!
-!
-!! Unpack data if recd.
-!DO iComm = 1,NumCommDirsPar
-!	IF (partransferrecv(1,iComm).GT.0_lng) THEN
-!		CALL list_insert(ParListHead)
-!		current => ParListHead%next
-!		! PACK DATA INTO AN ARRAY
-!		current%parid 		= INT(partransferrecv(1,iComm),lng)
-!		!write(*,*) 'unpacking data ',mySub,current%parid
-!		!PAUSE
-!		current%xp 		= partransferrecv(2,iComm)
-!		current%yp 		= partransferrecv(3,iComm)
-!		current%zp		= partransferrecv(4,iComm)
-!		current%up 		= partransferrecv(5,iComm)
-!		current%vp 		= partransferrecv(6,iComm)
-!		current%wp 		= partransferrecv(7,iComm)
-!		current%rp 		= partransferrecv(8,iComm)
-!		current%delNBbyCV 	= partransferrecv(9,iComm)
-!		current%par_conc 	= partransferrecv(10,iComm)
-!		current%bulk_conc 	= partransferrecv(11,iComm)
-!		current%rpold 		= partransferrecv(12,iComm)
-!		current%sh 		= partransferrecv(13,iComm)
-!		current%gamma_cont 	= partransferrecv(14,iComm)
-!		current%cur_part 	= INT(partransferrecv(15,iComm),lng)
-!		current%new_part 	= INT(partransferrecv(16,iComm),lng)
-!	
-!		current%cur_part 	= current%new_part
-!	END IF
-!END DO
-!
-!!!!!! OLD PIECE OF CODE
-!!nreqs = nreqs + 1_lng
-!!IF (myid.EQ.1_lng) THEN
-!! source = 0_lng
-!! recvtag = 21_lng 
-!! iComm = 1_lng
-!!ELSE
-!! source = 1_lng
-!! recvtag = 12_lng 
-!! iComm = 2_lng
-!!END IF
-!!CALL MPI_IRECV(recvarray,16_lng,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!!write(*,*) '********recd  ','parid ',recvtag,'from ',source+1_lng,'to ',mySub,'at iter ',iter
-!!!partransferrecv(iComm,:) = recvarray
-!!
-!!! Post send
-!!nreqs = nreqs + 1_lng
-!!IF (myid.EQ.1_lng) THEN
-!! dest = 0_lng 
-!! sendtag = 12_lng
-!! iComm = 2_lng
-!!ELSE
-!! dest = 1_lng
-!! sendtag = 21_lng 
-!! iComm = 1_lng
-!!END IF
-!!sendarray = partransfersend(iComm,:)
-!!CALL MPI_ISEND(sendarray,16_lng,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-!!write(*,*) '**********sent   ','parid ',sendtag,'from ',mySub,'to ',dest+1_lng,'at iter ',iter
-!!
-!!
-!!! Wait for all communication to complete
-!!CALL MPI_WAITALL(nreqs,parreqid(1:nreqs),parwtstat,mpierr)
-!!
-!!! Unpack data if recd. 
-!!IF (recvarray(1).GT.0_lng) THEN
-!!	CALL list_insert(ParListHead)
-!!	current => ParListHead%next
-!!	! PACK DATA INTO AN ARRAY
-!!	current%parid 		= INT(recvarray(1),lng)
-!!	!write(*,*) mySub,current%parid,recvarray(1),recvarray(5),recvarray(6)
-!!	!PAUSE
-!!	current%xp 		= recvarray(2)
-!!	current%yp 		= recvarray(3)
-!!	current%zp		= recvarray(4)
-!!	current%up 		= recvarray(5)
-!!	current%vp 		= recvarray(6)
-!!	current%wp 		= recvarray(7)
-!!	current%rp 		= recvarray(8)
-!!	current%delNBbyCV 	= recvarray(9)
-!!	current%par_conc 	= recvarray(10)
-!!	current%bulk_conc 	= recvarray(11)
-!!	current%rpold 		= recvarray(12)
-!!	current%sh 		= recvarray(13)
-!!	current%gamma_cont 	= recvarray(14)
-!!	current%cur_part 	= INT(recvarray(15),lng)
-!!	current%new_part 	= INT(recvarray(16),lng)
-!!
-!!	current%cur_part 	= current%new_part
-!!END IF
-!
-!! If data was sent then remove sent particle from list
-!current => ParListHead%next
-!DO WHILE (ASSOCIATED(current))
-!	next => current%next ! copy pointer of next node
-!	IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!	!write(*,*) current%parid,current%cur_part,current%new_part
-!	CALL list_delete(current)
-!	END IF
-!	! point to next node in the list
-!	current => next
-!	!write(*,*) current%parid
-!ENDDO
-!
-!write(*,*) '____________________________________________________________________'
-!
-!
-!
-!! Rough outline of the algorithm
-!! PACK DATA INTO OPTIMAL NUMBER OF PACKETS
-!! POST RECEIVE
-!! SEND DATA
-!! MPI_WAITALL - make sure all the data transfer is completed
-!! UNPACK DATA AND ADD DATA TO THE PARTICLE LINKED LIST
-!
-!!------------------------------------------------
-!END SUBROUTINE Particle_MPI_Transfer
-!!------------------------------------------------
-!!--------------------------------------------------------------------------------------------------
-!SUBROUTINE Particle_MPI_Transfer	! transfer the particles to neighbouring partitions
-!!--------------------------------------------------------------------------------------------------
-!IMPLICIT NONE
-!TYPE(ParRecord), POINTER :: current
-!TYPE(ParRecord), POINTER :: next
-!INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag		! number of send/recv requests
-!INTEGER(lng) :: mpierr			! MPI standard error object
-!LOGICAL :: probeflag
-!
-!
-!nreqs = 0_lng
-!partransfersend = 0.0_dbl
-!partransferrecv = 0.0_dbl
-!sendtag = 0_lng
-!write(*,*) 'In Particle_MPI	','FLAG=',ParticleTransfer,'SUBID = ',mySub,'iter = ',iter
-!
-!! Pack data
-!current => ParListHead%next
-!DO WHILE (ASSOCIATED(current))
-!	next => current%next ! copy pointer of next node
-!	IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!		! PACK DATA INTO AN ARRAY
-!		sendtag = current%parid
-!		partransfersend(1) = REAL(current%parid,dbl)
-!		!write(*,*) mySub,current%parid,partransfersend(1)
-!		partransfersend(2) = REAL(current%xp,dbl)
-!		partransfersend(3) = REAL(current%yp,dbl)
-!		partransfersend(4) = REAL(current%zp,dbl)
-!		partransfersend(5) = REAL(current%up,dbl)
-!		partransfersend(6) = REAL(current%vp,dbl)
-!		partransfersend(7) = REAL(current%wp,dbl)
-!		partransfersend(8) = REAL(current%rp,dbl)
-!		partransfersend(9) = REAL(current%delNBbyCV,dbl)
-!		partransfersend(10) = REAL(current%par_conc,dbl)
-!		partransfersend(11) = REAL(current%bulk_conc,dbl)
-!		partransfersend(12) = REAL(current%rpold,dbl)
-!		partransfersend(13) = REAL(current%sh,dbl)
-!		partransfersend(14) = REAL(current%gamma_cont,dbl)
-!		partransfersend(15) = REAL(current%cur_part,dbl)
-!		partransfersend(16) = REAL(current%new_part,dbl)
-!		!write(*,*) current%parid,current%cur_part,current%new_part
-!	END IF
-!	! point to next node in the list
-!	current => next
-!	!write(*,*) current%parid
-!ENDDO
-!
-!! Post receives
-!!CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,probeflag,probestat,mpierr)	
-!!IF (probeflag) THEN
-!!	nreqs = nreqs + 1_lng  
-!!	!nreqs = 2_lng  
-!!	!CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,probestat(MPI_SOURCE),probestat(MPI_TAG),MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!!	CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,probestat(MPI_SOURCE),probestat(MPI_TAG),MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!!END IF
-!
-!!CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,probeflag,probestat,mpierr)	
-!!nreqs = nreqs + 1_lng
-!!recvtag = probestat(MPI_TAG)
-!!source =  probestat(MPI_SOURCE)
-!nreqs = nreqs + 1_lng
-!IF (myid.EQ.1_lng) THEN
-! source = 0_lng
-! recvtag = 21_lng 
-!ELSE
-! source = 1_lng
-! recvtag = 12_lng 
-!END IF
-!CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!write(*,*) '********recd  ','parid ',recvtag,'from ',source+1_lng,'to ',mySub,'at iter ',iter
-!
-!! Post send
-!nreqs = nreqs + 1_lng
-!IF (myid.EQ.1_lng) THEN
-! dest = 0_lng 
-! sendtag = 12_lng 
-!ELSE
-! dest = 1_lng
-! sendtag = 21_lng 
-!END IF
-!CALL MPI_ISEND(partransfersend,16_lng,MPI_DOUBLE_PRECISION,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-!write(*,*) '**********sent   ','parid ',sendtag,'from ',mySub,'to ',dest+1_lng,'at iter ',iter
-!
-!! Wait for all communication to complete
-!CALL MPI_WAITALL(nreqs,parreqid(1:nreqs),parwtstat,mpierr)
-!
-!! Unpack data if recd. 
-!IF (partransferrecv(1).GT.0_lng) THEN
-!	CALL list_insert(ParListHead)
-!	current => ParListHead%next
-!	! PACK DATA INTO AN ARRAY
-!	current%parid 		= INT(partransferrecv(1),lng)
-!	!write(*,*) mySub,current%parid,partransferrecv(1),partransferrecv(5),partransferrecv(6)
-!	!PAUSE
-!	current%xp 		= partransferrecv(2)
-!	current%yp 		= partransferrecv(3)
-!	current%zp		= partransferrecv(4)
-!	current%up 		= partransferrecv(5)
-!	current%vp 		= partransferrecv(6)
-!	current%wp 		= partransferrecv(7)
-!	current%rp 		= partransferrecv(8)
-!	current%delNBbyCV 	= partransferrecv(9)
-!	current%par_conc 	= partransferrecv(10)
-!	current%bulk_conc 	= partransferrecv(11)
-!	current%rpold 		= partransferrecv(12)
-!	current%sh 		= partransferrecv(13)
-!	current%gamma_cont 	= partransferrecv(14)
-!	current%cur_part 	= INT(partransferrecv(15),lng)
-!	current%new_part 	= INT(partransferrecv(16),lng)
-!
-!	current%cur_part 	= current%new_part
-!END IF
-!
-!! If data was sent then remove sent particle from list
-!current => ParListHead%next
-!DO WHILE (ASSOCIATED(current))
-!	next => current%next ! copy pointer of next node
-!	IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!	!write(*,*) current%parid,current%cur_part,current%new_part
-!	CALL list_delete(current)
-!	END IF
-!	! point to next node in the list
-!	current => next
-!	!write(*,*) current%parid
-!ENDDO
-!
-!
-!
-!! Rough outline of the algorithm
-!! PACK DATA INTO OPTIMAL NUMBER OF PACKETS
-!! POST RECEIVE
-!! SEND DATA
-!! MPI_WAITALL - make sure all the data transfer is completed
-!! UNPACK DATA AND ADD DATA TO THE PARTICLE LINKED LIST
-!
-!!------------------------------------------------
-!END SUBROUTINE Particle_MPI_Transfer
-!!------------------------------------------------
-!!--------------------------------------------------------------------------------------------------
-!SUBROUTINE Particle_MPI_Transfer	! transfer the distribution functions between neighboring initialize the MPI arrays and variables
-!!--------------------------------------------------------------------------------------------------
-!IMPLICIT NONE
-!TYPE(ParRecord), POINTER :: current
-!TYPE(ParRecord), POINTER :: next
-!INTEGER(lng) :: nreqs		! number of send/recv requests
-!INTEGER(lng) :: mpierr			! MPI standard error object
-!LOGICAL :: probeflag
-!
-!
-!nreqs = 0_lng
-!
-!write(*,*) 'In Particle_MPI	','FLAG=',ParticleTransfer,'SUBID = ',mySub,'iter = ',iter
-!
-!IF (ParticleTransfer) THEN
-!	! Post all the send requests
-!	current => ParListHead%next
-!	DO WHILE (ASSOCIATED(current))
-!		next => current%next ! copy pointer of next node
-!		IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!		! PACK DATA INTO AN ARRAY
-!		partransfersend(1) = REAL(current%parid,dbl)
-!		!write(*,*) mySub,current%parid,partransfersend(1)
-!		partransfersend(2) = REAL(current%xp,dbl)
-!		partransfersend(3) = REAL(current%yp,dbl)
-!		partransfersend(4) = REAL(current%zp,dbl)
-!		partransfersend(5) = REAL(current%up,dbl)
-!		partransfersend(6) = REAL(current%vp,dbl)
-!		partransfersend(7) = REAL(current%wp,dbl)
-!		partransfersend(8) = REAL(current%rp,dbl)
-!		partransfersend(9) = REAL(current%delNBbyCV,dbl)
-!		partransfersend(10) = REAL(current%par_conc,dbl)
-!		partransfersend(11) = REAL(current%bulk_conc,dbl)
-!		partransfersend(12) = REAL(current%rpold,dbl)
-!		partransfersend(13) = REAL(current%sh,dbl)
-!		partransfersend(14) = REAL(current%gamma_cont,dbl)
-!		partransfersend(15) = REAL(current%cur_part,dbl)
-!		partransfersend(16) = REAL(current%new_part,dbl)
-!    		nreqs = nreqs + 1_lng  
-!    		!nreqs = 1_lng  
-!		! SEND DATA
-!		!CALL MPI_ISEND(partransfersend,16_lng,MPI_DOUBLE_PRECISION &
-!		!,current%new_part-1_lng,current%parid,MPI_COMM_WORLD, &
-!		!parreqid(nreqs),mpierr)	! send data
-!		CALL MPI_SEND(partransfersend,16_lng,MPI_DOUBLE_PRECISION &
-!		,current%new_part-1_lng,current%parid,MPI_COMM_WORLD, &
-!		parreqid(nreqs),mpierr)	! send data
-!		write(*,*) '**********sent','parid = ',current%parid,'from ',current%cur_part,'to ',current%new_part,'at iter ',iter,'in SUBID ',mySub
-!		CALL list_delete(current)
-!		END IF
-!		!write(*,*) current%parid,current%cur_part,current%new_part
-!		! point to next node in the list
-!		current => next
-!		!write(*,*) current%parid
-!	ENDDO
-!!	! delete all the nodes that are sent out
-!!	current => ParListHead%next
-!!	DO WHILE (ASSOCIATED(current))
-!!		next => current%next ! copy pointer of next node
-!!		IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!!			CALL list_delete(current)
-!!		END IF
-!!		!write(*,*) current%parid,current%cur_part,current%new_part
-!!		! point to next node in the list
-!!		current => next
-!!		!write(*,*) current%parid
-!!	ENDDO
-!
-!ELSE
-!! Now, we are not sure if this process wil rceive any data, so probe if there is any pending data. 
-!	CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,probeflag,probestat,mpierr)	
-!	write(*,*) 'In MPI	','TAG=',probestat(MPI_TAG),'SOURCE =',probestat(MPI_SOURCE)+1_lng,'SUBID = ',mySub,'iter = ',iter
-!	IF (probeflag) THEN
-!    		nreqs = nreqs + 1_lng  
-!	    	!nreqs = 2_lng  
-!		!CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,probestat(MPI_SOURCE),probestat(MPI_TAG),MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		CALL MPI_RECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,probestat(MPI_SOURCE),probestat(MPI_TAG),MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-!		!write(*,*) 'recd',probestat(MPI_TAG),probestat(MPI_SOURCE)+1_lng,mySub
-!		CALL MPI_WAITALL(nreqs,parreqid(1:nreqs),parwtstat,mpierr)
-!		write(*,*) '********recd  ','parid ',probestat(MPI_TAG),'from partition ',probestat(MPI_SOURCE)+1_lng,'in SUBID = ',mySub,'at iter ',iter
-!		CALL list_insert(ParListHead)
-!		current => ParListHead%next
-!		! PACK DATA INTO AN ARRAY
-!		current%parid 		= INT(partransferrecv(1),lng)
-!		!write(*,*) mySub,current%parid,partransferrecv(1),partransferrecv(5),partransferrecv(6)
-!		!PAUSE
-!		current%xp 		= partransferrecv(2)
-!		current%yp 		= partransferrecv(3)
-!		current%zp		= partransferrecv(4)
-!		current%up 		= partransferrecv(5)
-!		current%vp 		= partransferrecv(6)
-!		current%wp 		= partransferrecv(7)
-!		current%rp 		= partransferrecv(8)
-!		current%delNBbyCV 	= partransferrecv(9)
-!		current%par_conc 	= partransferrecv(10)
-!		current%bulk_conc 	= partransferrecv(11)
-!		current%rpold 		= partransferrecv(12)
-!		current%sh 		= partransferrecv(13)
-!		current%gamma_cont 	= partransferrecv(14)
-!		current%cur_part 	= INT(partransferrecv(15),lng)
-!		current%new_part 	= INT(partransferrecv(16),lng)
-!	
-!		current%cur_part 	= current%new_part
-!		write(*,*) partransferrecv(15),partransferrecv(16)
-!		!	current%xpold 		= current%xp
-!		!	current%ypold 		= current%yp
-!		!	current%zpold 		= current%zp
-!		!	current%upold 		= current%up
-!		!	current%vpold 		= current%vp
-!		!	current%wpold 		= current%wp
-!	END IF
-!
-!END IF
-!
-!
-!!CALL MPI_WAITALL(numReqs,req(1:numReqs),waitStat,mpierr)
-!! POST RECEIVE
-!		!CALL MPI_IRECV(partransferrecv,1_lng,MPI_DOUBLE_PRECISION,src,tag,MPI_COMM_WORLD,req(numReqs),mpierr)
-!! MPI_WAITALL - make sure all the data transfer is completed
-!! UNPACK DATA AND ADD DATA TO THE PARTICLE LINKED LIST
-!	!CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,current%cur_part,tag,MPI_COMM_WORLD,reqid,mpierr) 
-!
-!
-!
-!! Rough outline of the algorithm
-!! PACK DATA INTO OPTIMAL NUMBER OF PACKETS
-!! POST RECEIVE
-!! SEND DATA
-!! MPI_WAITALL - make sure all the data transfer is completed
-!! UNPACK DATA AND ADD DATA TO THE PARTICLE LINKED LIST
-!
-!!------------------------------------------------
-!END SUBROUTINE Particle_MPI_Transfer
-!!------------------------------------------------
-!!--------------------------------------------------------------------------------------------------
-!SUBROUTINE Particle_MPI_Transfer	! transfer the distribution functions between neighboring initialize the MPI arrays and variables
-!!--------------------------------------------------------------------------------------------------
-!IMPLICIT NONE
-!REAL(dbl), ALLOCATABLE  :: partransfersend(:),partransferrecv(:)
-!TYPE(ParRecord), POINTER :: current
-!TYPE(ParRecord), POINTER :: next
-!INTEGER(lng) :: nreqs		! number of send/recv requests
-!INTEGER(lng),ALLOCATABLE :: reqid(:),wtstat(:,:)		! number of send/recv requests
-!INTEGER(lng) :: mpierr			! MPI standard error object
-!INTEGER(lng) :: probestat(MPI_STATUS_SIZE),recvstat(MPI_STATUS_SIZE)	! MPI status object
-!LOGICAL :: probeflag
-!
-!ALLOCATE(partransfersend(16))
-!ALLOCATE(partransferrecv(16))
-!nreqs = 0_lng
-!ALLOCATE(reqid(2))
-!ALLOCATE(wtstat(MPI_STATUS_SIZE,2))
-!
-!!CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,probeflag,probestat,mpierr)	
-!!IF (probeflag) THEN
-!!    	nreqs = nreqs + 1_lng  
-!!	CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,probestat(MPI_SOURCE),probestat(MPI_TAG),MPI_COMM_WORLD,reqid(nreqs),mpierr)
-!!END IF
-!
-!
-!IF (ParticleTransfer) THEN
-!	! Post all the send requests
-!	current => ParListHead%next
-!	DO WHILE (ASSOCIATED(current))
-!		next => current%next ! copy pointer of next node
-!		IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!		! PACK DATA INTO AN ARRAY
-!		partransfersend(1) = REAL(current%parid,dbl)
-!		!write(*,*) mySub,current%parid,partransfersend(1)
-!		partransfersend(2) = REAL(current%xp,dbl)
-!		partransfersend(3) = REAL(current%yp,dbl)
-!		partransfersend(4) = REAL(current%zp,dbl)
-!		partransfersend(5) = REAL(current%up,dbl)
-!		partransfersend(6) = REAL(current%vp,dbl)
-!		partransfersend(7) = REAL(current%wp,dbl)
-!		partransfersend(8) = REAL(current%rp,dbl)
-!		partransfersend(9) = REAL(current%delNBbyCV,dbl)
-!		partransfersend(10) = REAL(current%par_conc,dbl)
-!		partransfersend(11) = REAL(current%bulk_conc,dbl)
-!		partransfersend(12) = REAL(current%rpold,dbl)
-!		partransfersend(13) = REAL(current%sh,dbl)
-!		partransfersend(14) = REAL(current%gamma_cont,dbl)
-!		partransfersend(15) = REAL(current%cur_part,dbl)
-!		partransfersend(16) = REAL(current%new_part,dbl)
-!    		nreqs = nreqs + 1_lng  
-!    		!nreqs = 1_lng  
-!		! SEND DATA
-!	CALL MPI_ISEND(partransfersend,16_lng,MPI_DOUBLE_PRECISION &
-!	,current%new_part-1_lng,current%parid,MPI_COMM_WORLD, &
-!	reqid(nreqs),mpierr)	! send data
-!		write(*,*) 'sent',current%parid,current%cur_part,current%new_part,iter
-!		CALL list_delete(current)
-!		END IF
-!		!write(*,*) current%parid,current%cur_part,current%new_part
-!		! point to next node in the list
-!		current => next
-!		!write(*,*) current%parid
-!	ENDDO
-!!	! delete all the nodes that are sent out
-!!	current => ParListHead%next
-!!	DO WHILE (ASSOCIATED(current))
-!!		next => current%next ! copy pointer of next node
-!!		IF (current%cur_part /= current%new_part) THEN ! Transfer only if the particle has moved to another partition
-!!			CALL list_delete(current)
-!!		END IF
-!!		!write(*,*) current%parid,current%cur_part,current%new_part
-!!		! point to next node in the list
-!!		current => next
-!!		!write(*,*) current%parid
-!!	ENDDO
-!END IF
-!
-!! Now, we are not sure if this process wil rceive any data, so probe if there is any pending data. 
-!CALL MPI_IPROBE(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,probeflag,probestat,mpierr)	
-!IF (probeflag) THEN
-!    	nreqs = nreqs + 1_lng  
-!    	!nreqs = 2_lng  
-!	CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,probestat(MPI_SOURCE),probestat(MPI_TAG),MPI_COMM_WORLD,reqid(nreqs),mpierr)
-!	!write(*,*) 'recd',probestat(MPI_TAG),probestat(MPI_SOURCE)+1_lng,mySub
-!	CALL MPI_WAITALL(nreqs,reqid(1:nreqs),wtstat,mpierr)
-!	write(*,*) 'recd',probestat(MPI_TAG),probestat(MPI_SOURCE)+1_lng,mySub,iter
-!	CALL list_insert(ParListHead)
-!	current => ParListHead%next
-!	! PACK DATA INTO AN ARRAY
-!	current%parid 		= INT(partransferrecv(1),lng)
-!	!write(*,*) mySub,current%parid,partransferrecv(1),partransferrecv(5),partransferrecv(6)
-!	!PAUSE
-!	current%xp 		= partransferrecv(2)
-!	current%yp 		= partransferrecv(3)
-!	current%zp		= partransferrecv(4)
-!	current%up 		= partransferrecv(5)
-!	current%vp 		= partransferrecv(6)
-!	current%wp 		= partransferrecv(7)
-!	current%rp 		= partransferrecv(8)
-!	current%delNBbyCV 	= partransferrecv(9)
-!	current%par_conc 	= partransferrecv(10)
-!	current%bulk_conc 	= partransferrecv(11)
-!	current%rpold 		= partransferrecv(12)
-!	current%sh 		= partransferrecv(13)
-!	current%gamma_cont 	= partransferrecv(14)
-!	current%cur_part 	= INT(partransferrecv(15),lng)
-!	current%new_part 	= INT(partransferrecv(16),lng)
-!
-!	current%cur_part 	= current%new_part
-!	write(*,*) partransferrecv(15),partransferrecv(16)
-!!	current%xpold 		= current%xp
-!!	current%ypold 		= current%yp
-!!	current%zpold 		= current%zp
-!!	current%upold 		= current%up
-!!	current%vpold 		= current%vp
-!!	current%wpold 		= current%wp
-!ENDIF
-!
-!DEALLOCATE(partransfersend)
-!DEALLOCATE(partransferrecv)
-!DEALLOCATE(reqid)
-!DEALLOCATE(wtstat)
-!
-!!CALL MPI_WAITALL(numReqs,req(1:numReqs),waitStat,mpierr)
-!! POST RECEIVE
-!		!CALL MPI_IRECV(partransferrecv,1_lng,MPI_DOUBLE_PRECISION,src,tag,MPI_COMM_WORLD,req(numReqs),mpierr)
-!! MPI_WAITALL - make sure all the data transfer is completed
-!! UNPACK DATA AND ADD DATA TO THE PARTICLE LINKED LIST
-!	!CALL MPI_IRECV(partransferrecv,16_lng,MPI_DOUBLE_PRECISION,current%cur_part,tag,MPI_COMM_WORLD,reqid,mpierr) 
-!
-!
-!
-!! Rough outline of the algorithm
-!! PACK DATA INTO OPTIMAL NUMBER OF PACKETS
-!! POST RECEIVE
-!! SEND DATA
-!! MPI_WAITALL - make sure all the data transfer is completed
-!! UNPACK DATA AND ADD DATA TO THE PARTICLE LINKED LIST
-!
-!!------------------------------------------------
-!END SUBROUTINE Particle_MPI_Transfer
-!!------------------------------------------------
+
+
+
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE MPI_Transfer	! transfer the distribution functions between neighboring initialize the MPI arrays and variables
