@@ -390,7 +390,7 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
 
    !------ open the proper output file
    OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-   WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
+   WRITE(160,*) '"CPU" "x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
 
    !------ Using linked lists
    current => ParListHead%next
@@ -399,10 +399,8 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
       numParticlesSub = numParticlesSub + 1_lng
       next => current%next 					! copy pointer of next node
 
-
-
-
-      WRITE(160,1001) 	current%pardata%xp 	  ,',',	&
+      WRITE(160,1001)   current%pardata%cur_part  ,',', &
+		 	current%pardata%xp 	  ,',',	&
 			current%pardata%yp  	  ,',',	&
 			current%pardata%zp 	  ,',',	&
                         current%pardata%up*vcf 	  ,',',	&
@@ -418,7 +416,7 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
 			current%pardata%Veff 	  ,',',	&
 			current%pardata%Nbj
 
-1001 format (F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001 format (I3,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
 
      current => next   						! point to next node in the list
   ENDDO
@@ -667,6 +665,7 @@ zcf3 = 1000000.0_lng * zcf*zcf*zcf
 !------ Computing the total drug released from particles      
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
+
    next => current%next
    Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
    current => next
@@ -1098,7 +1097,7 @@ ELSE
 					ParticleData(nnn,14)		,',', &
 					ParticleData(nnn,15)
 
-1001 format (F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001 format (a3, F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
 	
 	        END DO
 		CLOSE(685)	! close current output file (combined)
