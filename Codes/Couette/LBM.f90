@@ -5,6 +5,7 @@ MODULE LBM				! LBM Subroutines (Equilibrium, Collision, Stream, Macro, Scalar, 
 USE SetPrecision
 USE Setup
 USE ICBC
+USE MPI
 
 IMPLICIT NONE
 
@@ -669,7 +670,7 @@ DO WHILE (ASSOCIATED(current))
        END IF
  
        current%pardata%bulk_conc = Cb_Hybrid
-       
+
        current => next
 
 END DO
@@ -697,22 +698,17 @@ REAL(dbl)     :: deltaR,bulkVolume,temp,cbt,zcf3,bulkconc
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-
-!bulkVolume=xcf*ycf*zcf*Cb_numFluids/num_particles
 bulkVolume=xcf*ycf*zcf
 zcf3=xcf*ycf*zcf
 
-!calculate delNBbyCV for each particle in the domain
+!------calculate delNBbyCV for each particle in the domain
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-
+   next => current%next ! copy pointer of next node
 	current%pardata%rpold=current%pardata%rp
-
         bulkconc = current%pardata%bulk_conc
-
 	temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-  
+ 
         IF (temp.GE.0.0_dbl) THEN
 		current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
 	ELSE
@@ -721,7 +717,6 @@ DO WHILE (ASSOCIATED(current))
 	END IF
 
 	deltaR=current%pardata%rpold-current%pardata%rp
-
 	current%pardata%delNBbyCV=(4.0_dbl/3.0_dbl)*PI*(current%pardata%rpold*current%pardata%rpold*current%pardata%rpold &
 				-current%pardata%rp*current%pardata%rp*current%pardata%rp) &
 				/(molarvol*bulkVolume)
@@ -730,14 +725,13 @@ DO WHILE (ASSOCIATED(current))
            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
            CALL FLUSH(9)
 	ENDIF
-        
-! point to next node in the list
-	current => next
+
+   current => next
 ENDDO
 
 
 IF (myid .EQ. 0) THEN
-       	open(799,file='testoutput.dat',position='append')
+   	open(799,file='testoutput.dat',position='append')
 	write(799,*) iter*tcf,Cb_global*zcf3*Cb_numFluids,Cb_global,Cb_numFluids
         close(799)
 ENDIF
@@ -787,8 +781,8 @@ DO WHILE (ASSOCIATED(current))
 	iy1=CEILING(yp)
 	iz0=FLOOR(zp)
 	iz1=CEILING(zp)
-	!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
+	!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
 	IF (ix1 /= ix0) THEN 
 		xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
@@ -827,12 +821,7 @@ DO WHILE (ASSOCIATED(current))
 		current%pardata%sh=current%pardata%sh+Sh0-1.0_dbl
 	END IF
 
-	!IF (associated(current,ParListHead%next)) THEN
-	IF (current%pardata%parid.eq.1) THEN
-!		write(*,*) iter*tcf,S,Sst,current%pardata%sh,current%pardata%cur_part,dwdz,w(it,jt,kt),w(ib,jb,kb),ib,it,jt,kt,node(ib,jb,kb),node(it,jt,kt),zp,FLOOR(zp),CEILING(zp),w(it,jt,0),w(it,jt,nzSub+1_lng),nzSub
-	ENDIF
 
-	! point to next node in the list
 	current => next
 ENDDO
 
@@ -1008,8 +997,7 @@ DO WHILE (ASSOCIATED(current))
            END DO
         END DO
 
-!------ point to next node in the list
-	current => next
+current => next
 ENDDO
 
 !===================================================================================================
@@ -1087,33 +1075,34 @@ END SUBROUTINE Find_Root
 
 
 
-!------------------------------------------------
+!===================================================================================================
 SUBROUTINE Particle_Track
-!------------------------------------------------
+!===================================================================================================
 IMPLICIT NONE
-INTEGER(lng)   		 :: i,ipartition,ii,jj,kk, CaseNo
-REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np) 	! old particle coordinates (working coordinates are stored in xp,yp,zp)
-REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 	! old particle velocity components (new vales are stored in up, vp, wp)
+
+REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np),z_tmp 		! old particle coordinates (working coordinates are stored in xp,yp,zp)
+REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 		! old particle velocity components (new vales are stored in up, vp, wp)
 REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid, V_eff_Ratio
+REAL(dbl)                :: ZZZP
+INTEGER(lng)   		 :: i,ipartition,ii,jj,kk, CaseNo
+INTEGER(dbl)             :: RANKK
+INTEGER(lng) 		 :: mpierr
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-ParticleTransfer = .FALSE. 						! AT this time we do not know if any particles need to be transferred.
-delphi_particle = 0.0_dbl 						! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
-
+ParticleTransfer  = .FALSE. 							! AT this time we do not know if any particles need to be transferred.
+delphi_particle   = 0.0_dbl 							! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
 tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
 tausgs_particle_z = 0.0_dbl
 	
-IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first step, the only part of this subroutine that operates is computing the partitions the particles belong to without releasing any drug.  
+IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding the partitions the particles belong to without releasing any drug.  
+!----Second order interpolation in time
+!----Backup particle data from previous time step using a linked list of particle records
 
-!--Second order interpolation in time
-!--Backup particle data from previous time step using a linked list of particle records
-
-   current => ParListHead%next
-   DO WHILE (ASSOCIATED(current))
-      next => current%next 						! copy pointer of next node
-
+   current => ParListHead%next     
+   DO WHILE (ASSOCIATED(current)) 
+      next => current%next 	
       current%pardata%xpold = current%pardata%xp
       current%pardata%ypold = current%pardata%yp
       current%pardata%zpold = current%pardata%zp
@@ -1125,13 +1114,11 @@ IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first ste
       current%pardata%xp=current%pardata%xpold+current%pardata%up
       current%pardata%yp=current%pardata%ypold+current%pardata%vp
       current%pardata%zp=current%pardata%zpold+current%pardata%wp
-	
       current => next
    ENDDO
 
    CALL Interp_Parvel
 
-!--Using a linked list of particle records
    current => ParListHead%next
    DO WHILE (ASSOCIATED(current))
       next => current%next 						! copy pointer of next node
@@ -1143,43 +1130,38 @@ IF (iter.GT.iter0+0_lng) THEN 						! IF condition ensures that at the first ste
 
    CALL Interp_Parvel 							! interpolate final particle velocities after the final position is ascertained. 
    
+!-- Particle tracking is done, now time for drug relaes calculations------------------------------------------------------------------------------------------------------------
+
    CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
    CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
    CALL Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid)  
-   
    open(172,file='Cb-history.dat',position='append')
    write(172,*) iter, V_eff_Ratio, CaseNo, Cb_Local, Cb_Domain, Cb_Hybrid
-
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
    CALL Interp_ParToNodes_Conc_New 					! distributes released drug concentration to neightbouring nodes 
-									!drug molecules released by the particle at this new position
 ENDIF
 
-
 !---- Now update tausgs only for those cells that have non-zero values of tausgs
-DO kk=0,nzSub+1
-   DO jj=0,nySub+1
-      DO ii=0,nxSub+1
-         if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
-            tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
-	 endif
-	 if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
-            tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
-	 endif
-	 if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
-            tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
-	 endif
-      ENDDO
-   ENDDO
-ENDDO
-
-
+!DO kk=0,nzSub+1
+!   DO jj=0,nySub+1
+!      DO ii=0,nxSub+1
+!         if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
+!            tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
+!	 endif
+!	 if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
+!            tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
+!	 endif
+!	 if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
+!            tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
+!	 endif
+!      ENDDO
+!   ENDDO
+!ENDDO
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	
+   next => current%next ! copy pointer of next node
 	!------- Wrappign around in z-direction for periodic BC in z
 	IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
 	   current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
@@ -1196,7 +1178,6 @@ DO WHILE (ASSOCIATED(current))
 	   current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
 	ENDIF
 
-
 	!------- Estimate to which partition the updated position belongs to.
 	DO ipartition = 1_lng,NumSubsTotal 
            IF ((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
@@ -1205,13 +1186,10 @@ DO WHILE (ASSOCIATED(current))
 	      (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
 	      (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
 	      (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
-              
-              current%pardata%new_part = ipartition
+                 current%pardata%new_part = ipartition
 	    END IF
-            !write(*,*) ipartition,kMinDomain(ipartition),kMaxDomain(ipartition)
 	END DO
 	
-
 	IF ((.NOT.ParticleTransfer).AND.(current%pardata%new_part .NE. current%pardata%cur_part)) THEN
 	   ParticleTransfer = .TRUE.
 	END IF
@@ -1260,13 +1238,51 @@ DO WHILE (ASSOCIATED(current))
       close(81)
      
       END SELECT
-	
-      current => next   				! point to next node in the list
+   current => next 
 ENDDO
 
-!------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+!===================================================================================================
 END SUBROUTINE Particle_Track
-!------------------------------------------------
+!===================================================================================================
 
 
 
