@@ -128,6 +128,7 @@ SUBROUTINE IniParticles
 !-----------------------------------------------
 IMPLICIT NONE
 INTEGER(lng)   :: i, parid,particle_partition,ipartition
+INTEGER(lng)   :: mpierr
 REAL(dbl) :: xp,yp,zp,par_radius
 TYPE(ParRecord), POINTER	:: CurPar
 IF (restart) THEN
@@ -136,45 +137,33 @@ IF (restart) THEN
 	! Interpolate particle concentration to nodes into delphi_particle.
 
 ELSE
-	! Linked list approach
+	!----- Linked list approach
 	OPEN(60,FILE='particle.dat')
 	READ(60,*) np
 	num_particles = np
 
-	! Initialize Header Pointer
-	
-	!ALLOCATE(ParListHead)
-	!ParListHead%next => null()!ParListHead
-	!ParListHead%prev => null()!ParListHead
+	!----- Initialize Header Pointer
 	CALL list_init(ParListHead)
 	CurPar => ParListHead
 
-    !IF (myid .EQ. master) THEN
-	! Recursively allocate all the particle records and build the linked list
 	DO i = 1, np
-		!ALLOCATE(CurPar%next)
-		!CurPar%next%prev => CurPar
-		!!CurPar%next%next => ParListHead
-		!CurPar%next%next => null()
-		!CurPar => CurPar%next
-		READ(60,*) parid,xp,yp,zp,par_radius ! read particle.dat file
+	   READ(60,*) parid,xp,yp,zp,par_radius		! read particle.dat file
 
-		! Search the partition this particle belongs to
-		DO ipartition = 1_lng,NumSubsTotal 
-
-			IF ((xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-			(xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-			(yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-			(yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-			(zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-			(zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
-
-				particle_partition = ipartition
-			END IF
-		END DO
-		! Create a particle element in the linked list only if the particles belongs to this partition
-		IF (particle_partition.EQ.mySub) THEN
-			CALL list_init(CurPar%next)		
+	   !----- Search the partition this particle belongs to
+	   DO ipartition = 1_lng,NumSubsTotal 
+	      IF ((xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+	         (xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	         (yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	         (yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	         (zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	         (zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+                     particle_partition = ipartition
+	      END IF
+	   END DO
+ 
+         !----- Create a particle element in the linked list only if the particles belongs to this partition
+	 IF (particle_partition.EQ.mySub) THEN
+	    CALL list_init(CurPar%next)		
 			CurPar%next%prev => CurPar
 			CurPar%next%next => null()
 			CurPar%next%pardata%parid = parid
@@ -184,7 +173,7 @@ ELSE
 			CurPar%next%pardata%up = 0.0_dbl
 			CurPar%next%pardata%vp = 0.0_dbl
 			CurPar%next%pardata%wp = 0.0_dbl
-			CurPar%next%pardata%rp = par_radius!R0!0.005_dbl
+			CurPar%next%pardata%rp = par_radius
 			CurPar%next%pardata%xpold = CurPar%next%pardata%xp
 			CurPar%next%pardata%ypold = CurPar%next%pardata%yp
 			CurPar%next%pardata%zpold = CurPar%next%pardata%zp
@@ -203,18 +192,12 @@ ELSE
 			CurPar%next%pardata%delNBbyCV= 0.00000_dbl
 			CurPar%next%pardata%cur_part= mySub
 			CurPar%next%pardata%new_part= mySub
-!			!WRITE(*,*) "Particle Initializing ",i,xp(i),yp(i),zp(i)
-!	 		!ss(:,:)=uu(:,:,(nz+1)/2)
-!		        !CALL interp(xp(i),yp(i),ss,nx,ny,up(i))
-!		        !ss(:,:)=vv(:,:,(nz+1)/2)
-!		        !CALL interp(xp(i),yp(i),ss,nx,ny,vp(i))
-			! point to next node in the list
-			CurPar => CurPar%next
+	   CurPar => CurPar%next
 		END IF
-	END DO
-     !END IF
+     END DO
 	
-	CLOSE(60)
+ CLOSE(60)
+
 ENDIF
 !------------------------------------------------
 END SUBROUTINE IniParticles
