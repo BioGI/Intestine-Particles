@@ -699,7 +699,7 @@ SUBROUTINE Calc_Scalar_Release! Calculate rate of scalar release at every time s
 ! Sh(t)- sherwood number
 
 IMPLICIT NONE
-INTEGER(lng)  :: numFluids,i,j,k
+INTEGER(lng)  :: numFluids,i,j,k,RANK,mpierr
 REAL(dbl)     :: deltaR,bulkVolume,temp,cbt,zcf3,bulkconc
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
@@ -734,6 +734,13 @@ DO WHILE (ASSOCIATED(current))
 	ENDIF
 
    END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 
+!  write(*,*) iter,mySub,'FFF1, delNB:', current%pardata%delNBbyCV
+   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+   RANK= current%pardata%cur_part - 1
+   CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION,RANK, MPI_COMM_WORLD,mpierr)
+!  write(*,*) iter,mySub,'FFF2, delNB:', current%pardata%delNBbyCV 
+
    current => next
 ENDDO
 
@@ -872,7 +879,7 @@ SUBROUTINE Interp_ParToNodes_Conc_New
 !--- Called by Particle_Track (LBM.f90) to get delphi_particle
 
 IMPLICIT NONE
-INTEGER(lng)  		  :: i,j,k,kk
+INTEGER(lng)  		  :: i,j,k,kk,mpierr
 REAL(dbl)     		  :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
 REAL(dbl)                 :: N_d         				! Modeling parameter to extend the volume of influence around 
@@ -881,8 +888,9 @@ REAL(dbl)                 :: R_influence_P, L_influence_P
 REAL(dbl),DIMENSION(2)    :: VIB_x, VIB_y, VIB_z 			! Volume of Influence's Borders
 REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
-INTEGER  ,DIMENSION(2)    :: NEP_x, NEP_y, NEP_z                        ! Lattice Nodes Surronding the particle
-REAL(dbl)		  :: tmp, Overlap_sum
+INTEGER  ,DIMENSION(2)    :: GNEP_x, GNEP_y, GNEP_z                     ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
+INTEGER  ,DIMENSION(2)    :: NEP_x,   NEP_y,  NEP_z                     ! Lattice Nodes Surronding the particle (Local: in current processor)
+REAL(dbl)		  :: tmp, Overlap_sum_l, Overlap_sum
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
@@ -895,7 +903,6 @@ DO WHILE (ASSOCIATED(current))
 
 !------ Copy pointer of next node
 	next => current%next 
-        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 !------ Calculate length scale for jth particle:  delta = R / Sh
 !------ Calculate effective radius: R_influence_P = R + (N_d *delta)
@@ -909,11 +916,15 @@ DO WHILE (ASSOCIATED(current))
 
 !------ Computing equivalent cubic mesh length scale
         L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
- 
+!       write(*,*) iter, mySub,'A:  R_P_pointer, R_P, R_eff, L_eff', current%pardata%rp, R_P,R_influence_P, L_influence_P  
+
 !------ Finding particle location in this processor
-	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+!	xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+!	yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+!	zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+        xp= current%pardata%xp 
+        yp= current%pardata%yp
+        zp= current%pardata%zp
 
 !------ NEW: Volume of Influence Border (VIB) for this particle
         VIB_x(1)= xp - 0.5_dbl * L_influence_P
@@ -924,46 +935,87 @@ DO WHILE (ASSOCIATED(current))
         VIB_z(2)= zp + 0.5_dbl * L_influence_P
 
 !------ NEW: Finding the lattice "Nodes Effected by Particle" 
-        NEP_x(1)= FLOOR(VIB_x(1))
-        NEP_x(2)= CEILING(VIB_x(2))
-        NEP_y(1)= FLOOR(VIB_y(1))
-        NEP_y(2)= CEILING(VIB_y(2))
-        NEP_z(1)= FLOOR(VIB_z(1))
-        NEP_z(2)= CEILING(VIB_z(2))
+        GNEP_x(1)= FLOOR(VIB_x(1))
+        GNEP_x(2)= CEILING(VIB_x(2))
+        GNEP_y(1)= FLOOR(VIB_y(1))
+        GNEP_y(2)= CEILING(VIB_y(2))
+        GNEP_z(1)= FLOOR(VIB_z(1))
+        GNEP_z(2)= CEILING(VIB_z(2))
+        
+!       write(*,*) iter,mySub,'B: iMin, jMin, kMin,iMAx,jMax,kMax',iMin,jMin,kMin,iMax,jMax,kMax 
+!       write(*,*) iter,mySub,'C: global particle limits', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
 
-!------ NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
-        Overlap_sum = 0.0_dbl
-        Overlap= 0.0
- 
-        DO i= NEP_x(1),NEP_x(2) 
-           DO j= NEP_y(1),NEP_y(2)
-              DO k= NEP_z(1),NEP_z(2)
-	         NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
-        	 NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
-		 NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
-		 NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
-		 NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
-		 NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+!----- Finding processor that have overlap with effective volume around the particle       
+       IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
+           (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
+           (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
+       
+!               write(*,*) iter,mySub,'D: CPU effected by effective vol'  
 
-		 tmp = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
-                       MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
-                       MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
+                NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)            
+                NEP_x(2) = Max((GNEP_x(2) - (iMin-1)), 1)            
+                NEP_y(1) = Max((GNEP_y(1) - (jMin-1)), 1)
+                NEP_y(2) = Max((GNEP_y(2) - (jMin-1)), 1)
+                NEP_z(1) = Max((GNEP_z(1) - (kMin-1)), 1)
+                NEP_z(2) = Max((GNEP_z(2) - (kMin-1)), 1)
+
+                NEP_x(1) = Min(NEP_x(1) , iMax)
+                NEP_x(2) = Min(NEP_x(2) , iMax)
+                NEP_y(1) = Min(NEP_y(1) , jMax)
+                NEP_y(2) = Min(NEP_y(2) , jMax)
+                NEP_z(1) = Min(NEP_z(1) , kMax)
+                NEP_z(2) = Min(NEP_z(2) , kMax)
+
+!               write(*,*) iter,mySub,'D2: NEP',NEP_x(1),NEP_x(2),NEP_y(1),NEP_y(2),NEP_z(1),NEP_z(2)
+
+                VIB_x(1) = VIB_x(1)- REAL(iMin-1_lng,dbl)
+                VIB_x(2) = VIB_x(2)- REAL(iMin-1_lng,dbl)
+                VIB_y(1) = VIB_y(1)- REAL(jMin-1_lng,dbl)
+                VIB_y(2) = VIB_y(2)- REAL(jMin-1_lng,dbl)
+                VIB_z(1) = VIB_z(1)- REAL(kMin-1_lng,dbl)
+                VIB_z(2) = VIB_z(2)- REAL(kMin-1_lng,dbl)
                 
-		!---- Taking care of the periodic BC in Z-dir
-                kk = k 
-      		IF (k .gt. nz) THEN
-                    kk = k - (nz - 1)
-                ELSE IF (k .lt. 1) THEN
-                    kk = k + (nz-1)
-                END IF
 
-                IF (node(i,j,kk) .EQ. FLUID) THEN
-                    Overlap(i,j,kk)= tmp
-                    Overlap_sum= Overlap_sum + Overlap(i,j,kk)
-                 END IF
-              END DO
-           END DO
-        END DO
+!-------------- NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
+                Overlap_sum_l = 0.0_dbl
+                Overlap= 0.0
+ 
+                DO i= NEP_x(1),NEP_x(2) 
+                   DO j= NEP_y(1),NEP_y(2)
+                      DO k= NEP_z(1),NEP_z(2)
+	                 NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
+                	 NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
+	        	 NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
+        		 NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
+	        	 NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
+		         NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+
+            		 tmp = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
+                               MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
+                               MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
+                
+	                 !---- Taking care of the periodic BC in Z-dir
+                         kk = k 
+         		 IF (k .gt. nz) THEN
+                            kk = k - (nz - 1)
+                         ELSE IF (k .lt. 1) THEN
+                            kk = k + (nz-1)
+                         END IF
+
+                         IF (node(i,j,kk) .EQ. FLUID) THEN
+                            Overlap(i,j,kk)= tmp
+                            Overlap_sum_l= Overlap_sum_l + Overlap(i,j,kk)
+                         END IF
+                      END DO
+                   END DO
+                END DO
+
+        END IF
+!       write(*,*) iter,mySub,'E1: Overlap sum (Local):' ,overlap_sum_l
+
+        CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+
 
 !------ Computing NB_j and Veff for each particle
 !        Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
@@ -975,40 +1027,38 @@ DO WHILE (ASSOCIATED(current))
 !        current%pardata%Veff = Veff                                             ! store Veff in particle record
 !        current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
 !        Nbj = Nbj/zcf3  
-!
-!------ Computing particle release contribution to scalar field at each lattice node
-        DO i= NEP_x(1),NEP_x(2)
-           DO j= NEP_y(1),NEP_y(2)
-              DO k= NEP_z(1),NEP_z(2)
+
+
+!-------------- Computing particle release contribution to scalar field at each lattice node
+                DO i= NEP_x(1),NEP_x(2)
+                   DO j= NEP_y(1),NEP_y(2)
+                      DO k= NEP_z(1),NEP_z(2)
                  
-		 !----- Taking care of the periodic BC in Z-dir
-                 kk = k 
-                 IF (k .gt. nz) THEN
-                     kk = k - (nz-1)
-                 ELSE IF (k .lt. 1) THEN
-                     kk = k + (nz-1)
-                 END IF
+		      !----- Taking care of the periodic BC in Z-dir
+                      kk = k 
+                      IF (k .gt. nz) THEN
+                         kk = k - (nz-1)
+                      ELSE IF (k .lt. 1) THEN
+                         kk = k + (nz-1)
+                      END IF
  
-                 IF (node(i,j,kk) .EQ. FLUID) THEN                 
+                      IF (node(i,j,kk) .EQ. FLUID) THEN                 
                  
-		    !----- Overlap_sum going to zero when the particle is disapearing
-		    IF (Overlap_sum .gt. 1e-40) THEN
-                       Overlap(i,j,kk) = Overlap(i,j,kk) / Overlap_sum
-                    ELSE
-                       Overlap(i,j,kk) = 0.0
-                    END IF
+		         !----- Overlap_sum going to zero when the particle is disapearing
+		         IF (Overlap_sum .gt. 1e-40) THEN
+                            Overlap(i,j,kk) = Overlap(i,j,kk) / Overlap_sum
+                         ELSE
+                            Overlap(i,j,kk) = 0.0
+                         END IF
 
-                    delphi_particle(i,j,kk)  = delphi_particle(i,j,kk)  + current%pardata%delNBbyCV * Overlap(i,j,kk) 
-
-!                   tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-!                   tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-!                   tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-                 END IF 
-              END DO
-           END DO
-        END DO
-
-END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                         delphi_particle(i,j,kk)  = delphi_particle(i,j,kk)  + current%pardata%delNBbyCV * Overlap(i,j,kk) 
+!                        tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+!                        tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+!                        tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                      END IF 
+                   END DO
+                END DO
+             END DO
 current => next
 ENDDO
 
@@ -1097,7 +1147,7 @@ REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 		! old particle veloci
 REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid, V_eff_Ratio
 REAL(dbl)                :: ZZZP
 INTEGER(lng)   		 :: i,ipartition,ii,jj,kk, CaseNo
-INTEGER(dbl)             :: RANKK
+INTEGER(dbl)             :: RANK
 INTEGER(lng) 		 :: mpierr
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
@@ -1264,36 +1314,36 @@ ENDDO
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-	RANKK= current%pardata%cur_part - 1
+	RANK= current%pardata%cur_part - 1
         current%pardata%cur_part = current%pardata%new_part 
 
 	CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-	CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%up,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%xpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%ypold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%upold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rpold,     1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%par_conc,  1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%bulk_conc, 1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%gamma_cont,1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Nbj,       1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%S,         1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANKK, MPI_COMM_WORLD,mpierr)
+	CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%up,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%vp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%wp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%xpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%ypold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%zpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%upold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%vpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%wpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%rpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%par_conc,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%bulk_conc, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%gamma_cont,1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%Nbj,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%S,         1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
         
-        write(*,*) iter,'CPU, cur_P, Rank, z', mySub, current%pardata%cur_part, RANKK, current%pardata%zp
+        write(*,*) iter,mySub,'E: cur_P, Rank, z, R_P', current%pardata%cur_part, RANK, current%pardata%zp,current%pardata%rpold
    current => next  
 ENDDO
 
