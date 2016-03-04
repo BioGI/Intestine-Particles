@@ -468,61 +468,53 @@ DO WHILE (ASSOCIATED(current))
 !------ Copy pointer of next node
 	next => current%next
 
-!------ Calculate length scale for jth particle:  delta = R / Sh
-!------ Calculate effective radius: R_influence_P = R + (N_b *delta)
-!------ Note: need to convert this into Lattice units and not use the physical length units
-!------ Then compute equivalent cubic mesh length scale
+!------ Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(N_b*delta)
 	N_b = 1.0
-        R_P  = current%pardata%rp
-	Sh_P = current%pardata%sh
-        delta_P = R_P / Sh_P
-        R_influence_P = (R_P + N_b * delta_P) / xcf
-
+        R_P = current%pardata%rp
+	Sh_P= current%pardata%sh
+        delta_P= R_P/Sh_P
+        R_influence_P= (R_P+N_b*delta_P)/xcf
 !------ Computing equivalent cubic mesh length scale
-        V_influence_P= (4.0_dbl/3.0_dbl) * PI * R_influence_P**3.0_dbl
+        V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
         L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
-        V_eff_Ratio = V_influence_P / zcf3 					! Ratio of the effective volume to cell size 
+        V_eff_Ratio  = V_influence_P/zcf3 					! Ratio of the effective volume to cell size 
 
-!----------------------------------------------------------------------------------------------------------------------
+        Cb_Total_Veff_l  = 0.0_lng
+        Cb_Total_Veff    = 0.0_lng
+        NumFluids_Veff_l = 0.0_lng
+        NumFluids_Veff   = 0.0_lng
+
 !------ Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
 !----------------------------------------------------------------------------------------------------------------------
         IF (V_eff_Ratio .LE. 1.0) THEN 					
-           IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+           IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
               CaseNo = 1
-
 !------------ Finding local particle location (at current processor)
               xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
               yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
               zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
-
               ix0 =FLOOR(xp)
               ix1 =CEILING(xp)
               iy0 =FLOOR(yp)
               iy1 =CEILING(yp)
               iz0 =FLOOR(zp)
               iz1 =CEILING(zp)
-
 !------------ TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
-
               IF (ix1 /= ix0) THEN
                  xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
               ELSE
                  xd = 0.0_dbl
               END IF
-          
               IF (iy1 /= iy0) THEN
                  yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
               ELSE
                  yd = 0.0_dbl
               END IF
-       
               IF (iz1 /= iz0) THEN
                  zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
               ELSE
                  zd = 0.0_dbl
               END IF
-
 !------------ Concentration Trilinear Iinterpolation
 !------------ Interpolation in x-direction
               c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
@@ -534,121 +526,18 @@ DO WHILE (ASSOCIATED(current))
               c1  = c01 * (1.0_dbl-yd) + c11 * yd
 !------------ Interpolation in z-direction
               c   = c0 * (1.0_dbl-zd) + c1 * zd
-
               Cb_Hybrid= c 
-            END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+           END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         
-!----------------------------------------------------------------------------------------------------------------------
-!------ Veff is slightly larger than mesh volume --> Volume of influence is discretized 
-!------ Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence 
-!----------------------------------------------------------------------------------------------------------------------
- 	ELSE IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 27.0 ) ) THEN		
-
-           CaseNo = 2
-
-!--------- Finding particle global location (in the whole domain not this particular processor)
-           xp= current%pardata%xp
-           yp= current%pardata%yp
-           zp= current%pardata%zp
-
-!--------- NEW: Volume of Influence Border (VIB) for this particle
-           VIB_x(1)= xp - 0.5_dbl * L_influence_P
-           VIB_x(2)= xp + 0.5_dbl * L_influence_P
-           VIB_y(1)= yp - 0.5_dbl * L_influence_P
-           VIB_y(2)= yp + 0.5_dbl * L_influence_P
-           VIB_z(1)= zp - 0.5_dbl * L_influence_P
-           VIB_z(2)= zp + 0.5_dbl * L_influence_P
-
-!--------- Discretizing the volume of influence to  make sure at least 64 points are available
-           Delta_X = (VIB_x(2)-VIB_x(1)) / 3.0 
-	   Delta_Y = (VIB_y(2)-VIB_y(1)) / 3.0
-	   Delta_Z = (VIB_z(2)-VIB_z(1)) / 3.0 
-
-           Cb_Total_Veff = 0
-           NumFluids_Veff = 0
-
-!--------- Loop over discretized points and averaging the concentration
-           DO i= 0, 3
-              DO j= 0, 3
-                 DO k= 0, 3
-                    x_DP = VIB_x(1) + (i * Delta_X) 
-                    y_DP = VIB_y(1) + (j * Delta_Y)
-                    z_DP = VIB_z(1) + (k * Delta_Z)
-
-!------------------ Finding Lattice nodes surrounding this point (This point is discretized and is not a lattice node))
-                    ix0 = FLOOR(x_DP)
-                    ix1 = CEILING(x_DP)
-                    iy0 = FLOOR(y_DP)
-                    iy1 = CEILING(y_DP)
-                    iz0 = FLOOR(z_DP)
-                    iz1 = CEILING(z_DP)
-
-!------------------ TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
-                    IF (ix1 /= ix0) THEN
-                       xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-                    ELSE
-                       xd = 0.0_dbl
-                    END IF
-
-                    IF (iy1 /= iy0) THEN
-                        yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-                    ELSE
-                        yd = 0.0_dbl
-                    END IF
-       
-                    IF (iz1 /= iz0) THEN
-                       zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-                    ELSE
-                       zd = 0.0_dbl
-                    END IF
-
-!------------------ Taking care of the periodic BC in Z-dir
-                    iz00 = iz0
-                    IF (iz0 .gt. nz) THEN
-                       iz00 = iz0 - (nz - 1)
-                    ELSE IF (iz0 .lt. 1) THEN
-                       iz00 = iz0 + (nz-1)
-                    END IF
-
-                    iz11 = iz1         
-                    IF (iz1 .gt. nz) THEN
-                       iz11 = iz1 - (nz-1)
-                    ELSE IF (iz1 .lt. 1) THEN
-                       iz11 = iz1 + (nz-1)
-                    END IF
-
-!------------------ Concentration Trilinear Iinterpolation
-!------------------ Interpolation in x-direction
-                    c00 = phi(ix0,iy0,iz00) * (1.0_dbl-xd) + phi(ix1,iy0,iz00) * xd
-                    c01 = phi(ix0,iy0,iz11) * (1.0_dbl-xd) + phi(ix1,iy0,iz11) * xd
-                    c10 = phi(ix0,iy1,iz00) * (1.0_dbl-xd) + phi(ix1,iy1,iz00) * xd
-                    c11 = phi(ix0,iy1,iz11) * (1.0_dbl-xd) + phi(ix1,iy1,iz11) * xd
-!------------------ Interpolation in y-direction
-                    c0  = c00 * (1.0_dbl-yd) + c10 * yd
-                    c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------------------ Interpolation in z-direction
-                    c   = c0 * (1.0_dbl-zd) + c1 * zd
-
-                    Cb_Total_Veff  = Cb_Total_Veff  + c
-                    NumFluids_Veff = NumFluids_Veff + 1_lng
-                 END DO
-             END DO
-          END DO
-          
-          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
-
-!----------------------------------------------------------------------------------------------------------------------
-!------ Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
-!----------------------------------------------------------------------------------------------------------------------
-        ELSE IF (V_eff_Ratio .GE. 27.0) THEN                             
-           CaseNo = 3
+!-----------------------------------------------------------------------------------------------------------------------------
+        ELSE  !------------------------------------Veff is larger than 1 which means parallel communication might be necessary 
+!-----------------------------------------------------------------------------------------------------------------------------   
 
 !--------- Finding particle global location (in the whole domain not this particular processor)
            xp= current%pardata%xp 
            yp= current%pardata%yp 
            zp= current%pardata%zp 
-
-           write(*,*) iter,mySub,'A: xp,yp,zp', xp,yp,zp
+!          write(*,*) iter,mySub,'A:xp,yp,zp',xp,yp,zp
 
 !--------- NEW: Volume of Influence Border (VIB) for this particle
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
@@ -665,11 +554,7 @@ DO WHILE (ASSOCIATED(current))
            GNEP_y(2)= CEILING(VIB_y(2))
            GNEP_z(1)= FLOOR(VIB_z(1))
            GNEP_z(2)= CEILING(VIB_z(2))
-
-           write(*,*) iter,mySub,'B: GNEP', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
-
-           Cb_Total_Veff_l  = 0.0_dbl
-           NumFluids_Veff_l = 0.0_dbl
+!          write(*,*) iter,mySub,'B: GNEP', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
 
 !--------- Finding processor that have overlap with effective volume around the particle       
            IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
@@ -690,46 +575,136 @@ DO WHILE (ASSOCIATED(current))
                NEP_y(2) = Min(NEP_y(2) , jMax)
                NEP_z(1) = Min(NEP_z(1) , kMax)
                NEP_z(2) = Min(NEP_z(2) , kMax)
+!              write(*,*) iter,mySub,'C: NEP', NEP_x(1),NEP_x(2),NEP_y(1),NEP_y(2),NEP_z(1),NEP_z(2)
 
-               write(*,*) iter,mySub,'C: NEP', NEP_x(1),NEP_x(2),NEP_y(1),NEP_y(2),NEP_z(1),NEP_z(2)
+!-------------------------------------------------------------------------------------------------------------------------
+!------------- Veff is slightly larger than mesh volume --> Volume of influence is discretized
+!------------- Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence
+!-------------------------------------------------------------------------------------------------------------------------
+               IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 27.0 ) ) THEN		
+                  CaseNo = 2
 
-               Cb_Total_Veff_l = 0.0_dbl
-               NumFluids_Veff_l = 0_lng
+!---------------- Discretizing the volume of influence to  make sure at least 64 points are available
+                  Delta_X = (VIB_x(2)-VIB_x(1)) / 3.0 
+	          Delta_Y = (VIB_y(2)-VIB_y(1)) / 3.0
+                  Delta_Z = (VIB_z(2)-VIB_z(1)) / 3.0 
 
-               DO i= NEP_x(1),NEP_x(2) 
-                  DO j= NEP_y(1),NEP_y(2)
-                     DO k= NEP_z(1),NEP_z(2)
-                        !---- Taking care of the periodic BC in Z-dir
-                        kk = k
-                        IF (k .gt. nz) THEN
-                           kk = k - (nz - 1)  
-           	        ELSE IF (k .lt. 1) THEN
-                           kk = k + (nz-1)
-		        END IF   
+!---------------- Loop over discretized points and averaging the concentration
+                  DO i= 0, 3
+                     DO j= 0, 3
+                        DO k= 0, 3
+                           x_DP = VIB_x(1) + (i * Delta_X) 
+                           y_DP = VIB_y(1) + (j * Delta_Y)
+                           z_DP = VIB_z(1) + (k * Delta_Z)
 
-                        IF (node(i,j,kk) .EQ. FLUID) THEN
-                           Cb_Total_Veff_l  = Cb_Total_Veff_l  + phi(i,j,kk)
-                           NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
-                        END IF
+!------------------------- Finding Lattice nodes surrounding this point (This point is discretized and is not a lattice node))
+                           ix0 = FLOOR(x_DP)
+                           ix1 = CEILING(x_DP)
+                           iy0 = FLOOR(y_DP)
+                           iy1 = CEILING(y_DP)
+                           iz0 = FLOOR(z_DP)
+                           iz1 = CEILING(z_DP)
+
+!------------------------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
+                           IF (ix1 /= ix0) THEN
+                              xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+                           ELSE
+                              xd = 0.0_dbl
+                           END IF
+ 
+                           IF (iy1 /= iy0) THEN
+                              yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+                           ELSE
+                              yd = 0.0_dbl
+                           END IF
+       
+                           IF (iz1 /= iz0) THEN
+                              zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                           ELSE
+                              zd = 0.0_dbl
+                           END IF
+
+!------------------------- Taking care of the periodic BC in Z-dir
+                           iz00 = iz0
+                           IF (iz0 .gt. nz) THEN
+                              iz00 = iz0 - (nz - 1)
+                           ELSE IF (iz0 .lt. 1) THEN
+                              iz00 = iz0 + (nz-1)
+                           END IF
+
+                           iz11 = iz1         
+                           IF (iz1 .gt. nz) THEN
+                              iz11 = iz1 - (nz-1)
+                           ELSE IF (iz1 .lt. 1) THEN
+                              iz11 = iz1 + (nz-1)
+                           END IF
+
+!------------------------- Concentration Trilinear Iinterpolation
+!------------------------- Interpolation in x-direction
+                           c00 = phi(ix0,iy0,iz00) * (1.0_dbl-xd) + phi(ix1,iy0,iz00) * xd
+                           c01 = phi(ix0,iy0,iz11) * (1.0_dbl-xd) + phi(ix1,iy0,iz11) * xd
+                           c10 = phi(ix0,iy1,iz00) * (1.0_dbl-xd) + phi(ix1,iy1,iz00) * xd
+                           c11 = phi(ix0,iy1,iz11) * (1.0_dbl-xd) + phi(ix1,iy1,iz11) * xd
+!------------------------- Interpolation in y-direction
+                           c0  = c00 * (1.0_dbl-yd) + c10 * yd
+                           c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------------------------- Interpolation in z-direction
+                           c   = c0 * (1.0_dbl-zd) + c1 * zd
+
+                           Cb_Total_Veff_l  = Cb_Total_Veff  + c
+                           NumFluids_Veff_l = NumFluids_Veff + 1_lng
+                        END DO
+                    END DO
+                 END DO
+          
+                 Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+
+!----------------------------------------------------------------------------------------------------------------------
+!------------- Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
+!----------------------------------------------------------------------------------------------------------------------
+               ELSE IF (V_eff_Ratio .GE. 27.0) THEN                             
+                  CaseNo = 3
+                  DO i= NEP_x(1),NEP_x(2) 
+                     DO j= NEP_y(1),NEP_y(2)
+                        DO k= NEP_z(1),NEP_z(2)
+                           !---- Taking care of the periodic BC in Z-dir
+                           kk = k
+                           IF (k .gt. nz) THEN
+                              kk = k - (nz - 1)  
+           	           ELSE IF (k .lt. 1) THEN
+                              kk = k + (nz-1)
+		           END IF   
+
+                           IF (node(i,j,kk) .EQ. FLUID) THEN
+                              Cb_Total_Veff_l  = Cb_Total_Veff_l  + phi(i,j,kk)
+                              NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
+                           END IF
+                        END DO
                      END DO
                   END DO
-               END DO
        
-               write(*,*) iter,mySub,'D: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
+                  write(*,*) iter,mySub,'D: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
 
-           END IF
+               END IF  					! Conditional for cases 2 and 3
 
-           CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-           CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-           CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
-           Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
-           
-       END IF
+ 
+         END IF 					! Conditional for the processor which has overlap with effective volume 
+
+
+
+         CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+         CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+         CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+         Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+         current%pardata%bulk_conc = Cb_Hybrid
+
+      
+      END IF                                           !Conditional for V_eff 
+
 
        write(*,*) iter,mySub,'E: Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff',Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff
        write(*,*) iter,mySub,'F: Case, Cb_Hybrid',CaseNo, Cb_Hybrid
 
-       current%pardata%bulk_conc = Cb_Hybrid
        current => next
 
 END DO
