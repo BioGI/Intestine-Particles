@@ -557,9 +557,9 @@ DO WHILE (ASSOCIATED(current))
 !          write(*,*) iter,mySub,'B: GNEP', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
 
 !--------- Finding processor that have overlap with effective volume around the particle       
-           IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
-               (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
-               (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
+           IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LT. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LT. iMax))) .AND. &
+               (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LT. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LT. jMax))) .AND. &
+               (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LT. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LT. kMax)))  )THEN
 
 !------------- NEW: Finding the lattice "Nodes Effected by Particle"
                NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)            
@@ -970,9 +970,9 @@ DO WHILE (ASSOCIATED(current))
         Overlap= 0.0
 
 !----- Finding processor that have overlap with effective volume around the particle       
-       IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
-           (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
-           (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
+       IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LT. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LT. iMax))) .AND. &
+           (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LT. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LT. jMax))) .AND. &
+           (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LT. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LT. kMax)))  )THEN
        
                 NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)            
                 NEP_x(2) = Max((GNEP_x(2) - (iMin-1)), 1)            
