@@ -448,7 +448,7 @@ REAl(dbl)                :: V_influence_P, V_eff_Ratio			! Parameters related to
 REAL(dbl)		 :: Cb_Total_Veff_l, Cb_Total_Veff
 REAL(dbl),DIMENSION(2)   :: VIB_x, VIB_y, VIB_z	 			! Volume of Influence's Borders
 REAL(dbl),DIMENSION(2)   :: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
-REAL(dbl)                :: Delta_X, Delta_Y, Delta_Z
+REAL(dbl)                :: Delta_L
 REAL(dbl)                :: x_DP, y_DP, z_DP				! Coordinates of "Discretized Point" (DP)
 REAL(dbl)                :: Cb_Hybrid
 
@@ -539,7 +539,7 @@ DO WHILE (ASSOCIATED(current))
            zp= current%pardata%zp 
 !          write(*,*) iter,mySub,'A:xp,yp,zp',xp,yp,zp
 
-!--------- NEW: Volume of Influence Border (VIB) for this particle
+!--------- Global Volume of Influence Border (VIB) for this particle (in the whole domain not this particular processor)
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
            VIB_x(2)= xp + 0.5_dbl * L_influence_P
            VIB_y(1)= yp - 0.5_dbl * L_influence_P
@@ -547,35 +547,10 @@ DO WHILE (ASSOCIATED(current))
            VIB_z(1)= zp - 0.5_dbl * L_influence_P
            VIB_z(2)= zp + 0.5_dbl * L_influence_P
 
-!--------- NEW: Finding the lattice "Nodes Effected by Particle" 
-           GNEP_x(1)= FLOOR(VIB_x(1))
-           GNEP_x(2)= CEILING(VIB_x(2))
-           GNEP_y(1)= FLOOR(VIB_y(1))
-           GNEP_y(2)= CEILING(VIB_y(2))
-           GNEP_z(1)= FLOOR(VIB_z(1))
-           GNEP_z(2)= CEILING(VIB_z(2))
-!          write(*,*) iter,mySub,'B: GNEP', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
-
 !--------- Finding processor that have overlap with effective volume around the particle       
-           IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LT. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LT. iMax))) .AND. &
-               (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LT. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LT. jMax))) .AND. &
-               (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LT. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LT. kMax)))  )THEN
-
-!------------- NEW: Finding the lattice "Nodes Effected by Particle"
-               NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)            
-               NEP_x(2) = Max((GNEP_x(2) - (iMin-1)), 1)            
-               NEP_y(1) = Max((GNEP_y(1) - (jMin-1)), 1)
-               NEP_y(2) = Max((GNEP_y(2) - (jMin-1)), 1)
-               NEP_z(1) = Max((GNEP_z(1) - (kMin-1)), 1)
-               NEP_z(2) = Max((GNEP_z(2) - (kMin-1)), 1)
-
-               NEP_x(1) = Min(NEP_x(1) , iMax)
-               NEP_x(2) = Min(NEP_x(2) , iMax)
-               NEP_y(1) = Min(NEP_y(1) , jMax)
-               NEP_y(2) = Min(NEP_y(2) , jMax)
-               NEP_z(1) = Min(NEP_z(1) , kMax)
-               NEP_z(2) = Min(NEP_z(2) , kMax)
-!              write(*,*) iter,mySub,'C: NEP', NEP_x(1),NEP_x(2),NEP_y(1),NEP_y(2),NEP_z(1),NEP_z(2)
+           IF( (((VIB_x(1) .GE. (iMin-1_lng)) .AND. (VIB_x(1) .LT. iMax)) .OR. ((VIB_x(2) .GE. (iMin-1_lng)) .AND. (VIB_x(2) .LT. iMax))) .AND. &
+               (((VIB_y(1) .GE. (jMin-1_lng)) .AND. (VIB_y(1) .LT. jMax)) .OR. ((VIB_y(2) .GE. (jMin-1_lng)) .AND. (VIB_y(2) .LT. jMax))) .AND. &
+               (((VIB_z(1) .GE. (kMin-1_lng)) .AND. (VIB_z(1) .LT. kMax)) .OR. ((VIB_z(2) .GE. (kMin-1_lng)) .AND. (VIB_z(2) .LT. kMax)))  )THEN
 
 !-------------------------------------------------------------------------------------------------------------------------
 !------------- Veff is slightly larger than mesh volume --> Volume of influence is discretized
@@ -584,86 +559,117 @@ DO WHILE (ASSOCIATED(current))
                IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 27.0 ) ) THEN		
                   CaseNo = 2
 
-!---------------- Discretizing the volume of influence to  make sure at least 64 points are available
-                  Delta_X = (VIB_x(2)-VIB_x(1)) / 3.0 
-	          Delta_Y = (VIB_y(2)-VIB_y(1)) / 3.0
-                  Delta_Z = (VIB_z(2)-VIB_z(1)) / 3.0 
+                  !write(*,*) iter,mySub,'X: Case',CaseNo
+                  !write(*,*) iter,mySub,'Y: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
+
+!---------------- Discretizing the volume of influence to  make sure at least 27 points are available
+                  Delta_L = (VIB_x(2)-VIB_x(1)) / 2.0 
 
 !---------------- Loop over discretized points and averaging the concentration
-                  DO i= 0, 3
-                     DO j= 0, 3
-                        DO k= 0, 3
-                           x_DP = VIB_x(1) + (i * Delta_X) 
-                           y_DP = VIB_y(1) + (j * Delta_Y)
-                           z_DP = VIB_z(1) + (k * Delta_Z)
+                  DO i= 0, 2
+                     DO j= 0, 2
+                        DO k= 0, 2
+                           x_DP = VIB_x(1) + (i * Delta_L) 
+                           y_DP = VIB_y(1) + (j * Delta_L)
+                           z_DP = VIB_z(1) + (k * Delta_L)
+                           IF( (x_DP .GE. (REAL(iMin,dbl)-1.0_dbl)) .AND. &               
+			       (x_DP .LT.  REAL(iMax,dbl)         ) .AND. &
+                               (y_DP .GE. (REAL(jMin,dbl)-1.0_dbl)) .AND. & 
+			       (y_DP .LT.  REAL(jMax,dbl)         ) .AND. &
+                               (z_DP .GE. (REAL(kMin,dbl)-1.0_dbl)) .AND. & 
+			       (z_DP .LT.  REAL(kMax,dbl)         ) ) THEN
 
-!------------------------- Finding Lattice nodes surrounding this point (This point is discretized and is not a lattice node))
-                           ix0 = FLOOR(x_DP)
-                           ix1 = CEILING(x_DP)
-                           iy0 = FLOOR(y_DP)
-                           iy1 = CEILING(y_DP)
-                           iz0 = FLOOR(z_DP)
-                           iz1 = CEILING(z_DP)
+                               !write(*,*) iter,mySub,'Z1: x_DP,y_DP,z_DP',x_DP,y_DP,z_DP
+                               !write(*,*) iter,mySub,'Z2: iMin,iMax,jMin,jMax,kMin,kMax', iMin,iMax,jMin,jMax,kMin,kMax 
 
-!------------------------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
-                           IF (ix1 /= ix0) THEN
-                              xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-                           ELSE
-                              xd = 0.0_dbl
-                           END IF
+!----------------------------- Finding Local lattice nodes surrounding this point (This point is discretized and is not a lattice node))
+                               ix0 = FLOOR(x_DP)   - (REAL(iMin,dbl)-1.0_dbl)
+                               ix1 = CEILING(x_DP) - (REAL(iMin,dbl)-1.0_dbl)
+                               iy0 = FLOOR(y_DP)   - (REAL(jMin,dbl)-1.0_dbl)
+                               iy1 = CEILING(y_DP) - (REAL(jMin,dbl)-1.0_dbl) 
+                               iz0 = FLOOR(z_DP)   - (REAL(kMin,dbl)-1.0_dbl)
+                               iz1 = CEILING(z_DP) - (REAL(kMin,dbl)-1.0_dbl)
+                              
+            		       x_DP = x_DP - REAL(iMin-1_lng,dbl)
+                               y_DP = y_DP - REAL(jMin-1_lng,dbl)
+                               z_DP = z_DP - REAL(kMin-1_lng,dbl)
  
-                           IF (iy1 /= iy0) THEN
-                              yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-                           ELSE
-                              yd = 0.0_dbl
-                           END IF
-       
-                           IF (iz1 /= iz0) THEN
-                              zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-                           ELSE
-                              zd = 0.0_dbl
-                           END IF
+			       !write(*,*) iter,mySub,'Z1: x_DP,y_DP,z_DP',x_DP,y_DP,z_DP
+                               !write(*,*) iter,mySub,'Z2: ix0,ix1,iy0,iy1,iz0,iz1',ix0,ix1,iy0,iy1,iz0,iz1
+             
 
-!------------------------- Taking care of the periodic BC in Z-dir
-                           iz00 = iz0
-                           IF (iz0 .gt. nz) THEN
-                              iz00 = iz0 - (nz - 1)
-                           ELSE IF (iz0 .lt. 1) THEN
-                              iz00 = iz0 + (nz-1)
+!----------------------------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
+                               IF (ix1 /= ix0) THEN
+                                  xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+                               ELSE
+                                  xd = 0.0_dbl
+                               END IF
+ 
+                               IF (iy1 /= iy0) THEN
+                                  yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+                               ELSE
+                                  yd = 0.0_dbl
+                               END IF
+        
+                               IF (iz1 /= iz0) THEN
+                                  zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                               ELSE
+                                  zd = 0.0_dbl
+                               END IF
+
+!----------------------------- Concentration Trilinear Iinterpolation
+!----------------------------- Interpolation in x-direction
+                               c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
+                               c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
+                               c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
+                               c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+!----------------------------- Interpolation in y-direction
+                               c0  = c00 * (1.0_dbl-yd) + c10 * yd
+                               c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!----------------------------- Interpolation in z-direction
+                               c   = c0 * (1.0_dbl-zd) + c1 * zd
+ 
+                               !write(*,*) iter,mySub,'A1:',x_DP,y_DP,z_DP,ix0,ix1,iy0,iy1,iz00,iz11,zd,c
+                               !write(*,*) iter,mySub,'A2:', phi(ix0,iy0,iz00),phi(ix1,iy0,iz00),phi(ix0,iy0,iz11),phi(ix1,iy0,iz11) 
+
+                               Cb_Total_Veff_l  = Cb_Total_Veff_l  + c
+                               NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
                            END IF
-
-                           iz11 = iz1         
-                           IF (iz1 .gt. nz) THEN
-                              iz11 = iz1 - (nz-1)
-                           ELSE IF (iz1 .lt. 1) THEN
-                              iz11 = iz1 + (nz-1)
-                           END IF
-
-!------------------------- Concentration Trilinear Iinterpolation
-!------------------------- Interpolation in x-direction
-                           c00 = phi(ix0,iy0,iz00) * (1.0_dbl-xd) + phi(ix1,iy0,iz00) * xd
-                           c01 = phi(ix0,iy0,iz11) * (1.0_dbl-xd) + phi(ix1,iy0,iz11) * xd
-                           c10 = phi(ix0,iy1,iz00) * (1.0_dbl-xd) + phi(ix1,iy1,iz00) * xd
-                           c11 = phi(ix0,iy1,iz11) * (1.0_dbl-xd) + phi(ix1,iy1,iz11) * xd
-!------------------------- Interpolation in y-direction
-                           c0  = c00 * (1.0_dbl-yd) + c10 * yd
-                           c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------------------------- Interpolation in z-direction
-                           c   = c0 * (1.0_dbl-zd) + c1 * zd
-
-                           Cb_Total_Veff_l  = Cb_Total_Veff  + c
-                           NumFluids_Veff_l = NumFluids_Veff + 1_lng
                         END DO
                     END DO
                  END DO
           
-                 Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
-
 !----------------------------------------------------------------------------------------------------------------------
 !------------- Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
 !----------------------------------------------------------------------------------------------------------------------
                ELSE IF (V_eff_Ratio .GE. 27.0) THEN                             
                   CaseNo = 3
+
+!---------------- Finding the lattice "Nodes Effected by Particle"
+                  GNEP_x(1)= FLOOR(VIB_x(1))
+                  GNEP_x(2)= CEILING(VIB_x(2))
+                  GNEP_y(1)= FLOOR(VIB_y(1))
+                  GNEP_y(2)= CEILING(VIB_y(2))
+                  GNEP_z(1)= FLOOR(VIB_z(1))
+                  GNEP_z(2)= CEILING(VIB_z(2))
+!                 write(*,*) iter,mySub,'B: GNEP', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
+
+!---------------- Finding the lattice "Nodes Effected by Particle"
+                  NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)
+                  NEP_x(2) = Max((GNEP_x(2) - (iMin-1)), 1)
+                  NEP_y(1) = Max((GNEP_y(1) - (jMin-1)), 1)
+                  NEP_y(2) = Max((GNEP_y(2) - (jMin-1)), 1)
+                  NEP_z(1) = Max((GNEP_z(1) - (kMin-1)), 1)
+                  NEP_z(2) = Max((GNEP_z(2) - (kMin-1)), 1)
+
+                  NEP_x(1) = Min(NEP_x(1) , iMax)
+                  NEP_x(2) = Min(NEP_x(2) , iMax)
+                  NEP_y(1) = Min(NEP_y(1) , jMax)
+                  NEP_y(2) = Min(NEP_y(2) , jMax)
+                  NEP_z(1) = Min(NEP_z(1) , kMax)
+                  NEP_z(2) = Min(NEP_z(2) , kMax)
+!                 write(*,*) iter,mySub,'C: NEP', NEP_x(1),NEP_x(2),NEP_y(1),NEP_y(2),NEP_z(1),NEP_z(2)
+
                   DO i= NEP_x(1),NEP_x(2) 
                      DO j= NEP_y(1),NEP_y(2)
                         DO k= NEP_z(1),NEP_z(2)
@@ -683,14 +689,14 @@ DO WHILE (ASSOCIATED(current))
                      END DO
                   END DO
        
-                  write(*,*) iter,mySub,'D: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
+                 !write(*,*) iter,mySub,'D: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
 
                END IF  					! Conditional for cases 2 and 3
 
  
          END IF 					! Conditional for the processor which has overlap with effective volume 
 
-
+         write(*,*) iter,mySub,'E1: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
 
          CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
          CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
@@ -701,12 +707,10 @@ DO WHILE (ASSOCIATED(current))
       
       END IF                                           !Conditional for V_eff 
 
-
-       write(*,*) iter,mySub,'E: Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff',Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff
-       write(*,*) iter,mySub,'F: Case, Cb_Hybrid',CaseNo, Cb_Hybrid
+       write(*,*) iter,mySub,'E2: Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff',Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff
+       write(*,*) iter,mySub,'E3: Case, Cb_Hybrid',CaseNo, Cb_Hybrid
 
        current => next
-
 END DO
 
 !===================================================================================================
@@ -940,7 +944,7 @@ DO WHILE (ASSOCIATED(current))
 
 !------ Computing equivalent cubic mesh length scale
         L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
-        write(*,*) iter, mySub,'A:  R_P_pointer, R_P, R_eff, L_eff', current%pardata%rp, R_P,R_influence_P, L_influence_P  
+        !write(*,*) iter, mySub,'A:  R_P_pointer, R_P, R_eff, L_eff', current%pardata%rp, R_P,R_influence_P, L_influence_P  
 
 !------ Finding global particle location (in whole domain and not in current processor)
         xp= current%pardata%xp 
