@@ -237,62 +237,52 @@ DO WHILE (ASSOCIATED(current))
            yd = 0.0_dbl
 	END IF
 
-
 	IF (iz1 /= iz0) THEN 
            zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
 	ELSE
            zd = 0.0_dbl
 	END IF
 
-
 ! u-interpolation
-! Do first level linear interpolation in x-direction
+!------ 1st level linear interpolation in x-direction
 	c00 = u(ix0,iy0,iz0)*(1.0_dbl-xd)+u(ix1,iy0,iz0)*xd	
 	c01 = u(ix0,iy0,iz1)*(1.0_dbl-xd)+u(ix1,iy0,iz1)*xd	
 	c10 = u(ix0,iy1,iz0)*(1.0_dbl-xd)+u(ix1,iy1,iz0)*xd	
 	c11 = u(ix0,iy1,iz1)*(1.0_dbl-xd)+u(ix1,iy1,iz1)*xd	
-	
-! Do second level linear interpolation in y-direction
+!------ 2nd level linear interpolation in y-direction
 	c0  = c00*(1.0_dbl-yd)+c10*yd
 	c1  = c01*(1.0_dbl-yd)+c11*yd
-
-! Do third level linear interpolation in z-direction
+!------ 3rd level linear interpolation in z-direction
 	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%up=c
 
-
 ! v-interpolation
-! Do first level linear interpolation in x-direction
+!------ 1st level linear interpolation in x-direction
 	c00 = v(ix0,iy0,iz0)*(1.0_dbl-xd)+v(ix1,iy0,iz0)*xd
 	c01 = v(ix0,iy0,iz1)*(1.0_dbl-xd)+v(ix1,iy0,iz1)*xd
 	c10 = v(ix0,iy1,iz0)*(1.0_dbl-xd)+v(ix1,iy1,iz0)*xd
 	c11 = v(ix0,iy1,iz1)*(1.0_dbl-xd)+v(ix1,iy1,iz1)*xd	
-
-! Do second level linear interpolation in y-direction
+!------ 2nd level linear interpolation in y-direction
 	c0  = c00*(1.0_dbl-yd)+c10*yd
 	c1  = c01*(1.0_dbl-yd)+c11*yd
-
-! Do third level linear interpolation in z-direction
+!------ 3rd level linear interpolation in z-direction
 	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%vp=c
 
 ! w-interpolation
-! Do first level linear interpolation in x-direction
+!------ 1st level linear interpolation in x-direction
 	c00 = w(ix0,iy0,iz0)*(1.0_dbl-xd)+w(ix1,iy0,iz0)*xd	
 	c01 = w(ix0,iy0,iz1)*(1.0_dbl-xd)+w(ix1,iy0,iz1)*xd	
 	c10 = w(ix0,iy1,iz0)*(1.0_dbl-xd)+w(ix1,iy1,iz0)*xd	
 	c11 = w(ix0,iy1,iz1)*(1.0_dbl-xd)+w(ix1,iy1,iz1)*xd	
-
-! Do second level linear interpolation in y-direction
+!------ 2nd level linear interpolation in y-direction
 	c0  = c00*(1.0_dbl-yd)+c10*yd
 	c1  = c01*(1.0_dbl-yd)+c11*yd
-
-! Do third level linear interpolation in z-direction
+!------ 3rd level linear interpolation in z-direction
 	c   = c0*(1.0_dbl-zd)+c1*zd
         current%pardata%wp=c
       END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-! point to next node in the list
 	current => next
 
 ENDDO
@@ -376,7 +366,6 @@ DO WHILE (ASSOCIATED(current))
 ! point to next node in the list
 	current => next
 ENDDO
-
 !===================================================================================================
 END SUBROUTINE Interp_bulkconc  ! Using Trilinear interpolation
 !===================================================================================================
@@ -390,30 +379,27 @@ END SUBROUTINE Interp_bulkconc  ! Using Trilinear interpolation
 
 !===================================================================================================
 SUBROUTINE Calc_Global_Bulk_Scalar_Conc(Cb_Domain)  !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
+!          Calculates the bulk Conc = total number of moles/total domain size or it is the average conc in the domain
 !===================================================================================================
-
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
 REAL(dbl)     :: Cb_Domain
-! Calculate the bulk Conc = total number of moles/total domain size or it is the average conc in the domain
+
 Cb_global = 0.0_dbl
 Cb_numFluids = 0_lng
+
 DO k=1,nzSub
-  DO j=1,nySub
-    DO i=1,nxSub
-      IF(node(i,j,k) .EQ. FLUID) THEN
-        !if (mySub.eq.22) then
-        !        write(*,*) iter,i,j,k,Cb_global,phi(i,j,k),delphi_particle(i,j,k)
-        !end if
-        Cb_global = Cb_global + phi(i,j,k)
-        Cb_numFluids = Cb_numFluids + 1_lng
-      END IF
-    END DO
-  END DO
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i,j,k) .EQ. FLUID) THEN
+            Cb_global = Cb_global + phi(i,j,k)
+            Cb_numFluids = Cb_numFluids + 1_lng
+         END IF
+      END DO
+   END DO
 END DO
 
 Cb_Domain = Cb_global/ Cb_numFluids
-
 !===================================================================================================
 END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 !===================================================================================================
@@ -455,12 +441,8 @@ REAL(dbl)                :: Cb_Hybrid
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-
-
 delta_mesh = 1.0_dbl
-
-!zcf3 = xcf*ycf*zcf
-zcf3 = 1.0
+zcf3 = 1.0_dbl
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
@@ -474,6 +456,7 @@ DO WHILE (ASSOCIATED(current))
 	Sh_P= current%pardata%sh
         delta_P= R_P/Sh_P
         R_influence_P= (R_P+N_b*delta_P)/xcf
+
 !------ Computing equivalent cubic mesh length scale
         V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
         L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
@@ -485,7 +468,6 @@ DO WHILE (ASSOCIATED(current))
         NumFluids_Veff   = 0.0_lng
 
 !------ Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
-!----------------------------------------------------------------------------------------------------------------------
         IF (V_eff_Ratio .LE. 1.0) THEN 					
            IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
               CaseNo = 1
@@ -537,7 +519,6 @@ DO WHILE (ASSOCIATED(current))
            xp= current%pardata%xp 
            yp= current%pardata%yp 
            zp= current%pardata%zp 
-!          write(*,*) iter,mySub,'A:xp,yp,zp',xp,yp,zp
 
 !--------- Global Volume of Influence Border (VIB) for this particle (in the whole domain not this particular processor)
            VIB_x(1)= xp - 0.5_dbl * L_influence_P
@@ -559,9 +540,6 @@ DO WHILE (ASSOCIATED(current))
                IF ( (V_eff_Ratio .GT. 1.0) .AND. (V_eff_Ratio .LT. 27.0 ) ) THEN		
                   CaseNo = 2
 
-                  !write(*,*) iter,mySub,'X: Case',CaseNo
-                  !write(*,*) iter,mySub,'Y: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
-
 !---------------- Discretizing the volume of influence to  make sure at least 27 points are available
                   Delta_L = (VIB_x(2)-VIB_x(1)) / 2.0 
 
@@ -579,9 +557,6 @@ DO WHILE (ASSOCIATED(current))
                                (z_DP .GE. (REAL(kMin,dbl)-1.0_dbl)) .AND. & 
 			       (z_DP .LT.  REAL(kMax,dbl)         ) ) THEN
 
-                               !write(*,*) iter,mySub,'Z1: x_DP,y_DP,z_DP',x_DP,y_DP,z_DP
-                               !write(*,*) iter,mySub,'Z2: iMin,iMax,jMin,jMax,kMin,kMax', iMin,iMax,jMin,jMax,kMin,kMax 
-
 !----------------------------- Finding Local lattice nodes surrounding this point (This point is discretized and is not a lattice node))
                                ix0 = FLOOR(x_DP)   - (REAL(iMin,dbl)-1.0_dbl)
                                ix1 = CEILING(x_DP) - (REAL(iMin,dbl)-1.0_dbl)
@@ -594,10 +569,6 @@ DO WHILE (ASSOCIATED(current))
                                y_DP = y_DP - REAL(jMin-1_lng,dbl)
                                z_DP = z_DP - REAL(kMin-1_lng,dbl)
  
-			       !write(*,*) iter,mySub,'Z1: x_DP,y_DP,z_DP',x_DP,y_DP,z_DP
-                               !write(*,*) iter,mySub,'Z2: ix0,ix1,iy0,iy1,iz0,iz1',ix0,ix1,iy0,iy1,iz0,iz1
-             
-
 !----------------------------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
                                IF (ix1 /= ix0) THEN
                                   xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
@@ -629,9 +600,6 @@ DO WHILE (ASSOCIATED(current))
 !----------------------------- Interpolation in z-direction
                                c   = c0 * (1.0_dbl-zd) + c1 * zd
  
-                               !write(*,*) iter,mySub,'A1:',x_DP,y_DP,z_DP,ix0,ix1,iy0,iy1,iz00,iz11,zd,c
-                               !write(*,*) iter,mySub,'A2:', phi(ix0,iy0,iz00),phi(ix1,iy0,iz00),phi(ix0,iy0,iz11),phi(ix1,iy0,iz11) 
-
                                Cb_Total_Veff_l  = Cb_Total_Veff_l  + c
                                NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
                            END IF
@@ -652,7 +620,6 @@ DO WHILE (ASSOCIATED(current))
                   GNEP_y(2)= CEILING(VIB_y(2))
                   GNEP_z(1)= FLOOR(VIB_z(1))
                   GNEP_z(2)= CEILING(VIB_z(2))
-!                 write(*,*) iter,mySub,'B: GNEP', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
 
 !---------------- Finding the lattice "Nodes Effected by Particle"
                   NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)
@@ -668,7 +635,6 @@ DO WHILE (ASSOCIATED(current))
                   NEP_y(2) = Min(NEP_y(2) , jMax)
                   NEP_z(1) = Min(NEP_z(1) , kMax)
                   NEP_z(2) = Min(NEP_z(2) , kMax)
-!                 write(*,*) iter,mySub,'C: NEP', NEP_x(1),NEP_x(2),NEP_y(1),NEP_y(2),NEP_z(1),NEP_z(2)
 
                   DO i= NEP_x(1),NEP_x(2) 
                      DO j= NEP_y(1),NEP_y(2)
@@ -688,31 +654,20 @@ DO WHILE (ASSOCIATED(current))
                         END DO
                      END DO
                   END DO
-       
-                 !write(*,*) iter,mySub,'D: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
-
-               END IF  					! Conditional for cases 2 and 3
-
- 
-         END IF 					! Conditional for the processor which has overlap with effective volume 
-
-         write(*,*) iter,mySub,'E1: Cb_Total_Veff_l, NumFluids_Veff_l',Cb_Total_Veff_l, NumFluids_Veff_l
+               END IF  									! Conditional for cases 2 and 3
+         END IF 									! Conditional for the processor which has overlap with effective volume 
 
          CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
          CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
          CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+
          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
          current%pardata%bulk_conc = Cb_Hybrid
+	
+      END IF       			                                    		!Conditional for V_eff 
 
-      
-      END IF                                           !Conditional for V_eff 
-
-       write(*,*) iter,mySub,'E2: Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff',Cb_Total_Veff_l,Cb_Total_Veff, NumFluids_Veff_l,NumFluids_Veff
-       write(*,*) iter,mySub,'E3: Case, Cb_Hybrid',CaseNo, Cb_Hybrid
-
-       current => next
+      current => next
 END DO
-
 !===================================================================================================
 END SUBROUTINE Compute_Cb
 !===================================================================================================
@@ -732,21 +687,19 @@ SUBROUTINE Calc_Scalar_Release! Calculate rate of scalar release at every time s
 
 IMPLICIT NONE
 INTEGER(lng)  :: numFluids,i,j,k,RANK,mpierr
-REAL(dbl)     :: deltaR,bulkVolume,temp,cbt,zcf3,bulkconc 
+REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc 
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-bulkVolume=xcf*ycf*zcf
 zcf3=xcf*ycf*zcf
 
 !------calculate delNBbyCV for each particle in the domain
-current => ParListHead%next
 
+current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-
       IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-         current%pardata%rpold=current%pardata%rp
+         current%pardata%rpold = current%pardata%rp
          bulkconc = current%pardata%bulk_conc
  	 temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
  
@@ -758,26 +711,16 @@ DO WHILE (ASSOCIATED(current))
 	 END IF
 
 	 deltaR=current%pardata%rpold-current%pardata%rp
-	 current%pardata%delNBbyCV=(4.0_dbl/3.0_dbl)*PI*(current%pardata%rpold **3.0_dbl - current%pardata%rp **3.0_dbl) /(molarvol*bulkVolume)
-          
-	 IF (associated(current,ParListHead%next)) THEN
-            write(9,*) iter*tcf,current%pardata%parid,current%pardata%rp,current%pardata%Sh,Cb_global*zcf3*Cb_numFluids,current%pardata%delNBbyCV,Cb_global,Cb_numFluids
-            CALL FLUSH(9)
-	 ENDIF
+	 current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
       END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 
+
       CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
       RANK= current%pardata%cur_part - 1
       CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD, mpierr)
+      CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD, mpierr)
 
     current => next
 ENDDO
-
-IF (myid .EQ. 0) THEN
-   	open(799,file='testoutput.dat',position='append')
-	write(799,*) iter*tcf,Cb_global*zcf3*Cb_numFluids,Cb_global,Cb_numFluids
-        close(799)
-ENDIF
 
 !===================================================================================================
 END SUBROUTINE Calc_Scalar_Release
@@ -789,11 +732,14 @@ END SUBROUTINE Calc_Scalar_Release
 
 
 
-!------------------------------------------------
-SUBROUTINE Update_Sh! Incporate hierarchical mdoel to Sh(t) to include effect of shear/hydrodynamics and container effect
-! Called by Particle_Track (LBM.f90) to get Calc_SCalar_Release, delNBbyCV, update particle radius
-!------------------------------------------------
+!===================================================================================================
+SUBROUTINE Update_Sh 
+!===================================================================================================
+! Called by Particle_Track (LBM.f90) used in Calc_SCalar_Release 
+! Incporates hierarchical mdoel to Sh(t) to include effect of shear/hydrodynamics and container effect
+
 IMPLICIT NONE
+INTEGER(lng)  :: mpierr, RANK
 INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
 INTEGER(lng)  :: it,jt,kt,ib,jb,kb
 REAL(dbl)     :: temp,dudx,dudy,dudz,dvdx,dvdy,dvdz,dwdx,dwdy,dwdz
@@ -802,13 +748,10 @@ REAL(dbl)     :: xp,yp,zp,xd,yd,zd
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-
-
-!calculate delNBbyCV for each particle in the domain
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   next => current%next ! copy pointer of next node
+   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	! Initialize Sh for this particle
 	current%pardata%sh=1.0_dbl/(1.0_dbl-current%pardata%gamma_cont)
 	! Add container effect
@@ -865,15 +808,19 @@ DO WHILE (ASSOCIATED(current))
 		current%pardata%sh=current%pardata%sh+Sh0-1.0_dbl
 	END IF
 
+    END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  
+    RANK= current%pardata%cur_part - 1
+    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
 
-        END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	current => next
+    current => next
 ENDDO
-
-
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Update_Sh
-!------------------------------------------------
+!===================================================================================================
+
+
 
 
 
@@ -900,9 +847,8 @@ END SUBROUTINE Compute_shear
 
 
 !===================================================================================================
-SUBROUTINE Interp_ParToNodes_Conc_New 
+SUBROUTINE Interp_ParToNodes_Conc 
 !===================================================================================================
-
 !--- Interpolate Particle concentration release to node locations 
 !--- Called by Particle_Track (LBM.f90) to get delphi_particle
 
@@ -921,7 +867,6 @@ INTEGER  ,DIMENSION(2)    :: NEP_x,   NEP_y,  NEP_z                     ! Lattic
 REAL(dbl)		  :: tmp, Overlap_sum_l, Overlap_sum
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
-
 
 delta_mesh = 1.0_dbl
 zcf3 = xcf*ycf*zcf
@@ -942,16 +887,15 @@ DO WHILE (ASSOCIATED(current))
         delta_P = R_P / Sh_P
         R_influence_P = (R_P + N_d * delta_P) / xcf
 
-!------ Computing equivalent cubic mesh length scale
+!------ iomputing equivalent cubic mesh length scale
         L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
-        !write(*,*) iter, mySub,'A:  R_P_pointer, R_P, R_eff, L_eff', current%pardata%rp, R_P,R_influence_P, L_influence_P  
 
-!------ Finding global particle location (in whole domain and not in current processor)
+!------ Global particle location (in whole domain and not in current processor)
         xp= current%pardata%xp 
         yp= current%pardata%yp
         zp= current%pardata%zp
 
-!------ NEW: Volume of Influence Border (VIB) for this particle
+!------ Global Volume of Influence Border (VIB) for this particle
         VIB_x(1)= xp - 0.5_dbl * L_influence_P
         VIB_x(2)= xp + 0.5_dbl * L_influence_P
         VIB_y(1)= yp - 0.5_dbl * L_influence_P
@@ -959,7 +903,7 @@ DO WHILE (ASSOCIATED(current))
         VIB_z(1)= zp - 0.5_dbl * L_influence_P
         VIB_z(2)= zp + 0.5_dbl * L_influence_P
 
-!------ NEW: Finding the lattice "Nodes Effected by Particle" 
+!----- "Global Nodes Effected by Particle" 
         GNEP_x(1)= FLOOR(VIB_x(1))
         GNEP_x(2)= CEILING(VIB_x(2))
         GNEP_y(1)= FLOOR(VIB_y(1))
@@ -967,39 +911,35 @@ DO WHILE (ASSOCIATED(current))
         GNEP_z(1)= FLOOR(VIB_z(1))
         GNEP_z(2)= CEILING(VIB_z(2))
         
-!       write(*,*) iter,mySub,'B: iMin, jMin, kMin,iMAx,jMax,kMax',iMin,jMin,kMin,iMax,jMax,kMax 
-!       write(*,*) iter,mySub,'C: global particle limits', GNEP_x(1),GNEP_x(2),GNEP_y(1),GNEP_y(2),GNEP_z(1),GNEP_z(2)
-
         Overlap_sum_l = 0.0_dbl
         Overlap= 0.0
 
-!----- Finding processor that have overlap with effective volume around the particle       
+!----- Finding processors with overlap with effective volume around the particle       
        IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LT. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LT. iMax))) .AND. &
            (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LT. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LT. jMax))) .AND. &
            (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LT. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LT. kMax)))  )THEN
-       
-                NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)            
-                NEP_x(2) = Max((GNEP_x(2) - (iMin-1)), 1)            
-                NEP_y(1) = Max((GNEP_y(1) - (jMin-1)), 1)
-                NEP_y(2) = Max((GNEP_y(2) - (jMin-1)), 1)
-                NEP_z(1) = Max((GNEP_z(1) - (kMin-1)), 1)
-                NEP_z(2) = Max((GNEP_z(2) - (kMin-1)), 1)
+      
+               NEP_x(1) = GNEP_x(1) - (iMin-1) 
+               NEP_x(2) = GNEP_x(2) - (iMin-1)          
+               NEP_y(1) = GNEP_y(1) - (jMin-1)          
+               NEP_y(2) = GNEP_y(2) - (jMin-1)      
+               NEP_z(1) = GNEP_z(1) - (kMin-1)
+               NEP_z(2) = GNEP_z(2) - (kMin-1)
+ 
+               NEP_x(1) = Max(NEP_x(1) , 1)            
+               NEP_y(1) = Max(NEP_y(1) , 1)
+               NEP_z(1) = Max(NEP_z(1) , 1)
 
-                NEP_x(1) = Min(NEP_x(1) , iMax)
-                NEP_x(2) = Min(NEP_x(2) , iMax)
-                NEP_y(1) = Min(NEP_y(1) , jMax)
-                NEP_y(2) = Min(NEP_y(2) , jMax)
-                NEP_z(1) = Min(NEP_z(1) , kMax)
-                NEP_z(2) = Min(NEP_z(2) , kMax)
+               NEP_x(2) = Min(NEP_x(2) , iMax )
+               NEP_y(2) = Min(NEP_y(2) , jMax )
+               NEP_z(2) = Min(NEP_z(2) , kMax )
 
-!               write(*,*) iter,mySub,'D2: NEP',NEP_x(1),NEP_x(2),NEP_y(1),NEP_y(2),NEP_z(1),NEP_z(2)
-
-                VIB_x(1) = VIB_x(1)- REAL(iMin-1_lng,dbl)
-                VIB_x(2) = VIB_x(2)- REAL(iMin-1_lng,dbl)
-                VIB_y(1) = VIB_y(1)- REAL(jMin-1_lng,dbl)
-                VIB_y(2) = VIB_y(2)- REAL(jMin-1_lng,dbl)
-                VIB_z(1) = VIB_z(1)- REAL(kMin-1_lng,dbl)
-                VIB_z(2) = VIB_z(2)- REAL(kMin-1_lng,dbl)
+               VIB_x(1) = VIB_x(1) - REAL(iMin-1.0_dbl , dbl)
+               VIB_x(2) = VIB_x(2) - REAL(iMin-1.0_dbl , dbl)
+               VIB_y(1) = VIB_y(1) - REAL(jMin-1.0_dbl , dbl)
+               VIB_y(2) = VIB_y(2) - REAL(jMin-1.0_dbl , dbl)
+               VIB_z(1) = VIB_z(1) - REAL(kMin-1.0_dbl , dbl)
+               VIB_z(2) = VIB_z(2) - REAL(kMin-1.0_dbl , dbl)
 
 !-------------- NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
                 DO i= NEP_x(1),NEP_x(2) 
@@ -1015,18 +955,10 @@ DO WHILE (ASSOCIATED(current))
             		 tmp = MAX ( MIN(VIB_x(2),NVB_x(2)) - MAX(VIB_x(1),NVB_x(1)), 0.0_dbl) * &
                                MAX ( MIN(VIB_y(2),NVB_y(2)) - MAX(VIB_y(1),NVB_y(1)), 0.0_dbl) * &
                                MAX ( MIN(VIB_z(2),NVB_z(2)) - MAX(VIB_z(1),NVB_z(1)), 0.0_dbl)
-                
-	                 !---- Taking care of the periodic BC in Z-dir
-                         kk = k 
-         		 IF (k .gt. nz) THEN
-                            kk = k - (nz - 1)
-                         ELSE IF (k .lt. 1) THEN
-                            kk = k + (nz-1)
-                         END IF
 
-                         IF (node(i,j,kk) .EQ. FLUID) THEN
-                            Overlap(i,j,kk)= tmp
-                            Overlap_sum_l= Overlap_sum_l + Overlap(i,j,kk)
+                         IF (node(i,j,k) .EQ. FLUID) THEN
+                            Overlap(i,j,k)= tmp
+                            Overlap_sum_l= Overlap_sum_l + Overlap(i,j,k)
                          END IF
                       END DO
                    END DO
@@ -1037,10 +969,12 @@ DO WHILE (ASSOCIATED(current))
         CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 
+        write(*,*) iter,mySub,'A: overlap',Overlap_sum_l,Overlap_sum
+
+
 !------ Computing NB_j and Veff for each particle
 !        Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
 !        Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
-!
 !------ Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
 !        CALL Find_Root(current%pardata%parid, current%pardata%bulk_conc, current%pardata%par_conc &
 !                      ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
@@ -1048,65 +982,56 @@ DO WHILE (ASSOCIATED(current))
 !        current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
 !        Nbj = Nbj/zcf3  
 
-
-
-
 !----- Finding processor that have overlap with effective volume around the particle
-       IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
-           (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
-           (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
+       IF( (((GNEP_x(1) .GE. (iMin-1_lng)) .AND. (GNEP_x(1) .LT. iMax)) .OR. ((GNEP_x(2) .GE. (iMin-1_lng)) .AND. (GNEP_x(2) .LT. iMax))) .AND. &
+           (((GNEP_y(1) .GE. (jMin-1_lng)) .AND. (GNEP_y(1) .LT. jMax)) .OR. ((GNEP_y(2) .GE. (jMin-1_lng)) .AND. (GNEP_y(2) .LT. jMax))) .AND. &
+           (((GNEP_z(1) .GE. (kMin-1_lng)) .AND. (GNEP_z(1) .LT. kMax)) .OR. ((GNEP_z(2) .GE. (kMin-1_lng)) .AND. (GNEP_z(2) .LT. kMax)))  )THEN
 
-                NEP_x(1) = Max((GNEP_x(1) - (iMin-1)), 1)
-                NEP_x(2) = Max((GNEP_x(2) - (iMin-1)), 1)
-                NEP_y(1) = Max((GNEP_y(1) - (jMin-1)), 1)
-                NEP_y(2) = Max((GNEP_y(2) - (jMin-1)), 1)
-                NEP_z(1) = Max((GNEP_z(1) - (kMin-1)), 1)
-                NEP_z(2) = Max((GNEP_z(2) - (kMin-1)), 1)
+               NEP_x(1) = GNEP_x(1) - (iMin-1)
+               NEP_x(2) = GNEP_x(2) - (iMin-1)
+               NEP_y(1) = GNEP_y(1) - (jMin-1)
+               NEP_y(2) = GNEP_y(2) - (jMin-1)
+               NEP_z(1) = GNEP_z(1) - (kMin-1)
+               NEP_z(2) = GNEP_z(2) - (kMin-1)
 
-                NEP_x(1) = Min(NEP_x(1) , iMax)
-                NEP_x(2) = Min(NEP_x(2) , iMax)
-                NEP_y(1) = Min(NEP_y(1) , jMax)
-                NEP_y(2) = Min(NEP_y(2) , jMax)
-                NEP_z(1) = Min(NEP_z(1) , kMax)
-                NEP_z(2) = Min(NEP_z(2) , kMax)
+               NEP_x(1) = Max(NEP_x(1) , 1)
+               NEP_y(1) = Max(NEP_y(1) , 1)
+               NEP_z(1) = Max(NEP_z(1) , 1)
 
-!-------------- Computing particle release contribution to scalar field at each lattice node
-                DO i= NEP_x(1),NEP_x(2)
-                   DO j= NEP_y(1),NEP_y(2)
-                      DO k= NEP_z(1),NEP_z(2)
-                 
-		      !----- Taking care of the periodic BC in Z-dir
-                      kk = k 
-                      IF (k .gt. nz) THEN
-                         kk = k - (nz-1)
-                      ELSE IF (k .lt. 1) THEN
-                         kk = k + (nz-1)
-                      END IF
+               NEP_x(2) = Min(NEP_x(2) , iMax)
+               NEP_y(2) = Min(NEP_y(2) , jMax)
+               NEP_z(2) = Min(NEP_z(2) , kMax)
+
+!------------- Computing particle release contribution to scalar field at each lattice node
+               DO i= NEP_x(1),NEP_x(2)
+                  DO j= NEP_y(1),NEP_y(2)
+                     DO k= NEP_z(1),NEP_z(2)
  
-                      IF (node(i,j,kk) .EQ. FLUID) THEN                 
-                 
-		         !----- Overlap_sum going to zero when the particle is disapearing
-		         IF (Overlap_sum .gt. 1e-40) THEN
-                            Overlap(i,j,kk) = Overlap(i,j,kk) / Overlap_sum
-                         ELSE
-                            Overlap(i,j,kk) = 0.0
-                         END IF
+                        IF (node(i,j,k) .EQ. FLUID) THEN                 
+	        	   !----- Overlap_sum going to zero when the particle is disapearing
+		           IF (Overlap_sum .gt. 1e-40) THEN
+                              Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
+                           ELSE
+                              Overlap(i,j,k) = 0.0
+                           END IF
+                   
+                           write(*,*) iter,mySub,'B: i,j,k,overlap', i,j,k, Overlap(i,j,k) 
 
-                         delphi_particle(i,j,kk)  = delphi_particle(i,j,kk)  + current%pardata%delNBbyCV * Overlap(i,j,kk) 
-!                        tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-!                        tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-!                        tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-                      END IF 
-                   END DO
-                END DO
-             END DO
+		           delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
+!                          tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+!                          tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+!                          tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+                          END IF 
+                     END DO
+                  END DO
+               END DO
        END IF
 
 current => next
 ENDDO
 
 !===================================================================================================
-END SUBROUTINE Interp_ParToNodes_Conc_New  		 
+END SUBROUTINE Interp_ParToNodes_Conc  		 
 !===================================================================================================
 
 
@@ -1126,11 +1051,10 @@ INTEGER(lng),intent(in) :: parid
 REAL(dbl),intent(out) :: Nbj,Veff
 REAL(dbl)      :: xnew,xold,f,fprime,error,Reff,parcb,parcs
 REAL(dbl) :: Aj,Bj,a,b,c,AjBj
-REAL(dbl),parameter :: eps = 1.0e-12_dbl,tol = 1.0e-8_dbl,largenum = 1.0e8_dbl
+REAL(dbl),parameter :: eps = 1.0e-12_dbl, tol = 1.0e-8_dbl, largenum = 1.0e8_dbl
 
 parcb = conc
 parcs = cs
-
 nmax = 100_lng
 iter = 0_lng
 xnew = 0.0_dbl
@@ -1151,7 +1075,6 @@ b = -1.5_dbl*AjBj!Aj*Bj
 c = parcb - Aj
 error = abs(xold-xnew)
 
-!write(*,*) 'test code', Nbj,conc,Veff
 DO WHILE ((error.gt.tol).AND.(iter.LE.nmax))
         f = a*(xold**3.0_dbl)+b*xold+c
         fprime = 3.0_dbl*a*(xold**2.0_dbl)+b
@@ -1165,8 +1088,7 @@ DO WHILE ((error.gt.tol).AND.(iter.LE.nmax))
         iter = iter+1_lng
         xold = xnew
 END DO
-!xnew = max(min(xnew,0.5_dbl),0.01)
-xnew = max(min(xnew,1.0_dbl),0.01) ! Limit xnew (radius ratio) to values that are meaningful and not too small or large. 
+xnew = max(min(xnew,1.0_dbl),0.01) 			! Limit xnew (radius ratio) to values that are meaningful and not too small or large. 
 Reff = Rj/xnew
 Veff = (88.0_dbl/21.0_dbl)*(Reff**3.0_dbl)
 Nbj = conc*Veff
@@ -1246,9 +1168,10 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
    CALL Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid)  
    open(172,file='Cb-history.dat',position='append')
    write(172,*) iter, V_eff_Ratio, CaseNo, Cb_Local, Cb_Domain, Cb_Hybrid
+
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
-   CALL Interp_ParToNodes_Conc_New 					! distributes released drug concentration to neightbouring nodes 
+   CALL Interp_ParToNodes_Conc  					! distributes released drug concentration to neightbouring nodes 
 ENDIF
 
 !---- Now update tausgs only for those cells that have non-zero values of tausgs
@@ -1303,55 +1226,9 @@ DO WHILE (ASSOCIATED(current))
 	IF ((.NOT.ParticleTransfer).AND.(current%pardata%new_part .NE. current%pardata%cur_part)) THEN
 	   ParticleTransfer = .TRUE.
 	END IF
-	
-	
-	SELECT CASE(current%pardata%parid)
-	CASE(1_lng)
-      open(72,file='particle1-history.dat',position='append')
-      write(72,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up*vcf,current%pardata%vp*vcf,current%pardata%wp*vcf,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(72)
-	CASE(3_lng)
-      open(73,file='particle3-history.dat',position='append')
-      write(73,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(73) 
-	CASE(5_lng)
-      open(74,file='particle5-history.dat',position='append')
-      write(74,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(74)
-	CASE(7_lng)
-      open(75,file='particle7-history.dat',position='append')
-      write(75,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(75)
-	CASE(9_lng)
-      open(76,file='particle9-history.dat',position='append')
-      write(76,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(76) 
-	CASE(10_lng)
-      open(77,file='particle10-history.dat',position='append')
-      write(77,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(77)
-	CASE(8_lng)
-      open(78,file='particle8-history.dat',position='append')
-      write(78,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(78)
-	CASE(6_lng)
-      open(79,file='particle6-history.dat',position='append')
-      write(79,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(79)
-	CASE(4_lng)
-      open(80,file='particle4-history.dat',position='append')
-      write(80,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(80)
-	CASE(2_lng)
-      open(81,file='particle2-history.dat',position='append')
-      write(81,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp,current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
-      close(81)
-     
-      END SELECT
    END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    current => next 
 ENDDO
-
 
 !---- Parallel communication between all processors
 current => ParListHead%next
@@ -1386,7 +1263,6 @@ DO WHILE (ASSOCIATED(current))
 	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
         CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
         
-!        write(*,*) iter,mySub,'E: cur_P, Rank, z, R_P', current%pardata%cur_part, RANK, current%pardata%zp,current%pardata%rpold
    current => next  
 ENDDO
 
@@ -1472,7 +1348,6 @@ DO k=1,nzSub+0
         
           feq	= (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5*Usum*Usum - 1.5*uu)	! equilibrium distribution function
           f(m,i,j,k)		= f(m,i,j,k) - oneOVERtau*(f(m,i,j,k) - feq)					! collision
-	!write(*,*) 0.5_dbl*s1/vcf,s1,vcf,xcf,nu,nuL,tau!m,i,j,k,f(m,i,j,k),w(i,j,k)
         
         END DO 
 
