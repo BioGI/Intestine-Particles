@@ -684,7 +684,7 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
 ENDIF
 
 
-WRITE(2472,'(I8, F15.4, 5E14.5)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+WRITE(2472,'(I8, F10.3, 5E15.7)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
 CALL FLUSH(2472)
 
 !------------------------------------------------
