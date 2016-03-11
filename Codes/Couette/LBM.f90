@@ -819,7 +819,7 @@ DO WHILE (ASSOCIATED(current))
          write(*,*) iter,mySub, 'Cb2',Cb_Total_Veff, NumFluids_Veff
 
          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
-         current%pardata%bulk_conc = 0.0 !Cb_Hybrid
+         current%pardata%bulk_conc = Cb_Hybrid
 
          write(*,*) iter,mySub, 'Cb3',Cb_Hybrid 
 	
