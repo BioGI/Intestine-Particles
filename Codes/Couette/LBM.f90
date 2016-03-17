@@ -1,7 +1,6 @@
 !==================================================================================================
 MODULE LBM				! LBM Subroutines (Equilibrium, Collision, Stream, Macro, Scalar, ScalarBCs,ParticleTracking)
 !==================================================================================================
-
 USE SetPrecision
 USE Setup
 USE ICBC
@@ -11,10 +10,9 @@ IMPLICIT NONE
 
 CONTAINS
 
-!---------------------------------------------------------------------------------------------------
+!===================================================================================================
 SUBROUTINE LBM_Setup	! setup the LBM simulation
-!---------------------------------------------------------------------------------------------------
-
+!===================================================================================================
 IMPLICIT NONE
 
 !---- Initialize variables and arrays---------------------------------------------------------------
@@ -166,17 +164,14 @@ CALL Equilibrium
 !---- Set f-from wall motion sums to zero at initial timestep --------------------------------------
 fmovingsum = 0.0_dbl
 fmovingrhosum = 0.0_dbl
-
 !===================================================================================================
 END SUBROUTINE LBM_Setup
 !===================================================================================================
 
 
-
-
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 SUBROUTINE Equilibrium		! calculate the equilibrium distribution function and set f to feq (initial condition)
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng)	:: i,j,k,m					! index variables
@@ -187,40 +182,30 @@ REAL(dbl)		:: feq						! equilibrium distribution function
 DO k=1,nzSub+0
   DO j=1,nySub+0
     DO i=1,nxSub+0
-
       IF(node(i,j,k) .EQ. FLUID) THEN
-      
         uu = u(i,j,k)*u(i,j,k) + v(i,j,k)*v(i,j,k) + w(i,j,k)*w(i,j,k)						! u . u
-      
         DO m=0,NumDistDirs
-        
           ue	= u(i,j,k)*ex(m)																			! u . e
           ve	= v(i,j,k)*ey(m)																			! v . e
           we	= w(i,j,k)*ez(m)																			! w . e
 
           Usum	= ue + ve + we																				! U . e
-        
           feq = (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5_dbl*Usum*Usum - 1.5_dbl*uu)	! equilibrium distribution function
-
           f(m,i,j,k) = feq    
-
         END DO
-
       END IF
-      
     END DO
   END DO
 END DO
-
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Equilibrium
-!------------------------------------------------
+!===================================================================================================
 
 
 
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 SUBROUTINE Collision		! calculates equilibrium distribution function AND collision step for each node
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng)	:: i,j,k,m				! index variables
@@ -231,61 +216,44 @@ REAL(dbl)	:: feq					! equilibrium distribution function
 DO k=1,nzSub+0
   DO j=1,nySub+0
     DO i=1,nxSub+0
-
       IF(node(i,j,k) .EQ. FLUID) THEN
-
         UU = u(i,j,k)*u(i,j,k) + v(i,j,k)*v(i,j,k) + w(i,j,k)*w(i,j,k)						! U . U
-      
         DO m=0,NumDistDirs
-        
           ue	= u(i,j,k)*ex(m)										! u . e
           ve	= v(i,j,k)*ey(m)										! v . e
           we	= w(i,j,k)*ez(m)										! w . e
-
           Usum	= ue + ve + we											! U . e
-        
           feq	= (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5*Usum*Usum - 1.5*uu)	! equilibrium distribution function
           f(m,i,j,k)		= f(m,i,j,k) - oneOVERtau*(f(m,i,j,k) - feq)					! collision
-        
         END DO 
-
       END IF
-      
     END DO
   END DO
 END DO
-
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Collision
-!------------------------------------------------
+!===================================================================================================
 
 
-
-
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 SUBROUTINE Stream	! stream the distribution functions between neighboring nodes (stream - using Lallemand 2nd order moving BB)
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k,m,im1,jm1,km1		! index variables
-REAL(dbl) :: fbb								! bounced back distribution function
+REAL(dbl) :: fbb				! bounced back distribution function
 
-fplus = f									! store the post-collision distribution function
-
+fplus = f					! store the post-collision distribution function
 ! interior nodes (away from other subdomains)
 DO k=2,nzSub-1
   DO j=2,nySub-1
     DO i=2,nxSub-1
-
       IF(node(i,j,k) .EQ. FLUID) THEN
-      
         DO m=1,NumDistDirs
-        
           ! i,j,k location of neighboring node
           im1 = i - ex(m)
           jm1 = j - ey(m)
           km1 = k - ez(m)
-    
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN					! macro- boundary
@@ -309,11 +277,8 @@ DO k=2,nzSub-1
             CLOSE(1000)
             STOP
           END IF
-
         END DO    
-
       END IF
- 
     END DO
   END DO
 END DO
@@ -322,18 +287,12 @@ END DO
 DO k=1,nzSub,(nzSub-1)
   DO j=1,nySub
     DO i=1,nxSub
-
       IF(node(i,j,k) .EQ. FLUID) THEN
-      
         DO m=1,NumDistDirs
-        
           ! i,j,k location of neighboring node
           im1 = i - ex(m)
           jm1 = j - ey(m)
           km1 = k - ez(m)
-
-          !IF(km1.eq.0) km1=nzSub ! Balaji added
-
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN				! macro- boundary
@@ -356,11 +315,8 @@ DO k=1,nzSub,(nzSub-1)
             CLOSE(1000)
             STOP
           END IF
-
         END DO    
-
       END IF
-
     END DO
   END DO
 END DO
@@ -369,17 +325,12 @@ END DO
 DO j=1,nySub,(nySub-1)
   DO k=1,nzSub
     DO i=1,nxSub
-
       IF(node(i,j,k) .EQ. FLUID) THEN
-      
         DO m=1,NumDistDirs
-        
           ! i,j,k location of neighboring node
           im1 = i - ex(m)
           jm1 = j - ey(m)
           km1 = k - ez(m)
-
-        
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
@@ -402,11 +353,8 @@ DO j=1,nySub,(nySub-1)
             CLOSE(1000)
             STOP
           END IF
-
         END DO    
-
       END IF
-
     END DO
   END DO
 END DO
@@ -415,16 +363,12 @@ END DO
 DO i=1,nxSub,(nxSub-1)
   DO k=1,nzSub
     DO j=1,nySub
-
       IF(node(i,j,k) .EQ. FLUID) THEN
-      
         DO m=1,NumDistDirs
-        
           ! i,j,k location of neighboring node
           im1 = i - ex(m)
           jm1 = j - ey(m)
           km1 = k - ez(m)
-        
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
@@ -447,58 +391,45 @@ DO i=1,nxSub,(nxSub-1)
             CLOSE(1000)
             STOP
           END IF
-
         END DO    
-
       END IF
-
     END DO
   END DO
 END DO
-
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Stream
-!------------------------------------------------
+!===================================================================================================
 
-
-
-
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 SUBROUTINE Macro	! calculate the macroscopic quantities
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k,m						! index variables
 INTEGER(lng) :: ii,jj,kk
-
 LOGICAL :: nodebounflag
 
 ! Balaji modified to include 0 to nzSub+1
 DO k=1,nzSub
   DO j=1,nySub
     DO i=1,nxSub
-      
       IF(node(i,j,k) .EQ. FLUID) THEN
-
         ! initialize arrays
         rho(i,j,k)		= 0.0_dbl				! density
         u(i,j,k)		= 0.0_dbl				! x-velocity
         v(i,j,k)		= 0.0_dbl				! y-velocity
         w(i,j,k)		= 0.0_dbl				! z-velocity     
-
         DO m=0,NumDistDirs  
           rho(i,j,k)	= rho(i,j,k) + f(m,i,j,k)			! density
           u(i,j,k)	= u(i,j,k)   + f(m,i,j,k)*ex(m)			! x-velocity
           v(i,j,k)	= v(i,j,k)   + f(m,i,j,k)*ey(m)			! y-velocity
           w(i,j,k)	= w(i,j,k)   + f(m,i,j,k)*ez(m)			! z-velocity
         END DO
-
         IF(rho(i,j,k) .NE. 0) THEN
           u(i,j,k) = u(i,j,k)/rho(i,j,k)				! x-velocity
           v(i,j,k) = v(i,j,k)/rho(i,j,k)				! y-velocity
           w(i,j,k) = w(i,j,k)/rho(i,j,k)				! z-velocity
         ELSE          
-
           OPEN(6678,FILE='error.'//sub//'.txt')
           WRITE(6678,*) 'rho(i,j,k) = 0: Line 362 in Macro in LBM.f90'
           WRITE(6678,*) 'iter', iter
@@ -517,18 +448,13 @@ DO k=1,nzSub
             WRITE(6678,*)
           END DO
           CLOSE(6678)
-
           OPEN(1001,FILE='rhoMacro.'//sub//'.dat')
           WRITE(1001,'(A60)') 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
           WRITE(1001,'(8E15.5,I6)') x(i), y(j), z(k), u(i,j,k), v(i,j,k), w(i,j,k), (rho(i,j,k)-denL)*dcf*pcf, phi(i,j,k), node(i,j,k)
           CLOSE(1001)
-
           CALL PrintFieldsTEST									! output the velocity, density, and scalar fields [MODULE: Output]
-
           STOP
-
         END IF
-
       ELSE
         rho(i,j,k)	= denL									! density (zero gauge pressure)
         u(i,j,k)		= 0.0_dbl							! x-velocity
@@ -536,15 +462,12 @@ DO k=1,nzSub
         w(i,j,k)		= 0.0_dbl							! z-velocity
         phi(i,j,k)	= phiWall								! scalar
       END IF
-
     END DO
   END DO
 END DO   
-
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE Macro
-!------------------------------------------------
-
+!===================================================================================================
 
 
 !================================================
