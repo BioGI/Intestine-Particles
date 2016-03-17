@@ -11,6 +11,7 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
 	USE PassiveScalar
 	USE ICBC	
 	USE Output
+        USE Particle
 
 	IMPLICIT NONE
 
