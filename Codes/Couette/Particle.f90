@@ -645,7 +645,7 @@ END SUBROUTINE Compute_Cb
 
 
 !===================================================================================================
-SUBROUTINE Scalar_Release                     ! Calculate rate of scalar release at every time step  
+SUBROUTINE Particle_Drug_Release                     ! Calculate rate of scalar release at every time step  
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: numFluids,i,j,k,RANK,mpierr
@@ -685,7 +685,7 @@ DO WHILE (ASSOCIATED(current))
 ENDDO
 
 !===================================================================================================
-END SUBROUTINE Scalar_Release
+END SUBROUTINE Particle_Drug_Release
 !===================================================================================================
 
 
@@ -695,9 +695,9 @@ END SUBROUTINE Scalar_Release
 
 
 !===================================================================================================
-SUBROUTINE Update_Sh 
+SUBROUTINE Update_Sherwood 
 !===================================================================================================
-! Called by Particle_Track (LBM.f90) used in Scalar_Release 
+! Called by Particle_Track (LBM.f90) used in Particle_Drug_Release 
 ! Incporates hierarchical mdoel to Sh(t) to include effect of shear/hydrodynamics and container effect
 
 IMPLICIT NONE
@@ -733,7 +733,7 @@ DO WHILE (ASSOCIATED(current))
     current => next
 ENDDO
 !===================================================================================================
-END SUBROUTINE Update_Sh
+END SUBROUTINE Update_Sherwood
 !===================================================================================================
 
 
@@ -801,7 +801,7 @@ END SUBROUTINE Compute_shear
 
 
 !===================================================================================================
-SUBROUTINE Interp_ParToNodes_Conc 
+SUBROUTINE Particle_Drug_To_Nodes 
 !===================================================================================================
 !--- Interpolate Particle concentration release to node locations 
 !--- Called by Particle_Track (LBM.f90) to get delphi_particle
@@ -1109,7 +1109,7 @@ current => next
 ENDDO
 
 !===================================================================================================
-END SUBROUTINE Interp_ParToNodes_Conc  		 
+END SUBROUTINE Particle_Drug_To_Nodes  		 
 !===================================================================================================
 
 
@@ -1257,16 +1257,13 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
 
    
 !-- Particle tracking is done, now time for drug relaes calculations------------------------------------------------------------------------------------------------------------
-
 !  CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
 !  CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
-
-
    CALL Compute_Cb  
    CALL Compute_Shear
-   CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
-   CALL Scalar_Release  						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
-   CALL Interp_ParToNodes_Conc  					! distributes released drug concentration to neightbouring nodes 
+   CALL Update_Sherwood							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
+   CALL Particle_Drug_Release	  						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
+   CALL Particle_Drug_To_Nodes   					! distributes released drug concentration to neightbouring nodes 
 ENDIF
 
 !---- Now update tausgs only for those cells that have non-zero values of tausgs
