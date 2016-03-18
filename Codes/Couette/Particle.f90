@@ -13,14 +13,12 @@ CONTAINS
 !===================================================================================================
 SUBROUTINE Particle_Setup
 !===================================================================================================
-
 IMPLICIT NONE
 
 IF (restart) THEN
 ELSE
 	CALL Interp_Parvel
 ENDIF
-
 !===================================================================================================
 END SUBROUTINE Particle_Setup
 !===================================================================================================
@@ -28,9 +26,8 @@ END SUBROUTINE Particle_Setup
 
 
 !===================================================================================================
-SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
+SUBROUTINE Interp_Parvel 					     ! Using Trilinear interpolation
 !===================================================================================================
-
 IMPLICIT NONE
 INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
 REAL(dbl)     :: xp,yp,zp,c00,c01,c10,c11,c0,c1,c,xd,yd,zd
@@ -113,15 +110,10 @@ DO WHILE (ASSOCIATED(current))
       END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	current => next
-
 ENDDO
-
 !===================================================================================================
-END SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
+END SUBROUTINE Interp_Parvel 
 !===================================================================================================
-
-
-
 
 
 
@@ -129,9 +121,8 @@ END SUBROUTINE Interp_Parvel ! Using Trilinear interpolation
 
 
 !===================================================================================================
-SUBROUTINE Interp_bulkconc(Cb_Local) ! Using Trilinear interpolation
+SUBROUTINE Interp_bulkconc(Cb_Local)                                 ! Using Trilinear interpolation
 !===================================================================================================
-
 IMPLICIT NONE
 INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
 REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
@@ -188,7 +179,6 @@ DO WHILE (ASSOCIATED(current))
 
 ! Do third level linear interpolation in z-direction
 	c   = c0*(1.0_dbl-zd)+c1*zd
-!       current%pardata%bulk_conc=c
         Cb_Local= c        
 
       END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -196,7 +186,7 @@ DO WHILE (ASSOCIATED(current))
 	current => next
 ENDDO
 !===================================================================================================
-END SUBROUTINE Interp_bulkconc  ! Using Trilinear interpolation
+END SUBROUTINE Interp_bulkconc  
 !===================================================================================================
 
 
@@ -207,8 +197,7 @@ END SUBROUTINE Interp_bulkconc  ! Using Trilinear interpolation
 
 
 !===================================================================================================
-SUBROUTINE Calc_Global_Bulk_Scalar_Conc(Cb_Domain)  !Calculate Global Bulk SCalar COnc for use in the scalar drug relese model 
-!          Calculates the bulk Conc = total number of moles/total domain size or it is the average conc in the domain
+SUBROUTINE Calc_Global_Bulk_Scalar_Conc(Cb_Domain)         !Bulk Conc= total moles/total domain size
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
@@ -241,12 +230,11 @@ END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
 
 
 !===================================================================================================
-SUBROUTINE Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid) ! Computes the mesh-independent bulk concentration
+SUBROUTINE Compute_Cb				  ! Computes the mesh-independent bulk concentration
 !===================================================================================================
-
 IMPLICIT NONE
 
-INTEGER(lng)  		 :: i,j,k, CaseNo, mpierr
+INTEGER(lng)  		 :: i,j,k, mpierr
 INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
 INTEGER(dbl)		 :: NumFluids_Veff_l, NumFluids_Veff
 INTEGER,DIMENSION(2)   	 :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
@@ -259,13 +247,12 @@ REAL(dbl)		 :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
 REAL(dbl)       	 :: N_b         				! Modeling parameter to extend the volume of influence  
 REAL(dbl)    	         :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
-REAl(dbl)                :: V_influence_P, V_eff_Ratio			! Parameters related to particle's volume of influence
+REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
 REAL(dbl)		 :: Cb_Total_Veff_l, Cb_Total_Veff
 REAL(dbl),DIMENSION(2)   :: VIB_x, VIB_y, VIB_z	, VIB_z_Per 			! Volume of Influence's Borders
 REAL(dbl),DIMENSION(2)   :: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
 REAL(dbl)                :: Delta_L
 REAL(dbl)                :: x_DP, y_DP, z_DP				! Coordinates of "Discretized Point" (DP)
-REAL(dbl)                :: Cb_Hybrid
 
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
@@ -488,9 +475,6 @@ DO WHILE (ASSOCIATED(current))
 
 
 
-
-
-
 !--------------------------------------------------------------
 !------- TAKING CARE OF THE PERIODIC BC
 !--------------------------------------------------------------
@@ -637,25 +621,16 @@ DO WHILE (ASSOCIATED(current))
 
        ENDIF 
 
-
-
-         !write(*,*) iter,mySub, 'Cb1',Cb_Total_Veff_l, NumFluids_Veff_l
-         
          CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
          CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
          CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
 
-         !write(*,*) iter,mySub, 'Cb2',Cb_Total_Veff, NumFluids_Veff
-
          Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
          current%pardata%bulk_conc = Cb_Hybrid
-
-         !write(*,*) iter,mySub, 'Cb3',Cb_Hybrid 
 	
       END IF       			                                    		!Conditional for V_eff 
       
       open(172,file='Cb-'//sub//'.dat', position='append')
-      !write(172,'(I6,2F15.7,I6,E16.6  )') iter, current%pardata%zp, current%pardata%zp+L_influence_P, NumFluids_Veff, Cb_Hybrid
 
       current => next
 END DO
@@ -670,12 +645,8 @@ END SUBROUTINE Compute_Cb
 
 
 !===================================================================================================
-SUBROUTINE Calc_Scalar_Release! Calculate rate of scalar release at every time step  
+SUBROUTINE Scalar_Release                     ! Calculate rate of scalar release at every time step  
 !===================================================================================================
-
-! Called by Particle_Track (LBM.f90) to get delNBbyCV, update particle radius,
-! Sh(t)- sherwood number
-
 IMPLICIT NONE
 INTEGER(lng)  :: numFluids,i,j,k,RANK,mpierr
 REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc 
@@ -714,7 +685,7 @@ DO WHILE (ASSOCIATED(current))
 ENDDO
 
 !===================================================================================================
-END SUBROUTINE Calc_Scalar_Release
+END SUBROUTINE Scalar_Release
 !===================================================================================================
 
 
@@ -726,84 +697,45 @@ END SUBROUTINE Calc_Scalar_Release
 !===================================================================================================
 SUBROUTINE Update_Sh 
 !===================================================================================================
-! Called by Particle_Track (LBM.f90) used in Calc_SCalar_Release 
+! Called by Particle_Track (LBM.f90) used in Scalar_Release 
 ! Incporates hierarchical mdoel to Sh(t) to include effect of shear/hydrodynamics and container effect
 
 IMPLICIT NONE
 INTEGER(lng)  :: mpierr, RANK
-INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
-INTEGER(lng)  :: it,jt,kt,ib,jb,kb
-REAL(dbl)     :: temp,dudx,dudy,dudz,dvdx,dvdy,dvdz,dwdx,dwdy,dwdz
 REAL(dbl)     :: S,Sst,Sh0
-REAL(dbl)     :: xp,yp,zp,xd,yd,zd
+REAL(dbl)     :: xp, yp, zp
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-   next => current%next ! copy pointer of next node
+   next => current%next 
    IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	! Initialize Sh for this particle
-	current%pardata%sh=1.0_dbl/(1.0_dbl-current%pardata%gamma_cont)
-	! Add container effect
-	current%pardata%sh=current%pardata%sh + (current%pardata%gamma_cont/(1.0_dbl-current%pardata%gamma_cont))
+	current%pardata%sh= 1.0_dbl / (1.0_dbl - current%pardata%gamma_cont)                                        	! Initialize Sh for this particle
+	current%pardata%sh= current%pardata%sh + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 	! Add container effect
 
-	! Add Shear effect from Yanxing's correlations from Wang et al., (2015)
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+!------ Adding Shear effects from Yanxing's correlations from Wang et al., (2015)
+        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-	ix0=FLOOR(xp)
-	ix1=CEILING(xp)
-	iy0=FLOOR(yp)
-	iy1=CEILING(yp)
-	iz0=FLOOR(zp)
-	iz1=CEILING(zp)
-
-	!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
-
-	IF (ix1 /= ix0) THEN 
-		xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
-	ELSE
-		xd = 0.0_dbl
-	END IF
-	IF (iy1 /= iy0) THEN 
-		yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
-	ELSE
-		yd = 0.0_dbl
-	END IF
-	IF (iz1 /= iz0) THEN 
-		zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-	ELSE
-		zd = 0.0_dbl
-	END IF
-
-	ib = ix0
-	jb = iy0
-	kb = iz0
-	it = ix0+1_lng
-	jt = iy0
-	kt = iz0
-
-	dwdz = (w(it,jt,kt)-w(ib,jb,kb))
-	S = abs(dwdz*vcf/zcf)
-	Sst = S*(current%pardata%rp**2.0)/diffm
-
-	current%pardata%S = S
-	current%pardata%Sst = Sst
+        CALL  Compute_shear
+	Sst = S * (current%pardata%rp**2.0) / diffm
+        
+        current%pardata%S = S
+	current%pardata%Sst= Sst
 
 	IF (Sst.LT.5.0_dbl) THEN
-		current%pardata%sh=current%pardata%sh+0.296_dbl*(Sst**0.5_dbl)
+           current%pardata%sh = current%pardata%sh + 0.296_dbl*(Sst**0.5_dbl)
 	ELSE
-		Sh0 = exp(0.162_dbl+0.202_dbl*log(Sst)-7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
-		current%pardata%sh=current%pardata%sh+Sh0-1.0_dbl
+	   Sh0 = exp(0.162_dbl + 0.202_dbl*log(Sst) - 7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
+	   current%pardata%sh = current%pardata%sh + Sh0-1.0_dbl
 	END IF
-
     END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   
     RANK= current%pardata%cur_part - 1
     CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-    CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+    CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
 
     current => next
 ENDDO
@@ -824,7 +756,48 @@ SUBROUTINE Compute_shear
 
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
-REAL(dbl)  :: temp
+INTEGER(lng)  :: it,jt,kt,ib,jb,kb
+REAL(dbl)     :: xp,yp,zp,xd,yd,zd
+INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
+REAL(dbl)     :: temp,dudx,dudy,dudz,dvdx,dvdy,dvdz,dwdx,dwdy,dwdz
+REAL(dbl)     :: S
+
+ix0= FLOOR(xp)
+ix1= CEILING(xp)
+iy0= FLOOR(yp)
+iy1= CEILING(yp)
+iz0= FLOOR(zp)
+iz1= CEILING(zp)
+
+!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
+
+IF (ix1 /= ix0) THEN
+   xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+ELSE
+   xd= 0.0_dbl
+END IF  
+
+IF (iy1 /= iy0) THEN
+   yd= (yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+ELSE
+   yd= 0.0_dbl
+END IF
+
+IF (iz1 /= iz0) THEN
+   zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+ELSE 
+   zd= 0.0_dbl
+END IF
+
+ib = ix0
+jb = iy0
+kb = iz0
+it = ix0+1_lng
+jt = iy0
+kt = iz0
+
+dwdz = (w(it,jt,kt)-w(ib,jb,kb))
+S = abs(dwdz*vcf/zcf)
 
 !===================================================================================================
 END SUBROUTINE Compute_shear
@@ -1224,9 +1197,9 @@ IMPLICIT NONE
 
 REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np),z_tmp 		! old particle coordinates (working coordinates are stored in xp,yp,zp)
 REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 		! old particle velocity components (new vales are stored in up, vp, wp)
-REAL(dbl)                :: Cb_Domain, Cb_Local, Cb_Hybrid, V_eff_Ratio
+REAL(dbl)                :: Cb_Domain, Cb_Local
 REAL(dbl)                :: ZZZP
-INTEGER(lng)   		 :: i,ipartition,ii,jj,kk, CaseNo
+INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
 INTEGER(dbl)             :: RANK
 INTEGER(lng) 		 :: mpierr
 TYPE(ParRecord), POINTER :: current
@@ -1295,11 +1268,12 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
    
 !-- Particle tracking is done, now time for drug relaes calculations------------------------------------------------------------------------------------------------------------
 
-   CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
-   CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
-   CALL Compute_Cb(V_eff_Ratio,CaseNo,Cb_Hybrid)  
+!  CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
+!  CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
+
+   CALL Compute_Cb  
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
-   CALL Calc_Scalar_Release 						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
+   CALL Scalar_Release  						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
    CALL Interp_ParToNodes_Conc  					! distributes released drug concentration to neightbouring nodes 
 ENDIF
 
@@ -1360,8 +1334,6 @@ DO WHILE (ASSOCIATED(current))
    current => next
 ENDDO
 
-
-
 !---- Parallel communication between all processors
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
@@ -1397,13 +1369,9 @@ DO WHILE (ASSOCIATED(current))
         
    current => next  
 ENDDO
-
-
 !===================================================================================================
 END SUBROUTINE Particle_Track
 !===================================================================================================
-
-
 
 
 

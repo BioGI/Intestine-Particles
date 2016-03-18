@@ -232,6 +232,9 @@ REAL(dbl):: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global 
 INTEGER(dbl):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
 INTEGER(dbl):: num_particles							! Total number of particles in domain
 
+INTEGER(dbl):: CaseNo
+REAL(dbl)::    V_eff_Ratio
+REAL(dbl)::    Cb_Hybrid
 
 INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) 			! List of starting/enning i indices for each subdomain
 INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) 			! List of starting/enning j indices for each subdomain
