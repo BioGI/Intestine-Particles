@@ -291,13 +291,66 @@ DO WHILE (ASSOCIATED(current))
         CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
 	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
         CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        
+
+!------ Writing an output file for the properties of the first 10 particles at each time step
+        SELECT CASE(current%pardata%parid)
+	   CASE(1_lng)
+               open(72,file='particle1-history.dat',position='append')
+               write(72,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, &
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(72)
+           CASE(3_lng)
+               open(73,file='particle3-history.dat',position='append')
+               write(73,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, &
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(73) 
+	   CASE(5_lng)
+               open(74,file='particle5-history.dat',position='append')
+               write(74,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, & 
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(74)
+           CASE(7_lng)
+               open(75,file='particle7-history.dat',position='append')
+               write(75,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, &
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(75)
+	   CASE(9_lng)
+               open(76,file='particle9-history.dat',position='append')
+               write(76,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, &
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(76) 
+           CASE(10_lng)
+               open(77,file='particle10-history.dat',position='append')
+               write(77,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, &
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(77)
+           CASE(8_lng)
+               open(78,file='particle8-history.dat',position='append')
+               write(78,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, &
+	                   current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(78)
+	   CASE(6_lng)
+               open(79,file='particle6-history.dat',position='append')
+               write(79,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, & 
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(79)
+	   CASE(4_lng)
+               open(80,file='particle4-history.dat',position='append')
+               write(80,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, & 
+			   current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(80)
+	   CASE(2_lng)
+               open(81,file='particle2-history.dat',position='append')
+               write(81,*) iter,iter*tcf,current%pardata%xp,current%pardata%yp,current%pardata%zp,current%pardata%up,current%pardata%vp,current%pardata%wp, &
+                           current%pardata%sh,current%pardata%rp,current%pardata%bulk_conc,current%pardata%delNBbyCV,current%pardata%cur_part,current%pardata%new_part
+               close(81)
+	END SELECT
+
    current => next  
 ENDDO
 !===================================================================================================
 END SUBROUTINE Particle_Track
 !===================================================================================================
-
 
 
 
