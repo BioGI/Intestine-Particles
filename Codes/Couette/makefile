@@ -33,10 +33,10 @@ FCFLAGS += -I/opt/local/include
 PARFILES = SetParticle.o
 PROGRAMS = Couette3D.exe
 #OBJS = SetPrecision.o Setup.o LBM.o PassiveScalar.o \
-       Parallel.o Geometry.o ICBC.o Output.o Particle.o\
+       Parallel.o Geometry.o ICBC.o Output.o ParticleDrug.o ParticleTracking.o \
        Main.o
 MODULES = SetPrecision.o Setup.o ICBC.o LBM.o PassiveScalar.o \
-        Parallel.o Geometry.o Output.o Particle.o
+        Parallel.o Geometry.o Output.o ParticleDrug.o ParticleTracking.o 
 SRCOBJS = Main.o
 
 # "make" builds all

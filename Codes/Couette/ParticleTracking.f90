@@ -18,7 +18,7 @@ IMPLICIT NONE
 
 IF (restart) THEN
 ELSE
-	CALL Interp_Parvel
+	CALL Particle_Velocity
 ENDIF
 !===================================================================================================
 END SUBROUTINE Particle_Setup
@@ -27,7 +27,7 @@ END SUBROUTINE Particle_Setup
 
 
 !===================================================================================================
-SUBROUTINE Interp_Parvel 					     ! Using Trilinear interpolation
+SUBROUTINE Particle_Velocity 					     ! Using Trilinear interpolation
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
@@ -113,7 +113,7 @@ DO WHILE (ASSOCIATED(current))
 	current => next
 ENDDO
 !===================================================================================================
-END SUBROUTINE Interp_Parvel 
+END SUBROUTINE Particle_Velocity 
 !===================================================================================================
 
 
@@ -163,7 +163,7 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
       current => next
    ENDDO
 
-   CALL Interp_Parvel
+   CALL Particle_Velocity
 
    current => ParListHead%next
    DO WHILE (ASSOCIATED(current))
@@ -176,7 +176,7 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
       current => next
    ENDDO
 
-   CALL Interp_Parvel 							! interpolate final particle velocities after the final position is ascertained. 
+   CALL Particle_Velocity 							! interpolate final particle velocities after the final position is ascertained. 
 
 
 !---- Parallel communication between all processors
