@@ -15,10 +15,9 @@ CONTAINS
 SUBROUTINE Particle_Setup
 !===================================================================================================
 IMPLICIT NONE
-
 IF (restart) THEN
 ELSE
-	CALL Particle_Velocity
+   CALL Particle_Velocity
 ENDIF
 !===================================================================================================
 END SUBROUTINE Particle_Setup
@@ -37,80 +36,78 @@ TYPE(ParRecord), POINTER :: next
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-        IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   next => current%next ! copy pointer of next node
+   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+      yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+      zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-	xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-	yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-	zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
+      ix0= FLOOR(xp)
+      ix1= CEILING(xp)
+      iy0= FLOOR(yp)
+      iy1= CEILING(yp)
+      iz0= FLOOR(zp)
+      iz1= CEILING(zp)
+!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
-	ix0=FLOOR(xp)
-	ix1=CEILING(xp)
-	iy0=FLOOR(yp)
-	iy1=CEILING(yp)
-	iz0=FLOOR(zp)
-	iz1=CEILING(zp)
-!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
+      IF (ix1 /= ix0) THEN 
+         xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
+      ELSE
+         xd= 0.0_dbl
+      END IF
 
-	IF (ix1 /= ix0) THEN 
-           xd=(xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
-	ELSE
-           xd = 0.0_dbl
-	END IF
+      IF (iy1 /= iy0) THEN 
+         yd= (yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
+      ELSE
+         yd= 0.0_dbl
+      END IF
 
-	IF (iy1 /= iy0) THEN 
-           yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
-	ELSE
-           yd = 0.0_dbl
-	END IF
+      IF (iz1 /= iz0) THEN 
+         zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+      ELSE
+         zd= 0.0_dbl
+      END IF
 
-	IF (iz1 /= iz0) THEN 
-           zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-	ELSE
-           zd = 0.0_dbl
-	END IF
+!-----u-interpolation
+!-----1st level linear interpolation in x-direction
+      c00= u(ix0,iy0,iz0)*(1.0_dbl-xd)+u(ix1,iy0,iz0)*xd	
+      c01= u(ix0,iy0,iz1)*(1.0_dbl-xd)+u(ix1,iy0,iz1)*xd	
+      c10= u(ix0,iy1,iz0)*(1.0_dbl-xd)+u(ix1,iy1,iz0)*xd	
+      c11= u(ix0,iy1,iz1)*(1.0_dbl-xd)+u(ix1,iy1,iz1)*xd	
+!-----2nd level linear interpolation in y-direction
+      c0 = c00*(1.0_dbl-yd)+c10*yd
+      c1 = c01*(1.0_dbl-yd)+c11*yd
+!-----3rd level linear interpolation in z-direction
+      c  = c0*(1.0_dbl-zd)+c1*zd
+      current%pardata%up=c
 
-! u-interpolation
-!------ 1st level linear interpolation in x-direction
-	c00 = u(ix0,iy0,iz0)*(1.0_dbl-xd)+u(ix1,iy0,iz0)*xd	
-	c01 = u(ix0,iy0,iz1)*(1.0_dbl-xd)+u(ix1,iy0,iz1)*xd	
-	c10 = u(ix0,iy1,iz0)*(1.0_dbl-xd)+u(ix1,iy1,iz0)*xd	
-	c11 = u(ix0,iy1,iz1)*(1.0_dbl-xd)+u(ix1,iy1,iz1)*xd	
-!------ 2nd level linear interpolation in y-direction
-	c0  = c00*(1.0_dbl-yd)+c10*yd
-	c1  = c01*(1.0_dbl-yd)+c11*yd
-!------ 3rd level linear interpolation in z-direction
-	c   = c0*(1.0_dbl-zd)+c1*zd
-        current%pardata%up=c
+!-----v-interpolation
+!-----1st level linear interpolation in x-direction
+      c00= v(ix0,iy0,iz0)*(1.0_dbl-xd)+v(ix1,iy0,iz0)*xd
+      c01= v(ix0,iy0,iz1)*(1.0_dbl-xd)+v(ix1,iy0,iz1)*xd
+      c10= v(ix0,iy1,iz0)*(1.0_dbl-xd)+v(ix1,iy1,iz0)*xd
+      c11= v(ix0,iy1,iz1)*(1.0_dbl-xd)+v(ix1,iy1,iz1)*xd	
+!-----2nd level linear interpolation in y-direction
+      c0 = c00*(1.0_dbl-yd)+c10*yd
+      c1 = c01*(1.0_dbl-yd)+c11*yd
+!-----3rd level linear interpolation in z-direction
+      c  = c0*(1.0_dbl-zd)+c1*zd
+      current%pardata%vp=c
 
-! v-interpolation
-!------ 1st level linear interpolation in x-direction
-	c00 = v(ix0,iy0,iz0)*(1.0_dbl-xd)+v(ix1,iy0,iz0)*xd
-	c01 = v(ix0,iy0,iz1)*(1.0_dbl-xd)+v(ix1,iy0,iz1)*xd
-	c10 = v(ix0,iy1,iz0)*(1.0_dbl-xd)+v(ix1,iy1,iz0)*xd
-	c11 = v(ix0,iy1,iz1)*(1.0_dbl-xd)+v(ix1,iy1,iz1)*xd	
-!------ 2nd level linear interpolation in y-direction
-	c0  = c00*(1.0_dbl-yd)+c10*yd
-	c1  = c01*(1.0_dbl-yd)+c11*yd
-!------ 3rd level linear interpolation in z-direction
-	c   = c0*(1.0_dbl-zd)+c1*zd
-        current%pardata%vp=c
-
-! w-interpolation
-!------ 1st level linear interpolation in x-direction
-	c00 = w(ix0,iy0,iz0)*(1.0_dbl-xd)+w(ix1,iy0,iz0)*xd	
-	c01 = w(ix0,iy0,iz1)*(1.0_dbl-xd)+w(ix1,iy0,iz1)*xd	
-	c10 = w(ix0,iy1,iz0)*(1.0_dbl-xd)+w(ix1,iy1,iz0)*xd	
-	c11 = w(ix0,iy1,iz1)*(1.0_dbl-xd)+w(ix1,iy1,iz1)*xd	
-!------ 2nd level linear interpolation in y-direction
-	c0  = c00*(1.0_dbl-yd)+c10*yd
-	c1  = c01*(1.0_dbl-yd)+c11*yd
-!------ 3rd level linear interpolation in z-direction
-	c   = c0*(1.0_dbl-zd)+c1*zd
-        current%pardata%wp=c
-      END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-	current => next
+!-----w-interpolation
+!-----1st level linear interpolation in x-direction
+      c00 = w(ix0,iy0,iz0)*(1.0_dbl-xd)+w(ix1,iy0,iz0)*xd	
+      c01 = w(ix0,iy0,iz1)*(1.0_dbl-xd)+w(ix1,iy0,iz1)*xd	
+      c10 = w(ix0,iy1,iz0)*(1.0_dbl-xd)+w(ix1,iy1,iz0)*xd	
+      c11 = w(ix0,iy1,iz1)*(1.0_dbl-xd)+w(ix1,iy1,iz1)*xd	
+!-----2nd level linear interpolation in y-direction
+      c0  = c00*(1.0_dbl-yd)+c10*yd
+      c1  = c01*(1.0_dbl-yd)+c11*yd
+!-----3rd level linear interpolation in z-direction
+      c   = c0*(1.0_dbl-zd)+c1*zd
+      current%pardata%wp=c
+   END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   current => next
 ENDDO
 !===================================================================================================
 END SUBROUTINE Particle_Velocity 
@@ -200,7 +197,7 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
 !  CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
    CALL Compute_Cb  
    CALL Compute_Shear
-   CALL Update_Sherwood							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
+   CALL Compute_Sherwood							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Particle_Drug_Release	  						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
    CALL Particle_Drug_To_Nodes   					! distributes released drug concentration to neightbouring nodes 
 ENDIF
