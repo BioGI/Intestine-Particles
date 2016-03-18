@@ -713,16 +713,9 @@ DO WHILE (ASSOCIATED(current))
    IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	current%pardata%sh= 1.0_dbl / (1.0_dbl - current%pardata%gamma_cont)                                        	! Initialize Sh for this particle
 	current%pardata%sh= current%pardata%sh + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 	! Add container effect
-
-!------ Adding Shear effects from Yanxing's correlations from Wang et al., (2015)
-        xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-        yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-        zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-
-        CALL  Compute_shear
-	Sst = S * (current%pardata%rp**2.0) / diffm
+        S  = current%pardata%S
+	Sst= S* (current%pardata%rp**2.0) / diffm
         
-        current%pardata%S = S
 	current%pardata%Sst= Sst
 
 	IF (Sst.LT.5.0_dbl) THEN
@@ -761,43 +754,40 @@ REAL(dbl)     :: xp,yp,zp,xd,yd,zd
 INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
 REAL(dbl)     :: temp,dudx,dudy,dudz,dvdx,dvdy,dvdz,dwdx,dwdy,dwdz
 REAL(dbl)     :: S
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
 
-ix0= FLOOR(xp)
-ix1= CEILING(xp)
-iy0= FLOOR(yp)
-iy1= CEILING(yp)
-iz0= FLOOR(zp)
-iz1= CEILING(zp)
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next
+   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+      yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+      zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
+      ix0= FLOOR(xp)
+      ix1= CEILING(xp)
+      iy0= FLOOR(yp)
+      iy1= CEILING(yp)
+      iz0= FLOOR(zp)
+      iz1= CEILING(zp)
 
-IF (ix1 /= ix0) THEN
-   xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-ELSE
-   xd= 0.0_dbl
-END IF  
+      ib = ix0
+      jb = iy0
+      kb = iz0
+      it = ix0 + 1_lng
+      jt = iy0
+      kt = iz0
 
-IF (iy1 /= iy0) THEN
-   yd= (yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-ELSE
-   yd= 0.0_dbl
-END IF
+      !!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
-IF (iz1 /= iz0) THEN
-   zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-ELSE 
-   zd= 0.0_dbl
-END IF
+      dwdz = w(it,jt,kt) - w(ib,jb,kb)
+      S = abs(dwdz*vcf/zcf)
 
-ib = ix0
-jb = iy0
-kb = iz0
-it = ix0+1_lng
-jt = iy0
-kt = iz0
-
-dwdz = (w(it,jt,kt)-w(ib,jb,kb))
-S = abs(dwdz*vcf/zcf)
+      current%pardata%S = S
+    END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    current => next
+ENDDO
 
 !===================================================================================================
 END SUBROUTINE Compute_shear
@@ -1271,7 +1261,9 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
 !  CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
 !  CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
 
+
    CALL Compute_Cb  
+   CALL Compute_Shear
    CALL Update_Sh 							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
    CALL Scalar_Release  						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
    CALL Interp_ParToNodes_Conc  					! distributes released drug concentration to neightbouring nodes 
