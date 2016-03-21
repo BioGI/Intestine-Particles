@@ -659,8 +659,8 @@ ELSE
    phiAverage = 0.0_dbl
 END IF
 
-!------ node volume in physical units (cm^3) so when printing the drung units are "mole
-zcf3 = 1000000.0_lng * zcf*zcf*zcf				
+!------ node volume in physical units (cm^3) so when printing the drung units are micro  mole
+zcf3 = 1000000.0_lng * zcf*zcf*zcf 
 
 !------ Computing the total drug released from particles      
 current => ParListHead%next
@@ -684,7 +684,7 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
 ENDIF
 
 
-WRITE(2472,'(I8, F10.3, 5E15.7)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+WRITE(2472,'(I7, F9.3, 5E19.11)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
 CALL FLUSH(2472)
 
 !------------------------------------------------
