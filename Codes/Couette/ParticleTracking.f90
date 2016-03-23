@@ -228,7 +228,7 @@ DO WHILE (ASSOCIATED(current))
         IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
            current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
         ENDIF
-        IF (current%pardata%zp.LE.0.0_dbl) THEN
+        IF (current%pardata%zp.LT.0.0_dbl) THEN
            current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
         ENDIF
 
