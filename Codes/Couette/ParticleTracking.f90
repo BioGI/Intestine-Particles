@@ -121,42 +121,35 @@ SUBROUTINE Particle_Track
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np),z_tmp 		! old particle coordinates (working coordinates are stored in xp,yp,zp)
-REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 		! old particle velocity components (new vales are stored in up, vp, wp)
-REAL(dbl)                :: Cb_Domain, Cb_Local
-REAL(dbl)                :: ZZZP
-INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
-INTEGER(dbl)             :: RANK
-INTEGER(lng) 		 :: mpierr
+INTEGER(dbl)             :: mpierr
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-ParticleTransfer  = .FALSE. 							! AT this time we do not know if any particles need to be transferred.
-delphi_particle   = 0.0_dbl 							! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
+delphi_particle   = 0.0_dbl 						! set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
 tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
-tausgs_particle_z = 0.0_dbl
+tausgs_particle_z = 0.0_dbl           
 	
-IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding the partitions the particles belong to without releasing any drug.  
-!----Second order interpolation in time
-!----Backup particle data from previous time step using a linked list of particle records
+IF (iter.GT.iter0+0_lng) THEN 	 					!At first step, the only part is finding the partitions the particles belong to without releasing any drug.  
+!--Second order interpolation in time
+!--Backup particle data from previous time step using a linked list of particle records
 
    current => ParListHead%next     
    DO WHILE (ASSOCIATED(current)) 
       next => current%next 	
-      IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-      current%pardata%xpold = current%pardata%xp
-      current%pardata%ypold = current%pardata%yp
-      current%pardata%zpold = current%pardata%zp
+      IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++
+         current%pardata%xpold = current%pardata%xp
+         current%pardata%ypold = current%pardata%yp
+         current%pardata%zpold = current%pardata%zp
 	
-      current%pardata%upold = current%pardata%up
-      current%pardata%vpold = current%pardata%vp
-      current%pardata%wpold = current%pardata%wp
+         current%pardata%upold = current%pardata%up
+         current%pardata%vpold = current%pardata%vp
+         current%pardata%wpold = current%pardata%wp
 	
-      current%pardata%xp=current%pardata%xpold+current%pardata%up
-      current%pardata%yp=current%pardata%ypold+current%pardata%vp
-      current%pardata%zp=current%pardata%zpold+current%pardata%wp
-      END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+         current%pardata%xp=current%pardata%xpold+current%pardata%up
+         current%pardata%yp=current%pardata%ypold+current%pardata%vp
+         current%pardata%zp=current%pardata%zpold+current%pardata%wp
+      END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       current => next
    ENDDO
 
@@ -165,46 +158,31 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
 
    current => ParListHead%next
    DO WHILE (ASSOCIATED(current))
-      next => current%next 						! copy pointer of next node
-      IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-      current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
-      current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
-      current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
-      END IF   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      next => current%next 						
+      IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++
+         current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
+         current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
+         current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+      END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       current => next
    ENDDO
 
    CALL Particle_Transfer
-   CALL Particle_Velocity 							! interpolate final particle velocities after the final position is ascertained. 
+   CALL Particle_Velocity 						! interpolate final particle velocities after the final position is ascertained. 
 
-
-!---- Parallel communication between all processors
-   current => ParListHead%next
-   DO WHILE (ASSOCIATED(current))
-      next => current%next
-           RANK= current%pardata%cur_part - 1
-           CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-           CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-           CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-           CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-           CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-           CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-      current => next
-   ENDDO
-
-   CALL Particle_Transfer
-   
-!--Particle tracking is done, now time for drug relaes calculations------------------------------------------------------------------------------------------------------------
+!--Particle tracking is done, now time for drug relaes calculations---------------------------------
    CALL Compute_Cb  
    CALL Compute_Shear
-   CALL Compute_Sherwood							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
-   CALL Particle_Drug_Release	  						! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
+   CALL Compute_Sherwood						! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
+   CALL Particle_Drug_Release	  					! Updates particle radius, calculates new drug conc release rate delNBbyCV. 
    CALL Particle_Drug_To_Nodes   					! distributes released drug concentration to neightbouring nodes 
+   CALL Particle_History
 ENDIF
-
 !===================================================================================================
 END SUBROUTINE Particle_Track
 !===================================================================================================
+
+
 
 
 
@@ -218,20 +196,16 @@ SUBROUTINE Particle_Transfer
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np),z_tmp 		! old particle coordinates (working coordinates are stored in xp,yp,zp)
-REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 		! old particle velocity components (new vales are stored in up, vp, wp)
-REAL(dbl)                :: Cb_Domain, Cb_Local
-REAL(dbl)                :: ZZZP
 INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
 INTEGER(dbl)             :: RANK
-INTEGER(lng) 		 :: mpierr
+INTEGER(lng)             :: mpierr
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next ! copy pointer of next node
-   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++
         !------- Wrappign around in z-direction for periodic BC in z
         IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
            current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
@@ -259,7 +233,7 @@ DO WHILE (ASSOCIATED(current))
                  current%pardata%new_part = ipartition
             END IF
         END DO
-   END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    current => next
 ENDDO
 
@@ -303,6 +277,70 @@ END SUBROUTINE Particle_Transfer
 
 
 
+
+
+
+
+
+
+
+!===================================================================================================
+SUBROUTINE Particle_History
+!===================================================================================================
+IMPLICIT NONE
+
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next
+!--Writing an output file for the properties of the first 10 particles at each time step
+   SELECT CASE(current%pardata%parid)
+         CASE(1_lng)
+         IF (mySub .EQ.current%pardata%cur_part) THEN
+            open(72,file='History-Particle-1.dat',position='append')
+            write(72,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
+            current%pardata%up, current%pardata%vp, current%pardata%wp, &
+            current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+            close(72)
+         END IF
+
+         CASE(2_lng)
+         IF (mySub .EQ.current%pardata%cur_part) THEN
+             open(73,file='History-Particle-2.dat',position='append')
+             write(73,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
+             current%pardata%up, current%pardata%vp, current%pardata%wp, &
+            current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+             close(73)
+         END IF
+
+         CASE(3_lng)
+         IF (mySub .EQ.current%pardata%cur_part) THEN
+             open(74,file='History-Particle-3.dat',position='append')
+             write(74,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
+             current%pardata%up, current%pardata%vp, current%pardata%wp, &
+             current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+             close(74)
+          END IF
+                 
+         CASE(4_lng)
+         IF (mySub .EQ.current%pardata%cur_part) THEN
+            open(75,file='History-Particle-4.dat',position='append')
+            write(75,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
+            current%pardata%up, current%pardata%vp, current%pardata%wp, &
+            current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+            close(75)
+         END IF
+  END SELECT
+
+101 format (I6, F10.3, 7F20.14,3E20.12)
+   current => next  
+ENDDO
+
+!===================================================================================================
+END SUBROUTINE Particle_History
+!===================================================================================================
 
 
 
