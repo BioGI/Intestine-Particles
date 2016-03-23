@@ -131,6 +131,10 @@ DO k=1,nzSub
   END DO
 END DO
 
+IF (Negative_phi_Counter.LT. 1.0) THEN
+   Negative_phi_Counter = 1.0
+ENDIF 
+
 !----- Monitorin the Negative phi issue
 write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
 

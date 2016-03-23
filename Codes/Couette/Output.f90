@@ -676,6 +676,11 @@ Drug_Remained_in_Domain = phiDomain * zcf3
 Drug_Loss = Drug_Released_Total - (Drug_Absorbed + Drug_Remained_in_Domain)  
 Drug_Loss_Modified = (Drug_Released_Total- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
 
+
+IF (Drug_Released_Total .LT. 1e-20) THEN
+    Drug_Released_Total =1e-20
+END IF
+
 Drug_Loss_Percent = (Drug_Loss / Drug_Released_Total) * 100.0_lng
 Drug_Loss_Modified_Percent = (Drug_Loss_Modified / Drug_Released_Total) * 100.0_lng  
 
