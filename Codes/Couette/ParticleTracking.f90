@@ -160,6 +160,7 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
       current => next
    ENDDO
 
+   CALL Particle_Transfer
    CALL Particle_Velocity
 
    current => ParListHead%next
@@ -173,6 +174,7 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
       current => next
    ENDDO
 
+   CALL Particle_Transfer
    CALL Particle_Velocity 							! interpolate final particle velocities after the final position is ascertained. 
 
 
@@ -190,11 +192,9 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
       current => next
    ENDDO
 
-
+   CALL Particle_Transfer
    
-!-- Particle tracking is done, now time for drug relaes calculations------------------------------------------------------------------------------------------------------------
-!  CALL Interp_bulkconc(Cb_Local)  					! interpolate final bulk_concentration after the final position is ascertained.
-!  CALL Calc_Global_Bulk_Scalar_Conc(Cb_Domain)
+!--Particle tracking is done, now time for drug relaes calculations------------------------------------------------------------------------------------------------------------
    CALL Compute_Cb  
    CALL Compute_Shear
    CALL Compute_Sherwood							! Update the Sherwood number for each particle depending on the shear rate at the particle location. 
@@ -202,23 +202,31 @@ IF (iter.GT.iter0+0_lng) THEN 	 						!At first step, the only part is finding t
    CALL Particle_Drug_To_Nodes   					! distributes released drug concentration to neightbouring nodes 
 ENDIF
 
-!---- Now update tausgs only for those cells that have non-zero values of tausgs
-!DO kk=0,nzSub+1
-!   DO jj=0,nySub+1
-!      DO ii=0,nxSub+1
-!         if (tausgs_particle_x(ii,jj,kk).ne.0.0_dbl) then
-!            tausgs_particle_x(ii,jj,kk) = u(ii,jj,kk)*phi(ii,jj,kk)
-!	 endif
-!	 if (tausgs_particle_y(ii,jj,kk).ne.0.0_dbl) then
-!            tausgs_particle_y(ii,jj,kk) = v(ii,jj,kk)*phi(ii,jj,kk)
-!	 endif
-!	 if (tausgs_particle_z(ii,jj,kk).ne.0.0_dbl) then
-!            tausgs_particle_z(ii,jj,kk) = w(ii,jj,kk)*phi(ii,jj,kk)
-!	 endif
-!      ENDDO
-!   ENDDO
-!ENDDO
+!===================================================================================================
+END SUBROUTINE Particle_Track
+!===================================================================================================
 
+
+
+
+
+
+
+
+!===================================================================================================
+SUBROUTINE Particle_Transfer
+!===================================================================================================
+IMPLICIT NONE
+
+REAL(dbl)      		 :: xpold(1:np),ypold(1:np),zpold(1:np),z_tmp 		! old particle coordinates (working coordinates are stored in xp,yp,zp)
+REAL(dbl)      		 :: upold(1:np),vpold(1:np),wpold(1:np) 		! old particle velocity components (new vales are stored in up, vp, wp)
+REAL(dbl)                :: Cb_Domain, Cb_Local
+REAL(dbl)                :: ZZZP
+INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
+INTEGER(dbl)             :: RANK
+INTEGER(lng) 		 :: mpierr
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
@@ -251,10 +259,6 @@ DO WHILE (ASSOCIATED(current))
                  current%pardata%new_part = ipartition
             END IF
         END DO
-
-        IF ((.NOT.ParticleTransfer).AND.(current%pardata%new_part .NE. current%pardata%cur_part)) THEN
-           ParticleTransfer = .TRUE.
-        END IF
    END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    current => next
 ENDDO
@@ -265,7 +269,6 @@ DO WHILE (ASSOCIATED(current))
    next => current%next 
 	RANK= current%pardata%cur_part - 1
         current%pardata%cur_part = current%pardata%new_part 
-
 	CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
         CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
@@ -291,54 +294,16 @@ DO WHILE (ASSOCIATED(current))
         CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
 	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
         CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-
-!------ Writing an output file for the properties of the first 10 particles at each time step
-        SELECT CASE(current%pardata%parid)
-	   CASE(1_lng)
-              IF (mySub .EQ.current%pardata%cur_part) THEN
-                 open(72,file='History-Particle-1.dat',position='append')
-                 write(72,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
-                                           current%pardata%up, current%pardata%vp, current%pardata%wp, &
-                                           current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
-                 close(72)
-              END IF
-
-           CASE(2_lng)
-              IF (mySub .EQ.current%pardata%cur_part) THEN
-                 open(73,file='History-Particle-2.dat',position='append')
-                 write(73,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
-                             current%pardata%up, current%pardata%vp, current%pardata%wp, &
-                             current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
-                 close(73)
-              END IF
-
-           CASE(3_lng)
-              IF (mySub .EQ.current%pardata%cur_part) THEN
-                 open(74,file='History-Particle-3.dat',position='append')
-                 write(74,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
-                             current%pardata%up, current%pardata%vp, current%pardata%wp, &
-                             current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
-                 close(74)
-              END IF
-
-           CASE(4_lng)
-              IF (mySub .EQ.current%pardata%cur_part) THEN
-                 open(75,file='History-Particle-4.dat',position='append')
-                 write(75,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
-                             current%pardata%up, current%pardata%vp, current%pardata%wp, &
-                             current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
-                 close(75)
-              END IF
-
-101 format (I6, F10.3, 7F20.14,3E20.12)
-
-	END SELECT
-
    current => next  
 ENDDO
+
 !===================================================================================================
-END SUBROUTINE Particle_Track
+END SUBROUTINE Particle_Transfer
 !===================================================================================================
+
+
+
+
 
 
 
