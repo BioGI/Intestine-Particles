@@ -146,13 +146,14 @@ IF(myid .EQ. master) THEN
  
   IF (MOD(iter,100) .EQ. 0 .AND. (iter .NE. 0)) THEN 		! Print Current Status Periodically
     CALL SYSTEM_CLOCK(current,rate)					
-    WRITE(5,*)  
-    WRITE(5,*) '-------------------- Status -------------------'
-    WRITE(5,*) 'Iteration Number:		    ', iter
-    WRITE(5,*) 'Elapsed Time (min):	     ', ((current-start)/REAL(rate))/60.0_dbl
-    WRITE(5,*) 'Avg. Time Per Iter. (sec):  ', ((current-start)/REAL(rate))/(iter-iter0)
-    WRITE(5,*) 'Estimated Time Left (min):  ', ((((current-start)/REAL(rate))/(iter-iter0))/60.0_dbl)*(nt-iter)
-    WRITE(5,*) '-----------------------------------------------'
+!   WRITE(5,*)  
+!   WRITE(5,*) '-------------------- Status -------------------'
+!   WRITE(5,*) 'Iteration Number:		    ', iter
+!   WRITE(5,*) 'Elapsed Time (min):	     ', ((current-start)/REAL(rate))/60.0_dbl
+!   WRITE(5,*) 'Avg. Time Per Iter. (sec):  ', ((current-start)/REAL(rate))/(iter-iter0)
+!   WRITE(5,*) 'Estimated Time Left (min):  ', ((((current-start)/REAL(rate))/(iter-iter0))/60.0_dbl)*(nt-iter)
+!   WRITE(5,*) '-----------------------------------------------'
+    WRITE(5,*) iter, ((current-start)/REAL(rate))/(iter-iter0)
     CALL FLUSH(5)													
   END IF
 
