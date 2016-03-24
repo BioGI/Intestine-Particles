@@ -15,7 +15,7 @@ SUBROUTINE LBM_Setup	! setup the LBM simulation
 !===================================================================================================
 IMPLICIT NONE
 
-!---- Initialize variables and arrays---------------------------------------------------------------
+!--Initialize variables and arrays------------------------------------------------------------------
 f     = 0.0_dbl			! distribution functions
 fplus = 0.0_dbl			! post-collision distribution functions
 u     = 0.0_dbl			! x-velocity
@@ -51,7 +51,7 @@ bb(13) = 14_lng
 bb(14) = 13_lng
 
 !----Fill out symmetry array -----------------------------------------------------------------------
-! iComm=2, -ZY FACE
+!----iComm=2, -ZY FACE
 sym(0,2)  = 0_lng
 sym(1,2)  = 2_lng
 sym(2,2)  = 1_lng
@@ -68,7 +68,7 @@ sym(12,2) = 8_lng
 sym(13,2) = 10_lng
 sym(14,2) = 9_lng
 
-! iComm=3, -ZX FACE
+!----iComm=3, -ZX FACE
 sym(0,4)  = 0_lng
 sym(1,4)  = 2_lng
 sym(2,4)  = 1_lng
@@ -85,7 +85,7 @@ sym(12,4) = 9_lng
 sym(13,4) = 7_lng
 sym(14,4) = 8_lng
 
-! iComm=8, Z AXIS
+!----iComm=8, Z AXIS
 sym(0,8)  = 0_lng
 sym(1,8)  = 2_lng
 sym(2,8)  = 1_lng
@@ -102,7 +102,7 @@ sym(12,8) = 14_lng
 sym(13,8) = 11_lng
 sym(14,8) = 12_lng 
 
-!---- Fill velocity direction vector arrays --------------------------------------------------------
+!----Fill velocity direction vector arrays --------------------------------------------------------
 ex(0) =	 0.0_dbl		! direction 0
 ey(0) =	 0.0_dbl
 ez(0) =	 0.0_dbl
@@ -150,10 +150,10 @@ ey(14) =  1.0_dbl
 ez(14) = -1.0_dbl
 
 !---- Define other simulation parameters -----------------------------------------------------------
-nuL   		= (2.0_dbl*tau - 1.0_dbl)/6.0_dbl	! lattice kinematic viscosity
-denL 		= 1.0_dbl				! arbitrary lattice density (1.0 for convenience)
-oneOVERtau 	= 1.0_dbl/tau				! reciprical of tau
-cs		= (1.0_dbl)/(SQRT(3.0_dbl))		! speed of sound on the lattice
+nuL   	   = (2.0_dbl*tau - 1.0_dbl)/6.0_dbl	! lattice kinematic viscosity
+denL 	   = 1.0_dbl				! arbitrary lattice density (1.0 for convenience)
+oneOVERtau = 1.0_dbl/tau			! reciprical of tau
+cs	   = (1.0_dbl)/(SQRT(3.0_dbl))		! speed of sound on the lattice
 
 !---- Initialize timestep --------------------------------------------------------------------------
 iter = 0_lng						! intialize the starting timestep to 0 - will get reset in 'ICs' in ICBCM.f90
@@ -169,28 +169,29 @@ END SUBROUTINE LBM_Setup
 !===================================================================================================
 
 
+
+
+
 !===================================================================================================
-SUBROUTINE Equilibrium		! calculate the equilibrium distribution function and set f to feq (initial condition)
+SUBROUTINE Equilibrium	     !calculates the equilibrium distribution function and set f to feq (IC)
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)	:: i,j,k,m					! index variables
-REAL(dbl)		:: uu,ue,ve,we,Usum		! precalculated quantities for use in the feq equation
-REAL(dbl)		:: feq						! equilibrium distribution function
+INTEGER(lng)	:: i,j,k,m			! index variables
+REAL(dbl)	:: uu,ue,ve,we,Usum		! precalculated quantities for use in the feq equation
+REAL(dbl)	:: feq				! equilibrium distribution function
 
-! Balaji modified to change indices form 0 to nzSub+1
 DO k=1,nzSub+0
   DO j=1,nySub+0
     DO i=1,nxSub+0
       IF(node(i,j,k) .EQ. FLUID) THEN
-        uu = u(i,j,k)*u(i,j,k) + v(i,j,k)*v(i,j,k) + w(i,j,k)*w(i,j,k)						! u . u
+        uu = u(i,j,k)*u(i,j,k) + v(i,j,k)*v(i,j,k) + w(i,j,k)*w(i,j,k)				! u . u
         DO m=0,NumDistDirs
-          ue	= u(i,j,k)*ex(m)																			! u . e
-          ve	= v(i,j,k)*ey(m)																			! v . e
-          we	= w(i,j,k)*ez(m)																			! w . e
-
-          Usum	= ue + ve + we																				! U . e
-          feq = (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5_dbl*Usum*Usum - 1.5_dbl*uu)	! equilibrium distribution function
+          ue	= u(i,j,k)*ex(m)								! u . e
+          ve	= v(i,j,k)*ey(m)								! v . e
+          we	= w(i,j,k)*ez(m)								! w . e
+          Usum	= ue + ve + we							  		! U . e
+          feq = (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5_dbl*Usum*Usum- 1.5_dbl*uu)	! equilibrium distribution function
           f(m,i,j,k) = feq    
         END DO
       END IF
@@ -203,28 +204,30 @@ END SUBROUTINE Equilibrium
 
 
 
+
+
 !===================================================================================================
 SUBROUTINE Collision		! calculates equilibrium distribution function AND collision step for each node
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)	:: i,j,k,m				! index variables
-REAL(dbl)	:: UU,ue,ve,we,Usum			! precalculated quantities for use in the feq equation
-REAL(dbl)	:: feq					! equilibrium distribution function
+INTEGER(lng)	:: i,j,k,m			! index variables
+REAL(dbl)	:: UU,ue,ve,we,Usum		! precalculated quantities for use in the feq equation
+REAL(dbl)	:: feq				! equilibrium distribution function
 
 ! Balaji modified to change indices form 0 to nzSub+1
 DO k=1,nzSub+0
   DO j=1,nySub+0
     DO i=1,nxSub+0
       IF(node(i,j,k) .EQ. FLUID) THEN
-        UU = u(i,j,k)*u(i,j,k) + v(i,j,k)*v(i,j,k) + w(i,j,k)*w(i,j,k)						! U . U
+        UU = u(i,j,k)*u(i,j,k) + v(i,j,k)*v(i,j,k) + w(i,j,k)*w(i,j,k)				! U . U
         DO m=0,NumDistDirs
-          ue	= u(i,j,k)*ex(m)										! u . e
-          ve	= v(i,j,k)*ey(m)										! v . e
-          we	= w(i,j,k)*ez(m)										! w . e
-          Usum	= ue + ve + we											! U . e
-          feq	= (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5*Usum*Usum - 1.5*uu)	! equilibrium distribution function
-          f(m,i,j,k)		= f(m,i,j,k) - oneOVERtau*(f(m,i,j,k) - feq)					! collision
+          ue	    = u(i,j,k)*ex(m)								! u . e
+          ve        = v(i,j,k)*ey(m)								! v . e
+          we	    = w(i,j,k)*ez(m)								! w . e
+          Usum	    = ue + ve + we								! U . e
+          feq	    = (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5*Usum*Usum - 1.5*uu)	! equilibrium distribution function
+          f(m,i,j,k)= f(m,i,j,k) - oneOVERtau*(f(m,i,j,k) - feq)		    		! collision
         END DO 
       END IF
     END DO
@@ -233,6 +236,9 @@ END DO
 !===================================================================================================
 END SUBROUTINE Collision
 !===================================================================================================
+
+
+
 
 
 !===================================================================================================
@@ -244,7 +250,7 @@ INTEGER(lng) :: i,j,k,m,im1,jm1,km1		! index variables
 REAL(dbl) :: fbb				! bounced back distribution function
 
 fplus = f					! store the post-collision distribution function
-! interior nodes (away from other subdomains)
+!----- interior nodes (away from other subdomains)
 DO k=2,nzSub-1
   DO j=2,nySub-1
     DO i=2,nxSub-1
@@ -256,12 +262,12 @@ DO k=2,nzSub-1
           km1 = k - ez(m)
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
-          ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN					! macro- boundary
+          ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
 	    ! Balaji added after commenting out the earlier method
-            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)					  					! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackV2(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)							! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBackV2(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
@@ -283,7 +289,7 @@ DO k=2,nzSub-1
   END DO
 END DO
 
-! XY faces
+!----- XY faces
 DO k=1,nzSub,(nzSub-1)
   DO j=1,nySub
     DO i=1,nxSub
@@ -295,11 +301,11 @@ DO k=1,nzSub,(nzSub-1)
           km1 = k - ez(m)
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
-          ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN				! macro- boundary
-            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  						! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
+          ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
+            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  				! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
             f(m,i,j,k) = fbb
-          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi
-            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)						! implement the bounceback BCs [MODULE: ICBC]
+          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
+            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
@@ -321,7 +327,7 @@ DO k=1,nzSub,(nzSub-1)
   END DO
 END DO
 
-! XZ faces
+!----- XZ faces
 DO j=1,nySub,(nySub-1)
   DO k=1,nzSub
     DO i=1,nxSub
@@ -359,7 +365,7 @@ DO j=1,nySub,(nySub-1)
   END DO
 END DO
 
-! YZ faces
+!----- YZ faces
 DO i=1,nxSub,(nxSub-1)
   DO k=1,nzSub
     DO j=1,nySub
@@ -379,7 +385,7 @@ DO i=1,nxSub,(nxSub-1)
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
-		    WRITE(1000,'(A75)') "error in LBM.f90 at Line 1709: node(im1,jm1,km1) is out of range"
+	    WRITE(1000,'(A75)') "error in LBM.f90 at Line 1709: node(im1,jm1,km1) is out of range"
             WRITE(1000,*) "iter", iter
             WRITE(1000,*) "m=",m
             WRITE(1000,*) "i=",i,"j=",j,"k=",k
@@ -399,6 +405,10 @@ END DO
 !===================================================================================================
 END SUBROUTINE Stream
 !===================================================================================================
+
+
+
+
 
 !===================================================================================================
 SUBROUTINE Macro	! calculate the macroscopic quantities
@@ -452,15 +462,15 @@ DO k=1,nzSub
           WRITE(1001,'(A60)') 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
           WRITE(1001,'(8E15.5,I6)') x(i), y(j), z(k), u(i,j,k), v(i,j,k), w(i,j,k), (rho(i,j,k)-denL)*dcf*pcf, phi(i,j,k), node(i,j,k)
           CLOSE(1001)
-          CALL PrintFieldsTEST									! output the velocity, density, and scalar fields [MODULE: Output]
+          CALL PrintFieldsTEST						! output the velocity, density, and scalar fields [MODULE: Output]
           STOP
         END IF
       ELSE
-        rho(i,j,k)	= denL									! density (zero gauge pressure)
-        u(i,j,k)		= 0.0_dbl							! x-velocity
-        v(i,j,k)		= 0.0_dbl							! y-velocity
-        w(i,j,k)		= 0.0_dbl							! z-velocity
-        phi(i,j,k)	= phiWall								! scalar
+        rho(i,j,k)= denL						! density (zero gauge pressure)
+        u(i,j,k)  = 0.0_dbl						! x-velocity
+        v(i,j,k)  = 0.0_dbl						! y-velocity
+        w(i,j,k)  = 0.0_dbl						! z-velocity
+        phi(i,j,k)= phiWall						! scalar
       END IF
     END DO
   END DO

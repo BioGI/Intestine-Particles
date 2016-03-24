@@ -10,105 +10,6 @@ IMPLICIT NONE
 
 CONTAINS
 
-!!===================================================================================================
-!SUBROUTINE Interp_bulkconc(Cb_Local)                                 ! Using Trilinear interpolation
-!!===================================================================================================
-!IMPLICIT NONE
-!INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
-!REAL(dbl)     :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd
-!REAL(dbl)     :: xp,yp,zp
-!REAL(dbl)     :: Cb_Local
-!TYPE(ParRecord), POINTER :: current
-!TYPE(ParRecord), POINTER :: next
-!
-!current => ParListHead%next
-!DO WHILE (ASSOCIATED(current))
-!   next => current%next ! copy pointer of next node
-!   IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!      xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-!      yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-!      zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
-!
-!      ix0= FLOOR(xp)
-!      ix1= CEILING(xp)
-!      iy0= FLOOR(yp)
-!      iy1= CEILING(yp)
-!      iz0= FLOOR(zp)
-!      iz1= CEILING(zp)
-!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
-!
-!      IF (ix1 /= ix0) THEN 
-!         xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
-!      ELSE
-!         xd= 0.0_dbl
-!      END IF
-!      IF (iy1 /= iy0) THEN 
-!         yd=(yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
-!      ELSE
-!         yd = 0.0_dbl
-!      END IF
-!      IF (iz1 /= iz0) THEN 
-!         zd=(zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-!      ELSE
-!         zd = 0.0_dbl
-!      END IF
-!
-!!-----phi-interpolation
-!!-----1st level linear interpolation in x-direction
-!      c00 = phi(ix0,iy0,iz0)*(1.0_dbl-xd)+phi(ix1,iy0,iz0)*xd	
-!      c01 = phi(ix0,iy0,iz1)*(1.0_dbl-xd)+phi(ix1,iy0,iz1)*xd	
-!      c10 = phi(ix0,iy1,iz0)*(1.0_dbl-xd)+phi(ix1,iy1,iz0)*xd	
-!      c11 = phi(ix0,iy1,iz1)*(1.0_dbl-xd)+phi(ix1,iy1,iz1)*xd	
-!
-!!-----2nd level linear interpolation in y-direction
-!      c0  = c00*(1.0_dbl-yd)+c10*yd
-!      c1  = c01*(1.0_dbl-yd)+c11*yd
-!
-!!-----3rd level linear interpolation in z-direction
-!	c   = c0*(1.0_dbl-zd)+c1*zd
-!        Cb_Local= c        
-!
-!   END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!   current => next
-!ENDDO
-!!===================================================================================================
-!END SUBROUTINE Interp_bulkconc  
-!!===================================================================================================
-!
-!
-!
-!
-!!===================================================================================================
-!SUBROUTINE Calc_Global_Bulk_Scalar_Conc(Cb_Domain)         !Bulk Conc= total moles/total domain size
-!!===================================================================================================
-!IMPLICIT NONE
-!INTEGER(lng)  :: i,j,k
-!REAL(dbl)     :: Cb_Domain
-!
-!Cb_global = 0.0_dbl
-!Cb_numFluids = 0_lng
-!
-!DO k=1,nzSub
-!   DO j=1,nySub
-!      DO i=1,nxSub
-!         IF (node(i,j,k) .EQ. FLUID) THEN
-!            Cb_global = Cb_global + phi(i,j,k)
-!            Cb_numFluids = Cb_numFluids + 1_lng
-!         END IF
-!      END DO
-!   END DO
-!END DO
-!
-!Cb_Domain = Cb_global/ Cb_numFluids
-!!===================================================================================================
-!END SUBROUTINE Calc_Global_Bulk_Scalar_Conc
-!!===================================================================================================
-
-
-
-
-
-
 
 !===================================================================================================
 SUBROUTINE Compute_Cb				  ! Computes the mesh-independent bulk concentration
@@ -213,9 +114,9 @@ DO WHILE (ASSOCIATED(current))
 
 
 
-!-----------------------------------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------------
 !--Veff is larger than 1 which means parallel communication might be necessary 
-!-----------------------------------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------------
    IF (V_eff_Ratio .GT. 1.0) THEN
 
 !-----Finding particle global location (in the whole domain not this particular processor)
@@ -455,7 +356,7 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
    IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++
-      current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 	! Add container effect
+      current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
       S= current%pardata%S
       Sst= S* (current%pardata%rp**2.0) / diffm
       current%pardata%Sst= Sst
@@ -655,7 +556,6 @@ DO WHILE (ASSOCIATED(current))
                NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
                NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
 	       NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
-
                IF (node(i,j,k) .EQ. FLUID) THEN
                   Overlap(i,j,k)= MAX ( MIN(LVIB_x(2),NVB_x(2)) - MAX(LVIB_x(1),NVB_x(1)), 0.0_dbl) * & 
                                   MAX ( MIN(LVIB_y(2),NVB_y(2)) - MAX(LVIB_y(1),NVB_y(1)), 0.0_dbl) * &
@@ -769,7 +669,6 @@ DO WHILE (ASSOCIATED(current))
 
    current => next
 ENDDO
-
 !===================================================================================================
 END SUBROUTINE Particle_Drug_To_Nodes  		 
 !===================================================================================================
