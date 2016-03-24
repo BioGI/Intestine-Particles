@@ -18,7 +18,7 @@
 FC = mpif90
 # flags for debugging or for maximum performance, comment as necessary
 #FCFLAGS = -g -fbounds-check
-FCFLAGS = -O2 -ffree-line-length-none -ffree-form
+FCFLAGS = -g -ffree-line-length-none -ffree-form  -ffpe-trap=invalid,zero,overflow 
 # flags forall (e.g. look for system .mod files, required in gfortran)
 FCFLAGS += -I/usr/include
 FCFLAGS += -I/opt/local/include
