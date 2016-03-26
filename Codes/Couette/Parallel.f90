@@ -49,79 +49,6 @@ dsSize				= 0_lng		! array of the number of elements sent for each communication
 uvwSize				= 0_lng		! array of the number of elements sent for each communication direction (density and scalar)
 nodeSize			= 0_lng		! array of the number of elements sent for each communication direction (density and scalar)
 
-! Initialize/setup derived data types
-!der_block_len = (/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
-!der_block_types=	(/ MPI_INTEGER, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_INTEGER, &
-!			MPI_INTEGER /)
-
-!der_block_len = (/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
-!der_block_types=	(/ MPI_INTEGER, &
-!			MPI_INTEGER, &
-!			MPI_INTEGER, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION, &
-!			MPI_DOUBLE_PRECISION/)
-!CALL MPI_TYPE_EXTENT(MPI_DOUBLE_PRECISION,mpidblextent,mpierr)
-!CALL MPI_TYPE_EXTENT(MPI_INTEGER,mpiintextent,mpierr)
-!der_block_offsets=	(/ 0, &
-!			mpiintextent, &
-!			2*mpiintextent, &
-!			3*mpiintextent+0*mpidblextent, &
-!			3*mpiintextent+1*mpidblextent, &
-!			3*mpiintextent+2*mpidblextent, &
-!			3*mpiintextent+3*mpidblextent, &
-!			3*mpiintextent+4*mpidblextent, &
-!			3*mpiintextent+5*mpidblextent, &
-!			3*mpiintextent+6*mpidblextent, &
-!			3*mpiintextent+7*mpidblextent, &
-!			3*mpiintextent+8*mpidblextent, &
-!			3*mpiintextent+9*mpidblextent, &
-!			3*mpiintextent+10*mpidblextent, &
-!			3*mpiintextent+11*mpidblextent, &
-!			3*mpiintextent+12*mpidblextent, &
-!			3*mpiintextent+13*mpidblextent, &
-!			3*mpiintextent+14*mpidblextent, &
-!			3*mpiintextent+15*mpidblextent, &
-!			3*mpiintextent+16*mpidblextent, &
-!			3*mpiintextent+17*mpidblextent, &
-!			3*mpiintextent+18*mpidblextent/)
-
 
 der_block_len = (/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
 der_block_types=	(/ MPI_INTEGER, &
@@ -610,17 +537,12 @@ END DO
 ! Allocate the MPI_WAITALL status array
 ALLOCATE(waitStat(MPI_STATUS_SIZE,2*NumCommDirs))
 
-! ALLOCATE Particle MPI transfer variables
-!ALLOCATE(partransfersend(NumCommDirsPar,NumParVar))
 ALLOCATE(partransfersend(NumParVar,NumCommDirsPar))
-!ALLOCATE(partransferrecv(NumCommDirsPar,NumParVar))
 ALLOCATE(partransferrecv(NumParVar,NumCommDirsPar))
 ALLOCATE(numpartransfer(NumCommDirsPar))
 ALLOCATE(parreqid(2*NumCommDirsPar))
 ALLOCATE(parwtstat(MPI_STATUS_SIZE,2*NumCommDirsPar))
 ALLOCATE(probestat(MPI_STATUS_SIZE))
-!ALLOCATE(ParSendArray(1,NumCommDirsPar))
-!ALLOCATE(ParRecvArray(1,NumCommDirsPar))
 
 ParInit%parid = 0_lng
 ParInit%cur_part = 0_lng
@@ -648,12 +570,6 @@ ParInit%Veff = 0.0_dbl
 ParInit%Nbj = 0.0_dbl
 ParInit%gamma_cont = 0.0_dbl
 ParInit%delNBbyCV = 0.0_dbl
-
-!ALLOCATE(partransfersend(NumParVar))
-!ALLOCATE(partransferrecv(NumParVar))
-!ALLOCATE(parreqid(2))
-!ALLOCATE(parwtstat(MPI_STATUS_SIZE,2))
-!ALLOCATE(probestat(MPI_STATUS_SIZE))
 
 !------------------------------------------------
 END SUBROUTINE MPI_Initialize
@@ -1090,7 +1006,7 @@ DO WHILE (ASSOCIATED(current))
       CALL list_delete(current)
       NULLIFY(current)
    END IF
-   current => next 								! point to next node in the list
+   current => next
 ENDDO
 
 numparticlesSub = 0_lng
