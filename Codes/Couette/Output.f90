@@ -609,7 +609,6 @@ IF(myid .EQ. master) THEN
     volume = volume + (ny-1)*ycf*zcf*(rDomOut(k)-rDomIn(k))
   END DO
 
-  !volume = PI*volume
 
   ! account for the villi
   volume = volume - numVilliActual*(PI*Rv*Rv*(Lv-Rv))						! subtract the cylindrical volume
