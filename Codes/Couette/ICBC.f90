@@ -81,16 +81,10 @@ ELSE															! clean start
         v(i,j,k)   = 0.0_dbl!0.01_dbl							! y-velocity
 	IF (node(i,j,k).EQ.FLUID) THEN        
 		w(i,j,k)   = (0.5_dbl*s1/vcf)*(xmid-xx(i+iMin-1))/(xmid-xmin)! z-velocity
-		!w(i,j,k)   = (s1/vcf)*(xmax-xx(i+iMin-1))/(xmax-xmin)! z-velocity
-		!w(i,j,k)   = (s1/vcf)! z-velocity
-		!w(i,j,k)   = (s1/vcf)*(alpha*D-xx(i))/(2.0_dbl*alpha*D)!s1/vcf!0.0_dbl!0.0_dbl	! z-velocity
 	ELSE
 		w(i,j,k) = 0.0_dbl
 	ENDIF
         rho(i,j,k) = denL
-	!IF (node(i,j,k).EQ.FLUID) THEN
-	!	write(*,*) i,j,k,xx(i),w(i,j,k)
-	!ENDIF								! density
 	! Balaji added
 	! distribution functions (set to equilibrium)
 	DO m=0,NumDistDirs
@@ -203,87 +197,9 @@ ENDIF
 END SUBROUTINE IniParticles
 !------------------------------------------------
 
-!------------------------------------------------
-SUBROUTINE IniParticles_Old
-!-----------------------------------------------
-IMPLICIT NONE
-INTEGER(lng)   :: i, parid
-REAL(dbl) :: xp,yp,zp,par_radius
-TYPE(ParRecord), POINTER	:: CurPar
-IF (restart) THEN
-	! Read particle number and position along with it's radius,concentration.
-	! Interpolate to calculate particle velocities.
-	! Interpolate particle concentration to nodes into delphi_particle.
 
-ELSE
-	! Linked list approach
-	OPEN(60,FILE='particle.dat')
-	READ(60,*) np
-	num_particles = np
 
-	! Initialize Header Pointer
-	
-	!ALLOCATE(ParListHead)
-	!ParListHead%next => null()!ParListHead
-	!ParListHead%prev => null()!ParListHead
-	CALL list_init(ParListHead)
-	CurPar => ParListHead
 
-    IF (myid .EQ. master) THEN
-	! Recursively allocate all the particle records and build the linked list
-	DO i = 1, np
-		!ALLOCATE(CurPar%next)
-		!CurPar%next%prev => CurPar
-		!!CurPar%next%next => ParListHead
-		!CurPar%next%next => null()
-		!CurPar => CurPar%next
-		READ(60,*) parid,xp,yp,zp,par_radius
-
-		CALL list_init(CurPar%next)		
-		CurPar%next%prev => CurPar
-		CurPar%next%next => null()
-		CurPar%next%pardata%parid = parid
-		CurPar%next%pardata%xp = xp
-		CurPar%next%pardata%yp = yp
-		CurPar%next%pardata%zp = zp
-		CurPar%next%pardata%up = 0.0_dbl
-		CurPar%next%pardata%vp = 0.0_dbl
-		CurPar%next%pardata%wp = 0.0_dbl
-		CurPar%next%pardata%rp = par_radius!R0!0.005_dbl
-		CurPar%next%pardata%xpold = CurPar%next%pardata%xp
-		CurPar%next%pardata%ypold = CurPar%next%pardata%yp
-		CurPar%next%pardata%zpold = CurPar%next%pardata%zp
-		CurPar%next%pardata%upold = CurPar%next%pardata%up
-		CurPar%next%pardata%vpold = CurPar%next%pardata%vp
-		CurPar%next%pardata%wpold = CurPar%next%pardata%wp
-		CurPar%next%pardata%rpold = CurPar%next%pardata%rp
-		CurPar%next%pardata%par_conc = Cs_mol!3.14854e-6
-		CurPar%next%pardata%gamma_cont = 0.0000_dbl
-		CurPar%next%pardata%sh = 1.0000_dbl/(1.0_dbl-CurPar%next%pardata%gamma_cont)
-		CurPar%next%pardata%S = 0.0_dbl
-		CurPar%next%pardata%Sst = 0.0_dbl
-		CurPar%next%pardata%Veff = 0.0_dbl
-		CurPar%next%pardata%Nbj = 0.0_dbl
-		CurPar%next%pardata%bulk_conc = 0.0000_dbl
-		CurPar%next%pardata%delNBbyCV= 0.00000_dbl
-		CurPar%next%pardata%cur_part= mySub
-		CurPar%next%pardata%new_part= mySub
-!		!WRITE(*,*) "Particle Initializing ",i,xp(i),yp(i),zp(i)
-! 		!ss(:,:)=uu(:,:,(nz+1)/2)
-!	        !CALL interp(xp(i),yp(i),ss,nx,ny,up(i))
-!	        !ss(:,:)=vv(:,:,(nz+1)/2)
-!	        !CALL interp(xp(i),yp(i),ss,nx,ny,vp(i))
-		! point to next node in the list
-		CurPar => CurPar%next
-		!write(*,*) i
-	END DO
-     END IF
-	
-	CLOSE(60)
-ENDIF
-!------------------------------------------------
-END SUBROUTINE IniParticles_Old
-!------------------------------------------------
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE ScalarDistribution		! Sets/Maintains initial distributions of scalar
@@ -305,11 +221,8 @@ IF(iter .EQ. phiStart) THEN
         DO j=0,nySub+1
           DO i=0,nxSub+1
 
-            !phi(i,j,k) = phiIC*ee**(-((x(i)**2 + y(j)**2 + (z(k)-0.5_dbl*L)**2)/(2.0_dbl*sigma**2)))		! 3D Gaussian Distribution
             IF (((i.GE.16).AND.(i.LE.25)).AND.((j.GE.16).AND.(j.LE.25)).AND.((k.GE.16).AND.(k.LE.25))) THEN
-		    !IF (node(i,j,k).EQ.FLUID) THEN
-	            	phi(i,j,k) = phiIC!i+j+k!phiIC		! 3D Cube test
-		    !ENDIF
+	       	phi(i,j,k) = phiIC!i+j+k!phiIC		! 3D Cube test
 	    ENDIF
 
           END DO
@@ -452,7 +365,6 @@ REAL(dbl) :: cosTheta, sinTheta								! COS(theta), SIN(theta)
 REAL(dbl) :: ub, vb, wb											! wall velocity (x-, y-, z- components)
 REAL(dbl) :: rijk													! radius of current node
 
-!rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))				! radius at current location
 rijk = x(im1)								! height at current location
 
 cosTheta = x(im1)/rijk											! COS(theta)
@@ -462,27 +374,13 @@ IF (rijk .GE. rOut(k)) THEN
 	ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 	vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 	wb = velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
-	!ub = -velOut(km1)*sinTheta!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-	!vb = velOut(km1)*cosTheta!0.0!vel(km1)*sinTheta							! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl!vel(km1)!0.0_dbl									! no z-component in this case			
-	!ub = vel(km1)*cosTheta										! x-component of the velocity at i,j,k
-	!vb = vel(km1)*sinTheta										! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl											! no z-component in this case
 ELSE IF (rijk .LE. rIn(k)) THEN
 	ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 	vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 	wb = velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
-	!ub = -velIn(km1)*sinTheta!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
-	!vb = velIn(km1)*cosTheta!0.0!vel(km1)*sinTheta					! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl!vel(km1)!0.0_dbl							! no z-component in this case			
-	!ub = vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-	!vb = vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl														! no z-component in this case
 END IF				
 
-!fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))	! bounced back distribution function with added momentum
 fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m))	! bounced back distribution function with added momentum
-!fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))	! bounced back distribution function with added momentum
 fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
 fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
 !------------------------------------------------
@@ -517,7 +415,6 @@ kp2 = k + 2_lng*ez(m)											! k location of 2nd neighbor in the m direction
 
 IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! continue with 2nd order BB if the two positive neighbors are in the fluid (most cases)
 
-	!rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))				! radius at current location
 	rijk = x(im1)								! height at current location
 
   cosTheta = x(im1)/rijk										! COS(theta)
@@ -529,22 +426,10 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
 		ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 		vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 		wb = velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
-		!ub = -velOut(km1)*sinTheta!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-		!vb = velOut(km1)*cosTheta!0.0!vel(km1)*sinTheta							! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl!vel(km1)!0.0_dbl									! no z-component in this case			
-		!ub = vel(km1)*cosTheta										! x-component of the velocity at i,j,k
-		!vb = vel(km1)*sinTheta										! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl											! no z-component in this case
 	ELSE IF (rijk .LE. rIn(k)) THEN
 		ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 		vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 		wb = velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
-		!ub = -velIn(km1)*sinTheta!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
-		!vb = velIn(km1)*cosTheta!0.0!vel(km1)*sinTheta					! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl!vel(km1)!0.0_dbl							! no z-component in this case			
-		!ub = vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-		!vb = vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl														! no z-component in this case
 	END IF	
 
   CALL qCalc(m,i,j,k,im1,jm1,km1,q)							! calculate q					
@@ -618,7 +503,6 @@ kp2 = k + 2_lng*ez(m)											! k location of 2nd neighbor in the m direction
 IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! continue with 2nd order BB if the two positive neighbors are in the fluid (most cases)
 
 !*****************************************************************************
-	!rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))				! radius at current location
 	rijk = x(im1)								! height at current location
 		 ! Initial fluid node guess
                  x1=x(i)
@@ -637,17 +521,11 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
                    yt=(y1+y2)/2.0_dbl
                    zt=(z1+z2)/2.0_dbl
 
-      		   !rt = SQRT(xt*xt + yt*yt)
       		   rt = xt
-		   !Write(*,*) 'test'
                    IF (rijk .GE. rOut(k)) THEN
-		   	!ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
 		   	ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
-		   	!ht = (r(km1)+r(k))/2.0_dbl
 		   ELSE
-		   	!ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
 		   	ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
-		   	!ht = (r(km1)+r(k))/2.0_dbl
 		   END IF
 
                    IF(rt.GT.ht) then
@@ -678,16 +556,10 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
                    yt=(y1+y2)/2.0_dbl
                    zt=(z1+z2)/2.0_dbl
 
-      		   !rt = SQRT(xt*xt + yt*yt)
       		   rt = xt
-		   !Write(*,*) 'test'
 		   IF (rijk .GE. rOut(k)) THEN
-			   !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
-			   !ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
 			   ht = (rOut(km1)+rOut(k))/2.0_dbl
 		   ELSE
-			   !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
-			   !ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
 			   ht = (rIn(km1)+rIn(k))/2.0_dbl
 		   END IF
 
@@ -717,10 +589,8 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
 		 sinTheta=yt/rt
 	 IF (k.NE.km1) THEN
 		   IF (rijk .GE. rOut(k)) THEN
-			 !vt = (ABS(zt-z(k))*vel(km1)+ABS(z(km1)-zt)*vel(k))/ABS(z(km1)-z(k))
 			 vt = ((zt-z(k))*velOut(km1)+(z(km1)-zt)*velOut(k))/(z(km1)-z(k))
 		   ELSE
-			 !vt = (ABS(zt-z(k))*vel(km1)+ABS(z(km1)-zt)*vel(k))/ABS(z(km1)-z(k))
 			 vt = ((zt-z(k))*velIn(km1)+(z(km1)-zt)*velIn(k))/(z(km1)-z(k))
 		   END IF
 	 ELSE
@@ -733,14 +603,6 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
 		ub = 0.0_dbl!0.0!vel(km1)*cosTheta								! x-component of the velocity at i,j,k
 		vb = 0.0_dbl!0.0!vel(km1)*sinTheta								! y-component of the velocity at i,j,k
 		wb = vt!vel(km1)!0.0_dbl									! only z-component in this case)
-		!ub = -vt*sinTheta!0.0!vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-		!vb = vt*cosTheta!0.0!vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl!vel(km1)!0.0_dbl											! no z-component in this case)
-		!ub = vt*cosTheta										! x-component of the velocity at i,j,k
-		!vb = vt*sinTheta										! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl											! no z-component in this case)
-		!write(*,*) 'ht',ht,rt
-		!write(*,*) 'q-yanxing',q,i,j,k,im1,jm1,km1
 	! make sure 0<q<1
         IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
           OPEN(1000,FILE="error.txt")
@@ -778,12 +640,6 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
         - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) 													&
         !+ 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)) ! use actual rho
         + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)) ! use rho = 1.0
-        !+ 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
-
-!    fbb = (2.0_dbl*q)*fplus(bb(m),i,j,k)+ &
-!	(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip1,jp1,kp1) &
-!        + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))
-!        !+ 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
 
 	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
 	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
@@ -793,13 +649,6 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
         - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1)							&
         !+ (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))	! Use actual rho
         + (6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))		! Use rho = 1.0
-        !+ (6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m))))/(q*(2.0_dbl*q + 1.0_dbl))
-
-!    fbb = fplus(bb(m),i,j,k)/(2.0_dbl*q)+ &
-!		(2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k)/(2.0_dbl*q) &
-!        + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))) &
-!	/(2.0_dbl*q)
-!        !+ (6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m))))/(2.0_dbl*q)
 
 	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
 	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
@@ -811,9 +660,6 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
     CLOSE(1000)
     STOP
   END IF
-  !IF (k.EQ.42) THEN
-  !	write(9,*) i,j,k,q
-  !ENDIF
 
 ELSE
 
@@ -1030,8 +876,6 @@ wV = (omegaX*Cy - omegaY*Cx)/vcf											! z-component
 !ubx = (velDom(NINT(villiLoc(vNum,3)/zcf))/vcf)*(villiLoc(vNum,1)/rijk)	! x-component of the wall velocity
 !uby = (velDom(NINT(villiLoc(vNum,3)/zcf))/vcf)*(villiLoc(vNum,2)/rijk)	! y-component of the wall velocity
 
-!uV = uV + (velDom(NINT(villiLoc(vNum,3)/zcf))/vcf)*COS(alpha)	! active villous velocity component + wall velocity component (x-direction)
-!vV = vV + (velDom(NINT(villiLoc(vNum,3)/zcf))/vcf)*SIN(alpha)	! active villous velocity component + wall velocity component (y-direction)
 uV = uV + (velDomOut(NINT(villiLoc(vNum,3)/zcf))/vcf)*COS(alpha)	! active villous velocity component + wall velocity component (x-direction)
 vV = vV + (velDomOut(NINT(villiLoc(vNum,3)/zcf))/vcf)*SIN(alpha)	! active villous velocity component + wall velocity component (y-direction)
 
@@ -1404,7 +1248,6 @@ REAL(dbl) :: ub, vb, wb																! wall velocity (x-, y-, z- components)
 REAL(dbl) :: rijk ! radius of the solid node
 
 CALL qCalc(m,i,j,k,im1,jm1,km1,q)												! calculate q	
-!rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))				! radius at current location
 rijk = x(im1)								! height at current location
 
 cosTheta = x(im1)/rijk!r(km1)	! COS(theta)
@@ -1415,22 +1258,10 @@ IF (rijk .GE. rOut(k)) THEN
 	ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 	vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 	wb = velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
-	!ub = -velOut(km1)*sinTheta!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-	!vb = velOut(km1)*cosTheta!0.0!vel(km1)*sinTheta							! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl!vel(km1)!0.0_dbl									! no z-component in this case			
-	!ub = vel(km1)*cosTheta										! x-component of the velocity at i,j,k
-	!vb = vel(km1)*sinTheta										! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl											! no z-component in this case
 ELSE IF (rijk .LE. rIn(k)) THEN
 	ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 	vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 	wb = velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
-	!ub = -velIn(km1)*sinTheta!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
-	!vb = velIn(km1)*cosTheta!0.0!vel(km1)*sinTheta					! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl!vel(km1)!0.0_dbl							! no z-component in this case			
-	!ub = vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-	!vb = vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-	!wb = 0.0_dbl														! no z-component in this case
 END IF		
 
 ! neighboring node (fluid side)	
@@ -1449,10 +1280,6 @@ END IF
 rhoB = (rho(i,j,k) - rho(ip1,jp1,kp1))*(1+q) + rho(ip1,jp1,kp1)		! extrapolate the density
 CALL Equilibrium_LOCAL(m,rhoB,ub,vb,wb,feq_m)			        ! calculate the equibrium distribution function in the mth direction
 
-!! Balaji added for sero flux BC. Otherwise set to constant value for Dirichlet BC
-!phiWall = (phi(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(ip1,jp1,kp1)*q*q/(1.0+2.0*q)) 	! calculate phiWall for flux BC (eq. 28 in paper)
-!phiWall = (phiTemp(i,j,k)*(1.0_dbl+q-q*q) + phiTemp(ip1,jp1,kp1)*(q*q-2.0_dbl*q+1.0_dbl))/(2.0_dbl-q) 	! calculate phiWall for flux BC - Balaji's idea
-!phiWall = (phiTemp(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phiTemp(ip1,jp1,kp1)*q*q/(1.0+2.0*q)) 	! calculate phiWall for flux BC (eq. 28 in paper)
 
 ! find the contribution of scalar streamed from the wall to the current node (i,j,k), and from the current node to the next neighboring node (ip1,jp1,kp1)
 phiB		= (feq_m/rhoB - wt(m)*Delta)*phiWall								! contribution from the wall in the mth direction (zero if phiWall=0)
@@ -3296,7 +3123,7 @@ IMPLICIT NONE
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1								! index variables
 INTEGER(lng), INTENT(IN) :: vNum													! number of the current villus
 REAL(dbl), INTENT(OUT) :: phiBC     											! scalar contribution from the boundary condition
-INTEGER(lng) :: ip1,jp1,kp1 														! neighboring nodes (2 away from the wall)
+INTEGER(dbl) :: ip1,jp1,kp1 														! neighboring nodes (2 away from the wall)
 REAL(dbl) :: Cx,Cy,Cz,Vx,Vy,Vz													! vector between villous base and current node, vector between villous base and villous tip
 REAL(dbl) :: uV,vV,wV																! villus wall velocity at actual coordinate system
 REAL(dbl) :: q																			! distance ratio from the current node to the solid node
