@@ -1247,8 +1247,8 @@ REAL(dbl) :: rijk ! radius of the solid node
 
 CALL qCalc(m,i,j,k,im1,jm1,km1,q)												! calculate q	
 rijk = x(im1)								! height at current location
-cosTheta = x(im2)/rijk!r(km1)	! COS(theta)
-sinTheta = y(jm1)/rijk!r(km1)	! SIN(theta)
+cosTheta = x(im1)/rijk    !r(km1)	! COS(theta)
+sinTheta = y(jm1)/rijk    !r(km1)	! SIN(theta)
 
 
 IF (rijk .GE. rOut(k)) THEN
@@ -1565,6 +1565,10 @@ END IF
 phiBC = 1.0_dbl*(1.0_dbl*(fbb-fmoving)/rhoX - wt(bb(m))*Delta)*ScX+(fmoving/rhoAst)*ScAst !+ wt(bb(m))*Delta*phiTemp(i,j,k)
 phiOut = 1.0_dbl*(1.0_dbl*fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
 phiIn =  phiBC!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
+
+!------------------------------------------------
+END SUBROUTINE ScalarBC2
+!------------------------------------------------
 
 
 
