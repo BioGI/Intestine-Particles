@@ -415,12 +415,10 @@ kp2 = k + 2_lng*ez(m)											! k location of 2nd neighbor in the m direction
 
 IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! continue with 2nd order BB if the two positive neighbors are in the fluid (most cases)
 
-	rijk = x(im1)								! height at current location
+  rijk = x(im1)										! height at current location
 
   cosTheta = x(im1)/rijk										! COS(theta)
   sinTheta = y(jm1)/rijk										! SIN(theta)
-  !cosTheta = x(im1)/r(km1)									! COS(theta)
-  !sinTheta = y(jm1)/r(km1)									! SIN(theta)
 
 	IF (rijk .GE. rOut(k)) THEN
 		ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
@@ -1249,8 +1247,7 @@ REAL(dbl) :: rijk ! radius of the solid node
 
 CALL qCalc(m,i,j,k,im1,jm1,km1,q)												! calculate q	
 rijk = x(im1)								! height at current location
-
-cosTheta = x(im1)/rijk!r(km1)	! COS(theta)
+cosTheta = x(im2)/rijk!r(km1)	! COS(theta)
 sinTheta = y(jm1)/rijk!r(km1)	! SIN(theta)
 
 
@@ -1339,64 +1336,6 @@ IF ((node(ip1,jp1,kp1) .EQ. FLUID).AND.(node(ip2,jp2,kp2) .EQ. FLUID)) THEN
 END IF
 BC2FLAG = .FALSE.
 
-!! if (ip1,jp1,kp1) is not in the fluid domain, use values from the current node as an approximation
-!IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
-!  ip1 = i
-!  jp1 = j
-!  kp1 = k
-!END IF
-!
-!!if (rho(ip1,jp1,kp1).lt.0.00001_dbl) THEN
-!!	rho(ip1,jp1,kp1) = rho(i,j,k)!1.0_dbl
-!!	phiTemp(ip1,jp1,kp1) = phiTemp(i,j,k)!1.0_dbl
-!!	fplus(bb(m),ip1,jp1,kp1) = fplus(bb(m),i,j,k)
-!!	fplus(m,ip1,jp1,kp1) = fplus(m,i,j,k)
-!!ENDIF
-!
-!IF(node(ip2,jp2,kp2) .NE. FLUID) THEN
-!  ip2 = ip1
-!  jp2 = jp1
-!  kp2 = kp1
-!END IF	
-!!if (rho(ip2,jp2,kp2).lt.0.00001_dbl) THEN
-!!	rho(ip2,jp2,kp2) = rho(ip1,jp1,kp1)!1.0_dbl
-!!	phiTemp(ip2,jp2,kp2) = phiTemp(ip1,jp1,kp1)!1.0_dbl
-!!	fplus(bb(m),ip2,jp2,kp2) = fplus(bb(m),ip1,jp1,kp1)
-!!	fplus(m,ip2,jp2,kp2) = fplus(m,ip1,jp1,kp1)
-!!ENDIF
-
-
-
-!! Original Code to estimate q
-!CALL qCalc(m,i,j,k,im1,jm1,km1,q) ! calculate q
-!!! if q is too small, the extrapolation to phiBC can create a large error...
-!!IF(q .LT. 0.5) THEN
-!!  q = 0.5_dbl  	! approximate the distance ratio as 0.25
-!!END IF
-!
-!!q=1.0_dbl
-!rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))! radius at current location
-!
-!cosTheta = x(im1)/rijk!r(km1)	! COS(theta)
-!sinTheta = y(jm1)/rijk!r(km1)	! SIN(theta)
-!
-!
-!IF (rijk .GE. rOut(k)) THEN
-!	ub = -velOut(km1)*sinTheta!0.0!vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-!	vb = velOut(km1)*cosTheta!0.0!vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-!	wb = 0.0_dbl!vel(km1)!0.0_dbl														! no z-component in this case			
-!	!ub = vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-!	!vb = vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-!	!wb = 0.0_dbl														! no z-component in this case
-!ELSE IF (rijk .LE. rIn(k)) THEN
-!	ub = -velIn(km1)*sinTheta!0.0!vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-!	vb = velIn(km1)*cosTheta!0.0!vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-!	wb = 0.0_dbl!vel(km1)!0.0_dbl														! no z-component in this case			
-!	!ub = vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-!	!vb = vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-!	!wb = 0.0_dbl														! no z-component in this case
-!END IF		
-	
 
 !BC2FLAG = .TRUE.
 IF (BC2FLAG) THEN
@@ -1517,9 +1456,6 @@ IF (BC2FLAG) THEN
 		ub = 0.0_dbl!0.0!vel(km1)*cosTheta											! x-component of the velocity at i,j,k
 		vb = 0.0_dbl!0.0!vel(km1)*sinTheta											! y-component of the velocity at i,j,k
 		wb = vt!vel(km1)!0.0_dbl												! only z-component of velocity	
-		!ub = -vt*sinTheta!0.0!vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-		!vb = vt*cosTheta!0.0!vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl!vel(km1)!0.0_dbl			
 
 	        ! make sure 0<q<1
         IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
@@ -1531,19 +1467,8 @@ IF (BC2FLAG) THEN
           CLOSE(1000)
           STOP
         END IF	
-
-	!q = max(q, 0.25_dbl)
 ELSE
-
-        ! Original Code to estimate q
-        !CALL qCalc(m,i,j,k,im1,jm1,km1,q) ! calculate q
-        !! if q is too small, the extrapolation to phiBC can create a large error...
-        !IF(q .LT. 0.5) THEN
-        !  q = 0.5_dbl  	! approximate the distance ratio as 0.25
-        !END IF
-        
         q=0.5_dbl
-	!rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))				! radius at current location
 	rijk = x(im1)								! height at current location
         
         cosTheta = x(im1)/rijk!r(km1)	! COS(theta)
@@ -1554,231 +1479,15 @@ ELSE
 		ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 		vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 		wb = velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
-		!ub = -velOut(km1)*sinTheta!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-		!vb = velOut(km1)*cosTheta!0.0!vel(km1)*sinTheta							! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl!vel(km1)!0.0_dbl									! no z-component in this case			
-		!ub = vel(km1)*cosTheta										! x-component of the velocity at i,j,k
-		!vb = vel(km1)*sinTheta										! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl											! no z-component in this case
 	ELSE IF (rijk .LE. rIn(k)) THEN
 		ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
 		vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
 		wb = velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
-		!ub = -velIn(km1)*sinTheta!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
-		!vb = velIn(km1)*cosTheta!0.0!vel(km1)*sinTheta					! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl!vel(km1)!0.0_dbl							! no z-component in this case			
-		!ub = vel(km1)*cosTheta											! x-component of the velocity at i,j,k
-		!vb = vel(km1)*sinTheta											! y-component of the velocity at i,j,k
-		!wb = 0.0_dbl														! no z-component in this case
 	END IF			
 
 
 END IF
-!BC2FLAG = .FALSE.
 
-
-!! neighboring node (fluid side)	
-!ip1 = i + ex(m) 	! i + 1
-!jp1 = j + ey(m)		! j + 1
-!kp1 = k + ez(m)		! k + 1
-!ip2 = ip1 + ex(m) 	! i + 2
-!jp2 = jp1 + ey(m)	! j + 2
-!kp2 = kp1 + ez(m)	! k + 2
-!
-!! if (ip1,jp1,kp1) is not in the fluid domain, use values from the current node as an approximation
-!IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
-!  ip1 = i
-!  jp1 = j
-!  kp1 = k
-!END IF
-!
-!if (rho(ip1,jp1,kp1).lt.0.00001_dbl) THEN
-!	rho(ip1,jp1,kp1) = rho(i,j,k)!1.0_dbl
-!	phiTemp(ip1,jp1,kp1) = phiTemp(i,j,k)!1.0_dbl
-!	fplus(bb(m),ip1,jp1,kp1) = fplus(bb(m),i,j,k)
-!	fplus(m,ip1,jp1,kp1) = fplus(m,i,j,k)
-!ENDIF
-!
-!IF(node(ip2,jp2,kp2) .NE. FLUID) THEN
-!  ip2 = ip1
-!  jp2 = jp1
-!  kp2 = kp1
-!END IF	
-!if (rho(ip2,jp2,kp2).lt.0.00001_dbl) THEN
-!	rho(ip2,jp2,kp2) = rho(ip1,jp1,kp1)!1.0_dbl
-!	phiTemp(ip2,jp2,kp2) = phiTemp(ip1,jp1,kp1)!1.0_dbl
-!	fplus(bb(m),ip2,jp2,kp2) = fplus(bb(m),ip1,jp1,kp1)
-!	fplus(m,ip2,jp2,kp2) = fplus(m,ip1,jp1,kp1)
-!ENDIF
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Yanxing's BC Scheme
-!!q = max(q,0.01_dbl)
-!! assign values to boundary (density, scalar, f)
-!rhoAst = (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)		! extrapolate the density
-!
-!CALL Equilibrium_LOCAL(m,rhoAst,ub,vb,wb,feq_m)			        ! calculate the equibrium distribution function in the mth direction
-!CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq1_m)			        ! calculate the equibrium distribution function in the mth direction for node A
-!CALL Equilibrium_LOCAL(m,rho(ip1,jp1,kp1),u(ip1,jp1,kp1),v(ip1,jp1,kp1),w(ip1,jp1,kp1),feq2_m)			        ! calculate the equibrium distribution function in the mth direction for node B
-!
-!!! Comment non-eq. effects for the time being. 
-!fnoneq1_m = fplus(m,i,j,k)-feq1_m!max(fplus(m,i,j,k)-feq1_m,0.0_dbl)
-!fnoneq2_m = fplus(m,ip1,jp1,kp1)-feq2_m!max(fplus(m,ip1,jp1,kp1)-feq2_m,0.0_dbl)
-!fnoneq_m = fnoneq1_m+q*(fnoneq1_m-fnoneq2_m)
-!feq_m = feq_m + fnoneq_m
-!!write(9,*) feq_m, fnoneq_m, m
-!!feq_m = (fplus(m,i,j,k) - fplus(m,ip1,jp1,kp1))*(q) + fplus(m,i,j,k)		! extrapolate the dist. function
-!
-!!! Balaji added for sero flux BC. Otherwise set to constant value for Dirichlet BC
-!
-!!phiWall = (phiTemp(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phiTemp(ip1,jp1,kp1)*q*q/(1.0+2.0*q)) 	! calculate phiWall for flux BC (eq. 28 in paper)
-!
-!!phiWall = phiTemp(i,j,k) 	! calculate phiWall for flux BC (eq. 28 in paper)
-!
-!!phiWall = (phiTemp(i,j,k)*(1.0_dbl+q-q*q) + phiTemp(ip1,jp1,kp1)*(q*q-2.0_dbl*q+1.0_dbl))/(2.0_dbl-q) 	! calculate phiWall for flux BC - Balaji's idea
-!
-!!phiWall = min (phiWall,phiTemp(i,j,k))
-!
-!phiAst = phiWall
-!!dphidn = 0.0_dbl
-!!CALL GetPhiWall(i,j,k,m,q,dphidn,phiAst)
-!dphidn = 0.0_dbl
-!CALL GetPhiWallNew(i,j,k,m,q,dphidn,phiAst,rhoAst)
-!rhoAst = (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)		! extrapolate the density
-!!phiAst = (phiTemp(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phiTemp(ip1,jp1,kp1)*q*q/(1.0+2.0*q)) 	! calculate phiWall for flux BC (eq. 28 in paper)
-!!phiAst = (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q)+ phiTemp(i,j,k) 	! calculate phiWall for flux BC (eq. 28 in paper)
-!!phiAst = 2.0_dbl*q*phiTemp(i,j,k) + (1.0_dbl-2.0_dbl*q)*phiTemp(ip1,jp1,kp1) 	! calculate phiWall for flux BC (eq. 28 in paper)
-!
-!ScAst = phiAst
-!
-!! find the contribution of scalar streamed from the wall to the current node (i,j,k), and from the current node to the next neighboring node (ip1,jp1,kp1)
-!PAstToBst = (feq_m/rhoAst - wt(m)*Delta)*ScAst								! contribution from the wall in the mth direction (zero if phiWall=0)
-!
-!rhoBst = rho(i,j,k) +(1.0_dbl-q)*(rho(ip1,jp1,kp1)-rho(i,j,k))		! extrapolate the density
-!fBst = fplus(m,i,j,k) +(1.0_dbl-q)*(fplus(m,ip1,jp1,kp1)-fplus(m,i,j,k)) ! extrapolate the distribution function
-!ScBst = phiTemp(i,j,k) +(1.0_dbl-q)*(phiTemp(ip1,jp1,kp1)-phiTemp(i,j,k)) ! extrapolate the scalar
-!PBstToCst = (fBst/rhoBst - wt(m)*Delta)*ScBst	! contribution from the wall in the mth direction (zero if phiWall=0)
-!
-!fBstopp = fplus(bb(m),ip1,jp1,kp1) - q*(fplus(bb(m),ip1,jp1,kp1)-fplus(bb(m),i,j,k)) ! extrapolate the dist. function
-!PBstToAst = (fBstopp/rhoBst - wt(bb(m))*Delta)*ScBst	! contribution to the wall in the bb(m) th direction 
-!PAtoB = (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k) ! contribution from A to B				
-!
-!! contribution from the wall in the mth direction (zero if phiWall=0)
-!
-!! if q is too small, the extrapolation to phiBC can create a large error...
-!!zIF(q .LT. 0.25) THEN
-!!  q = 0.25_dbl  ! approximate the distance ratio as 0.25
-!!END IF
-!
-!! extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
-!phiBC	= PAstToBst - (PBstToCst - PAstToBst)*(1.0_dbl-q)
-!!phiBC	= PAstToBst - (PAtoB - PAstToBst)*(1.0_dbl-q)/q
-!phiOut = phiBC!PAstToBst
-!phiIn = phiBC!PBstToAst
-!
-!!phiBtoA = ((fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k))!PBstToAst
-!!phiAtoB = PAstToBst+wt(m)*Delta*ScAst
-!!phiBtoA = PBstToAst+wt(bb(m))*Delta*ScBst
-!
-!!phiBC	= PBstToAst - (PBstToCst - PBstToAst)*(1.0_dbl-q)
-!!!phiBC	= PAstToBst - (PAtoB - PAstToBst)*(1.0_dbl-q)/q
-!!phiAtoB = PBstToAst
-!!phiBtoA = PBstToAst
-!
-!!IF (m.EQ.1) THEN
-!!	!write(9,*) i,j,k,ScAst,phiTemp(i,j,k)
-!!	write(9,*) i,j,k,phiAtoB,phiBtoA
-!!ENDIF
-!
-!!phiBC = pBstToAst
-!!phiAtoB = PBstToAst
-!!phiBC = 2.0_dbl*q*((fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k))+(1.0_dbl-2.0*dbl*q)*((fplus(bb(m),ip1,jp1,kp1)/rho(ip1,jp1,kp1) - wt(bb(m))*Delta)*phiTemp(ip1,jp1,kp1))
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! Using P to bounce back
-!!rho(i,j,k) = 1.0_dbl
-!!rho(ip1,jp1,kp1) = 1.0_dbl
-!if (rho(ip2,jp2,kp2).lt.0.00001_dbl) THEN
-!	rho(ip2,jp2,kp2) = rho(ip1,jp1,kp1)!1.0_dbl
-!	phiTemp(ip2,jp2,kp2) = phiTemp(ip1,jp1,kp1)!1.0_dbl
-!	fplus(bb(m),ip2,jp2,kp2) = fplus(bb(m),ip1,jp1,kp1)
-!	fplus(m,ip2,jp2,kp2) = fplus(m,ip1,jp1,kp1)
-!ENDIF
-!!if (phiTemp(i,j,k).ne.0.0_dbl) then
-!!write(*,*) i,j,k,iter
-!!PAUSE
-!!endif
-!ScAst = (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)		! extrapolate the scalar
-!!delta = SQRT(ex(bb(m))**2 + ex(bb(m))**2 + ex(bb(m))**2)*xcf
-!!ScAst = ((q+1.0_dbl)*(q+1.0_dbl)*phiTemp(i,j,k)-q*q*phiTemp(ip1,jp1,kp1))!-dphidk*delta*q*(q+1.0_dbl))/(2.0_dbl*q+1.0_dbl)
-!
-!q = max(q,0.01_dbl)
-!IF((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN
-!
-!	! Interpolate the flux that leaves - pre streaming
-!	PAtoO = 1.0_dbl*(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta) &
-!					*phiTemp(i,j,k)
-!	PBtoA = 1.0_dbl*(fplus(bb(m),ip1,jp1,kp1)/rho(ip1,jp1,kp1) &
-!			- wt(bb(m))*Delta)*phiTemp(ip1,jp1,kp1)
-!	PCtoB = 1.0_dbl*(fplus(bb(m),ip2,jp2,kp2)/rho(ip2,jp2,kp2) - &
-!			wt(bb(m))*Delta)*phiTemp(ip2,jp2,kp2)
-!	Pmovingwall = 6.0_dbl*wt(m)*ScAst*(ub*ex(m) + vb*ey(m) + &
-!			wb*ez(m))
-!!	Pmovingwall = 6.0_dbl*wt(bb(m))*ScAst*(ub*ex(bb(m)) + vb*ey(bb(m)) + &
-!!			wb*ez(bb(m)))
-!	POtoA = q*(1.0_dbl+2.0_dbl*q)*PAtoO + (1.0_dbl-4.0_dbl*q*q)*PBtoA -  &
-!			q*(1.0_dbl-2.0_dbl*q)*PCtoB &
-!		+ Pmovingwall
-!!write(*,*) phiBC, q, PAtoO,PBtoA,PCtoB
-!!write(*,*) phiBC,q,phiTemp(i,j,k),phiTemp(ip1,jp1,kp1),phiTemp(ip2,jp2,kp2)
-!!write(*,*) phiBC,q,fplus(bb(m),i,j,k),fplus(bb(m),ip1,jp1,kp1),fplus(bb(m),ip2,jp2,kp2)
-!!write(*,*) phiBC,q,rho(i,j,k),rho(ip1,jp1,kp1),rho(ip2,jp2,kp2),node(ip2,jp2,kp2), FLUID
-!ELSE IF((q.GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN
-!	! Interpolate the flux that arrives - pre streaming
-!	PAtoO = 1.0_dbl*(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta) &
-!					*phiTemp(i,j,k)
-!	PAtoB = 1.0_dbl*(fplus(m,i,j,k)/rho(i,j,k) &
-!			- wt(m)*Delta)*phiTemp(i,j,k)
-!	PBtoC = 1.0_dbl*(fplus(m,ip1,jp1,kp1)/rho(ip1,jp1,kp1) - &
-!			wt(m)*Delta)*phiTemp(ip1,jp1,kp1)
-!	Pmovingwall = 6.0_dbl*wt(m)*ScAst*(ub*ex(m) + vb*ey(m) + &
-!			wb*ez(m))/(q*(1.0_dbl+2.0_dbl*q))
-!!	Pmovingwall = 6.0_dbl*wt(bb(m))*ScAst*(ub*ex(bb(m)) + vb*ey(bb(m)) + &
-!!			wb*ez(bb(m)))/(q*(1.0_dbl+2.0_dbl*q))
-!	POtoA = (1.0_dbl/(q*(1.0_dbl+2.0_dbl*q)))*PAtoO + (2.0_dbl*q-1.0_dbl) &
-!		*PAtoB/q -	(2.0_dbl*q-1.0_dbl)*PBtoC/(2.0_dbl*q+1.0_dbl) &
-!		+ Pmovingwall 
-!!write(*,*) phiBC, q, PAtoO,PBtoC,PCtoD
-!ELSE
-!    OPEN(1000,FILE='error-'//sub//'.txt')
-!    WRITE(1000,*) "Error in BounceBack2() in ICBC.f90 (line 137): q is not (0<=q<=1)...? Aborting."
-!    WRITE(1000,*) "q=",q,"(i,j,k):",i,j,k
-!    CLOSE(1000)
-!    STOP
-!END IF
-!phiBC = POtoA
-!
-!PBtoC = 1.0_dbl*(fplus(m,ip1,jp1,kp1)/rho(ip1,jp1,kp1) &
-!		- wt(m)*Delta)*phiTemp(ip1,jp1,kp1)
-!PAtoB = 1.0_dbl*(fplus(m,i,j,k)/rho(i,j,k) &
-!		- wt(m)*Delta)*phiTemp(i,j,k)
-!PBtoA = 1.0_dbl*(fplus(bb(m),ip1,jp1,kp1)/rho(ip1,jp1,kp1) &
-!		- wt(bb(m))*Delta)*phiTemp(ip1,jp1,kp1)
-!
-!phiOut = phiBC!POtoA!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!phiIn =  phiBC!PAtoO!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-!
-!!phiOut = POtoA!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!!phiIn =  PAtoO!PAtoO!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-!!phiOut = POtoA!POtoA*(1.0+q)-PAtoB!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!!phiIn =  PAtoO - Pmovingwall!(PAtoO*q + PBtoA*(1.0_dbl-q))!PAtoO!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-!!write(9,*) Pmovingwall,ex(m),ey(m),ez(m),PAtoO,POtoA
-!
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!q = max(q,0.01_dbl)
 ! Using fbb to bounce back
   IF((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN
 
@@ -1801,13 +1510,6 @@ END IF
 
     ELSE
 
-        !! first order Balaji
-        !    fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-        !    !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
-        !    fbb = (2.0_dbl*q)*fplus(bb(m),i,j,k) &
-        !	  +(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip1,jp1,kp1) &
-        !  	  + fmoving
-        
         ! zeroth order half-way bounce back
             rhoX = rho(i,j,k)
             ScX  = phiTemp(i,j,k)
@@ -1827,38 +1529,24 @@ END IF
 
             rhoX = 2.0_dbl*q*rho(i,j,k) + (1.0_dbl-2.0_dbl*q)*rho(ip1,jp1,kp1)
             ScX  =  2.0_dbl*q*phiTemp(i,j,k) + (1.0_dbl-2.0_dbl*q)*phiTemp(ip1,jp1,kp1)
-            !rhoX = rho(i,j,k)
-            !ScX  = phiTemp(i,j,k)
             rhoAst =  (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)
             ScAst =  (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)
         
         ! 2nd order Lallemand and Luo
-            !fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
-            !fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
             fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
-            !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))/(q*(2.0_dbl*q + 1.0_dbl))
             fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 	&
                 + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q	&
                 - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1) &
                 + fmoving
 
     ELSE
-
-        !! first order Balaji
-        !    fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(2.0_dbl*q)
-        !    !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))/(2.0_dbl*q)
-        !    fbb = fplus(bb(m),i,j,k)/(2.0_dbl*q) &
-        !	+ (2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k)/(2.0_dbl*q) &
-        !	+ fmoving
         
         ! zeroth order half-way bounce back
             rhoX = rho(i,j,k)
             ScX  = phiTemp(i,j,k)
             rhoAst = rho(i,j,k)
             ScAst =  phiTemp(i,j,k)
-            !fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
             fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))!*(rhoAst/ScAst)
-            !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
             fbb = fplus(bb(m),i,j,k) &
         	+ fmoving
 
@@ -1872,146 +1560,15 @@ END IF
     STOP
   END IF
 
-!rhoAst = rho(ip1,jp1,kp1)
-!ScAst = phiTemp(ip1,jp1,kp1)
-!rhoAst = (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)		! extrapolate the density
-!ScAst = (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)		! extrapolate the density
-!rhoAst = 2.0_dbl*q*rho(i,j,k) + (1.0_dbl-2.0_dbl*q)*rho(ip1,jp1,kp1)		! extrapolate the density
-!ScAst =  2.0_dbl*q*phiTemp(i,j,k) + (1.0_dbl-2.0_dbl*q)*phiTemp(ip1,jp1,kp1)		! extrapolate the density
-!rhoAst = rhoX
-!ScAst = ScX
 
-!dphidn = 0.0_dbl
-!CALL GetPhiWallNew(i,j,k,m,q,dphidn,phiAst,rhoAst)
-!rhoAst = rhoX!(rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)		! extrapolate the density
-!ScAst = ScX!phiAst!phiTemp(ip1,jp1,kp1)
-!ScAst = max((2.0_dbl*q*phiAst + (1.0_dbl-q)*phiTemp(ip1,jp1,kp1))/(1.0_dbl+q),0.0_dbl) 
-!write(9,*) ScX-ScAst,phiAst,ScX,ScAst
 
-!phiBC = 1.0_dbl*(1.0*fbb*ScX/rhoX - wt(bb(m))*Delta*ScX) !+ wt(bb(m))*Delta*phiTemp(i,j,k)
-!phiBC = 1.0_dbl*(1.0_dbl*fbb/rhoAst - wt(bb(m))*Delta)*ScAst !+ wt(bb(m))*Delta*phiTemp(i,j,k)
-!phiBC = 1.0_dbl*(1.0_dbl*fplus(bb(m),i,j,k)/rhoAst - wt(bb(m))*Delta)*ScAst + fmoving*1.0_dbl !+ wt(bb(m))*Delta*phiTemp(i,j,k)
 phiBC = 1.0_dbl*(1.0_dbl*(fbb-fmoving)/rhoX - wt(bb(m))*Delta)*ScX+(fmoving/rhoAst)*ScAst !+ wt(bb(m))*Delta*phiTemp(i,j,k)
-!phiBC = 1.0_dbl*(1.0*fbb/rhoAst + wt(bb(m))*Delta)*ScAst - wt(bb(m))*Delta*phiTemp(i,j,k)
-!phiBC = 1.0_dbl*(fbb/rhoX - wt(bb(m))*Delta)*ScX
 phiOut = 1.0_dbl*(1.0_dbl*fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!phiOut = phiBC!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
 phiIn =  phiBC!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
 
-!phiIn = 0.0_dbl
-!phiOut = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))*(phiTemp(i,j,k)/(rho(i,j,k)+0.0e-10))
 
 
-!!!!!! First order bounceback for scalar
-!fbb = fplus(bb(m),i,j,k)+(6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-!rhoAst = rho(i,j,k)!(rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)		! extrapolate the density
-!ScAst = phiTemp(i,j,k)!phiAst!phiTemp(ip1,jp1,kp1)
-!phiBC = 1.0_dbl*(1.0_dbl*fbb/rhoAst - wt(bb(m))*Delta)*ScAst !+ wt(bb(m))*Delta*phiTemp(i,j,k)
-!phiOut = 1.0_dbl*(1.0_dbl*fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!!phiOut = 1.0_dbl*(1.0_dbl*fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*ScAst!phiTemp(i,j,k)!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!phiIn =  phiBC!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-!!phiOut = 0.0_dbl!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!!phiIn =  (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))*phiTemp(i,j,k)/rho(i,j,k)!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! Using P to bounce back
-!!rho(i,j,k) = 1.0_dbl
-!!rho(ip1,jp1,kp1) = 1.0_dbl
-!if (rho(ip2,jp2,kp2).lt.0.00001_dbl) THEN
-!	rho(ip2,jp2,kp2) = rho(ip1,jp1,kp1)!1.0_dbl
-!	phiTemp(ip2,jp2,kp2) = phiTemp(ip1,jp1,kp1)!1.0_dbl
-!	fplus(bb(m),ip2,jp2,kp2) = fplus(bb(m),ip1,jp1,kp1)
-!	fplus(m,ip2,jp2,kp2) = fplus(m,ip1,jp1,kp1)
-!ENDIF
-!!if (phiTemp(i,j,k).ne.0.0_dbl) then
-!!write(*,*) i,j,k,iter
-!!PAUSE
-!!endif
-!!ScAst = (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)		! extrapolate the scalar
-!!delta = SQRT(ex(bb(m))**2 + ex(bb(m))**2 + ex(bb(m))**2)*xcf
-!!ScAst = ((q+1.0_dbl)*(q+1.0_dbl)*phiTemp(i,j,k)-q*q*phiTemp(ip1,jp1,kp1))!-dphidk*delta*q*(q+1.0_dbl))/(2.0_dbl*q+1.0_dbl)
-!dphidn = 0.0_dbl
-!CALL GetPhiWallNew(i,j,k,m,q,dphidn,phiAst,rhoAst)
-!ScAst = phiAst
-!rhoAst = (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)		! extrapolate the density
-!
-!q = max(q,0.01_dbl)
-!IF((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN
-!
-!	! Interpolate the flux that leaves - pre streaming
-!	PAtoO = 1.0_dbl*(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta) &
-!					*phiTemp(i,j,k)
-!	PBtoA = 1.0_dbl*(fplus(bb(m),ip1,jp1,kp1)/rho(ip1,jp1,kp1) &
-!			- wt(bb(m))*Delta)*phiTemp(ip1,jp1,kp1)
-!	PCtoB = 1.0_dbl*(fplus(bb(m),ip2,jp2,kp2)/rho(ip2,jp2,kp2) - &
-!			wt(bb(m))*Delta)*phiTemp(ip2,jp2,kp2)
-!	Pmovingwall = 6.0_dbl*wt(m)*ScAst*(ub*ex(m) + vb*ey(m) + &
-!			wb*ez(m)) !-wt(m)*Delta*ScAst
-!!	Pmovingwall = 6.0_dbl*wt(bb(m))*ScAst*(ub*ex(bb(m)) + vb*ey(bb(m)) + &
-!!			wb*ez(bb(m))) !-wt(m)*Delta*ScAst
-!	POtoA = q*(1.0_dbl+2.0_dbl*q)*PAtoO + (1.0_dbl-4.0_dbl*q*q)*PBtoA -  &
-!			q*(1.0_dbl-2.0_dbl*q)*PCtoB &
-!		+ Pmovingwall
-!!write(*,*) phiBC, q, PAtoO,PBtoA,PCtoB
-!!write(*,*) phiBC,q,phiTemp(i,j,k),phiTemp(ip1,jp1,kp1),phiTemp(ip2,jp2,kp2)
-!!write(*,*) phiBC,q,fplus(bb(m),i,j,k),fplus(bb(m),ip1,jp1,kp1),fplus(bb(m),ip2,jp2,kp2)
-!!write(*,*) phiBC,q,rho(i,j,k),rho(ip1,jp1,kp1),rho(ip2,jp2,kp2),node(ip2,jp2,kp2), FLUID
-!ELSE IF((q.GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN
-!	! Interpolate the flux that arrives or received - pre streaming
-!	PAtoO = 1.0_dbl*(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta) & ! flux recd. by O or X after bounceback
-!					*phiTemp(i,j,k)
-!	PAtoB = 1.0_dbl*(fplus(m,i,j,k)/rho(i,j,k) & ! flux recd by B
-!			- wt(m)*Delta)*phiTemp(i,j,k)
-!	PBtoC = 1.0_dbl*(fplus(m,ip1,jp1,kp1)/rho(ip1,jp1,kp1) - & ! flux recd. by C
-!			wt(m)*Delta)*phiTemp(ip1,jp1,kp1)
-!	Pmovingwall = 6.0_dbl*wt(m)*ScAst*(ub*ex(m) + vb*ey(m) + & ! contribution form moving wall
-!			wb*ez(m))/(q*(1.0_dbl+2.0_dbl*q)) !-wt(m)*Delta*ScAst
-!!	Pmovingwall = 6.0_dbl*wt(bb(m))*ScAst*(ub*ex(bb(m)) + vb*ey(bb(m)) + &
-!!			wb*ez(bb(m)))/(q*(1.0_dbl+2.0_dbl*q)) !-wt(m)*Delta*ScAst
-!	POtoA = (1.0_dbl/(q*(1.0_dbl+2.0_dbl*q)))*PAtoO + (2.0_dbl*q-1.0_dbl) & ! flux recd. by A
-!		*PAtoB/q -	(2.0_dbl*q-1.0_dbl)*PBtoC/(2.0_dbl*q+1.0_dbl) &
-!		+ Pmovingwall 
-!!write(*,*) phiBC, q, PAtoO,PBtoC,PCtoD
-!ELSE
-!    OPEN(1000,FILE='error-'//sub//'.txt')
-!    WRITE(1000,*) "Error in BounceBack2() in ICBC.f90 (line 137): q is not (0<=q<=1)...? Aborting."
-!    WRITE(1000,*) "q=",q,"(i,j,k):",i,j,k
-!    CLOSE(1000)
-!    STOP
-!END IF
-!phiBC = POtoA
-!
-!!PBtoC = 1.0_dbl*(fplus(m,ip1,jp1,kp1)/rho(ip1,jp1,kp1) &
-!!		- wt(m)*Delta)*phiTemp(ip1,jp1,kp1)
-!!PAtoB = 1.0_dbl*(fplus(m,i,j,k)/rho(i,j,k) &
-!!		- wt(m)*Delta)*phiTemp(i,j,k)
-!!PBtoA = 1.0_dbl*(fplus(bb(m),ip1,jp1,kp1)/rho(ip1,jp1,kp1) &
-!!		- wt(bb(m))*Delta)*phiTemp(ip1,jp1,kp1)
-!
-!phiOut = phiBC!POtoA!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!phiIn =  phiBC!PAtoO!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-!
-!!phiOut = POtoA!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!!phiIn =  PAtoO!PAtoO!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-!!phiOut = POtoA!POtoA*(1.0+q)-PAtoB!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!!phiIn =  PAtoO - Pmovingwall!(PAtoO*q + PBtoA*(1.0_dbl-q))!PAtoO!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-!!write(9,*) Pmovingwall,ex(m),ey(m),ez(m),PAtoO,POtoA
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!phiBC = 1.0_dbl*(1.0*fplus(bb(m),i,j,k)/rho(i,j,k) - 1.0*wt(bb(m))*Delta)*phiTemp(i,j,k) &
-!	+ 6.0_dbl*wt(m)*phiTemp(i,j,k)*(ub*ex(m) + vb*ey(m) + &
-!			wb*ez(m))!- 1.0*wt(bb(m))*Delta*phiTemp(i,j,k)
-!phiOut = phiBC!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
-!phiIn =  phiBC!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
-
-!CALL Equilibrium_LOCAL(m,rhoB,ub,vb,wb,feq_m)			        ! calculate the equibrium distribution function in the mth direction
-!phiBC = 0.9999_dbl*(fplus(bb(m),i,j,k)/rho(i,j,k) - 1.0*wt(bb(m))*Delta)*phiTemp(i,j,k)
-
-!phiBC = min(phiBC,1.0_dbl*(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k))
-
-!------------------------------------------------
-END SUBROUTINE ScalarBC2
-!------------------------------------------------
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE GetPhiWallNew(ip0,jp0,kp0,m,q,dphidn,phiAst,rhoAst)	! Get phiAst for specified flux  New (Balaji, Jan 2015)
 !--------------------------------------------------------------------------------------------------
@@ -2022,7 +1579,6 @@ REAL(dbl), INTENT(IN) :: q     	! Boundary distance fraction
 REAL(dbl) :: qlocal     	! Boundary distance fraction (local variable)
 REAL(dbl), INTENT(IN) :: dphidn ! Specified boundary flux (gradient)
 REAL(dbl), INTENT(OUT) :: phiAst,rhoAst ! scalar value at the wall
-!REAL(dbl), INTENT(IN) :: phiA,phiB,phiC ! scalar values at the wall neighbours
 REAL(dbl):: phiA,phiB,phiC ! scalar values at the wall neighbours
 REAL(dbl):: rhoA,rhoB,rhoC ! scalar values at the wall neighbours
 REAL(dbl) :: delta ! lattice distance in direction m
@@ -2067,9 +1623,6 @@ epsx=0.0_dbl
 epsy=0.0_dbl
 epsz=0.0_dbl
 CALL IntersectSurface(m,ip0,jp0,kp0,im1,jm1,km1,px1,py1,pz1,qlocal,epsz,epsy,epsx)
-!write(9,*) "px1,py1,pz1",px1,py1,pz1,qlocal
-!write(9,*) q,qlocal
-!CALL FLUSH(9)
 
 nx1 = 2.0_dbl*px1
 ny1 = 2.0_dbl*py1
@@ -2092,38 +1645,21 @@ nx1 = nx1/magnvec
 ny1 = ny1/magnvec
 nz1 = nz1/magnvec
 
-!! Make sure the normal vector is an outer normal
-!IF (nx1*ex(bb(m))+ny1*ey(bb(m))+nz1*ez(bb(m)).LT.0.0_dbl) THEN
-!nx1 = -nx1
-!ny1 = -ny1
-!nz1 = -nz1
-!ENDIF
-!write(9,*) "normal vector ",nx1,ny1,nz1,ex(bb(m)),ey(bb(m)),ez(bb(m))
 
-!write(9,*) 'ip0,jp0,kp0',ip0,jp0,kp0,node(ip0,jp0,kp0)
 ! Get points along the normal vector in the fluid side of the surface. 
 veclen = 0.1_dbl
 px2 = px1 - veclen*nx1
 py2 = py1 - veclen*ny1
 pz2 = pz1 - veclen*nz1
-!write(9,*) px2-REAL(iMin-2_lng)+REAL(Ci - 1_lng),py2-REAL(jMin-2_lng)+REAL(Cj - 1_lng),pz2+ 0.5_dbl- REAL(kMin-1_lng),ip1,jp1,kp1,ip0,jp0,kp0,px1-REAL(iMin-2_lng)+REAL(Ci - 1_lng),py1-REAL(jMin-2_lng)+REAL(Cj - 1_lng),pz1+ 0.5_dbl- REAL(kMin-1_lng)
 CALL InterpolateProp(px2,py2,pz2,phiA,rhoA)
 
 px3 = px2 - veclen*nx1
 py3 = py2 - veclen*ny1
 pz3 = pz2 - veclen*nz1
-	!write(9,*) px3,py3,pz3
-!write(9,*) px3-REAL(iMin-2_lng)+REAL(Ci - 1_lng),py3-REAL(jMin-2_lng)+REAL(Cj - 1_lng),pz3+ 0.5_dbl- REAL(kMin-1_lng)
 CALL InterpolateProp(px3,py3,pz3,phiB,rhoB)
 !check if these are fluid points. 
 
-!phiAst = phiTemp(ip1,jp1,kp1)
-!delta = SQRT(ex(bb(m))**2 + ex(bb(m))**2 + ex(bb(m))**2)*xcf
-!phiAst = ((q+1.0_dbl)*(q+1.0_dbl)*phiA-(q)*(q)*phiB-dphidn*delta*q*(q+1.0_dbl))/(2.0_dbl*q+1.0_dbl)
-!rhoAst = ((q+1.0_dbl)*(q+1.0_dbl)*rhoA-q*q*rhoB-0.0_dbl*delta*q*(q+1.0_dbl))/(2.0_dbl*q+1.0_dbl)
 delta = veclen
-!phiAst = (9.0_dbl*phiA - 4.0_dbl*phiB - 6.0*delta*dphidn)/5.0_dbl
-!rhoAst = (9.0_dbl*rhoA - 4.0_dbl*rhoB - 6.0*delta*0.0_dbl)/5.0_dbl
 phiAst = (4.0_dbl*phiA - 1.0_dbl*phiB - 2.0*delta*dphidn)/3.0_dbl
 rhoAst = (4.0_dbl*rhoA - 1.0_dbl*rhoB - 2.0*delta*0.0_dbl)/3.0_dbl
 
@@ -2156,16 +1692,9 @@ REAL(dbl) :: rhoSum,phiSum
 	yd=(yps-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
 	zd=(zps-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
 
-	!write(9,*) 'ix0,iy0,iz0',ix0,iy0,iz0
-	!write(9,*) 'xd,yd,zd',xd,yd,zd
-	!write(9,*) "xps,yps,zps",xps,yps,zps
 
 	! w-interpolation
 	! Do first level linear interpolation in x-direction
-!	IF ((rho(ix0,iy0,iz0).GT.0.000001_dbl).OR.(rho(ix1,iy0,iz0).GT.0.000001_dbl) &
-!	.OR.(rho(ix0,iy0,iz1).GT.0.000001_dbl).OR.(rho(ix1,iy0,iz1).GT.0.000001_dbl) &
-!	.OR.(rho(ix0,iy1,iz0).GT.0.000001_dbl).OR.(rho(ix1,iy1,iz0).GT.0.000001_dbl) &
-!	.OR.(rho(ix0,iy1,iz1).GT.0.000001_dbl).OR.(rho(ix1,iy1,iz1).GT.0.000001_dbl)) THEN
 	IF ((node(ix0,iy0,iz0).EQ. FLUID).OR.(node(ix1,iy0,iz0).EQ. FLUID) &
 	.OR.(node(ix0,iy0,iz1).EQ. FLUID).OR.(node(ix1,iy0,iz1).EQ. FLUID) &
 	.OR.(node(ix0,iy1,iz0).EQ. FLUID).OR.(node(ix1,iy1,iz0).EQ. FLUID) &
@@ -2203,90 +1732,6 @@ REAL(dbl) :: rhoSum,phiSum
 		STOP
 	ENDIF
          
-! 	 rhoSum = 0.0_dbl
-!         phiSum = 0.0_dbl
-!         numFLUIDs = 0_lng	
-!	 !IF ((rho(ix0,iy0,iz0).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix0,iy0,iz0).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix0,iy0,iz0)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix0,iy0,iz0)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!	 !IF ((rho(ix1,iy0,iz0).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix1,iy0,iz0).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix1,iy0,iz0)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix1,iy0,iz0)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!	 !IF ((rho(ix0,iy0,iz1).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix0,iy0,iz1).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix0,iy0,iz1)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix0,iy0,iz1)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!	 !IF ((rho(ix1,iy0,iz1).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix1,iy0,iz1).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix1,iy0,iz1)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix1,iy0,iz1)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!	 !IF ((rho(ix0,iy1,iz0).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix0,iy1,iz0).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix0,iy1,iz0)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix0,iy1,iz0)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!	 !IF ((rho(ix1,iy1,iz0).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix1,iy1,iz0).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix1,iy1,iz0)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix1,iy1,iz0)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!	 !IF ((rho(ix0,iy1,iz1).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix0,iy1,iz1).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix0,iy1,iz1)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix0,iy1,iz1)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!	 !IF ((rho(ix1,iy1,iz1).GT.0.0000001_dbl)) THEN
-!	 IF ((node(ix1,iy1,iz1).EQ. FLUID)) THEN
-!	      rhoSum = rhoSum + rho(ix1,iy1,iz1)
-!	      !rhoSum = max(rhoSum,rho(ii,jj,kk))
-!	      phiSum = phiSum + phi(ix1,iy1,iz1)
-!	      !phiSum = max(phiSum,phi(ii,jj,kk))!phiSum + phi(ii,jj,kk)
-!	      numFLUIDs = numFLUIDs + 1_lng  
-!	 END IF
-!
-!	IF(numFLUIDs .NE. 0_lng) THEN
-!	 rhop = rhoSum/numFLUIDs
-!	 phip = phiSum/numFLUIDs
-!	ELSE
-!		OPEN(1000,FILE='error-'//sub//'.txt')
-!		WRITE(1000,*) "Error in InterpolateProp in ICBC.f90 (line 1736): rhos are zero"
-!		WRITE(1000,*) "rho(i,j,k) is zero",rho(ix0,iy0,iz0),rho(ix1,iy0,iz0),rho(ix0,iy0,iz1) &
-!		,rho(ix1,iy0,iz1),rho(ix0,iy1,iz0),rho(ix1,iy1,iz0),rho(ix0,iy1,iz1),rho(ix1,iy1,iz1)
-!		WRITE(1000,*) "node(i,j,k) is ",node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy0,iz1) &
-!		,node(ix1,iy0,iz1),node(ix0,iy1,iz0),node(ix1,iy1,iz0),node(ix0,iy1,iz1),node(ix1,iy1,iz1)
-!		WRITE(1000,*) "node index",ix0,iy0,iz0,ix1,iy1,iz1
-!		CLOSE(1000)
-!		STOP
-!	END IF
-
-
 
 !------------------------------------------------
 END SUBROUTINE InterpolateProp
@@ -2324,10 +1769,6 @@ REAL(dbl),DIMENSION(3,3) :: arr,arrinv
 REAL(dbl),DIMENSION(3) :: brhs
 REAL(dbl) :: temp,aa1,aa2,aa3,bb1,bb2,bb3,cc1,cc2,cc3,rb1,rb2,rb3,t1,t2,sz,sx,sy
 
-!REAL(dbl) :: term1,term2,term3  ! temp variables
-!REAL(dbl) :: randx1,randy1,randz1 ! temp variables
-!REAL(dbl) :: randx2,randy2,randz2 ! temp variables
-!REAL(dbl) :: s,r,h,theta,phiang,sinT,xc,yc,zc,newdx,newdy,newdz,randnum ! temp variables
 
 ! Solid node
 im1 = ip0 - ex(m)
@@ -2356,8 +1797,6 @@ epsx=0.0_dbl
 epsy=0.0_dbl
 epsz=0.0_dbl
 CALL IntersectSurface(m,ip0,jp0,kp0,im1,jm1,km1,px1,py1,pz1,qlocal,epsz,epsy,epsx)
-!write(9,*) "px1,py1,pz1",px1,py1,pz1,qlocal
-!CALL FLUSH(9)
 
 nx1 = 2.0_dbl*px1
 ny1 = 2.0_dbl*py1
@@ -2380,14 +1819,6 @@ nx1 = nx1/magnvec
 ny1 = ny1/magnvec
 nz1 = nz1/magnvec
 
-!! Make sure the normal vector is an outer normal
-!IF (nx1*ex(bb(m))+ny1*ey(bb(m))+nz1*ez(bb(m)).LT.0.0_dbl) THEN
-!nx1 = -nx1
-!ny1 = -ny1
-!nz1 = -nz1
-!ENDIF
-!write(9,*) "normal vector1 old",magnvec,nx1,ny1,nz1,nx1*sx1+ny1*sy1+nz1*sz1,nx1*sx2+ny1*sy2+nz1*sz2
-
 ! get 2nd point analytically
 epsx = 0.0001_dbl
 IF (abs(ny1+nz1).GT.epsmin) THEN
@@ -2399,134 +1830,16 @@ px2 = px1 + epsx
 py2 = py1 + epsy
 pz2 = pz1 + epsz
 
-!! get 3rd point analytically
-!epsx = -0.01_dbl
-!IF (abs(ny1+nz1).GT.epsmin) THEN
-!	epsy = -(nx1*epsx)/(ny1+nz1)
-!ELSE
-!	epsy = -(nx1*epsx)/sign(epsmin,ny1+nz1)
-!ENDIF
-!px3 = px1 + epsx
-!py3 = py1 + epsy
-!pz3 = pz1 + epsz
 
 ! Calculate first surface vector after obtaining the points
 sx1 = px1-px2
 sy1 = py1-py2
 sz1 = pz1-pz2
 magtvec = SQRT(sx1**2+sy1**2+sz1**2)
-!write(9,*) sx1,sy1,sz1,magtvec
-!CALL FLUSH(9)
 sx1 = sx1/magtvec
 sy1 = sy1/magtvec
 sz1 = sz1/magtvec
 
-!! Calculate second surface vector after obtaining the points
-!sx2 = px3-px2
-!sy2 = py3-py2
-!sz2 = pz3-pz2
-!magtvec = SQRT(sx2**2+sy2**2+sz2**2)
-!!write(9,*) sx2,sy2,sz2,magtvec
-!!CALL FLUSH(9)
-!sx2 = sx2/magtvec
-!sy2 = sy2/magtvec
-!sz2 = sz2/magtvec
-
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! Approach 2: We get the 3-4 surface points and normal vector from Ray Tracing Approach
-!epsmin = 1.0e-8_dbl
-!
-!dist = SQRT(ex(bb(m))**2+ey(bb(m))**2+ez(bb(m))**2)
-!dx=ex(bb(m))/dist	! i direction
-!dy=ey(bb(m))/dist	! j direction
-!dz=ez(bb(m))/dist	! k direction
-!
-!epsx=0.0_dbl
-!epsy=0.0_dbl
-!epsz=0.0_dbl
-!CALL IntersectSurface(m,ip0,jp0,kp0,im1,jm1,km1,px1,py1,pz1,qlocal,epsz,epsy,epsx)
-!!write(9,*) "px1,py1,pz1",px1,py1,pz1,qlocal
-!!CALL FLUSH(9)
-!
-!CALL GetPerturbedVector(dx,dy,dz,epsx,epsy,epsz)
-!CALL IntersectSurface(m,ip0,jp0,kp0,im1,jm1,km1,px2,py2,pz2,qlocal,epsz,epsy,epsx)
-!!write(9,*) "px2,py2,pz2",px2,py2,pz2,qlocal
-!!CALL FLUSH(9)
-!
-!
-!CALL GetPerturbedVector(dx,dy,dz,epsx,epsy,epsz)
-!CALL IntersectSurface(m,ip0,jp0,kp0,im1,jm1,km1,px3,py3,pz3,qlocal,epsz,epsy,epsx)
-!!write(9,*) "px3,py3,pz3",px3,py3,pz3,qlocal
-!!CALL FLUSH(9)
-!
-!!CALL GetPerturbedVector(dx,dy,dz,epsx,epsy,epsz)
-!!CALL IntersectSurface(m,ip0,jp0,kp0,im1,jm1,km1,px4,py4,pz4,qlocal,epsz,epsy,epsx)
-!!!!write(9,*) "px4,py4,pz4",px4,py4,pz4,qlocal
-!!!!CALL FLUSH(9)
-!
-!! Calculate first surface vector after obtaining the points
-!sx1 = px3-px1
-!sy1 = py3-py1
-!sz1 = pz3-pz1
-!magtvec = SQRT(sx1**2+sy1**2+sz1**2)
-!!write(9,*) sx1,sy1,sz1,magtvec
-!!CALL FLUSH(9)
-!sx1 = sx1/magtvec
-!sy1 = sy1/magtvec
-!sz1 = sz1/magtvec
-!
-!! Calculate second surface vector after obtaining the points
-!sx2 = px3-px2
-!sy2 = py3-py2
-!sz2 = pz3-pz2
-!magtvec = SQRT(sx2**2+sy2**2+sz2**2)
-!!write(9,*) sx2,sy2,sz2,magtvec
-!!CALL FLUSH(9)
-!sx2 = sx2/magtvec
-!sy2 = sy2/magtvec
-!sz2 = sz2/magtvec
-!
-!!write(9,*) "tangent plane vectors", sx1,sy1,sz1,sx2,sy2,sz2
-!
-!!! Calculate surface normal direction
-!! Approach 1: from cross product of surface vectors 
-!!nx1 = (sy1*sz2-sz1*sy2)
-!!ny1 = -(sx1*sz2-sz1*sx2)
-!!nz1 = (sx1*sy2-sy1*sx2)
-!!magnvec = SQRT(nx1**2+ny1**2+nz1**2)
-!!!write(9,*) nx1,ny1,nz1,magnvec
-!!!CALL FLUSH(9)
-!!nx1 = nx1/magnvec
-!!ny1 = ny1/magnvec
-!!nz1 = nz1/magnvec
-!!
-!!! Make sure the normal vector is an outer normal
-!!IF (nx1*ex(bb(m))+ny1*ey(bb(m))+nz1*ez(bb(m)).LT.0.0_dbl) THEN
-!!nx1 = -nx1
-!!ny1 = -ny1
-!!nz1 = -nz1
-!!ENDIF
-!!!write(9,*) "normal vector1 old",magnvec,nx1,ny1,nz1,nx1*sx1+ny1*sy1+nz1*sz1,nx1*sx2+ny1*sy2+nz1*sz2
-!
-!
-!!!!! Compute normal from analytical surface
-!! 
-!nx1 = 2.0_dbl*px1
-!ny1 = 2.0_dbl*py1
-!IF (k.GT.1) THEN
-!	nz1 = (2.0_dbl*((r(k)-r(k-1))/(z(k)-z(k-1)))*(((z(k)/zcf)-pz1)*r(k-1)+(pz1-(z(k-1)/zcf))*r(k))/((z(k)-z(k-1))/zcf))/zcf
-!ELSE 
-!	nz1 = -(2.0_dbl*((r(k+1)-r(k))/(z(k+1)-z(k)))*(((z(k+1)/zcf)-pz1)*r(k)+(pz1-(z(k)/zcf))*r(k+1))/((z(k+1)-z(k))/zcf))/zcf
-!ENDIF
-!magnvec = SQRT(nx1**2+ny1**2+nz1**2)
-!nx1 = nx1/magnvec
-!ny1 = ny1/magnvec
-!nz1 = nz1/magnvec
-!!write(9,*) "normal vector1 analytical",magnvec,nx1,ny1,nz1,nx1*sx1+ny1*sy1+nz1*sz1,nx1*sx2+ny1*sy2+nz1*sz2
-!!CALL FLUSH(9)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -2553,21 +1866,8 @@ tx1 = tx1/magtvec
 ty1 = ty1/magtvec
 tz1 = tz1/magtvec
 
-!write(9,*) "tangent plane vectors", SQRT(tx1**2+ty1**2+tz1**2),sx1,sy1,sz1,tx1,ty1,tz1,sx2,sy2,sz2,tx2,ty2,tz2,SQRT(tx2**2+ty2**2+tz2**2)
-!CALL FLUSH(9)
-!write(9,*) "normal vector2",magnvec,nx1,ny1,nz1,nx1*tx1+ny1*ty1+nz1*tz1,nx1*tx2+ny1*ty2+nz1*tz2
-!CALL FLUSH(9)
 
-!write(*,*) "normal vector2",magnvec,nx1,ny1,nz1,nx1*tx1+ny1*ty1+nz1*tz1,nx1*tx2+ny1*ty2+nz1*tz2
-
-!write(9,*) "normal vector error",nx1*tx1+ny1*ty1+nz1*tz1,nx1*tx2+ny1*ty2+nz1*tz2
-
-!PAUSE
-
-!
 !! We have dphi/dn. Need to get dphi/dt from the fluid
-!
-!! get dphidtA
 i = ip0
 j = jp0
 k = kp0
@@ -2662,23 +1962,6 @@ dphidtAst2 = 0.5_dbl*(q+1.0_dbl)*(q+2.0_dbl)*dphidtA2+0.5_dbl*(q+1.0_dbl)*(q)*dp
 ! get grad(phi) vector
 ! Set up linear systems to get components of grad(phi) at Astar
 
-!!write(*,*) nx1,ny1,nz1,tx1,ty1,tz1,tx2,ty2,tz2 
-!arr(1,1) = nx1; 
-!arr(1,2) = ny1; 
-!arr(1,3) = nz1;
-!arr(2,1) = tx1; 
-!arr(2,2) = ty1; 
-!arr(2,3) = tz1;
-!arr(3,1) = tx2; 
-!arr(3,2) = ty2;
-!arr(3,3) = tz2;
-!brhs(1) = dphidn;
-!brhs(2) = dphidtAst1;
-!brhs(3) = dphidtAst2;
-!CALL Gauss(arr,arrinv,3)
-!dphidx = arrinv(1,1)*brhs(1)+ arrinv(1,2)*brhs(2)+ arrinv(1,3)*brhs(3)
-!dphidy = arrinv(2,1)*brhs(1)+ arrinv(2,2)*brhs(2)+ arrinv(2,3)*brhs(3)
-!dphidz = arrinv(3,1)*brhs(1)+ arrinv(3,2)*brhs(2)+ arrinv(2,3)*brhs(3)
 
 !write(*,*) nx1,ny1,nz1,tx1,ty1,tz1,tx2,ty2,tz2 
 aa1 = nx1; 
@@ -2707,29 +1990,6 @@ dphidy = sy
 dphidz = sz
 
 
-
-
-
-
-! test - at the wall grad(phi).normalvec = dphidn
-!write(*,*) dphidtA1,dphidtB1,dphidtC1,dphidtA2,dphidtB2,dphidtC2 
-!write(*,*) dphidx,dphidy,dphidz,dphidn,dphidtAst1,dphidtAst2 
-
-!temp = aa1*sx+aa2*sy+aa3*sz
-!if (temp.gt.0.001) then
-!write (9,*) temp,aa1,aa2,aa3,sx,sy,sz
-!endif
-
-!temp = dphidx*nx1+dphidy*ny1+dphidz*nz1
-!If (abs(temp-dphidn).gt.0.001) then
-!write(9,*) "Error in dphidn",temp,sx*nx1+sy*ny1+sz*nz1,ip0,jp0,kp0,m,nx1,ny1,nz1 
-!write(9,*) "dphidx and sx",dphidx,dphidy,dphidz,sx,sy,sz
-!endif
-
-
-!PAUSE
-
-
 !! get dphidk = gradphi.dot.k_vec
 dist = SQRT(ex(bb(m))**2+ey(bb(m))**2+ez(bb(m))**2)
 dx=ex(bb(m))/dist	! i direction
@@ -2742,16 +2002,15 @@ phiB = phiTemp(ip1,jp1,kp1)
 phiC = phiTemp(ip2,jp2,kp2)
 delta = SQRT(ex(bb(m))**2 + ex(bb(m))**2 + ex(bb(m))**2)*xcf
 phiAst = ((q+1.0_dbl)*(q+1.0_dbl)*phiA-q*q*phiB-dphidk*delta*q*(q+1.0_dbl))/(2.0_dbl*q+1.0_dbl)
-!
-!! return phiWall
-!return phiAst
-
-!CLOSE(9)
-!phiAst = phiWall
-
 !------------------------------------------------
 END SUBROUTINE GetPhiWall
 !------------------------------------------------
+
+
+
+
+
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE GetPerturbedVector(dx,dy,dz,epsx,epsy,epsz)	! Perturb a vector with components dx,dy and dz within a cone (using method from stackoverflow, Ray Tracing News)
@@ -2790,9 +2049,6 @@ randy1 = -(dz*randz1+dx*randx1)/(dy+epsmin)
 else
 randz1 = -(dx*randx1+dy*randy1)/(dz+epsmin)
 endif
-!randx1 = -(dz*randz1+dy*randy1)/(dx+epsmin)
-!randy1 = -(dz*randz1+dx*randx1)/(dy+epsmin)
-!randz1 = -(dx*randx1+dy*randy1)/(dz+epsmin)
 dist = SQRT(randx1**2+randy1**2+randz1**2)
 randx1=randx1/dist	! i direction
 randy1=randy1/dist	! j direction
@@ -2806,12 +2062,7 @@ dist = SQRT(randx2**2+randy2**2+randz2**2)
 randx2=randx2/dist	! i direction
 randy2=randy2/dist	! j direction
 randz2=randz2/dist	! k direction
-!write(9,*) "testting",dx*randx1+dy*randy1+dz*randz1,dx*randx2+dy*randy2+dz*randz2 &
-!		,randz1,dz,randx1,dx,randy1,dy
-!CALL FLUSH(9)
 
-!s = rand(0)
-!r = rand(0)
 CALL RANDOM_NUMBER(s)
 CALL RANDOM_NUMBER(rv)
 s = s*1.0_dbl + 0.0_dbl
@@ -2839,25 +2090,16 @@ newdz = newdz/dist	! k direction
 epsx = newdx - dx
 epsy = newdy - dy
 epsz = newdz - dz
-!write(9,*) "original vector",dx,dy,dz,dist
-!write(9,*) "perturbed vector",newdx,newdy,newdz,acos(newdx*dx+newdy*dy+newdz*dz)*180.0/PI
-
-
-!eps = 0.1_dbl
-!epsx = 0.1_dbl
-!term1 = 1.0_dbl + ((dy**2)/(dz**2+epsmin))
-!term2 = 2.0_dbl*(dx*dy)/(dz**2+epsmin)
-!term3 = (epsx**2)*(1.0_dbl + ((dx**2)/(dz**2+epsmin)))-(eps**2) 
-!epsy = (-term2 + SQRT(term2**2 - 4.0_dbl*term1*term3))/(2.0_dbl*term1)
-!epsz = -(dx*epsx+dy*epsy)/(dz*(1.0_dbl+epsmin))
-!epsx=0.01_dbl
-!epsy=0.01_dbl
-!epsz=0.01_dbl
-
 
 !------------------------------------------------
 END SUBROUTINE GetPerturbedVector
 !------------------------------------------------
+
+
+
+
+
+
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE RotateVector(dx,dy,dz,ang1,ang2,ang3)	! Rotate a vector with components dx,dy and dz by angles ang1,ang2,ang3 (in radians)
@@ -2883,6 +2125,12 @@ dz=tempdz
 !------------------------------------------------
 END SUBROUTINE RotateVector
 !------------------------------------------------
+
+
+
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE RotateVectorAboutAxis(dx,dy,dz,ang1,ang2,ang3)	! Rotate a vector with components dx,dy and dz by angles ang1,ang2,ang3 (in radians)
 !--------------------------------------------------------------------------------------------------
@@ -2941,30 +2189,6 @@ Bx = x(im1)/xcf
 By = y(jm1)/ycf
 Bz = z(km1)/zcf
 
-!! point A (current node)
-!Ax = x(i)
-!Ay = y(j)
-!Az = z(k)
-!
-!! point B (solid node)
-!Bx = x(im1)
-!By = y(jm1)
-!Bz = z(km1)
-
-!! distance from A to B
-!AB = SQRT((Bx - Ax)*(Bx - Ax) + (By - Ay)*(By - Ay) + (Bz - Az)*(Bz - Az))
-!
-!! unit vector (d) from point A to point B
-!dx = (x(im1)-x(i))/AB									! i direction
-!dy = (y(jm1)-y(j))/AB									! j direction
-!dz = (z(km1)-z(k))/AB									! k direction
-
-!!! unit vector (d) from point A to point B
-!AB = SQRT(ex(m)**2+ey(m)**2+ez(m)**2)
-!dxorig=ex(bb(m))/AB	! i direction
-!dyorig=ey(bb(m))/AB	! j direction
-!dzorig=ez(bb(m))/AB	! k direction
-
 ! distance from A to B
 AB = SQRT((Bx - Ax)*(Bx - Ax) + (By - Ay)*(By - Ay) + (Bz - Az)*(Bz - Az))
 
@@ -2972,13 +2196,6 @@ AB = SQRT((Bx - Ax)*(Bx - Ax) + (By - Ay)*(By - Ay) + (Bz - Az)*(Bz - Az))
 dxorig = (x(im1)-x(i))/AB									! i direction
 dyorig = (y(jm1)-y(j))/AB									! j direction
 dzorig = (z(km1)-z(k))/AB									! k direction
-
-!Write(9,*) "test1",dx,dy,dz
-!CALL FLUSH(9)
-! Rotate vector (d) by (ang1,ang2,ang3) using a transformation matrix
-!CALL RotateVector(dx,dy,dz,ang1,ang2,ang3)
-!CALL RotateVectorAboutAxis(dx,dy,dz,ang1,ang2,ang3)
-!Write(9,*) "test2",dx,dy,dz
 
 10 dx=dxorig+ang3
 dy=dyorig+ang2
@@ -2989,9 +2206,6 @@ dx=dx/AB	! i direction
 dy=dy/AB	! j direction
 dz=dz/AB	! k direction
 
-!Write(9,*) "test2",dx,dy,dz
-!CALL FLUSH(9)
-! distance from A to B
 AB = SQRT((Bx - Ax)*(Bx - Ax) + (By - Ay)*(By - Ay) + (Bz - Az)*(Bz - Az))
 
 ! SURFACE
@@ -3032,17 +2246,6 @@ ELSE
 ENDIF
 q = AP/AB	! distance ratio
 
-!IF ((q.GT.2.0_dbl).AND.(abs(dxorig).LE.0.0000001_dbl).AND.(abs(dyorig).LE.0.0000001_dbl)) THEN
-!	ang3 = -ang3
-!	ang2 = -ang2
-!	GOTO 10
-!ENDIF
-
-!AP = (1.0_dbl/(2.0_dbl*term2)) * &
-!     (-2.0_dbl*term1					&
-!   + SQRT(4.0_dbl*(term1*term1 - (Ax*Ax + Ay*Ay - intercept*intercept - 2.0_dbl*Az*intercept*slope - Az*Az*slope2)*term2)))
-!q = AP/AB	! distance ratio
-
 ! calculate coordinates of the boudnayr interseciton point
 px = Ax + AP*dx
 py = Ay + AP*dy
@@ -3081,6 +2284,13 @@ END IF
 END SUBROUTINE IntersectSurface
 !------------------------------------------------
 
+
+
+
+
+
+
+
 ! -------------------------------------------------------------------- 
 SUBROUTINE Gauss (a,ainv,n)       ! Invert matrix by Gauss method 
 ! -------------------------------------------------------------------- 
@@ -3115,6 +2325,10 @@ ainv(:,ipvt) = b
 !--------------------------------------------------------------------------------------------------
 END SUBROUTINE Gauss
 !--------------------------------------------------------------------------------------------------
+
+
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE ScalarBCV(m,i,j,k,im1,jm1,km1,vNum,phiBC)						! implements the scalar BCs for the villi
 !--------------------------------------------------------------------------------------------------
