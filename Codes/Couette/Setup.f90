@@ -149,10 +149,8 @@ REAL(dbl), ALLOCATABLE		:: villiLoc(:,:)				! location of each villous
 REAL(dbl), ALLOCATABLE 		:: x(:),y(:),z(:)				! physical coordinate arrays
 REAL(dbl), ALLOCATABLE		:: xx(:),yy(:),zz(:)				! x,y,z arrays (global)
 REAL(dbl), ALLOCATABLE 		:: ub(:),vb(:),wb(:)				! x,y, and z components of the solid boundary velocity vector
-!REAL(dbl), ALLOCATABLE 		:: rDom0(:),rDom(:),r(:)		! initial, and current radius at each z-location (global), radius at each location (local)
 REAL(dbl), ALLOCATABLE 		:: rDom0In(:),rDomIn(:),rIn(:)			! initial, and current radius at each z-location (global), radius at each location (local)
 REAL(dbl), ALLOCATABLE 		:: rDom0Out(:),rDomOut(:),rOut(:)		! initial, and current radius at each z-location (global), radius at each location (local)
-!REAL(dbl), ALLOCATABLE		:: velDom(:),vel(:)				! global and local wall velocities 
 REAL(dbl), ALLOCATABLE		:: velDomIn(:),velIn(:)				! global and local wall velocities 
 REAL(dbl), ALLOCATABLE		:: velDomOut(:),velOut(:)			! global and local wall velocities 
 REAL(dbl), ALLOCATABLE		:: rnd(:)					! array of random numbers for random villi phase angles
