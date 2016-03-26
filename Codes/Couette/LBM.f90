@@ -271,7 +271,7 @@ DO k=2,nzSub-1
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
-            WRITE(1000,'(A75)') "error in LBM.f90 at Line 1570: node(im1,jm1,km1) is out of range"
+            WRITE(1000,'(A75)') "error in LBM.f90 at Line 274: node(im1,jm1,km1) is out of range"
             WRITE(1000,*) "iter", iter,'mySub',mySub
             WRITE(1000,*) "m=",m
             WRITE(1000,*) "i=",i,"j=",j,"k=",k
@@ -309,7 +309,7 @@ DO k=1,nzSub,(nzSub-1)
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
-            WRITE(1000,'(A75)') "error in LBM.f90 at Line 1618: node(im1,jm1,km1) is out of range"
+            WRITE(1000,'(A75)') "error in LBM.f90 at Line 312: node(im1,jm1,km1) is out of range"
             WRITE(1000,*) "iter", iter
             WRITE(1000,*) "m=",m
             WRITE(1000,*) "i=",i,"j=",j,"k=",k
@@ -347,7 +347,7 @@ DO j=1,nySub,(nySub-1)
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
-            WRITE(1000,'(A75)') "error in LBM.f90 at Line :1664 node(im1,jm1,km1) is out of range"
+            WRITE(1000,'(A75)') "error in LBM.f90 at Line :350 node(im1,jm1,km1) is out of range"
             WRITE(1000,*) "iter", iter
             WRITE(1000,*) "m=",m
             WRITE(1000,*) "i=",i,"j=",j,"k=",k
@@ -385,7 +385,7 @@ DO i=1,nxSub,(nxSub-1)
             f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
-	    WRITE(1000,'(A75)') "error in LBM.f90 at Line 1709: node(im1,jm1,km1) is out of range"
+	    WRITE(1000,'(A75)') "error in LBM.f90 at Line 388: node(im1,jm1,km1) is out of range"
             WRITE(1000,*) "iter", iter
             WRITE(1000,*) "m=",m
             WRITE(1000,*) "i=",i,"j=",j,"k=",k
