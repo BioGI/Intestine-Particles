@@ -15,8 +15,6 @@ IMPLICIT NONE
 CONTAINS
 
 
-
-
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE Geometry_Setup				! sets up the geometry
 !--------------------------------------------------------------------------------------------------
@@ -32,13 +30,11 @@ INTEGER(lng) :: xaxis,yaxis				! axes index variables
 
 ! Define the lattice <=> physical conversion factors
 IF(domaintype .EQ. 0) THEN
-        xcf 		= (0.5_lng*D)/(nx-1_lng)	! length conversion factor: x-direction
-        ycf 		= (0.5_lng*D)/(ny-1_lng)	! length conversion factor: y-direction
+        xcf 	= (0.5_lng*D)/(nx-1_lng)		! length conversion factor: x-direction
+        ycf 	= (0.5_lng*D)/(ny-1_lng)		! length conversion factor: y-direction
 ELSE
-        ! begin Balaji added
-        xcf 		= (1.0_lng*D)/(nx-1_lng)	! length conversion factor: x-direction
-        ycf 		= (1.0_lng*D)/(ny-1_lng)	! length conversion factor: y-direction
-        ! end Balaji added
+        xcf 	= (1.0_lng*D)/(nx-1_lng)		! length conversion factor: x-direction
+        ycf 	= (1.0_lng*D)/(ny-1_lng)		! length conversion factor: y-direction
 ENDIF
 
 zcf 		= L/nz					! length conversion factor: z-direction
@@ -46,25 +42,20 @@ tcf 		= nuL*((xcf*xcf)/nu)			! time conversion factor
 dcf 		= den/denL				! density conversion factor
 vcf 		= xcf/tcf				! velocity conversion factor
 pcf 		= cs*cs*vcf*vcf				! pressure conversion factor
-!write(*,*) vcf
 
 ! Determine the number of time steps to run
 nt = ANINT((nPers*Tmix)/tcf)
 
 ! Initialize arrays
 node		= -99_lng				! node flag array
-!rDom		= 0.0_dbl				! radius at each z-location
-!r		= 0.0_dbl				! temporary radius array for entire computational domain
 rDomIn		= 0.0_dbl				! radius at each z-location
 rIn		= 0.0_dbl				! temporary radius array for entire computational domain
 rDomOut		= 0.0_dbl				! radius at each z-location
 rOut		= 0.0_dbl				! temporary radius array for entire computational domain
-!velDom	= 0.0_dbl					! wall velocity at each z-location (global)
-!vel	= 0.0_dbl					! wall velocity at each z-location (local)
 velDomIn	= 0.0_dbl				! wall velocity at each z-location (global)
-velIn	= 0.0_dbl					! wall velocity at each z-location (local)
+velIn		= 0.0_dbl				! wall velocity at each z-location (local)
 velDomOut	= 0.0_dbl				! wall velocity at each z-location (global)
-velOut	= 0.0_dbl					! wall velocity at each z-location (local)
+velOut		= 0.0_dbl				! wall velocity at each z-location (local)
 
 ! Check to ensure xcf=ycf=zcf (LBM grid must be cubic)
 IF((ABS(xcf-ycf) .GE. 1E-8) .OR. (ABS(xcf-zcf) .GE. 1E-8) .OR. (ABS(ycf-zcf) .GE. 1E-8)) THEN
@@ -204,14 +195,6 @@ DO nvz=1,numVilliZ
   END DO
 END DO
 
-! Write villiGroup to a test file
-!OPEN(173,FILE='villiGroup-'//sub//'.dat')
-!  DO n=1,numVilli
-!    WRITE(173,*) 'n =', n, 'villiGroup(n)=', villiGroup(n)
-!  END DO
-!CLOSE(173)
-!STOP
-
 ! Convert villous length and radius of the villi to meters
 Lv = Lv*(0.000001_dbl)
 Rv = Rv*(0.000001_dbl)	
@@ -221,13 +204,13 @@ macroFreq = 1.0_dbl/Tmix
 vFreqT = freqRatioT*macroFreq
 vFreqZ = freqRatioZ*macroFreq
 
-IF(freqRatioT .LT. 0.00000001_dbl) THEN		! if the frequency ratio = 0 (no active villous motion) then zero out the contribution
+IF(freqRatioT .LT. 0.00000001_dbl) THEN						! if the frequency ratio = 0 (no active villous motion) then zero out the contribution
   activeVflagT = 0.0_dbl
 ELSE
   activeVflagT = 1.0_dbl
 END IF
 
-IF(freqRatioZ .LT. 0.00000001_dbl) THEN		! if the frequency ratio = 0 (no active villous motion) then zero out the contribution
+IF(freqRatioZ .LT. 0.00000001_dbl) THEN						! if the frequency ratio = 0 (no active villous motion) then zero out the contribution
   activeVflagZ = 0.0_dbl
 ELSE
   activeVflagZ = 1.0_dbl
@@ -235,11 +218,7 @@ END IF
 
 ! Convert villiAngle from degrees to radians
 villiAngle = (villiAngle/180.0_dbl)*PI
-
-!IF(restart .EQ. .FALSE.) THEN
 IF(restart .EQV. .FALSE.) THEN
-!IF(restart .eq. FALSE) THEN
-
   IF(randORord .EQ. RANDOM) THEN
     ALLOCATE(rnd(2_lng*numVilli))						! allocate the array of random numbers for random villi phase angles
     IF(myid .EQ. master) THEN
@@ -251,18 +230,14 @@ IF(restart .EQV. .FALSE.) THEN
       CALL RANDOM_SEED(PUT=iseed)						! use the seed array
       CALL RANDOM_NUMBER(rnd)							! get the actual random numbers
       DEALLOCATE(iseed)
-
       ! print the rnd array for restarting
       OPEN(1777,FILE='rnd.dat')
       DO i=1,2_lng*numVilli
         WRITE(1777,*) rnd(i)
       END DO
       CLOSE(1777)
-
     END IF
-
-    CALL MPI_BCAST(rnd,2_lng*numVilli,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,mpierr)		! send/recv rnd on all processing units
-
+    CALL MPI_BCAST(rnd,2_lng*numVilli,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,mpierr)! send/recv rnd on all processing units
   END IF
 
   CALL AdvanceGeometry
@@ -366,23 +341,22 @@ SUBROUTINE BoundaryVelocity			! defines the velocity of the solid boundaries (fi
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE 
 
-REAL(dbl) :: v1(0:nz+1), v2(0:nz+1)	! velocity arrays for each mode
+REAL(dbl) :: v1(0:nz+1), v2(0:nz+1)		! velocity arrays for each mode
 REAL(dbl) :: v1In(0:nz+1), v1Out(0:nz+1)	! velocity arrays for each mode
-REAL(dbl) :: lambdaC						! wavelength of the cos segments (mode 2)
-REAL(dbl) :: time							! time
-INTEGER(lng) :: i,j,ii					! indices
+REAL(dbl) :: lambdaC				! wavelength of the cos segments (mode 2)
+REAL(dbl) :: time				! time
+INTEGER(lng) :: i,j,ii				! indices
 
 !----- Initialize Variables
-time		= 0.0_dbl						! time
-velDomIn	= 0.0_dbl						! summed velocity
-velDomOut	= 0.0_dbl						! summed velocity
-v1In		= 0.0_dbl						! mode 1 velocity
-v1Out		= 0.0_dbl						! mode 1 velocity
+time	  = 0.0_dbl				! time
+velDomIn  = 0.0_dbl				! summed velocity
+velDomOut = 0.0_dbl				! summed velocity
+v1In	  = 0.0_dbl				! mode 1 velocity
+v1Out	  = 0.0_dbl				! mode 1 velocity
 
-! Current Physical Time
 time = iter*tcf
 
-DO i=0,nz-1  								! Balaji added to ensure periodicity just like in h1. 
+DO i=0,nz-1  					! Balaji added to ensure periodicity just like in h1. 
    v1In(i) =  s1* 0.5_dbl   
    v1Out(i)= -s1* 0.5_dbl
 END DO
@@ -424,26 +398,27 @@ REAL(dbl)      :: ubx,uby,ubz		! boundary velocity
 INTEGER(lng) :: mpierr										! MPI standard error variable 
 INTEGER(lng) :: numFluid
 REAL(dbl) :: phiInTemp,phiOutTemp,phiTotalOld,phiTotalNew,rhoInTemp,rhoOutTemp,zcf3
+
 zcf3 = zcf*zcf*zcf 
-!phiInNodes = 0.0_dbl
-!phiOutNodes = 0.0_dbl
-phiInTemp = 0.0_dbl
-phiOutTemp = 0.0_dbl
+
+phiInTemp   = 0.0_dbl
+phiOutTemp  = 0.0_dbl
 phiTotalOld = 0.0_dbl
 phiTotalNew = 0.0_dbl
-rhoInTemp = 0.0_dbl
-rhoOutTemp = 0.0_dbl
+rhoInTemp   = 0.0_dbl
+rhoOutTemp  = 0.0_dbl
+
 DO k=1,nzSub
   DO j=1,nySub
     DO i=1,nxSub
-	 IF(node(i,j,k) .EQ. FLUID) THEN
-		phiTotalOld =phiTotalOld + phi(i,j,k)*zcf3
-	 END IF
+       IF (node(i,j,k) .EQ. FLUID) THEN
+          phiTotalOld = phiTotalOld + phi(i,j,k)*zcf3
+       END IF
     END DO
   END DO
 END DO
 
-! Flag the interior nodes and give values to nodes that just came in
+!----- Flag the interior nodes and give values to nodes that just came in
 DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
@@ -468,8 +443,8 @@ DO k=1,nzSub
             node(i,j,k)	= FLUID						! reset the SOLID node that just came in to FLUID
          ELSE
 	    IF (node(i,j,k) .EQ. FLUID) THEN
-		phiOutTemp = phiOutTemp + phi(i,j,k)*zcf3
-		rhoOutTemp = rhoOutTemp + rho(i,j,k)*zcf3
+	       phiOutTemp = phiOutTemp + phi(i,j,k)*zcf3
+               rhoOutTemp = rhoOutTemp + rho(i,j,k)*zcf3
 	    END IF
 
             IF (rijk .GE. rOut(k)) THEN
@@ -477,7 +452,7 @@ DO k=1,nzSub
 	    ELSE IF (rijk .LE. rIn(k)) THEN		
         	node(i,j,k) = SOLID					! if rijk is LE rIn(k) then it's a SOLID node (Interior)
 	    ENDIF
-
+		
          END IF
        END DO
    END DO
@@ -499,17 +474,17 @@ phiInNodes = phiInNodes + phiInTemp
 phiOutNodes = phiOutNodes + phiOutTemp
 
 DO iComm=1,2
-   i = YZ_RecvIndex(OppCommDir(iComm))															! i index of the phantom nodes
+   i = YZ_RecvIndex(OppCommDir(iComm))					! i index of the phantom nodes
    DO j=0,nySub+1_lng
       rijk = x(i)							! height at current location
       DO k=0,nzSub+1_lng
          IF ((rijk .LT. rOut(k)).AND.(rijk .GT. rIn(k))) THEN
-            node(i,j,k) = FLUID																		! set the SOLID node that just came in to FLUID
+            node(i,j,k) = FLUID						! set the SOLID node that just came in to FLUID
          ELSE
 	    IF (rijk .GE. rOut(k)) THEN
-	       node(i,j,k) = SOLID2	! if rijk is GE rOut(k) then it's a SOLID2 node (Exterior)
+	       node(i,j,k) = SOLID2					! if rijk is GE rOut(k) then it's a SOLID2 node (Exterior)
 	    ELSE IF (rijk .LE. rIn(k)) THEN
-               node(i,j,k) = SOLID	! if rijk is LE rIn(k) then it's a SOLID node (Interior)
+               node(i,j,k) = SOLID					! if rijk is LE rIn(k) then it's a SOLID node (Interior)
 	    ENDIF
          END IF
      END DO
@@ -519,17 +494,17 @@ END DO
 
 !----- ZX Faces
 DO iComm=3,4
-   j = ZX_RecvIndex(OppCommDir(iComm))															! j index of the phantom nodes
+   j = ZX_RecvIndex(OppCommDir(iComm))					! j index of the phantom nodes
    DO i=0,nxSub+1_lng
       rijk = x(i)							! height at current location
       DO k=0,nzSub+1_lng
          IF ((rijk .LT. rOut(k)).AND.(rijk .GT. rIn(k))) THEN
-            node(i,j,k) = FLUID																		! set the SOLID node that just came in to FLUID
+            node(i,j,k) = FLUID						! set the SOLID node that just came in to FLUID
          ELSE
 	    IF (rijk .GE. rOut(k)) THEN
-	       node(i,j,k) = SOLID2	! if rijk is GE rOut(k) then it's a SOLID2 node (Exterior)
+	       node(i,j,k) = SOLID2					! if rijk is GE rOut(k) then it's a SOLID2 node (Exterior)
 	    ELSE IF (rijk .LE. rIn(k)) THEN
-               node(i,j,k) = SOLID	! if rijk is LE rIn(k) then it's a SOLID node (Interior)
+               node(i,j,k) = SOLID					! if rijk is LE rIn(k) then it's a SOLID node (Interior)
 	    ENDIF
          END IF
       END DO
@@ -539,27 +514,28 @@ END DO
 
 !----- XY Faces
 DO iComm=5,6
-   k = XY_RecvIndex(OppCommDir(iComm))															! k index of the phantom nodes
+   k = XY_RecvIndex(OppCommDir(iComm))					! k index of the phantom nodes
    DO j=0,nySub+1_lng
       DO i=0,nxSub+1_lng
          rijk = x(i)							! height at current location
          IF ((rijk .LT. rOut(k)).AND.(rijk .GT. rIn(k))) THEN
-            node(i,j,k) = FLUID																		! set the SOLID node that just came in to FLUID
+            node(i,j,k) = FLUID						! set the SOLID node that just came in to FLUID
          ELSE
 	    IF (rijk .GE. rOut(k)) THEN
-	       node(i,j,k) = SOLID2	! if rijk is GE rOut(k) then it's a SOLID2 node (Exterior)
+	       node(i,j,k) = SOLID2					! if rijk is GE rOut(k) then it's a SOLID2 node (Exterior)
 	    ELSE IF (rijk .LE. rIn(k)) THEN
-               node(i,j,k) = SOLID	! if rijk is LE rIn(k) then it's a SOLID node (Interior)
+               node(i,j,k) = SOLID					! if rijk is LE rIn(k) then it's a SOLID node (Interior)
 	    ENDIF
           END IF
     END DO
   END DO
 END DO
 
-CALL SetNodesVilli																					!  set the villi node flags
 
-IF (domaintype .EQ. 0) THEN  ! only needed when planes of symmetry exist
-   CALL SymmetryBC																						!	ensure symmetric node placement
+CALL SetNodesVilli							! set the villi node flags
+
+IF (domaintype .EQ. 0) THEN  						! only needed when planes of symmetry exist
+   CALL SymmetryBC							! ensure symmetric node placement
 ENDIF
 
 !------------------------------------------------
