@@ -43,9 +43,9 @@ ELSE IF (rijk .LE. rIn(k)) THEN
 END IF		
 
 ! neighboring node (fluid side)	
-ip1 = i + ex(m) 																		! i + 1
-jp1 = j + ey(m)																		! j + 1
-kp1 = k + ez(m)																		! k + 1
+ip1 = i + ex(m) 									! i + 1
+jp1 = j + ey(m)										! j + 1
+kp1 = k + ez(m)										! k + 1
 
 ! if (ip1,jp1,kp1) is not in the fluid domain, use values from the current node as an approximation
 IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
@@ -360,6 +360,42 @@ phiIn =  phiBC!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
 !------------------------------------------------
 END SUBROUTINE ScalarBC2
 !------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
