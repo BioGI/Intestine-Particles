@@ -5,7 +5,9 @@ MODULE Geometry	! Defines the geometry for the simulation
 USE SetPrecision      
 USE Setup
 USE LBM
-USE ICBC
+USE IC
+USE BClbm
+USE BCscalar
 USE MPI
 
 IMPLICIT NONE 

@@ -3,7 +3,9 @@ MODULE ParticleDrug				! LBM Subroutines (Equilibrium, Collision, Stream, Macro,
 !==================================================================================================
 USE SetPrecision
 USE Setup
-USE ICBC
+USE IC
+USE BClbm
+USE BCscalar
 USE MPI
 
 IMPLICIT NONE
