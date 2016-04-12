@@ -220,7 +220,7 @@ IF(iter .EQ. phiStart) THEN
         DO j=0,nySub+1
           DO i=0,nxSub+1
 
-            IF (((i.GE.16).AND.(i.LE.25)).AND.((j.GE.16).AND.(j.LE.25)).AND.((k.GE.16).AND.(k.LE.25))) THEN
+            IF (((i.GE.20).AND.(i.LE.60)).AND.((j.GE.20).AND.(j.LE.60)).AND.((k.GE.20).AND.(k.LE.60))) THEN
 	       	phi(i,j,k) = phiIC!i+j+k!phiIC		! 3D Cube test
 	    ENDIF
 
