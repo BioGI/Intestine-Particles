@@ -663,13 +663,14 @@ END IF
 zcf3 = 1000000.0_lng * zcf*zcf*zcf 
 
 !------ Computing the total drug released from particles      
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-
-   next => current%next
-   Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
-   current => next
-ENDDO
+IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN
+   current => ParListHead%next
+   DO WHILE (ASSOCIATED(current))
+      next => current%next
+      Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+      current => next
+   ENDDO
+END IF
 
 Drug_Absorbed = phiAbsorbed * zcf3
 Drug_Remained_in_Domain = phiDomain * zcf3
