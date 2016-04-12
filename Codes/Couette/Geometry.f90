@@ -14,54 +14,57 @@ IMPLICIT NONE
 
 CONTAINS
 
+
+
+
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE Geometry_Setup					! sets up the geometry
+SUBROUTINE Geometry_Setup				! sets up the geometry
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER :: isize,idate(8)									! size of seed array for the random number genreator, array for output of DATE_AND_TIME
-INTEGER,ALLOCATABLE  :: iseed(:)							! seeds for random number generator
+INTEGER :: isize,idate(8)				! size of seed array for the random number genreator, array for output of DATE_AND_TIME
+INTEGER,ALLOCATABLE  :: iseed(:)			! seeds for random number generator
 INTEGER(lng) :: i,j,k,kk,iCon,it,iPer,nPers_INT		! index variables
-INTEGER(lng) :: nvz,nvt,n,g								! index variables
-INTEGER(lng) :: mpierr										! MPI standard error variable 
-REAL(dbl) :: macroFreq										! macroscopic contraction frequency
-INTEGER(lng) :: xaxis,yaxis								! axes index variables
+INTEGER(lng) :: nvz,nvt,n,g				! index variables
+INTEGER(lng) :: mpierr					! MPI standard error variable 
+REAL(dbl) :: macroFreq					! macroscopic contraction frequency
+INTEGER(lng) :: xaxis,yaxis				! axes index variables
 
 ! Define the lattice <=> physical conversion factors
 IF(domaintype .EQ. 0) THEN
-        xcf 		= (0.5_lng*D)/(nx-1_lng)		! length conversion factor: x-direction
-        ycf 		= (0.5_lng*D)/(ny-1_lng)		! length conversion factor: y-direction
+        xcf 		= (0.5_lng*D)/(nx-1_lng)	! length conversion factor: x-direction
+        ycf 		= (0.5_lng*D)/(ny-1_lng)	! length conversion factor: y-direction
 ELSE
         ! begin Balaji added
-        xcf 		= (1.0_lng*D)/(nx-1_lng)		! length conversion factor: x-direction
-        ycf 		= (1.0_lng*D)/(ny-1_lng)		! length conversion factor: y-direction
+        xcf 		= (1.0_lng*D)/(nx-1_lng)	! length conversion factor: x-direction
+        ycf 		= (1.0_lng*D)/(ny-1_lng)	! length conversion factor: y-direction
         ! end Balaji added
 ENDIF
 
-zcf 		= L/nz								! length conversion factor: z-direction
-tcf 		= nuL*((xcf*xcf)/nu)				! time conversion factor
-dcf 		= den/denL							! density conversion factor
-vcf 		= xcf/tcf							! velocity conversion factor
-pcf 		= cs*cs*vcf*vcf					! pressure conversion factor
+zcf 		= L/nz					! length conversion factor: z-direction
+tcf 		= nuL*((xcf*xcf)/nu)			! time conversion factor
+dcf 		= den/denL				! density conversion factor
+vcf 		= xcf/tcf				! velocity conversion factor
+pcf 		= cs*cs*vcf*vcf				! pressure conversion factor
 !write(*,*) vcf
 
 ! Determine the number of time steps to run
 nt = ANINT((nPers*Tmix)/tcf)
 
 ! Initialize arrays
-node		= -99_lng							! node flag array
-!rDom		= 0.0_dbl							! radius at each z-location
-!r		= 0.0_dbl							! temporary radius array for entire computational domain
-rDomIn		= 0.0_dbl							! radius at each z-location
-rIn		= 0.0_dbl							! temporary radius array for entire computational domain
-rDomOut		= 0.0_dbl							! radius at each z-location
-rOut		= 0.0_dbl							! temporary radius array for entire computational domain
-!velDom	= 0.0_dbl							! wall velocity at each z-location (global)
-!vel	= 0.0_dbl							! wall velocity at each z-location (local)
-velDomIn	= 0.0_dbl							! wall velocity at each z-location (global)
-velIn	= 0.0_dbl							! wall velocity at each z-location (local)
-velDomOut	= 0.0_dbl							! wall velocity at each z-location (global)
-velOut	= 0.0_dbl							! wall velocity at each z-location (local)
+node		= -99_lng				! node flag array
+!rDom		= 0.0_dbl				! radius at each z-location
+!r		= 0.0_dbl				! temporary radius array for entire computational domain
+rDomIn		= 0.0_dbl				! radius at each z-location
+rIn		= 0.0_dbl				! temporary radius array for entire computational domain
+rDomOut		= 0.0_dbl				! radius at each z-location
+rOut		= 0.0_dbl				! temporary radius array for entire computational domain
+!velDom	= 0.0_dbl					! wall velocity at each z-location (global)
+!vel	= 0.0_dbl					! wall velocity at each z-location (local)
+velDomIn	= 0.0_dbl				! wall velocity at each z-location (global)
+velIn	= 0.0_dbl					! wall velocity at each z-location (local)
+velDomOut	= 0.0_dbl				! wall velocity at each z-location (global)
+velOut	= 0.0_dbl					! wall velocity at each z-location (local)
 
 ! Check to ensure xcf=ycf=zcf (LBM grid must be cubic)
 IF((ABS(xcf-ycf) .GE. 1E-8) .OR. (ABS(xcf-zcf) .GE. 1E-8) .OR. (ABS(ycf-zcf) .GE. 1E-8)) THEN
@@ -109,8 +112,6 @@ IF(domaintype .EQ. 0) THEN
       Ck = ANINT(0.5_dbl*nz)
 
 ELSE
-      ! begin Balaji added 
-      !INTEGER(lng) :: xaxis,yaxis								! axes index variables
       xaxis=ANINT(0.5_dbl*(nx+1))
       yaxis=ANINT(0.5_dbl*(ny+1))
       
@@ -144,53 +145,52 @@ ELSE
       Ci = xaxis
       Cj = yaxis
       Ck = ANINT(0.5_dbl*nz)
-      ! end Balaji added 
-ENDIF
+ENDIF	
+
 ! Mode 1 - Peristalsis
-a1				= (0.5_dbl*D)/(2.0_dbl - epsOVERa1)					! mean half-width of wave1
-eps1 			= epsOVERa1*a1												! occlusional distance
-lambda1		= L/numw1													! wavelength
-aOVERlam1	= a1/lambda1												! ratio of mean half-width to wavelength 
-kw1			= (2.0_dbl*PI)/lambda1									! wave number
-amp1			= 0.5_dbl*((0.5_dbl*D)-eps1)							! amplitude of the wave
-!Tp				= 0.8_dbl*D*PI/s1!lambda1/s1												! Couette Period
-Tp				= lambda1/s1												! peristaltic period
-Re1			= ((s1*(0.5_dbl*D))/nu)*((0.5_dbl*D)/lambda1)	! Reynolds number based on mode 1
+a1		= (0.5_dbl*D)/(2.0_dbl - epsOVERa1)				! mean half-width of wave1
+eps1 		= epsOVERa1*a1							! occlusional distance
+lambda1		= L/numw1							! wavelength
+aOVERlam1	= a1/lambda1							! ratio of mean half-width to wavelength 
+kw1		= (2.0_dbl*PI)/lambda1						! wave number
+amp1		= 0.5_dbl*((0.5_dbl*D)-eps1)					! amplitude of the wave
+Tp		= lambda1/s1							! peristaltic period
+Re1		= ((s1*(0.5_dbl*D))/nu)*((0.5_dbl*D)/lambda1)			! Reynolds number based on mode 1
 
 ! Mode 2 - Segmental Contractions
-a2				= (0.5_dbl*D)/(2.0_dbl - epsOVERa2)					! mean half-width of wave1 (based on peristalsis definition)
-eps2 			= epsOVERa2*a2												! occlusional distance
-lambda2		= L/numw2													! wavelength (physical units)
-nlambda2		= nz/numw2													! wavelength (nodes)
-aOVERlam2	= a2/lambda2												! ratio of mean half-width to wavelength 
-amp2			= 0.5_dbl*((0.5_dbl*D)-eps2)							! amplitude of the wave
-shift2		= 0.5_dbl*((0.5_dbl*D)+eps2)							! amplitude of the wave
-segment		= nlambda2/6_lng											! length of each segment of the segmental wave   !!!!! CAREFUL HERE WITH SYMMETRY!
-seg1L			= 1_lng + segment											! left point of sloped segement 1
-seg1R			= 1_lng + 2_lng*segment									! right point of sloped segement 1
-seg2R			= nlambda2 - segment										! right point of sloped segement 2
-seg2L			= nlambda2 - (2_lng*segment)							! left point of sloped segement 2
-s2				= (0.5_dbl*D)/Ts											! speed of collapse fo segmental contraction
-Re2			= (s2*(0.5_dbl*D))/nu									! Reynolds number based on mode 2
+a2		= (0.5_dbl*D)/(2.0_dbl - epsOVERa2)				! mean half-width of wave1 (based on peristalsis definition)
+eps2 		= epsOVERa2*a2							! occlusional distance
+lambda2		= L/numw2							! wavelength (physical units)
+nlambda2	= nz/numw2							! wavelength (nodes)
+aOVERlam2	= a2/lambda2							! ratio of mean half-width to wavelength 
+amp2		= 0.5_dbl*((0.5_dbl*D)-eps2)					! amplitude of the wave
+shift2		= 0.5_dbl*((0.5_dbl*D)+eps2)					! amplitude of the wave
+segment		= nlambda2/6_lng						! length of each segment of the segmental wave   !!!!! CAREFUL HERE WITH SYMMETRY!
+seg1L		= 1_lng + segment						! left point of sloped segement 1
+seg1R		= 1_lng + 2_lng*segment						! right point of sloped segement 1
+seg2R		= nlambda2 - segment						! right point of sloped segement 2
+seg2L		= nlambda2 - (2_lng*segment)					! left point of sloped segement 2
+s2		= (0.5_dbl*D)/Ts						! speed of collapse fo segmental contraction
+Re2		= (s2*(0.5_dbl*D))/nu						! Reynolds number based on mode 2
 
 ! Allocate and initialize the villi arrays
-numVilli				= numVilliZ*numVilliTheta						! determine the total number of villi
+numVilli				= numVilliZ*numVilliTheta		! determine the total number of villi
 IF(numVilliGroups .GT. 1_lng) THEN
-  numVilliActual	= numVilli - numVilliGroups*numVilliTheta	! determine the actual number of villi (subracting those skipping in grouping)
+  numVilliActual	= numVilli - numVilliGroups*numVilliTheta		! determine the actual number of villi (subracting those skipping in grouping)
 ELSE
-  numVilliActual = numVilli											! if there is only 1 group, numVilli is numVilliActual
+  numVilliActual = numVilli							! if there is only 1 group, numVilli is numVilliActual
 END IF
-ALLOCATE(villiLoc(numVilli,10))										! location and other information of the villi
+ALLOCATE(villiLoc(numVilli,10))							! location and other information of the villi
 villiLoc = 0.0_dbl
 
 ! Set up the villi groups
-ALLOCATE(villiGroup(numVilli))										! array of which group the villi are in
+ALLOCATE(villiGroup(numVilli))							! array of which group the villi are in
 villiGroup = 0.0_dbl
 n = 0_lng
 DO nvz=1,numVilliZ
   DO nvt=1,numVilliTheta
 
-    n = n + 1_lng															! villus number
+    n = n + 1_lng								! villus number
 
     DO g=1,numVilliGroups
 
@@ -241,17 +241,15 @@ IF(restart .EQV. .FALSE.) THEN
 !IF(restart .eq. FALSE) THEN
 
   IF(randORord .EQ. RANDOM) THEN
-    ! Fill out the random array for the villous oscilliatory phases
-    ALLOCATE(rnd(2_lng*numVilli))																		! allocate the array of random numbers for random villi phase angles
+    ALLOCATE(rnd(2_lng*numVilli))						! allocate the array of random numbers for random villi phase angles
     IF(myid .EQ. master) THEN
-
-      CALL DATE_AND_TIME(VALUES=idate)																	! get the date and time (for more different seeds each time)
-      CALL RANDOM_SEED(SIZE=isize)																		! get the size of the seed array
-      ALLOCATE(iseed(isize))																				! allocate the seed array
-      CALL RANDOM_SEED(GET=iseed)																		! get the seed array
-      iseed = iseed*(idate(8)-500_lng)    															! idate(8) contains millisecond
-      CALL RANDOM_SEED(PUT=iseed)																		! use the seed array
-      CALL RANDOM_NUMBER(rnd)																				! get the actual random numbers
+      CALL DATE_AND_TIME(VALUES=idate)						! get the date and time (for more different seeds each time)
+      CALL RANDOM_SEED(SIZE=isize)						! get the size of the seed array
+      ALLOCATE(iseed(isize))							! allocate the seed array
+      CALL RANDOM_SEED(GET=iseed)						! get the seed array
+      iseed = iseed*(idate(8)-500_lng)    					! idate(8) contains millisecond
+      CALL RANDOM_SEED(PUT=iseed)						! use the seed array
+      CALL RANDOM_NUMBER(rnd)							! get the actual random numbers
       DEALLOCATE(iseed)
 
       ! print the rnd array for restarting
@@ -267,7 +265,6 @@ IF(restart .EQV. .FALSE.) THEN
 
   END IF
 
-  ! Initialize the Geometry
   CALL AdvanceGeometry
 
 END IF
@@ -286,20 +283,14 @@ END SUBROUTINE Geometry_Setup
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE AdvanceGeometry												! advances the geometry in time
+SUBROUTINE AdvanceGeometry	! advances the geometry in time
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE 
 
-! Calculate the radius at the current time step
-CALL BoundaryPosition
+CALL BoundaryPosition		! Calculate the radius at the current time step
 CALL VilliPosition
-
-! Calculate the velocity at boundary point
-CALL BoundaryVelocity
-
-! Flag the fluid/solid nodes based on the new geometry
-CALL SetNodes
-
+CALL BoundaryVelocity		! Calculate the velocity at boundary point
+CALL SetNodes			! Flag the fluid/solid nodes based on the new geometry
 !------------------------------------------------
 END SUBROUTINE AdvanceGeometry
 !------------------------------------------------
@@ -361,347 +352,6 @@ END IF
 !------------------------------------------------
 END SUBROUTINE BoundaryPosition
 !------------------------------------------------
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE SetProperties(i,j,k,ubx,uby,ubz)     ! give properties to nodes that just came into the fluid domain (uncovered)
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng), INTENT(IN) :: i,j,k       ! current node location
-REAL(dbl), INTENT(IN) :: ubx,uby,ubz    ! velocity of the boundary
-INTEGER(lng)    :: m,ii,jj,kk           ! index variables
-INTEGER(lng)    :: numFLUIDs            ! number of fluid nodes
-REAL(dbl)       :: rhoSum, rhoTemp      ! sum of the densities of the neighboring fluid nodes, pre-set density
-REAL(dbl)       :: phiSum, phiTemp      ! sum of the scalars of the neighboring fluid nodes, pre-set density
-REAL(dbl)       :: feq                  ! equilibrium distribution function
-CHARACTER(7)    :: iter_char            ! iteration stored as a character
-REAL(dbl)       :: usum,vsum,wsum
-
-!----- initialize the sum of surrounding densities
-rhoSum = 0.0_dbl
-phiSum = 0.0_dbl
-numFLUIDs = 0_lng
-usum = 0.0_dbl
-vsum = 0.0_dbl
-wsum = 0.0_dbl
-
-!----- calculate the average density of the current node's neighbors
-DO m=1,NumDistDirs
-   ii = i + ex(m)
-   jj = j + ey(m)
-   kk = k + ez(m)
-   IF (((ii .GE. 0) .AND. (ii .LE. nxSub+1_lng)) .AND.  &
-      ((jj .GE. 0) .AND. (jj .LE. nySub+1_lng)) .AND.   &
-      ((kk .GE. 0) .AND. (kk .LE. nzSub+1_lng))) THEN
-      IF (node(ii,jj,kk) .EQ. FLUID) THEN
-         IF ((rho(ii,jj,kk).GT.0.0000001_dbl).AND.(rho(ii,jj,kk).GT.0.0000001_dbl)) THEN
-            usum = usum + u(i,j,k)
-            vsum = vsum + v(i,j,k)
-            wsum = wsum + w(i,j,k)
-            rhoSum = rhoSum + rho(ii,jj,kk)
-            phiSum = phiSum + phi(ii,jj,kk)
-            numFLUIDs = numFLUIDs + 1_lng
-         ENDIF
-      END IF
-   END IF
-END DO
-
-!----- This should rarely happen...
-IF (numFLUIDs .NE. 0_lng) THEN
-   rho(i,j,k) = rhoSum/numFLUIDs
-   phi(i,j,k) = phiSum/numFLUIDs
-   u(i,j,k)     = usum/numFLUIDs
-   v(i,j,k)     = vsum/numFLUIDs
-   w(i,j,k)     = wsum/numFLUIDs
-ELSE
-   rho(i,j,k) = denL
-   phi(i,j,k) = phiWall
-   write(9,*) i,j,k, "numFluids in Set Properties is zero"
-   u(i,j,k)     = ubx                                                                   ! wall velocity
-   v(i,j,k)     = uby
-   w(i,j,k)     = ubz
-END IF
-
-!----- enforcing boundary values of density
- rho(i,j,k) = denL
- u(i,j,k) = ubx                                                                         ! wall velocity
- v(i,j,k) = uby
- w(i,j,k) = ubz
-
-!----- distribution functions (set to equilibrium)
-DO m=0,NumDistDirs
-  CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)                   ! distribution functions
-  f(m,i,j,k) = feq
-END DO
-
-!------------------------------------------------
-END SUBROUTINE SetProperties
-!------------------------------------------------
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE SurfaceArea			! calculate the surface area at the current time and write it to a file
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-!REAL(dbl) :: SA					! surface area
-!REAL(dbl) :: r2,r1,z2,z1		! radius and z-location for each set of consecutive points
-!INTEGER(lng) :: kk				! index variable
-REAL(dbl) :: SA,SAIn,SAOut					! surface area
-REAL(dbl) :: r2,r1,z2,z1		! radius and z-location for each set of consecutive points
-INTEGER(lng) :: kk				! index variable
-
-SAIn = 0.0_dbl
-SAIn = (zz(1)-zz(0))*(yy(ny)-yy(1))
-SAIn = SAIn + (zz(nz+1)-zz(nz))*(yy(ny)-yy(1))
-
-!----- interior domain nodes
-DO kk=1,nz-1
-  SAIn = SAIn + (zz(kk+1)-zz(kk))*(yy(ny)-yy(1))
-END DO
-
-SAOut = 0.0_dbl
-SAOut = (zz(1)-zz(0))*(yy(ny)-yy(1))
-SAOut = SAOut + (zz(nz+1)-zz(nz))*(yy(ny)-yy(1))
-
-!----- interior domain nodes
-DO kk=1,nz-1
-  SAIn = SAIn + (zz(kk+1)-zz(kk))*(yy(ny)-yy(1))
-END DO
-
-SA = SAIn + SAOut ! compute total surface area
-
-!----- account for the villi
-SA = SA - numVilliActual*(PI*Rv*Rv)						! subtract the cross sectional area of the villous bases from the total outer surface area
-SA = SA + numVilliActual*(2.0_dbl*PI*Rv*(Lv-Rv))				! add the surface area from the villous cylinders
-SA = SA + numVilliActual*(2.0_dbl*PI*Rv*Rv)					! add the surface area from the villous tips
-
-!----- open and write to a file
-IF(iter .GT. 0) THEN
-  WRITE(2474,'(2E25.15)') REAL(iter/(nt/nPers)), SA,SAIn,SAOut			! write surface area to file
-  CALL FLUSH(2474)
-END IF
-
-!------------------------------------------------
-END SUBROUTINE SurfaceArea
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliPosition		! Calculates the position of the villi at the current time step
-!--------------------------------------------------------------------------------------------------
-!!!!!! NOTE: FOR ALL THE VILLI STUFF, Output stuff WE USE rDomOut for the time being instead of rDom. Need to modify to include rDomIn if needed 
-!!!!!! This is temporary to prevent the code from blowing up as we are not interested in using the villi at this time. 
-
-
-IMPLICIT NONE
-
-CALL VilliBase						! determine the x,y,z location of each villus base
-CALL VilliMove						! specify the movement of the villi
-CALL VilliTip						! determine the x,y,z locatin of each villus tip
-
-!------------------------------------------------
-END SUBROUTINE VilliPosition
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliBase				! Calculates the x,y,z location of each villus base
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng) :: nvz,nvt,n		! index variables
-INTEGER(lng) :: ivz				! k location of each villus
-REAL(dbl) :: vx,vy,vz,vt		! x,y,z, and theta locations of each villus
-
-! initialize the villi counter
-n = 0_lng
-
-DO nvz=1,numVilliZ
-
-  vz 	= L*(REAL(nvz - 0.5_dbl)/(REAL(numVilliZ)))							! z location of the villus (real)
-  ivz	= NINT(vz/zcf)																	! k location of the villus (integer)												
-
-  DO nvt=1,numVilliTheta 
-      
-    n = n + 1_lng																		! count the number of villi
- 
-    vt = (REAL(nvt - 0.5_dbl))*((0.5_dbl*PI)/(REAL(numVilliTheta)))	! theta location of the villus
-
-    vx = rDomOut(ivz)*COS(vt)															! x location of the villus
-    vy = rDomOut(ivz)*SIN(vt)															! y location of the villus
-
-    ! store the real location of each villus
-    villiLoc(n,1) = vx
-    villiLoc(n,2) = vy
-    villiLoc(n,3) = vz
-
-  END DO
-    
-END DO
-
-!------------------------------------------------
-END SUBROUTINE VilliBase
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliMove						! specifies the movement of each villus
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng) :: n							! index variable
-INTEGER(lng) :: ivz						! k location of each villus
-REAL(dbl) :: vx,vy,vz					! x,y,z, and theta locations of each villus
-REAL(dbl) :: rL,rR						! radii of the nodes to the left and right of the current villus location
-REAL(dbl) :: zL,zR						! axial locations of the nodes to the left and right of the current villus location
-REAL(dbl) :: thetaR, thetaX			! angles of each villus with respect to the radius and x axis
-REAL(dbl) :: time							! time
-
-DO n=1,numVilli
-
-  ! current time
-  time = iter*tcf
-
-  ! store thetaR and thetaX from the previous iteration
-  villiLoc(n,9) = villiLoc(n,5)		! thetaR at previous timestep
-  villiLoc(n,10) = villiLoc(n,4)		! thetaX at previous timestep
-
-  ! x,y,z location of the villous base
-  vx = villiLoc(n,1)						
-  vy = villiLoc(n,2)
-  vz = villiLoc(n,3)
-
-  ! ---------------- passive movement from "riding" on the intestinal wall ------------------------
-  ivz = vz/zcf									! k node location (along axial direction)
-  rL = rDomOut(ivz-1)							! radius of the node to the left of the current villus (k-1)
-  rR = rDomOut(ivz+1)							! radius of the node to the right of the current villus (k+1)
-  zL = zz(ivz-1)								! axial distance of the node to the left of the current villus (k-1)
-  zR = zz(ivz+1)								! axial distance of the node to the right of the current villus (k+1)
-  thetaR = ATAN((rR - rL)/(zR - zL))	! angle of the villus with respect to the radius
-  thetaX = ATAN(vy/vx)						! angle of the villus with respect to the x-axis
-  ! -----------------------------------------------------------------------------------------------
-
-  ! ---------------- active movement from specified villous motion --------------------------------
-  IF(MOD(villiGroup(n),2_lng) .EQ. 0) THEN		! even groups
-    IF(randORord .EQ. RANDOM) THEN
-      thetaX = thetaX - (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time + rnd(n)*2.0_dbl*PI))						! azimuthal direction (random)
-      thetaR = thetaR - (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time + (rnd(n+numVilli)*2.0_dbl*PI)))			! axial direction (random)
-    ELSE IF(randORord .EQ. ORDERED) THEN
-      thetaX = thetaX - (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time))													! azimuthal direction (ordered) 
-      thetaR = thetaR - (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time))													! axial direction (ordered)
-    ELSE
-      OPEN(1000,FILE="error.txt")
-      WRITE(1000,*) "Error in VilliMove in Geometry.f90 at line 535: randORord is not RANDOM(1) or ORDERED(2)..."
-      WRITE(1000,*) "randORord=", randORord
-      CLOSE(1000)
-      STOP
-    END IF
-  ELSE
-    IF(randORord .EQ. RANDOM) THEN		! odd groups
-      thetaX = thetaX + (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time + rnd(n)*2.0_dbl*PI))						! azimuthal direction (random)
-      thetaR = thetaR + (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time + (rnd(n+numVilli)*2.0_dbl*PI)))			! axial direction (random)
-    ELSE IF(randORord .EQ. ORDERED) THEN
-      thetaX = thetaX + (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time))													! azimuthal direction (ordered) 
-      thetaR = thetaR + (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time))													! axial direction (ordered)
-    ELSE
-      OPEN(1000,FILE="error.txt")
-      WRITE(1000,*) "Error in VilliMove in Geometry.f90 at line 535: randORord is not RANDOM(1) or ORDERED(2)..."
-      WRITE(1000,*) "randORord=", randORord
-      CLOSE(1000)
-      STOP
-    END IF
-  END IF
-  ! -----------------------------------------------------------------------------------------------
-
-  ! store the angles for each villus
-  villiLoc(n,4) = thetaX
-  villiLoc(n,5) = thetaR
-    
-END DO
-
-!------------------------------------------------
-END SUBROUTINE VilliMove
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliTip						! Calculates the x,y,z location of each villus tip (minus the half hemisphere)
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng) :: n							! index variables
-REAL(dbl) :: vx,vy,vz					! x,y,z, and theta locations of each villus
-REAL(dbl) :: thetaR, thetaX			! angles of each villus with respect to the radius and x axis
-REAL(dbl) :: vx2,vy2,vz2				! x,y,z location of each villus endpoint
-
-DO n=1,numVilli
-
-  ! x,y,z location and angles of the villus
-  vx = villiLoc(n,1)						
-  vy = villiLoc(n,2)
-  vz = villiLoc(n,3)
-  thetaX = villiLoc(n,4) 
-  thetaR = villiLoc(n,5)
-
-  ! calculate the end point of the villus (minus the hemisphere)
-  vx2 = vx - (Lv-Rv)*COS(thetaR)*COS(thetaX)
-  vy2 = vy - (Lv-Rv)*COS(thetaR)*SIN(thetaX)
-  vz2 = vz + (Lv-Rv)*SIN(thetaR)
-
-  ! store the location of the endpoints for each villus
-  villiLoc(n,6) = vx2
-  villiLoc(n,7) = vy2
-  villiLoc(n,8) = vz2
-    
-END DO
-
-!------------------------------------------------
-END SUBROUTINE VilliTip
-!------------------------------------------------
-
 
 
 
@@ -914,6 +564,386 @@ ENDIF
 
 !------------------------------------------------
 END SUBROUTINE SetNodes
+!------------------------------------------------
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE SetProperties(i,j,k,ubx,uby,ubz)     ! give properties to nodes that just came into the fluid domain (uncovered)
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+INTEGER(lng), INTENT(IN) :: i,j,k       ! current node location
+REAL(dbl), INTENT(IN) :: ubx,uby,ubz    ! velocity of the boundary
+INTEGER(lng)    :: m,ii,jj,kk           ! index variables
+INTEGER(lng)    :: numFLUIDs            ! number of fluid nodes
+REAL(dbl)       :: rhoSum, rhoTemp      ! sum of the densities of the neighboring fluid nodes, pre-set density
+REAL(dbl)       :: phiSum, phiTemp      ! sum of the scalars of the neighboring fluid nodes, pre-set density
+REAL(dbl)       :: feq                  ! equilibrium distribution function
+CHARACTER(7)    :: iter_char            ! iteration stored as a character
+REAL(dbl)       :: usum,vsum,wsum
+
+!----- initialize the sum of surrounding densities
+rhoSum = 0.0_dbl
+phiSum = 0.0_dbl
+numFLUIDs = 0_lng
+usum = 0.0_dbl
+vsum = 0.0_dbl
+wsum = 0.0_dbl
+
+!----- calculate the average density of the current node's neighbors
+DO m=1,NumDistDirs
+   ii = i + ex(m)
+   jj = j + ey(m)
+   kk = k + ez(m)
+   IF (((ii .GE. 0) .AND. (ii .LE. nxSub+1_lng)) .AND.  &
+      ((jj .GE. 0) .AND. (jj .LE. nySub+1_lng)) .AND.   &
+      ((kk .GE. 0) .AND. (kk .LE. nzSub+1_lng))) THEN
+      IF (node(ii,jj,kk) .EQ. FLUID) THEN
+         IF ((rho(ii,jj,kk).GT.0.0000001_dbl).AND.(rho(ii,jj,kk).GT.0.0000001_dbl)) THEN
+            usum = usum + u(i,j,k)
+            vsum = vsum + v(i,j,k)
+            wsum = wsum + w(i,j,k)
+            rhoSum = rhoSum + rho(ii,jj,kk)
+            phiSum = phiSum + phi(ii,jj,kk)
+            numFLUIDs = numFLUIDs + 1_lng
+         ENDIF
+      END IF
+   END IF
+END DO
+
+!----- This should rarely happen...
+IF (numFLUIDs .NE. 0_lng) THEN
+   rho(i,j,k) = rhoSum/numFLUIDs
+   phi(i,j,k) = phiSum/numFLUIDs
+   u(i,j,k)     = usum/numFLUIDs
+   v(i,j,k)     = vsum/numFLUIDs
+   w(i,j,k)     = wsum/numFLUIDs
+ELSE
+   rho(i,j,k) = denL
+   phi(i,j,k) = phiWall
+   write(9,*) i,j,k, "numFluids in Set Properties is zero"
+   u(i,j,k)     = ubx                                                                   ! wall velocity
+   v(i,j,k)     = uby
+   w(i,j,k)     = ubz
+END IF
+
+!----- enforcing boundary values of density
+ rho(i,j,k) = denL
+ u(i,j,k) = ubx                                                                         ! wall velocity
+ v(i,j,k) = uby
+ w(i,j,k) = ubz
+
+!----- distribution functions (set to equilibrium)
+DO m=0,NumDistDirs
+  CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)                   ! distribution functions
+  f(m,i,j,k) = feq
+END DO
+
+!------------------------------------------------
+END SUBROUTINE SetProperties
+!------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE SurfaceArea			! calculate the surface area at the current time and write it to a file
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+!REAL(dbl) :: SA					! surface area
+!REAL(dbl) :: r2,r1,z2,z1		! radius and z-location for each set of consecutive points
+!INTEGER(lng) :: kk				! index variable
+REAL(dbl) :: SA,SAIn,SAOut					! surface area
+REAL(dbl) :: r2,r1,z2,z1		! radius and z-location for each set of consecutive points
+INTEGER(lng) :: kk				! index variable
+
+SAIn = 0.0_dbl
+SAIn = (zz(1)-zz(0))*(yy(ny)-yy(1))
+SAIn = SAIn + (zz(nz+1)-zz(nz))*(yy(ny)-yy(1))
+
+!----- interior domain nodes
+DO kk=1,nz-1
+  SAIn = SAIn + (zz(kk+1)-zz(kk))*(yy(ny)-yy(1))
+END DO
+
+SAOut = 0.0_dbl
+SAOut = (zz(1)-zz(0))*(yy(ny)-yy(1))
+SAOut = SAOut + (zz(nz+1)-zz(nz))*(yy(ny)-yy(1))
+
+!----- interior domain nodes
+DO kk=1,nz-1
+  SAIn = SAIn + (zz(kk+1)-zz(kk))*(yy(ny)-yy(1))
+END DO
+
+SA = SAIn + SAOut ! compute total surface area
+
+!----- account for the villi
+SA = SA - numVilliActual*(PI*Rv*Rv)						! subtract the cross sectional area of the villous bases from the total outer surface area
+SA = SA + numVilliActual*(2.0_dbl*PI*Rv*(Lv-Rv))				! add the surface area from the villous cylinders
+SA = SA + numVilliActual*(2.0_dbl*PI*Rv*Rv)					! add the surface area from the villous tips
+
+!----- open and write to a file
+IF(iter .GT. 0) THEN
+  WRITE(2474,'(2E25.15)') REAL(iter/(nt/nPers)), SA,SAIn,SAOut			! write surface area to file
+  CALL FLUSH(2474)
+END IF
+
+!------------------------------------------------
+END SUBROUTINE SurfaceArea
+!------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE VilliPosition		! Calculates the position of the villi at the current time step
+!--------------------------------------------------------------------------------------------------
+!!!!!! NOTE: FOR ALL THE VILLI STUFF, Output stuff WE USE rDomOut for the time being instead of rDom. Need to modify to include rDomIn if needed 
+!!!!!! This is temporary to prevent the code from blowing up as we are not interested in using the villi at this time. 
+
+
+IMPLICIT NONE
+
+CALL VilliBase						! determine the x,y,z location of each villus base
+CALL VilliMove						! specify the movement of the villi
+CALL VilliTip						! determine the x,y,z locatin of each villus tip
+
+!------------------------------------------------
+END SUBROUTINE VilliPosition
+!------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE VilliBase				! Calculates the x,y,z location of each villus base
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+INTEGER(lng) :: nvz,nvt,n		! index variables
+INTEGER(lng) :: ivz				! k location of each villus
+REAL(dbl) :: vx,vy,vz,vt		! x,y,z, and theta locations of each villus
+
+! initialize the villi counter
+n = 0_lng
+
+DO nvz=1,numVilliZ
+
+  vz 	= L*(REAL(nvz - 0.5_dbl)/(REAL(numVilliZ)))							! z location of the villus (real)
+  ivz	= NINT(vz/zcf)																	! k location of the villus (integer)												
+
+  DO nvt=1,numVilliTheta 
+      
+    n = n + 1_lng																		! count the number of villi
+ 
+    vt = (REAL(nvt - 0.5_dbl))*((0.5_dbl*PI)/(REAL(numVilliTheta)))	! theta location of the villus
+
+    vx = rDomOut(ivz)*COS(vt)															! x location of the villus
+    vy = rDomOut(ivz)*SIN(vt)															! y location of the villus
+
+    ! store the real location of each villus
+    villiLoc(n,1) = vx
+    villiLoc(n,2) = vy
+    villiLoc(n,3) = vz
+
+  END DO
+    
+END DO
+
+!------------------------------------------------
+END SUBROUTINE VilliBase
+!------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE VilliMove						! specifies the movement of each villus
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+INTEGER(lng) :: n							! index variable
+INTEGER(lng) :: ivz						! k location of each villus
+REAL(dbl) :: vx,vy,vz					! x,y,z, and theta locations of each villus
+REAL(dbl) :: rL,rR						! radii of the nodes to the left and right of the current villus location
+REAL(dbl) :: zL,zR						! axial locations of the nodes to the left and right of the current villus location
+REAL(dbl) :: thetaR, thetaX			! angles of each villus with respect to the radius and x axis
+REAL(dbl) :: time							! time
+
+DO n=1,numVilli
+
+  ! current time
+  time = iter*tcf
+
+  ! store thetaR and thetaX from the previous iteration
+  villiLoc(n,9) = villiLoc(n,5)		! thetaR at previous timestep
+  villiLoc(n,10) = villiLoc(n,4)		! thetaX at previous timestep
+
+  ! x,y,z location of the villous base
+  vx = villiLoc(n,1)						
+  vy = villiLoc(n,2)
+  vz = villiLoc(n,3)
+
+  ! ---------------- passive movement from "riding" on the intestinal wall ------------------------
+  ivz = vz/zcf									! k node location (along axial direction)
+  rL = rDomOut(ivz-1)							! radius of the node to the left of the current villus (k-1)
+  rR = rDomOut(ivz+1)							! radius of the node to the right of the current villus (k+1)
+  zL = zz(ivz-1)								! axial distance of the node to the left of the current villus (k-1)
+  zR = zz(ivz+1)								! axial distance of the node to the right of the current villus (k+1)
+  thetaR = ATAN((rR - rL)/(zR - zL))	! angle of the villus with respect to the radius
+  thetaX = ATAN(vy/vx)						! angle of the villus with respect to the x-axis
+  ! -----------------------------------------------------------------------------------------------
+
+  ! ---------------- active movement from specified villous motion --------------------------------
+  IF(MOD(villiGroup(n),2_lng) .EQ. 0) THEN		! even groups
+    IF(randORord .EQ. RANDOM) THEN
+      thetaX = thetaX - (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time + rnd(n)*2.0_dbl*PI))						! azimuthal direction (random)
+      thetaR = thetaR - (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time + (rnd(n+numVilli)*2.0_dbl*PI)))			! axial direction (random)
+    ELSE IF(randORord .EQ. ORDERED) THEN
+      thetaX = thetaX - (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time))													! azimuthal direction (ordered) 
+      thetaR = thetaR - (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time))													! axial direction (ordered)
+    ELSE
+      OPEN(1000,FILE="error.txt")
+      WRITE(1000,*) "Error in VilliMove in Geometry.f90 at line 535: randORord is not RANDOM(1) or ORDERED(2)..."
+      WRITE(1000,*) "randORord=", randORord
+      CLOSE(1000)
+      STOP
+    END IF
+  ELSE
+    IF(randORord .EQ. RANDOM) THEN		! odd groups
+      thetaX = thetaX + (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time + rnd(n)*2.0_dbl*PI))						! azimuthal direction (random)
+      thetaR = thetaR + (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time + (rnd(n+numVilli)*2.0_dbl*PI)))			! axial direction (random)
+    ELSE IF(randORord .EQ. ORDERED) THEN
+      thetaX = thetaX + (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time))													! azimuthal direction (ordered) 
+      thetaR = thetaR + (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time))													! axial direction (ordered)
+    ELSE
+      OPEN(1000,FILE="error.txt")
+      WRITE(1000,*) "Error in VilliMove in Geometry.f90 at line 535: randORord is not RANDOM(1) or ORDERED(2)..."
+      WRITE(1000,*) "randORord=", randORord
+      CLOSE(1000)
+      STOP
+    END IF
+  END IF
+  ! -----------------------------------------------------------------------------------------------
+
+  ! store the angles for each villus
+  villiLoc(n,4) = thetaX
+  villiLoc(n,5) = thetaR
+    
+END DO
+
+!------------------------------------------------
+END SUBROUTINE VilliMove
+!------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE VilliTip						! Calculates the x,y,z location of each villus tip (minus the half hemisphere)
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+INTEGER(lng) :: n							! index variables
+REAL(dbl) :: vx,vy,vz					! x,y,z, and theta locations of each villus
+REAL(dbl) :: thetaR, thetaX			! angles of each villus with respect to the radius and x axis
+REAL(dbl) :: vx2,vy2,vz2				! x,y,z location of each villus endpoint
+
+DO n=1,numVilli
+
+  ! x,y,z location and angles of the villus
+  vx = villiLoc(n,1)						
+  vy = villiLoc(n,2)
+  vz = villiLoc(n,3)
+  thetaX = villiLoc(n,4) 
+  thetaR = villiLoc(n,5)
+
+  ! calculate the end point of the villus (minus the hemisphere)
+  vx2 = vx - (Lv-Rv)*COS(thetaR)*COS(thetaX)
+  vy2 = vy - (Lv-Rv)*COS(thetaR)*SIN(thetaX)
+  vz2 = vz + (Lv-Rv)*SIN(thetaR)
+
+  ! store the location of the endpoints for each villus
+  villiLoc(n,6) = vx2
+  villiLoc(n,7) = vy2
+  villiLoc(n,8) = vz2
+    
+END DO
+
+!------------------------------------------------
+END SUBROUTINE VilliTip
 !------------------------------------------------
 
 
