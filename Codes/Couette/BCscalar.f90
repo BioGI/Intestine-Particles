@@ -9,42 +9,43 @@ USE BClbm
 
 CONTAINS
 
+
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)		! implements the scalar BCs 
+SUBROUTINE ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)								! implements the scalar BCs 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
-INTEGER(lng), INTENT(IN):: m,i,j,k,im1,jm1,km1	! index variables
-REAL(dbl), INTENT(OUT) :: phiBC     		! scalar contribution from the boundary condition
-INTEGER(lng) :: ip1,jp1,kp1 			! neighboring nodes (2 away from the wall)
-REAL(dbl) :: q					! distance ratio from the current node to the solid node
-REAL(dbl) :: rhoB,phiB				! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
-REAL(dbl) :: feq_m				! equilibrium distribution function in the mth direction
-REAL(dbl) :: phiijk_m				! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
-REAL(dbl) :: cosTheta, sinTheta			! COS(theta), SIN(theta)
-REAL(dbl) :: ub, vb, wb				! wall velocity (x-, y-, z- components)
-REAL(dbl) :: rijk 				! radius of the solid node
 
-CALL qCalc(m,i,j,k,im1,jm1,km1,q)		! calculate q	
-rijk = x(im1)					! height at current location
-cosTheta = x(im1)/rijk  			!r(km1)	! COS(theta)
-sinTheta = y(jm1)/rijk  			!r(km1)	! SIN(theta)
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1								! index variables
+REAL(dbl), INTENT(OUT) :: phiBC     											! scalar contribution from the boundary condition
+INTEGER(lng) :: ip1,jp1,kp1 														! neighboring nodes (2 away from the wall)
+REAL(dbl) :: q																			! distance ratio from the current node to the solid node
+REAL(dbl) :: rhoB,phiB																! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
+REAL(dbl) :: feq_m																	! equilibrium distribution function in the mth direction
+REAL(dbl) :: phiijk_m																! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
+REAL(dbl) :: cosTheta, sinTheta													! COS(theta), SIN(theta)
+REAL(dbl) :: ub, vb, wb																! wall velocity (x-, y-, z- components)
+REAL(dbl) :: rijk ! radius of the solid node
+REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt
+INTEGER(lng) :: it
+
+CALL qCalc(m,i,j,k,im1,jm1,km1,q)							! calculate q	
 
 IF (rijk .GE. rOut(k)) THEN
-   ub = 0.0_dbl 				! x-component of the velocity at i,j,k
-   vb = 0.0_dbl 				! y-component of the velocity at i,j,k
-   wb = velOut(km1) 				! only z-component in this case			
+	ub = velOut(km1) 	!0.0_dbl!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
+	vb = 0.0_dbl 		!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
+	wb = 0.0_dbl 		! velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
 ELSE IF (rijk .LE. rIn(k)) THEN
-   ub = 0.0_dbl 				! x-component of the velocity at i,j,k
-   vb = 0.0_dbl 				! y-component of the velocity at i,j,k
-   wb = velIn(km1)!vel(km1)			! only z-component in this case	
+	ub = velIn(km1) 	!0.0_dbl!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
+	vb = 0.0_dbl		!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
+	wb = 0.0_dbl 		! velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
 END IF		
 
-!------ neighboring node (fluid side)	
-ip1 = i + ex(m) 				! i + 1
-jp1 = j + ey(m)					! j + 1
-kp1 = k + ez(m)					! k + 1
+! neighboring node (fluid side)	
+ip1 = i + ex(m) 									! i + 1
+jp1 = j + ey(m)										! j + 1
+kp1 = k + ez(m)										! k + 1
 
-!----- if (ip1,jp1,kp1) is not in the fluid domain, use values from the current node as an approximation
+! if (ip1,jp1,kp1) is not in the fluid domain, use values from the current node as an approximation
 IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
   ip1 = i
   jp1 = j
@@ -55,17 +56,19 @@ END IF
 rhoB = (rho(i,j,k) - rho(ip1,jp1,kp1))*(1+q) + rho(ip1,jp1,kp1)		! extrapolate the density
 CALL Equilibrium_LOCAL(m,rhoB,ub,vb,wb,feq_m)			        ! calculate the equibrium distribution function in the mth direction
 
-!----- find the contribution of scalar streamed from the wall to the current node (i,j,k), and from the current node to the next neighboring node (ip1,jp1,kp1)
-phiB	= (feq_m/rhoB - wt(m)*Delta)*phiWall				! contribution from the wall in the mth direction (zero if phiWall=0)
-phiijk_m= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)	! contribution from the current node to the next node in the mth direction
 
-!----- if q is too small, the extrapolation to phiBC can create a large error...
+! find the contribution of scalar streamed from the wall to the current node (i,j,k), and from the current node to the next neighboring node (ip1,jp1,kp1)
+phiB		= (feq_m/rhoB - wt(m)*Delta)*phiWall								! contribution from the wall in the mth direction (zero if phiWall=0)
+phiijk_m	= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)	! contribution from the current node to the next node in the mth direction
+
+! if q is too small, the extrapolation to phiBC can create a large error...
 IF(q .LT. 0.25) THEN
-  q = 0.25_dbl  							! approximate the distance ratio as 0.25
+  q = 0.25_dbl  																		! approximate the distance ratio as 0.25
 END IF
 
-!----- extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
-phiBC= ((phiB - phiijk_m)/q) + phiB					! extrapolated scalar value at the solid node, using q
+! extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
+phiBC		= ((phiB - phiijk_m)/q) + phiB										! extrapolated scalar value at the solid node, using q
+
 !------------------------------------------------
 END SUBROUTINE ScalarBC
 !------------------------------------------------
@@ -81,251 +84,275 @@ END SUBROUTINE ScalarBC
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOut,phiIn)		! implements the scalar BCs by Balaji Dec 2014.
+SUBROUTINE ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOut,phiIn)								! implements the scalar BCs by Balaji Dec 2014.
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
-INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1				! index variables
-REAL(dbl), INTENT(OUT) :: phiBC,phiOut,phiIn     			! scalar contribution from the boundary condition
-INTEGER(lng) :: ip1,jp1,kp1 						! neighboring nodes (2 away from the wall)
-INTEGER(lng) :: ip2,jp2,kp2 						! neighboring nodes (3 away from the wall)
-REAL(dbl) :: q								! distance ratio from the current node to the solid node
-REAL(dbl) :: rhoB,phiB							! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
-REAL(dbl) :: rhoAst,PAstToBSt,ScAst					! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes to an interior node 1 lattice unit away. 
-REAL(dbl) :: rhoBst,PBstToCSt,ScBst,fBst				! values of density and at the boundary, and contribution of scalar from the B* node to C* node (wee yanxing wang's 2010 paper)
-REAL(dbl) :: PBstToASt,fBstopp						! values of density and at the boundary, and contribution of scalar from the B* node to A* node (see yanxing wang's 2010 paper)
-REAL(dbl) :: PAtoB, PAtoO, PBtoA, PCtoB, PBtoC, PCtoD,POtoA        	! values of density and at the boundary, and contribution of scalar from the B* node to A* node (see yanxing wang's 2010 paper) 
-REAL(dbl) :: Pmovingwall,fbb,fmoving					! values of density and at the boundary, and contribution of scalar from the B* node to A* node (see yanxing wang's 2010 paper)
+
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1								! index variables
+REAL(dbl), INTENT(OUT) :: phiBC,phiOut,phiIn     											! scalar contribution from the boundary condition
+INTEGER(lng) :: ip1,jp1,kp1 														! neighboring nodes (2 away from the wall)
+INTEGER(lng) :: ip2,jp2,kp2 														! neighboring nodes (3 away from the wall)
+REAL(dbl) :: q																! distance ratio from the current node to the solid node
+REAL(dbl) :: rhoB,phiB															! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
+REAL(dbl) :: rhoAst,PAstToBSt,ScAst													! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes to an interior node 1 lattice unit away. 
+REAL(dbl) :: rhoBst,PBstToCSt,ScBst,fBst												! values of density and at the boundary, and contribution of scalar from the B* node to C* node (wee yanxing wang's 2010 paper)
+REAL(dbl) :: PBstToASt,fBstopp														! values of density and at the boundary, and contribution of scalar from the B* node to A* node (see yanxing wang's 2010 paper)
+REAL(dbl) :: PAtoB, PAtoO, PBtoA, PCtoB, PBtoC, PCtoD,POtoA, Pmovingwall,fbb,fmoving															! values of density and at the boundary, and contribution of scalar from the B* node to A* node (see yanxing wang's 2010 paper)
 REAL(dbl) :: rhoX,ScX
-REAL(dbl) :: feq_m,feq_bbm,feq1_m,feq2_m,fnoneq_m,fnoneq1_m,fnoneq2_m	! equilibrium distribution function in the mth direction
-REAL(dbl) :: phiijk_m							! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
-REAL(dbl) :: phiAst							! Scalar value at the boundary - For both Dirichlet and Neumann BC. For Dirichlet BC it is phiWall, but for Neumann BC it is computed from the flux BC.  
-REAL(dbl) :: dphidn							! Neumann flux BC.  
-REAL(dbl) :: cosTheta, sinTheta						! COS(theta), SIN(theta)
-REAL(dbl) :: ub, vb, wb							! wall velocity (x-, y-, z- components)
-REAL(dbl) :: rijk							! radius of current node
-REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt			! temporary coordinates to search for exact boundary coordinate (instead of ray tracing) 
-INTEGER(lng) :: it							! loop index variables
+REAL(dbl) :: feq_m,feq_bbm,feq1_m,feq2_m,fnoneq_m,fnoneq1_m,fnoneq2_m									! equilibrium distribution function in the mth direction
+REAL(dbl) :: phiijk_m	! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
+REAL(dbl) :: phiAst	! Scalar value at the boundary - For both Dirichlet and Neumann BC. For Dirichlet BC it is phiWall, but for Neumann BC it is computed from the flux BC.  
+REAL(dbl) :: dphidn	! Neumann flux BC.  
+REAL(dbl) :: cosTheta, sinTheta													! COS(theta), SIN(theta)
+REAL(dbl) :: ub, vb, wb																! wall velocity (x-, y-, z- components)
+REAL(dbl) :: rijk													! radius of current node
+REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt				! temporary coordinates to search for exact boundary coordinate (instead of ray tracing) 
+INTEGER(lng) :: it			! loop index variables
+
 LOGICAL :: BC2FLAG
 
-!----- neighboring node (fluid side)	
-ip1 = i + ex(m) 							! i + 1
-jp1 = j + ey(m)								! j + 1
-kp1 = k + ez(m)								! k + 1
-ip2 = ip1 + ex(m) 							! i + 2
-jp2 = jp1 + ey(m)							! j + 2
-kp2 = kp1 + ez(m)							! k + 2
+! neighboring node (fluid side)	
+ip1 = i + ex(m) 	! i + 1
+jp1 = j + ey(m)		! j + 1
+kp1 = k + ez(m)		! k + 1
+ip2 = ip1 + ex(m) 	! i + 2
+jp2 = jp1 + ey(m)	! j + 2
+kp2 = kp1 + ez(m)	! k + 2
 
 BC2FLAG = .FALSE.
 IF ((node(ip1,jp1,kp1) .EQ. FLUID).AND.(node(ip2,jp2,kp2) .EQ. FLUID)) THEN
-   BC2FLAG = .TRUE.
+	BC2FLAG = .TRUE.
 END IF
 BC2FLAG = .FALSE.
 
 IF (BC2FLAG) THEN
-!----- Calculate q using Yanxing's method
-   rijk = x(im1)								! height at current location
-
-   !----- Initial fluid node guess
-   x1=x(i)
-   y1=y(j)
-   z1=z(k)
-              
-   !----- Initial solid node guess
-   x2=x(im1)
-   y2=y(jm1)
-   z2=z(km1)
+! Calculate q using Yanxing's method
+!*****************************************************************************
+		!rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))				! radius at current location
+		rijk = x(im1)								! height at current location
+		 ! Initial fluid node guess
+                 x1=x(i)
+                 y1=y(j)
+                 z1=z(k)
+                
+		 ! Initial solid node guess
+                 x2=x(im1)
+                 y2=y(jm1)
+                 z2=z(km1)
                  
-   IF (k.NE.km1) THEN
-      DO it=1,qitermax
-         !----- guess of boundary location 
-         xt=(x1+x2)/2.0_dbl
-         yt=(y1+y2)/2.0_dbl
-         zt=(z1+z2)/2.0_dbl
+	 IF (k.NE.km1) THEN
+                 DO it=1,qitermax
+		   ! guess of boundary location 
+                   xt=(x1+x2)/2.0_dbl
+                   yt=(y1+y2)/2.0_dbl
+                   zt=(z1+z2)/2.0_dbl
 
-      	 !-----rt = SQRT(xt*xt + yt*yt)
-      	 rt = xt
-         IF (node(im1,jm1,km1).EQ.SOLID2) THEN
-   	    !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
-	    ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
-	    !ht = (r(km1)+r(k))/2.0_dbl
-	 ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
-	    !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
-	    ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
-	    !ht = (r(km1)+r(k))/2.0_dbl
-	 END IF
+      		   !rt = SQRT(xt*xt + yt*yt)
+      		   rt = xt
+		   !Write(*,*) 'test'
+                   IF (node(im1,jm1,km1).EQ.SOLID2) THEN
+		   	!ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
+		   	ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
+		   	!ht = (r(km1)+r(k))/2.0_dbl
+		   ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
+		   	!ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
+		   	ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
+		   	!ht = (r(km1)+r(k))/2.0_dbl
+		   END IF
 
-         IF (rt.GT.ht) then
-            x2=xt
-            y2=yt
-            z2=zt
-         ELSE
-            x1=xt
-            y1=yt
-            z1=zt
-         END IF
-      END DO
-
-      x1=x(i)
-      y1=y(j)
-      z1=z(k)
-      x2=x(im1)
-      y2=y(jm1)
-      z2=z(km1)
- 
-      q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-   ELSE
-      DO it=1,qitermax
-         !----- guess of boundary location 
-         xt=(x1+x2)/2.0_dbl
-         yt=(y1+y2)/2.0_dbl
-         zt=(z1+z2)/2.0_dbl
-
-      	 !rt = SQRT(xt*xt + yt*yt)
-      	 rt = xt
-         IF (node(im1,jm1,km1).EQ.SOLID2) THEN
-	    !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
-	    !ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
-	     ht = (rOut(km1)+rOut(k))/2.0_dbl
-	 ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
-	    !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
-	    !ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
-	     ht = (rIn(km1)+rIn(k))/2.0_dbl
-	 END IF
-
-         IF (rt.GT.ht) then
-            x2=xt
-            y2=yt
-            z2=zt
-         ELSE
-            x1=xt
-            y1=yt
-            z1=zt
-         END IF
-      END DO
-      
-      x1=x(i)
-      y1=y(j)
-      z1=z(k)
+                   IF(rt.GT.ht) then
+                     x2=xt
+                     y2=yt
+                     z2=zt
+                   ELSE
+                     x1=xt
+                     y1=yt
+                     z1=zt
+                   END IF
+				   
+                 END DO
+		 x1=x(i)
+                 y1=y(j)
+                 z1=z(k)
                  
-      x2=x(im1)
-      y2=y(jm1)
-      z2=z(km1)
+                 x2=x(im1)
+                 y2=y(jm1)
+                 z2=z(km1)
  
-      q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-   ENDIF
+                 q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+		 !write(*,*) 'q',q,zt,z1,z2,0.5*(z1+z2),rt,ht
+	 ELSE
+		  DO it=1,qitermax
+		   ! guess of boundary location 
+                   xt=(x1+x2)/2.0_dbl
+                   yt=(y1+y2)/2.0_dbl
+                   zt=(z1+z2)/2.0_dbl
 
-   cosTheta=xt/rt
-   sinTheta=yt/rt
-   IF (k.NE.km1) THEN
-      IF (node(im1,jm1,km1).EQ.SOLID2) THEN
-	 !vt = (ABS(zt-z(k))*vel(km1)+ABS(z(km1)-zt)*vel(k))/ABS(z(km1)-z(k))
-	 vt = ((zt-z(k))*velOut(km1)+(z(km1)-zt)*velOut(k))/(z(km1)-z(k))
-      ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
-	 !vt = (ABS(zt-z(k))*vel(km1)+ABS(z(km1)-zt)*vel(k))/ABS(z(km1)-z(k))
-	 vt = ((zt-z(k))*velIn(km1)+(z(km1)-zt)*velIn(k))/(z(km1)-z(k))
-      END IF
-   ELSE
-      IF (node(im1,jm1,km1).EQ.SOLID2) THEN
-         vt = (velOut(k)+velOut(km1))*0.5_dbl
-      ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
-	 vt = (velIn(k)+velIn(km1))*0.5_dbl
-      END IF
-   ENDIF
-   
-   ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-   vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
-   wb = vt!vel(km1)!0.0_dbl							! only z-component of velocity	
+      		   !rt = SQRT(xt*xt + yt*yt)
+      		   rt = xt
+		   !Write(*,*) 'test'
+		   IF (node(im1,jm1,km1).EQ.SOLID2) THEN
+			   !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
+			   !ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
+			   ht = (rOut(km1)+rOut(k))/2.0_dbl
+		   ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
+			   !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
+			   !ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
+			   ht = (rIn(km1)+rIn(k))/2.0_dbl
+		   END IF
 
-   !----- make sure 0<q<1
-   IF ((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
-      OPEN(1000,FILE="error.txt")
-      WRITE(1000,*) "q=",q
-      WRITE(1000,*) "m=",m
-      WRITE(1000,*) "i=",i,"j=",j,"k=",k
-      WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
-      CLOSE(1000)
-      STOP
-    END IF	
+                   IF(rt.GT.ht) then
+                     x2=xt
+                     y2=yt
+                     z2=zt
+                   ELSE
+                     x1=xt
+                     y1=yt
+                     z1=zt
+                   END IF
+				   
+                 END DO
+		 x1=x(i)
+                 y1=y(j)
+                 z1=z(k)
+                 
+                 x2=x(im1)
+                 y2=y(jm1)
+                 z2=z(km1)
+ 
+                 q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+		 !write(*,*) 'q',q,zt,z1,z2,0.5*(z1+z2),rt,ht
+	 ENDIF
+		 cosTheta=xt/rt
+		 sinTheta=yt/rt
+	 IF (k.NE.km1) THEN
+		   IF (node(im1,jm1,km1).EQ.SOLID2) THEN
+			 !vt = (ABS(zt-z(k))*vel(km1)+ABS(z(km1)-zt)*vel(k))/ABS(z(km1)-z(k))
+			 vt = ((zt-z(k))*velOut(km1)+(z(km1)-zt)*velOut(k))/(z(km1)-z(k))
+		   ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
+			 !vt = (ABS(zt-z(k))*vel(km1)+ABS(z(km1)-zt)*vel(k))/ABS(z(km1)-z(k))
+			 vt = ((zt-z(k))*velIn(km1)+(z(km1)-zt)*velIn(k))/(z(km1)-z(k))
+		   END IF
+	 ELSE
+		   IF (node(im1,jm1,km1).EQ.SOLID2) THEN
+			 vt = (velOut(k)+velOut(km1))*0.5_dbl
+		   ELSE IF (node(im1,jm1,km1).EQ.SOLID) THEN
+			 vt = (velIn(k)+velIn(km1))*0.5_dbl
+		   END IF
+	 ENDIF
+		ub =  velIn(km1) !0.0_dbl!0.0!vel(km1)*cosTheta		! x-component of the velocity at i,j,k
+		vb = 0.0_dbl	!0.0!vel(km1)*sinTheta			! y-component of the velocity at i,j,k
+		wb = 0.0_dbl   	!vt!vel(km1)!0.0_dbl			! only z-component of velocity	
+                write(*,*) 'ub', ub
+	        ! make sure 0<q<1
+        IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
+          OPEN(1000,FILE="error.txt")
+          WRITE(1000,*) "q=",q
+          WRITE(1000,*) "m=",m
+          WRITE(1000,*) "i=",i,"j=",j,"k=",k
+          WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
+          CLOSE(1000)
+          STOP
+        END IF	
 ELSE
-   q=0.5_dbl
-   rijk = x(im1)								! height at current location
-   cosTheta = x(im1)/rijk!r(km1)						! COS(theta)
-   sinTheta = y(jm1)/rijk!r(km1)						! SIN(theta)
-   IF (rijk .GE. rOut(k)) THEN
-      ub = 0.0_dbl!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
-      vb = 0.0_dbl!0.0!vel(km1)*sinTheta					! y-component of the velocity at i,j,k
-      wb = velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
-   ELSE IF (rijk .LE. rIn(k)) THEN
-      ub = 0.0_dbl!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
-      vb = 0.0_dbl!0.0!vel(km1)*sinTheta					! y-component of the velocity at i,j,k
-      wb = velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
-   END IF			
+        q=0.5_dbl
+	rijk = x(im1)								! height at current location
+        
+        !cosTheta = x(im1)/rijk!r(km1)	! COS(theta)
+        !sinTheta = y(jm1)/rijk!r(km1)	! SIN(theta)
+        
+        
+	IF (rijk .GE. rOut(k)) THEN
+		ub =  velOut(km1) 	!0.0_dbl!0.0!vel(km1)*cosTheta			! x-component of the velocity at i,j,k
+		vb = 0.0_dbl		!0.0!vel(km1)*sinTheta				! y-component of the velocity at i,j,k
+		wb = 0.0_dbl 		!velOut(km1)!vel(km1)!0.0_dbl			! only z-component in this case			
+	ELSE IF (rijk .LE. rIn(k)) THEN
+		ub = velIn(km1) !0.0_dbl!0.0!vel(km1)*cosTheta					! x-component of the velocity at i,j,k
+		vb = 0.0_dbl	!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
+		wb = 0.0_dbl 	!velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
+	END IF			
+
+
 END IF
 
-!--------------------------------------------------------------------------------
-!----- Using fbb to bounce back
-!-------------------------------------------------------------------------------
-IF ((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN
-   IF (BC2FLAG) THEN
-      rhoX = 2.0_dbl*q*rho(i,j,k) + (1.0_dbl-2.0_dbl*q)*rho(ip1,jp1,kp1)
-      ScX  =  2.0_dbl*q*phiTemp(i,j,k) + (1.0_dbl-2.0_dbl*q)*phiTemp(ip1,jp1,kp1)
-      rhoAst =  (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)
-      ScAst =  (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)
-        
-      !----- 2nd order Lallemand and Luo
-      !fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-      !fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-      fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-      !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
-      fbb = q*(1.0_dbl + 2.0_dbl*q)*fplus(bb(m),i,j,k) &
-          + (1.0_dbl - 4.0_dbl*q*q)*fplus(bb(m),ip1,jp1,kp1) & 
-          - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) &
-          + fmoving
-    ELSE
-      !---- zeroth order half-way bounce back
-      rhoX = rho(i,j,k)
-      ScX  = phiTemp(i,j,k)
-      rhoAst = rho(i,j,k)
-      ScAst =  phiTemp(i,j,k)
-      !fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-      fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))!*(rhoAst/ScAst)
-      !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
-      fbb = fplus(bb(m),i,j,k) + fmoving
-    END IF
+! Using fbb to bounce back
+  IF((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN
 
-ELSE IF((q .GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN
     IF (BC2FLAG) THEN
-       rhoX  = 2.0_dbl*q*rho(i,j,k) + (1.0_dbl-2.0_dbl*q)*rho(ip1,jp1,kp1)
-       ScX   = 2.0_dbl*q*phiTemp(i,j,k) + (1.0_dbl-2.0_dbl*q)*phiTemp(ip1,jp1,kp1)
-       rhoAst= (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)
-       ScAst = (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)
 
-       !---- 2nd order Lallemand and Luo
-       fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
-       fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 	&
-             + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q	&
-             - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1) &
-             + fmoving
+            rhoX = 2.0_dbl*q*rho(i,j,k) + (1.0_dbl-2.0_dbl*q)*rho(ip1,jp1,kp1)
+            ScX  =  2.0_dbl*q*phiTemp(i,j,k) + (1.0_dbl-2.0_dbl*q)*phiTemp(ip1,jp1,kp1)
+            rhoAst =  (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)
+            ScAst =  (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)
+        
+        ! 2nd order Lallemand and Luo
+            !fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+            !fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+            fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+            !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
+            fbb = q*(1.0_dbl + 2.0_dbl*q)*fplus(bb(m),i,j,k) &
+                + (1.0_dbl - 4.0_dbl*q*q)*fplus(bb(m),ip1,jp1,kp1) & 
+                - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) &
+                + fmoving
+
     ELSE
-       !----- zeroth order half-way bounce back
-       rhoX = rho(i,j,k)
-       ScX  = phiTemp(i,j,k)
-       rhoAst = rho(i,j,k)
-       ScAst =  phiTemp(i,j,k)
-       fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))!*(rhoAst/ScAst)
-       fbb = fplus(bb(m),i,j,k) + fmoving
+
+        ! zeroth order half-way bounce back
+            rhoX = rho(i,j,k)
+            ScX  = phiTemp(i,j,k)
+            rhoAst = rho(i,j,k)
+            ScAst =  phiTemp(i,j,k)
+            !fmoving = (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+            fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))!*(rhoAst/ScAst)
+            !fmoving = 6.0_dbl*wt(bb(m))*rho(i,j,k)*(ub*ex(bb(m)) + vb*ey(bb(m)) + wb*ez(bb(m)))
+            fbb = fplus(bb(m),i,j,k) &
+          	  + fmoving
+
     END IF
-ELSE
+
+  ELSE IF((q .GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN
+
+    IF (BC2FLAG) THEN
+
+            rhoX = 2.0_dbl*q*rho(i,j,k) + (1.0_dbl-2.0_dbl*q)*rho(ip1,jp1,kp1)
+            ScX  =  2.0_dbl*q*phiTemp(i,j,k) + (1.0_dbl-2.0_dbl*q)*phiTemp(ip1,jp1,kp1)
+            rhoAst =  (rho(i,j,k) - rho(ip1,jp1,kp1))*(q) + rho(i,j,k)
+            ScAst =  (phiTemp(i,j,k) - phiTemp(ip1,jp1,kp1))*(q) + phiTemp(i,j,k)
+        
+        ! 2nd order Lallemand and Luo
+            fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+            fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 	&
+                + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q	&
+                - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1) &
+                + fmoving
+
+    ELSE
+        
+        ! zeroth order half-way bounce back
+            rhoX = rho(i,j,k)
+            ScX  = phiTemp(i,j,k)
+            rhoAst = rho(i,j,k)
+            ScAst =  phiTemp(i,j,k)
+            fmoving = (6.0_dbl*wt(m)*rhoAst*(ub*ex(m) + vb*ey(m) + wb*ez(m)))!*(rhoAst/ScAst)
+            fbb = fplus(bb(m),i,j,k) &
+        	+ fmoving
+
+    END IF
+
+  ELSE
     OPEN(1000,FILE='error-'//sub//'.txt')
     WRITE(1000,*) "Error in BounceBack2() in ICBC.f90 (line 137): q is not (0<=q<=1)...? Aborting."
     WRITE(1000,*) "q=",q,"(i,j,k):",i,j,k
     CLOSE(1000)
     STOP
-END IF
+  END IF
+
+
 
 phiBC = 1.0_dbl*(1.0_dbl*(fbb-fmoving)/rhoX - wt(bb(m))*Delta)*ScX+(fmoving/rhoAst)*ScAst !+ wt(bb(m))*Delta*phiTemp(i,j,k)
 phiOut = 1.0_dbl*(1.0_dbl*fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)!POtoA*q + (1.0_dbl-q)*PAtoB ! phi going out of the surface
 phiIn =  phiBC!PAtoO*q + (1.0_dbl-q)*PBtoA ! phi going into the surface
+
 !------------------------------------------------
 END SUBROUTINE ScalarBC2
 !------------------------------------------------

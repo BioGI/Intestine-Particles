@@ -575,8 +575,8 @@ DO kSub=1,NumSubsZ
           jjSub = jSub + CDy(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
           kkSub = kSub + CDz(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
       
-          !CALL SetSubID(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
-          CALL SetSubIDNew(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
+          CALL SetSubID(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
+          !CALL SetSubIDNew(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
 
         END DO
 
