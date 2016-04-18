@@ -586,7 +586,7 @@ mass_theoretical = den*volume
 mass_err= 100*(mass_theoretical-mass_actual)/mass_theoretical
 
 ! print the mass to a file(s)
-WRITE(2458,'(I8,5E18.9)') iter, iter*tcf,mass_actual, mass_theoretical,mass_err,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
+WRITE(2458,'(I8,5E21.12)') iter, iter*tcf,mass_actual, mass_theoretical,mass_err,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
 CALL FLUSH(2458)  
 
 !------------------------------------------------
