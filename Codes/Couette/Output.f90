@@ -75,7 +75,7 @@ END IF
 
 ! Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
-WRITE(2458,'(A81)') '#VARIABLES = period, time, mass_actual, mass_theoretical, fi_moving_sum, f_moving_rho_sum'
+WRITE(2458,'(A81)') '#VARIABLES = period, time, mass_actual, mass_theoretical, mass_err, f_moving_sum, f_moving_rho_sum'
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
@@ -556,8 +556,8 @@ IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k				! index variables
 REAL(dbl) :: mass_actual			! mass in the system (per unit volume)
-REAL(dbl) :: mass_theoretical		! mass in the system (per unit volume)
-REAL(dbl) :: volume, node_volume	! total volume and volume of a sincle node (cell)
+REAL(dbl) :: mass_theoretical			! mass in the system (per unit volume)
+REAL(dbl) :: volume, node_volume,mass_err	! total volume and volume of a sincle node (cell)
 
 ! calculate the node volume
 node_volume = xcf*ycf*zcf
@@ -583,8 +583,10 @@ END DO
 ! calcuate the theoretical amount of mass in the system
 mass_theoretical = den*volume
 
+mass_err= 100*(mass_theoretical-mass_actual)/mass_theoretical
+
 ! print the mass to a file(s)
-WRITE(2458,'(I8,5E18.9)') iter, iter*tcf,mass_actual, mass_theoretical,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
+WRITE(2458,'(I8,5E18.9)') iter, iter*tcf,mass_actual, mass_theoretical,mass_err,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
 CALL FLUSH(2458)  
 
 !------------------------------------------------
