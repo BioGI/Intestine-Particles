@@ -584,7 +584,7 @@ END DO
 mass_theoretical = den*volume
 
 ! print the mass to a file(s)
-WRITE(2458,'(I8,5E15.5)') iter, iter*tcf,mass_actual, mass_theoretical,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
+WRITE(2458,'(I8,5E18.9)') iter, iter*tcf,mass_actual, mass_theoretical,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
 CALL FLUSH(2458)  
 
 !------------------------------------------------
