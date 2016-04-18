@@ -266,8 +266,7 @@ DO k=2,nzSub-1
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
 	    ! Balaji added after commenting out the earlier method
-            CALL BounceBack2New(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
-            !CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
             CALL BounceBackV2(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
@@ -302,13 +301,6 @@ DO k=1,nzSub,(nzSub-1)
           im1 = i - ex(m)
           jm1 = j - ey(m)
           km1 = k - ez(m)
-
-          IF (km1.eq.0) then
-             km1=nz
-          ELSE IF(km1.eq.nz+1) then
-             km1=1 
-          END IF
-
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
@@ -347,13 +339,6 @@ DO j=1,nySub,(nySub-1)
           im1 = i - ex(m)
           jm1 = j - ey(m)
           km1 = k - ez(m)
-
-          IF (jm1.eq.0) then
-             jm1=ny
-          ELSE IF(jm1.eq.ny+1) then
-             jm1=1
-          END IF
-
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary

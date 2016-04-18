@@ -301,8 +301,8 @@ rDomOut	= 0.0_dbl				! summed height
 
 time	= iter*tcf
 DO i=0,nz-1
-   h1Out(i) = -0.0 *D + s1*time 	! 0.4_dbl*D   
-   h1In(i)  = -0.4 *D + s1*time 	!-0.4_dbl*D 
+   h1Out(i) =  0.4_dbl*D   
+   h1In(i)  = -0.4_dbl*D 
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
@@ -357,8 +357,8 @@ v1Out	  = 0.0_dbl				! mode 1 velocity
 time = iter*tcf
 
 DO i=0,nz-1  					! Balaji added to ensure periodicity just like in h1. 
-   v1In(i) = s1 	! s1* 0.5_dbl   
-   v1Out(i)= s1 	!-s1* 0.5_dbl
+   v1In(i) =  s1* 0.5_dbl   
+   v1Out(i)= -s1* 0.5_dbl
 END DO
 
 v1In(nz)=   v1In(0)
@@ -425,16 +425,16 @@ DO k=1,nzSub
          rijk = x(i)							! height at current location
          IF ((rijk .LT. rOut(k)).AND.(rijk .GT. rIn(k))) THEN
             IF (node(i,j,k) .EQ. SOLID) THEN				! just came into the domain from interior solid
-               ubx = velIn(k) 	! 0.0_dbl
+               ubx = 0.0_dbl
                uby = 0.0_dbl
-               ubz = 0.0_dbl 	! velIn(k)
+               ubz = velIn(k)
                CALL SetProperties(i,j,k,ubx,uby,ubz)
                phiInTemp = phiInTemp + phi(i,j,k)*zcf3
 	       rhoInTemp = rhoInTemp + rho(i,j,k)*zcf3
             ELSE IF(node(i,j,k) .EQ. SOLID2) THEN 			! Just came into the domain from exterior solid
-               ubx = velOut(k) 	!0.0_dbl
+               ubx = 0.0_dbl
                uby = 0.0_dbl
-               ubz = 0.0_dbl 	! velOut(k)
+               ubz = velOut(k)
                CALL SetProperties(i,j,k,ubx,uby,ubz)
                phiInTemp = phiInTemp + phi(i,j,k)*zcf3
 	       rhoInTemp = rhoInTemp + rho(i,j,k)*zcf3
@@ -611,8 +611,7 @@ ELSE
 END IF
 
 !----- enforcing boundary values of density
-! rho(i,j,k) = denL
- phi(i,j,k) = phiWall
+ rho(i,j,k) = denL
  u(i,j,k) = ubx                                                                         ! wall velocity
  v(i,j,k) = uby
  w(i,j,k) = ubz

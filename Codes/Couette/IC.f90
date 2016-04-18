@@ -20,31 +20,41 @@ INTEGER(lng) :: imintemp,imaxtemp	! index variables
 REAL(dbl) :: alpha,xmin,xmax,xmid
 
 IF(restart) THEN											! restart from  file 
+  
   OPEN(50,FILE='restart.'//sub)						! open correct restart file
+  
   DO k=0,nzSub+1_lng
     DO j=0,nySub+1_lng
       DO i=0,nxSub+1_lng
+
         READ(50,*) node(i,j,k)
         READ(50,*) u(i,j,k)
         READ(50,*) v(i,j,k)
         READ(50,*) w(i,j,k)
         READ(50,*) rho(i,j,k)
         READ(50,*) phi(i,j,k)
+
         DO m=0,NumDistDirs
           READ(50,*) f(m,i,j,k)
         END DO
+
       END DO
     END DO
   END DO
+
   READ(50,*) phiAbsorbed
   READ(50,*) phiAbsorbedS
   READ(50,*) phiAbsorbedV
   READ(50,*) phiInOut
+ 
   CLOSE(50)
+
   OPEN(55,FILE='iter0.dat')							! open initial iteration file
   READ(55,*) iter0										! read and set initial iteration
   CLOSE(55)
+
   iter = iter0-1_lng										! set the initial iteration to the last iteration from the previous run
+
   IF(randORord .EQ. RANDOM) THEN
     ALLOCATE(rnd(2_lng*numVilli))
     OPEN(1778,FILE='rnd.dat')							! read in the rnd array
@@ -64,27 +74,30 @@ ELSE															! clean start
 
   ! Initial conditions on velocity, density, and scalar
   DO k=0,nzSub+1_lng
-     DO j=0,nySub+1_lng
-        DO i=0,nxSub+1_lng
-           u(i,j,k)   = s1/vcf		! 0.0_dbl							! x-velocity
-           v(i,j,k)   = 0.0_dbl							! y-velocity
-	   IF (node(i,j,k).EQ.FLUID) THEN        
-	      w(i,j,k) = 0.0_dbl  	! (0.5_dbl*s1/vcf)*(xmid-xx(i+iMin-1))/(xmid-xmin)! z-velocity
-	   ELSE
-              w(i,j,k) = 0.0_dbl
-	   ENDIF
-           rho(i,j,k) = denL
-	   !Balaji added:  distribution functions (set to equilibrium)
-           DO m=0,NumDistDirs
-	      CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)	! distribution functions
-	      f(m,i,j,k) = feq
-	   END DO
-        END DO
-     END DO
+    DO j=0,nySub+1_lng
+      DO i=0,nxSub+1_lng
+        u(i,j,k)   = 0.0_dbl!0.0_dbl!0.01_dbl							! x-velocity
+        v(i,j,k)   = 0.0_dbl!0.01_dbl							! y-velocity
+	IF (node(i,j,k).EQ.FLUID) THEN        
+		w(i,j,k)   = (0.5_dbl*s1/vcf)*(xmid-xx(i+iMin-1))/(xmid-xmin)! z-velocity
+	ELSE
+		w(i,j,k) = 0.0_dbl
+	ENDIF
+        rho(i,j,k) = denL
+	! Balaji added
+	! distribution functions (set to equilibrium)
+	DO m=0,NumDistDirs
+	  CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)	! distribution functions
+	  f(m,i,j,k) = feq
+	END DO
+
+      END DO
+    END DO
   END DO
 
   ! Starting iteration
   iter0 = 1_lng
+  !iter0 = 0_lng
 
   ! Initialize scalar values
   phiAbsorbed	= 0.0_dbl								! total amount of scalar absorbed
@@ -92,7 +105,9 @@ ELSE															! clean start
   phiAbsorbedV	= 0.0_dbl								! total amount of scalar absorbed through the villi
   phiInOut	= 0.0_dbl								! total amount of scalar leaving the inlet/outlet
   delphi_particle = 0.0_dbl								! Initialize the scalar contirbution from particles to 0.0. Once the particle
+											! data is read, we can interpolate to get the delphi_particle. In any event, thi
 											! variable is designed to store temporary data. 
+
 END IF
 
 !------------------------------------------------
