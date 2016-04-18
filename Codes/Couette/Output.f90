@@ -75,7 +75,7 @@ END IF
 
 ! Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
-WRITE(2458,'(A81)') '#VARIABLES = "period","time", "mass_actual", "mass_theoretical"," fmovingsum "," fmovingrhosum "'
+WRITE(2458,'(A81)') '#VARIABLES = period, time, mass_actual, mass_theoretical, fi_moving_sum, f_moving_rho_sum'
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
