@@ -23,18 +23,24 @@ IMPLICIT NONE
 INTEGER :: isize,idate(8)				! size of seed array for the random number genreator, array for output of DATE_AND_TIME
 INTEGER,ALLOCATABLE  :: iseed(:)			! seeds for random number generator
 INTEGER(lng) :: i,j,k,kk,iCon,it,iPer,nPers_INT		! index variables
-INTEGER(lng) :: nvz,nvt,n,g				! index variables
-INTEGER(lng) :: mpierr					! MPI standard error variable 
-REAL(dbl) :: macroFreq					! macroscopic contraction frequency
-INTEGER(lng) :: xaxis,yaxis				! axes index variables
+INTEGER(lng) :: nvz,nvt,n,g								! index variables
+INTEGER(lng) :: mpierr										! MPI standard error variable 
+REAL(dbl) :: macroFreq										! macroscopic contraction frequency
+INTEGER(lng) :: xaxis,yaxis								! axes index variables
+
+REAL(dbl) :: D_X, D_Y
+D_X = 20*D 
+D_Y = D
 
 ! Define the lattice <=> physical conversion factors
 IF(domaintype .EQ. 0) THEN
-        xcf 	= (0.5_lng*D)/(nx-1_lng)		! length conversion factor: x-direction
-        ycf 	= (0.5_lng*D)/(ny-1_lng)		! length conversion factor: y-direction
+        xcf 		= (0.5_lng*D_x)/(nx-1_lng)		! length conversion factor: x-direction
+        ycf 		= (0.5_lng*D_y)/(ny-1_lng)		! length conversion factor: y-direction
 ELSE
-        xcf 	= (1.0_lng*D)/(nx-1_lng)		! length conversion factor: x-direction
-        ycf 	= (1.0_lng*D)/(ny-1_lng)		! length conversion factor: y-direction
+        ! begin Balaji added
+        xcf 		= (1.0_lng*D_x)/(nx-1_lng)		! length conversion factor: x-direction
+        ycf 		= (1.0_lng*D_y)/(ny-1_lng)		! length conversion factor: y-direction
+        ! end Balaji added
 ENDIF
 
 zcf 		= L/nz					! length conversion factor: z-direction
@@ -291,6 +297,7 @@ REAL(dbl) :: h2(0:nz+1)				! Mode 2	(segmental)
 REAL(dbl) :: Ac, lambdaC, shiftC		! temporary variables for the cos slopes
 REAL(dbl) :: time				! time
 INTEGER(lng) :: i,j,ii,k			! indices
+REAL(dbl) :: D_X, D_Y
 
 !----- Initialize Variables
 time 	= 0.0_dbl				! time					
@@ -299,10 +306,13 @@ h1Out 	= 0.0_dbl				! mode 2 height
 rDomIn	= 0.0_dbl				! summed height
 rDomOut	= 0.0_dbl				! summed height
 
+D_X = 20*D
+D_Y = D
+
 time	= iter*tcf
 DO i=0,nz-1
-   h1Out(i) =  0.4_dbl*D   
-   h1In(i)  = -0.4_dbl*D 
+   h1Out(i) = -0.38 * D_x + s1*time 	! 0.4_dbl*D   
+   h1In(i)  = -0.48 * D_x + s1*time 	!-0.4_dbl*D 
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
@@ -357,8 +367,8 @@ v1Out	  = 0.0_dbl				! mode 1 velocity
 time = iter*tcf
 
 DO i=0,nz-1  					! Balaji added to ensure periodicity just like in h1. 
-   v1In(i) =  s1* 0.5_dbl   
-   v1Out(i)= -s1* 0.5_dbl
+   v1In(i) = s1 	! s1* 0.5_dbl   
+   v1Out(i)= s1 	!-s1* 0.5_dbl
 END DO
 
 v1In(nz)=   v1In(0)
@@ -425,16 +435,16 @@ DO k=1,nzSub
          rijk = x(i)							! height at current location
          IF ((rijk .LT. rOut(k)).AND.(rijk .GT. rIn(k))) THEN
             IF (node(i,j,k) .EQ. SOLID) THEN				! just came into the domain from interior solid
-               ubx = 0.0_dbl
+               ubx = velIn(k) 	! 0.0_dbl
                uby = 0.0_dbl
-               ubz = velIn(k)
+               ubz = 0.0_dbl 	! velIn(k)
                CALL SetProperties(i,j,k,ubx,uby,ubz)
                phiInTemp = phiInTemp + phi(i,j,k)*zcf3
 	       rhoInTemp = rhoInTemp + rho(i,j,k)*zcf3
             ELSE IF(node(i,j,k) .EQ. SOLID2) THEN 			! Just came into the domain from exterior solid
-               ubx = 0.0_dbl
+               ubx = velOut(k) 	!0.0_dbl
                uby = 0.0_dbl
-               ubz = velOut(k)
+               ubz = 0.0_dbl 	! velOut(k)
                CALL SetProperties(i,j,k,ubx,uby,ubz)
                phiInTemp = phiInTemp + phi(i,j,k)*zcf3
 	       rhoInTemp = rhoInTemp + rho(i,j,k)*zcf3
@@ -612,6 +622,7 @@ END IF
 
 !----- enforcing boundary values of density
  rho(i,j,k) = denL
+ phi(i,j,k) = phiWall
  u(i,j,k) = ubx                                                                         ! wall velocity
  v(i,j,k) = uby
  w(i,j,k) = ubz

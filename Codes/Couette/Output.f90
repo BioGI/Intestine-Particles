@@ -583,6 +583,10 @@ END DO
 ! calcuate the theoretical amount of mass in the system
 mass_theoretical = den*volume
 
+IF (mass_theoretical .LT. 1e-40) THEN
+   mass_theoretical =1.0e-40
+ENDIF
+
 mass_err= 100*(mass_theoretical-mass_actual)/mass_theoretical
 
 ! print the mass to a file(s)

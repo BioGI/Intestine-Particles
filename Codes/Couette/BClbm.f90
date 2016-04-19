@@ -25,17 +25,14 @@ REAL(dbl) :: rijk													! radius of current node
 
 rijk = x(im1)								! height at current location
 
-cosTheta = x(im1)/rijk											! COS(theta)
-sinTheta = y(jm1)/rijk											! SIN(theta)
-
 IF (rijk .GE. rOut(k)) THEN
-	ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-	vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
-	wb = velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
+	ub = velOut(km1)	 ! 0.0_dbl							! x-component of the velocity at i,j,k
+	vb = 0.0_dbl		 !0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
+	wb = 0.0_dbl 		 !velOut(km1)	!vel(km1)!0.0_dbl						! only z-component in this case			
 ELSE IF (rijk .LE. rIn(k)) THEN
-	ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-	vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
-	wb = velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
+	ub = velIn(km1)		 !0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
+	vb = 0.0_dbl		 !0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
+	wb = 0.0_dbl 		 !velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
 END IF				
 
 fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m))	! bounced back distribution function with added momentum
@@ -79,18 +76,14 @@ kp2 = k + 2_lng*ez(m)											! k location of 2nd neighbor in the m direction
 IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! continue with 2nd order BB if the two positive neighbors are in the fluid (most cases)
 
   rijk = x(im1)										! height at current location
-
-  cosTheta = x(im1)/rijk										! COS(theta)
-  sinTheta = y(jm1)/rijk										! SIN(theta)
-
 	IF (rijk .GE. rOut(k)) THEN
-		ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-		vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
-		wb = velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
+		ub = velOut(km1) 	!0.0_dbl 						! x-component of the velocity at i,j,k
+		vb = 0.0_dbl									! y-component of the velocity at i,j,k
+		wb = 0.0_dbl		 !  velOut(km1)!vel(km1)!0.0_dbl						! only z-component in this case			
 	ELSE IF (rijk .LE. rIn(k)) THEN
-		ub = 0.0_dbl!0.0!vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-		vb = 0.0_dbl!0.0!vel(km1)*sinTheta						! y-component of the velocity at i,j,k
-		wb = velIn(km1)!vel(km1)!0.0_dbl						! only z-component in this case	
+		ub = velIn(km1) !0.0_dbl 				! x-component of the velocity at i,j,k
+		vb = 0.0_dbl 						! y-component of the velocity at i,j,k
+		wb = 0.0_dbl 	!velIn(km1) 				! only z-component in this case	
 	END IF	
 
   CALL qCalc(m,i,j,k,im1,jm1,km1,q)							! calculate q					
@@ -268,9 +261,9 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
 			 vt = (velIn(k)+velIn(km1))*0.5_dbl
 		   END IF
 	 ENDIF
-		ub = 0.0_dbl!0.0!vel(km1)*cosTheta								! x-component of the velocity at i,j,k
-		vb = 0.0_dbl!0.0!vel(km1)*sinTheta								! y-component of the velocity at i,j,k
-		wb = vt!vel(km1)!0.0_dbl									! only z-component in this case)
+		ub = velIn(km1)	!0.0_dbl!0.0!vel(km1)*cosTheta								! x-component of the velocity at i,j,k
+		vb = 0.0_dbl	!0.0!vel(km1)*sinTheta								! y-component of the velocity at i,j,k
+		wb = 0.0_dbl	 !vt!vel(km1)!0.0_dbl									! only z-component in this case)
 	! make sure 0<q<1
         IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
           OPEN(1000,FILE="error.txt")
@@ -345,12 +338,85 @@ END SUBROUTINE BounceBack2New
 
 
 
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE qCalc(m,i,j,k,im1,jm1,km1,q)			! calculates q (boundary distance ratio) using "ray tracing" - see wikipedia article
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1	! current node, and neighboring node
+REAL(dbl), INTENT(OUT) :: q							! distance ratio
+REAL(dbl) :: Ax,Ay,Az									! current node
+REAL(dbl) :: Bx,By,Bz									! solid node
+REAL(dbl) :: AB,AP										! distances between current and solid nodes, and between current node and the wall
+REAL(dbl) :: dx,dy,dz									! unit vector pointing from A to B
+REAL(dbl) :: r1,r2,z1,z2,slope,intercept			! radius and z location at k and km1, slope of line connecting those two points, z-intercept of the r-equation
+REAL(dbl) :: slope2,term1,term2						! terms used in calculation
+REAL(dbl) :: h1,h2, time ! Height of the lower and upper pistons and the physical time
+
+
+!Get location of upper and lower pistons
+
+time = iter*tcf
+
+!h1 = lowerPistonVel * time		 !Ganesh
+!h2 = upperPistonVel * time + initHeight !Ganesh
+
+
+h2 = -0.0 *D + s1*time 
+h1 = -0.4 *D + s1*time
+ 
+
+! RAY
+! point A (current node)
+Ax = x(i)
+Ay = y(j)
+Az = z(k)
+
+! point B (solid node)
+Bx = x(im1)
+By = y(jm1)
+Bz = z(km1)
+
+if (Bx .ge. h2) then
+
+   q = (h2-Ax)/(Bx-Ax)
+   
+else if(Bx .le. h1) then
+
+   q = (Ax-h1)/(Ax-Bx)
+
+end if
+
+! make sure 0<q<1
+IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
+  OPEN(1000,FILE="error.txt")
+  WRITE(1000,*) "q    =",q
+ WRITE(1000,*) "h1,h2 =",h1,h2
+  WRITE(1000,*) "m=",m
+  WRITE(1000,*) "i=",i,"j=",j,"k=",k
+  WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
+  WRITE(1000,*) "Ax=",Ax,"Ay=",Ay,"Az=",Az
+  WRITE(1000,*) "Bx=",Bx,"By=",By,"Bz=",Bz
+  WRITE(1000,*) "dx=",dx,"dy=",dy,"dz=",dz
+  WRITE(1000,*) "r1=",r1,"r2=",r2
+  WRITE(1000,*) "z1=",z1,"z2=",z2
+  WRITE(1000,*) "slope=",slope
+  WRITE(1000,*) "term1=",term1,"term2=",term2
+  WRITE(1000,*) "intercept=",intercept
+  WRITE(1000,*) "AB=",AB,"AP=",AP
+  CLOSE(1000)
+  STOP
+END IF																																
+
+!------------------------------------------------
+END SUBROUTINE qCalc
+!------------------------------------------------
 
 
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE qCalc(m,i,j,k,im1,jm1,km1,q)			! calculates q (boundary distance ratio) using "ray tracing" - see wikipedia article
+SUBROUTINE qCalcBalaji(m,i,j,k,im1,jm1,km1,q)			! calculates q (boundary distance ratio) using "ray tracing" - see wikipedia article
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -420,6 +486,7 @@ q = max(q,0.001_dbl)
 ! make sure 0<q<1
 IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
   OPEN(1000,FILE="error.txt")
+  WRITE(1000,*) "Farhad"
   WRITE(1000,*) "q=",q
   WRITE(1000,*) "m=",m
   WRITE(1000,*) "i=",i,"j=",j,"k=",k
@@ -438,11 +505,154 @@ IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN
 END IF																																
 
 !------------------------------------------------
-END SUBROUTINE qCalc
+END SUBROUTINE qCalcBalaji
 !------------------------------------------------
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE qCalcFarhad(m,i,j,k,im1,jm1,km1,q)                 ! calculates q (boundary distance ratio) using "ray tracing" - see wikipedia article
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1 ! current node, and neighboring node
+REAL(dbl), INTENT(OUT) :: q                                                     ! distance ratio
+REAL(dbl) :: Ax,Ay,Az                                                                   ! current node
+REAL(dbl) :: Bx,By,Bz                                                                   ! solid node
+REAL(dbl) :: AB,AP                                                                              ! distances between current and solid nodes, and between current node and the wall
+REAL(dbl) :: dx,dy,dz                                                                   ! unit vector pointing from A to B
+REAL(dbl) :: r1,r2,z1,z2,slope,intercept                        ! radius and z location at k and km1, slope of line connecting those two points, z-intercept of the r-equation
+REAL(dbl) :: slope2,term1,term2                                         ! terms used in calculation
+REAL(dbl) :: h1,h2, time 				! Height of the lower and upper pistons and the physical time
+REAL(dbl) :: x1,y1,x2,y2,xt,yt,zt,ht,rt,vt
+REAL(dbl) :: rijk
+INTEGER(lng) :: it
+
+
+	rijk = x(im1)								! height at current location
+		 ! Initial fluid node guess
+                 x1=x(i)
+                 y1=y(j)
+                 z1=z(k)
+                
+		 ! Initial solid node guess
+                 x2=x(im1)
+                 y2=y(jm1)
+                 z2=z(km1)
+                 
+	 IF (k.NE.km1) THEN
+                 DO it=1,qitermax
+		   ! guess of boundary location 
+                   xt=(x1+x2)/2.0_dbl
+                   yt=(y1+y2)/2.0_dbl
+                   zt=(z1+z2)/2.0_dbl
+
+      		   rt = xt
+                   IF (rijk .GE. rOut(k)) THEN
+		   	ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
+		   ELSE
+		   	ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
+		   END IF
+
+                   IF(rt.GT.ht) then
+                     x2=xt
+                     y2=yt
+                     z2=zt
+                   ELSE
+                     x1=xt
+                     y1=yt
+                     z1=zt
+                   END IF
+				   
+                 END DO
+		 x1=x(i)
+                 y1=y(j)
+                 z1=z(k)
+                 
+                 x2=x(im1)
+                 y2=y(jm1)
+                 z2=z(km1)
+ 
+                 q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+	 ELSE
+		 DO it=1,qitermax
+		   ! guess of boundary location 
+                   xt=(x1+x2)/2.0_dbl
+                   yt=(y1+y2)/2.0_dbl
+                   zt=(z1+z2)/2.0_dbl
+
+      		   rt = xt
+		   IF (rijk .GE. rOut(k)) THEN
+			   ht = (rOut(km1)+rOut(k))/2.0_dbl
+		   ELSE
+			   ht = (rIn(km1)+rIn(k))/2.0_dbl
+		   END IF
+
+                   IF(rt.GT.ht) then
+                     x2=xt
+                     y2=yt
+                     z2=zt
+                   ELSE
+                     x1=xt
+                     y1=yt
+                     z1=zt
+                   END IF
+                 END DO
+
+		 x1=x(i)
+                 y1=y(j)
+                 z1=z(k)
+                 
+                 x2=x(im1)
+                 y2=y(jm1)
+                 z2=z(km1)
+ 
+                 q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+	 ENDIF
+
+
+
+
+! make sure 0<q<1
+IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN
+  OPEN(1000,FILE="error.txt")
+  WRITE(1000,*) "Farhad"
+  WRITE(1000,*) "q=",q
+  WRITE(1000,*) "m=",m
+  WRITE(1000,*) "i=",i,"j=",j,"k=",k
+  WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
+  WRITE(1000,*) "Ax=",Ax,"Ay=",Ay,"Az=",Az
+  WRITE(1000,*) "Bx=",Bx,"By=",By,"Bz=",Bz
+  WRITE(1000,*) "dx=",dx,"dy=",dy,"dz=",dz
+  WRITE(1000,*) "r1=",r1,"r2=",r2
+  WRITE(1000,*) "z1=",z1,"z2=",z2
+  WRITE(1000,*) "slope=",slope
+  WRITE(1000,*) "term1=",term1,"term2=",term2
+  WRITE(1000,*) "intercept=",intercept
+  WRITE(1000,*) "AB=",AB,"AP=",AP
+  CLOSE(1000)
+  STOP
+END IF
+
+!------------------------------------------------
+END SUBROUTINE qCalcFarhad
+!------------------------------------------------
 
 
 

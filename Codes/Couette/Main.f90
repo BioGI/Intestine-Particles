@@ -84,7 +84,7 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
 
 	IF (myid .EQ. 0) THEN
 	   open(70,file='t-history.dat',position='append')
-           write(70,*) iter, u(41,41,5)*vcf,v(41,41,5)*vcf,w(41,41,5)*vcf,sqrt(u(60,61,10)**2+v(60,61,10)**2)*vcf,u(70,71,10)*vcf,v(70,71,10)*vcf,w(70,71,10)*vcf,sqrt(u(70,71,10)**2+v(70,71,10)**2)*vcf
+  !         write(70,*) iter, u(41,41,5)*vcf,v(41,41,5)*vcf,w(41,41,5)*vcf,sqrt(u(60,61,10)**2+v(60,61,10)**2)*vcf,u(70,71,10)*vcf,v(70,71,10)*vcf,w(70,71,10)*vcf,sqrt(u(70,71,10)**2+v(70,71,10)**2)*vcf
 	   close(70)
 	ENDIF
 
