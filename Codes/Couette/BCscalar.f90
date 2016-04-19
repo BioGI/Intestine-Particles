@@ -11,7 +11,7 @@ CONTAINS
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
+SUBROUTINE Scalar_Fixed_BC(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -52,17 +52,13 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
   kp1 = k
 END IF	
 
-!------ Computing values for A* (See Chpter 3 paper)
+!------ Computing values at A* & scalar streamed from A* (Chpter 3 paper)
+CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)		       	! calculate the equibrium distribution function in the mth direction
 rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
 phiAstar= phiWall							! getting phi at the solid surface
-CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)			       	! calculate the equibrium distribution function in the mth direction
+PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in the mth direction (zero if phiWall=0)
 
-
-!----- Scalar  streamed from wall to current node (i,j,k) 
-!----- and from current node to neighboring node (ip1,jp1,kp1)
-PkAstar= (feq_Astar/rhoAstar - wt(m)*Delta)*phiAstar			! contribution from the wall in the mth direction (zero if phiWall=0)
-!phiijk_m= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)	! contribution from the current node to the next node in the mth direction
-
+!------ Computing values at B* & scalar streamed from B* (Chpter 3 paper)
 fPlusBstar= q*fplus(m,ip1,jp1,kp1) + (1-q)*fplus(m,i,j,k)
 rhoBstar= q*rho(ip1,jp1,kp1) + (1-q)*rho(i,j,k)
 phiBstar= q*phi(ip1,jp1,kp1) + (1-q)*phi(i,j,k)
@@ -72,7 +68,7 @@ PkBstar= (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
 phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
 
 !------------------------------------------------
-END SUBROUTINE ScalarBC
+END SUBROUTINE Scalar_Fixed_BC
 !------------------------------------------------
 
 

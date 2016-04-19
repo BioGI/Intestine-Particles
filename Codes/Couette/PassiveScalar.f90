@@ -102,7 +102,7 @@ DO k=1,nzSub
 	     phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN				! macro- boundary
 !            CALL ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOutSurf,phiInSurf)	! Wang: scalar flux  BC (using BB f's)	
-             CALL ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)				! Wang: scalar BC
+             CALL Scalar_Fixed_BC(m,i,j,k,im1,jm1,km1,phiBC)				! Wang: scalar BC
              phi(i,j,k) = phi(i,j,k) + phiBC     
 !            CALL AbsorbedScalarS2(i,j,k,m,phiOutSurf,phiInSurf)		! measure the absorption rate
              CALL AbsorbedScalarS(i,j,k,m,phiBC)				! measure the absorption rate
