@@ -223,15 +223,18 @@ INTEGER(lng), PARAMETER :: ParticleOn= 1					! flag to signify Particle Tracking
 INTEGER(lng), PARAMETER :: ParticleOff= 0					! flag for signify if particle tracking is off
 INTEGER(lng) :: np								! number of particles
 
-REAL(dbl), PARAMETER :: molarvol = 268.000_dbl					! (cm^3/mole) drug's molar volume
-REAL(dbl), PARAMETER :: diffm = 7.5000000e-6					! (cm2/s) drug's diffusivity	
+REAL(dbl), PARAMETER :: molarvol = 268.0e-6					! (cm^3/mole) drug's molar volume
+REAL(dbl), PARAMETER :: diffm = 7.5000000e-10					! (cm2/s) drug's diffusivity	
 REAL(dbl), PARAMETER :: R0 = 0.0026_dbl		
-REAL(dbl), PARAMETER :: Cs_mol = 3.30000e-7 					! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
+REAL(dbl), PARAMETER :: Cs_mol = 3.30000e-1 					! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
 REAL(dbl):: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global bulk scalar Concentration
 
 INTEGER(dbl):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
 INTEGER(dbl):: num_particles							! Total number of particles in domain
 
+INTEGER(dbl):: CaseNo
+REAL(dbl)::    V_eff_Ratio
+REAL(dbl)::    Cb_Hybrid
 
 INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) 			! List of starting/enning i indices for each subdomain
 INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) 			! List of starting/enning j indices for each subdomain

@@ -19,13 +19,13 @@ CALL RANDOM_SEED(put=seed1)
 DEALLOCATE(seed1)
 
 !------------------- Monodisperse Collection ------------------------------------------
-x_center= 	40.0
-y_center= 	40.0
-z_center=	30.0
+x_center= 	80.0
+y_center= 	80.0
+z_center=	60.0
 
 PI=3.1415926535897932384626433832
 
-rMax= 		25.0_dbl
+rMax= 		50.0_dbl
 teta1Max= 	2*PI
 teta2Max= 	2*PI
 
@@ -39,8 +39,8 @@ ALLOCATE(randno(3_lng*np))
 CALL RANDOM_NUMBER(randno)
 
 
-R0 = 0.00001875_dbl 
-dR = 0.00013125_dbl
+R0 = 0.000010_dbl 
+dR = 0.000140_dbl
 open(52,file='particle.dat')
 write(52,*) np
 

@@ -146,13 +146,14 @@ IF(myid .EQ. master) THEN
  
   IF (MOD(iter,100) .EQ. 0 .AND. (iter .NE. 0)) THEN 		! Print Current Status Periodically
     CALL SYSTEM_CLOCK(current,rate)					
-    WRITE(5,*)  
-    WRITE(5,*) '-------------------- Status -------------------'
-    WRITE(5,*) 'Iteration Number:		    ', iter
-    WRITE(5,*) 'Elapsed Time (min):	     ', ((current-start)/REAL(rate))/60.0_dbl
-    WRITE(5,*) 'Avg. Time Per Iter. (sec):  ', ((current-start)/REAL(rate))/(iter-iter0)
-    WRITE(5,*) 'Estimated Time Left (min):  ', ((((current-start)/REAL(rate))/(iter-iter0))/60.0_dbl)*(nt-iter)
-    WRITE(5,*) '-----------------------------------------------'
+!   WRITE(5,*)  
+!   WRITE(5,*) '-------------------- Status -------------------'
+!   WRITE(5,*) 'Iteration Number:		    ', iter
+!   WRITE(5,*) 'Elapsed Time (min):	     ', ((current-start)/REAL(rate))/60.0_dbl
+!   WRITE(5,*) 'Avg. Time Per Iter. (sec):  ', ((current-start)/REAL(rate))/(iter-iter0)
+!   WRITE(5,*) 'Estimated Time Left (min):  ', ((((current-start)/REAL(rate))/(iter-iter0))/60.0_dbl)*(nt-iter)
+!   WRITE(5,*) '-----------------------------------------------'
+    WRITE(5,*) iter, ((current-start)/REAL(rate))/(iter-iter0)
     CALL FLUSH(5)													
   END IF
 
@@ -324,7 +325,7 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
             pressure=0.0_lng
          END IF
  
-         WRITE(60,'(I3,2I4,3F8.4,E12.3,E11.3,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure,	&
+         WRITE(60,'(I3,2I4,3F11.7,E13.4,E12.4,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure,	&
                                      phi(i,j,k), node(i,j,k)
 
       END DO
@@ -391,7 +392,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
 
    !------ open the proper output file
    OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-   WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
+   WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
 
    !------ Using linked lists
    current => ParListHead%next
@@ -400,10 +401,8 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
       numParticlesSub = numParticlesSub + 1_lng
       next => current%next 					! copy pointer of next node
 
-
-
-
-      WRITE(160,1001) 	current%pardata%xp 	  ,',',	&
+      WRITE(160,1001)   current%pardata%cur_part  ,',', &
+		 	current%pardata%xp 	  ,',',	&
 			current%pardata%yp  	  ,',',	&
 			current%pardata%zp 	  ,',',	&
                         current%pardata%up*vcf 	  ,',',	&
@@ -419,7 +418,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
 			current%pardata%Veff 	  ,',',	&
 			current%pardata%Nbj
 
-1001 format (F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001 format (I3,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
 
      current => next   						! point to next node in the list
   ENDDO
@@ -633,9 +632,9 @@ IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k					! index variables
 INTEGER(lng) :: numFluids				! number of fluid nodes in the domain
-REAL(lng)    :: phiDomain				! current amount of scalar in the domain
-REAL(lng)    :: phiAverage				! average scalar in the domain
-REAL(lng)    :: zcf3					! node volume in physical units
+REAL(dbl)    :: phiDomain				! current amount of scalar in the domain
+REAL(dbl)    :: phiAverage				! average scalar in the domain
+REAL(dbl)    :: zcf3					! node volume in physical units
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -662,12 +661,13 @@ ELSE
    phiAverage = 0.0_dbl
 END IF
 
-!------ node volume in physical units (cm^3) so when printing the drung units are "mole
-zcf3 = 1000000.0_lng * zcf*zcf*zcf				
+!------ node volume in physical units (cm^3) so when printing the drung units are micro  mole
+zcf3 = 1000000.0_lng * zcf*zcf*zcf 
 
 !------ Computing the total drug released from particles      
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
+
    next => current%next
    Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
    current => next
@@ -678,6 +678,11 @@ Drug_Remained_in_Domain = phiDomain * zcf3
 Drug_Loss = Drug_Released_Total - (Drug_Absorbed + Drug_Remained_in_Domain)  
 Drug_Loss_Modified = (Drug_Released_Total- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
 
+
+IF (Drug_Released_Total .LT. 1e-20) THEN
+    Drug_Released_Total =1e-20
+END IF
+
 Drug_Loss_Percent = (Drug_Loss / Drug_Released_Total) * 100.0_lng
 Drug_Loss_Modified_Percent = (Drug_Loss_Modified / Drug_Released_Total) * 100.0_lng  
 
@@ -686,7 +691,7 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
 ENDIF
 
 
-WRITE(2472,'(I8, F15.4, 5E14.5)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+WRITE(2472,'(I7, F9.3, 5E19.11)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
 CALL FLUSH(2472)
 
 !------------------------------------------------
@@ -907,7 +912,6 @@ ELSE
       DO j=1,ny
         DO i=1,nx
 
-!         WRITE(685,'(8E15.5,I6)') xx(i),yy(j),zz(k),							&	! x,y,z node location
           WRITE(685,'(3I6,5E15.5,I6)') i,j,k,								&	! x,y,z node location
                                    FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),		&	! u,v,w @ i,j,k
                                    FieldData(i,j,k,4),							&	! rho(i,j,k)
@@ -1100,7 +1104,7 @@ ELSE
 					ParticleData(nnn,14)		,',', &
 					ParticleData(nnn,15)
 
-1001 format (F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001 format (a3, F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
 	
 	        END DO
 		CLOSE(685)	! close current output file (combined)

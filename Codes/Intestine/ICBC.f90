@@ -77,11 +77,10 @@ ELSE															! clean start
   DO k=0,nzSub+1_lng
     DO j=0,nySub+1_lng
       DO i=0,nxSub+1_lng
-
         u(i,j,k)   = 0.0_dbl							! x-velocity
         v(i,j,k)   = 0.0_dbl							! y-velocity
         w(i,j,k)   = 0.0_dbl							! z-velocity
-        rho(i,j,k) = denL								! density
+        rho(i,j,k) = denL							! density
 	! Balaji added
 	! distribution functions (set to equilibrium)
 	DO m=0,NumDistDirs
@@ -119,6 +118,7 @@ SUBROUTINE IniParticles
 !-----------------------------------------------
 IMPLICIT NONE
 INTEGER(lng)   :: i, parid,particle_partition,ipartition
+INTEGER(lng)   :: mpierr
 REAL(dbl) :: xp,yp,zp,par_radius
 TYPE(ParRecord), POINTER	:: CurPar
 IF (restart) THEN
@@ -127,42 +127,33 @@ IF (restart) THEN
 	! Interpolate particle concentration to nodes into delphi_particle.
 
 ELSE
-	! Linked list approach
+	!----- Linked list approach
 	OPEN(60,FILE='particle.dat')
 	READ(60,*) np
 	num_particles = np
-	! Initialize Header Pointer
-	
-	!ALLOCATE(ParListHead)
-	!ParListHead%next => null()!ParListHead
-	!ParListHead%prev => null()!ParListHead
+
+	!----- Initialize Header Pointer
 	CALL list_init(ParListHead)
 	CurPar => ParListHead
 
-    !IF (myid .EQ. master) THEN
-	! Recursively allocate all the particle records and build the linked list
 	DO i = 1, np
-		!ALLOCATE(CurPar%next)
-		!CurPar%next%prev => CurPar
-		!!CurPar%next%next => ParListHead
-		!CurPar%next%next => null()
-		!CurPar => CurPar%next
-		READ(60,*) parid,xp,yp,zp,par_radius ! read particle.dat file
-		! Search the partition this particle belongs to
-		DO ipartition = 1_lng,NumSubsTotal 
-			IF ((xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-			(xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-			(yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-			(yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-			(zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-			(zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+	   READ(60,*) parid,xp,yp,zp,par_radius		! read particle.dat file
 
-				particle_partition = ipartition
-			END IF
-		END DO
-		! Create a particle element in the linked list only if the particles belongs to this partition
-		IF (particle_partition.EQ.mySub) THEN
-			CALL list_init(CurPar%next)		
+	   !----- Search the partition this particle belongs to
+	   DO ipartition = 1_lng,NumSubsTotal 
+	      IF ((xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+	         (xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	         (yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	         (yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+	         (zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+	         (zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+                     particle_partition = ipartition
+	      END IF
+	   END DO
+ 
+         !----- Create a particle element in the linked list only if the particles belongs to this partition
+!        IF (particle_partition.EQ.mySub) THEN
+	    CALL list_init(CurPar%next)		
 			CurPar%next%prev => CurPar
 			CurPar%next%next => null()
 			CurPar%next%pardata%parid = parid
@@ -172,7 +163,7 @@ ELSE
 			CurPar%next%pardata%up = 0.0_dbl
 			CurPar%next%pardata%vp = 0.0_dbl
 			CurPar%next%pardata%wp = 0.0_dbl
-			CurPar%next%pardata%rp = par_radius!R0!0.005_dbl
+			CurPar%next%pardata%rp = par_radius
 			CurPar%next%pardata%xpold = CurPar%next%pardata%xp
 			CurPar%next%pardata%ypold = CurPar%next%pardata%yp
 			CurPar%next%pardata%zpold = CurPar%next%pardata%zp
@@ -189,63 +180,19 @@ ELSE
 			CurPar%next%pardata%Nbj = 0.0_dbl
 			CurPar%next%pardata%bulk_conc = 0.0000_dbl
 			CurPar%next%pardata%delNBbyCV= 0.00000_dbl
-			CurPar%next%pardata%cur_part= mySub
-			CurPar%next%pardata%new_part= mySub
-!			!WRITE(*,*) "Particle Initializing ",i,xp(i),yp(i),zp(i)
-!	 		!ss(:,:)=uu(:,:,(nz+1)/2)
-!		        !CALL interp(xp(i),yp(i),ss,nx,ny,up(i))
-!		        !ss(:,:)=vv(:,:,(nz+1)/2)
-!		        !CALL interp(xp(i),yp(i),ss,nx,ny,vp(i))
-			! point to next node in the list
-			CurPar => CurPar%next
-		END IF
-	END DO
-     !END IF
+			CurPar%next%pardata%cur_part= particle_partition
+			CurPar%next%pardata%new_part= particle_partition
+	   CurPar => CurPar%next
+!	END IF
+     END DO
 	
-	CLOSE(60)
+ CLOSE(60)
+
 ENDIF
 !------------------------------------------------
 END SUBROUTINE IniParticles
 !------------------------------------------------
 
-
-
-
-
-!!------------------------------------------------
-!SUBROUTINE IniParticles_OLD
-!!------------------------------------------------
-!IMPLICIT NONE
-!INTEGER(lng)   :: i
-!IF (restart) THEN
-!	! Read particle number and position along with it's radius,concentration.
-!	! Interpolate to calculate particle velocities.
-!	! Interpolate particle concentration to nodes into delphi_particle.
-!
-!ELSE
-!	OPEN(60,FILE='particle.dat')
-!	read(60,*) np
-!	ALLOCATE(xp(np),yp(np),zp(np),up(np),vp(np),wp(np),ipar(np),jpar(np),kpar(np),rp(np),delNBbyCV(np),par_conc(np))
-!	ALLOCATE(bulk_conc(np),sh(np),gamma_cont(np),rpold(np))
-!	DO i=1,np
-!		read(60,*) xp(i),yp(i),zp(i)
-!		up(i) = 0.0_dbl
-!		vp(i) = 0.0_dbl
-!		wp(i) = 0.0_dbl
-!		rp(i) = 0.00005_dbl
-!		rpold(i) = 0.00005_dbl
-!		par_conc(i) = 0.89_dbl
-!		gamma_cont(i) = 0.0000_dbl
-!		sh(i) = 1.0000_dbl/(1.0_dbl-gamma_cont(i))
-!		bulk_conc(i) = 0.0000_dbl
-!		delNBbyCV(i)= 0.00000_dbl
-!	END DO
-!	
-!	close(60)
-!ENDIF
-!!------------------------------------------------
-!END SUBROUTINE IniParticles_OLD
-!!------------------------------------------------
 
 
 
@@ -455,12 +402,10 @@ kp2 = k + 2_lng*ez(m)											! k location of 2nd neighbor in the m direction
 
 IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! continue with 2nd order BB if the two positive neighbors are in the fluid (most cases)
 
-  rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))				! radius at current location
+  rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))						! radius at current location
 
   cosTheta = x(im1)/rijk										! COS(theta)
   sinTheta = y(jm1)/rijk										! SIN(theta)
-  !cosTheta = x(im1)/r(km1)									! COS(theta)
-  !sinTheta = y(jm1)/r(km1)									! SIN(theta)
 
   ub = vel(km1)*cosTheta										! x-component of the velocity at i,j,k
   vb = vel(km1)*sinTheta										! y-component of the velocity at i,j,k
@@ -555,10 +500,7 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
                    zt=(z1+z2)/2.0_dbl
 
       		   rt = SQRT(xt*xt + yt*yt)
-		   !Write(*,*) 'test'
-		   !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
 		   ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
-		   !ht = (r(km1)+r(k))/2.0_dbl
 
                    IF(rt.GT.ht) then
                      x2=xt
@@ -589,9 +531,6 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
                    zt=(z1+z2)/2.0_dbl
 
       		   rt = SQRT(xt*xt + yt*yt)
-		   !Write(*,*) 'test'
-		   !ht = (ABS(zt-z(k))*r(km1)+ABS(z(km1)-zt)*r(k))/ABS(z(km1)-z(k))
-		   !ht = ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
 		   ht = (r(km1)+r(k))/2.0_dbl
 
                    IF(rt.GT.ht) then
@@ -603,8 +542,8 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
                      y1=yt
                      z1=zt
                    END IF
-				   
                  END DO
+
 		 x1=x(i)
                  y1=y(j)
                  z1=z(k)
@@ -619,7 +558,6 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
 		 cosTheta=xt/rt
 		 sinTheta=yt/rt
 	 IF (k.NE.km1) THEN
-		 !vt = (ABS(zt-z(k))*vel(km1)+ABS(z(km1)-zt)*vel(k))/ABS(z(km1)-z(k))
 		 vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
 	 ELSE
 		 vt = (vel(k)+vel(km1))*0.5_dbl
@@ -627,8 +565,6 @@ IF((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		! 
 		 ub = vt*cosTheta										! x-component of the velocity at i,j,k
 		 vb = vt*sinTheta										! y-component of the velocity at i,j,k
 		 wb = 0.0_dbl											! no z-component in this case)
-		 !write(*,*) 'ht',ht,rt
-		 !write(*,*) 'q-yanxing',q,i,j,k,im1,jm1,km1
 !*****************************************************************************
 !*****************************************************************************
 !! Original method used by Gino
@@ -1241,7 +1177,6 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)	! synchronize all processing units
 !------------------------------------------------
 END SUBROUTINE SymmetryBC_NODE
 !------------------------------------------------
-
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)								! implements the scalar BCs 
 !--------------------------------------------------------------------------------------------------
@@ -1260,8 +1195,10 @@ REAL(dbl) :: rijk ! radius of the solid node
 
 CALL qCalc(m,i,j,k,im1,jm1,km1,q)												! calculate q	
 
-cosTheta = x(im1)/r(km1)															! COS(theta)
-sinTheta = y(jm1)/r(km1)															! SIN(theta)
+cosTheta = x(im1)/r(km1)	! COS(theta)
+sinTheta = y(jm1)/r(km1)	! SIN(theta)
+
+
 
 ub = vel(km1)*cosTheta																! x-component of the velocity at i,j,k
 vb = vel(km1)*sinTheta																! y-component of the velocity at i,j,k
@@ -1283,8 +1220,6 @@ END IF
 rhoB = (rho(i,j,k) - rho(ip1,jp1,kp1))*(1+q) + rho(ip1,jp1,kp1)		! extrapolate the density
 CALL Equilibrium_LOCAL(m,rhoB,ub,vb,wb,feq_m)			        ! calculate the equibrium distribution function in the mth direction
 
-!! Balaji added for sero flux BC. Otherwise set to constant value for Dirichlet BC
-!phiWall = (phi(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(ip1,jp1,kp1)*q*q/(1.0+2.0*q)) 	! calculate phiWall for flux BC (eq. 28 in paper)
 
 ! find the contribution of scalar streamed from the wall to the current node (i,j,k), and from the current node to the next neighboring node (ip1,jp1,kp1)
 phiB		= (feq_m/rhoB - wt(m)*Delta)*phiWall								! contribution from the wall in the mth direction (zero if phiWall=0)
@@ -1375,7 +1310,7 @@ we		= wijk*ez(m)															! w . e
 
 Usum	= ue + ve + we															! U . e
         
-feq_m	= (wt(m)*rhoijk)*(1.0_dbl + 3.0_dbl*Usum + 4.5_dbl*Usum*Usum - 1.5_dbl*uu)	! equilibrium distribution function in the mth direction
+feq_m	= (wt(m)*rhoijk)*(1.0_dbl + 3.0_dbl*Usum + 4.5_dbl*Usum*Usum - 1.5_dbl*UU)	! equilibrium distribution function in the mth direction
         
 !------------------------------------------------
 END SUBROUTINE Equilibrium_LOCAL

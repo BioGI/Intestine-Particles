@@ -860,20 +860,24 @@ END SUBROUTINE PackData
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE  Collect_Distribute_Global_Bulk_Scalar_Conc
-! This subroutine does the
-!parallel communication needed to collect all the bulk concentration in each of
-!the processes and computeѕ an average, which is the distributed to the various
-!process for computing the drug concentration. 
+! This subroutine does the parallel communication needed to collect all the bulk concentration in
+! each of the processes and computeѕ an average, which is the distributed to the various
+! process for computing the drug concentration. 
 !--------------------------------------------------------------------------------------------------
+
 IMPLICIT NONE
-REAL(dbl) :: Cb_global_temp
-INTEGER(lng):: Cb_numFluids_temp,mpierr
+REAL(dbl)   :: Cb_global_temp
+INTEGER(lng):: Cb_numFluids_temp, mpierr
+
 Cb_global_temp = 0.0_dbl
 Cb_numFluids_temp = 0_lng
+
 CALL MPI_REDUCE(Cb_global,Cb_global_temp,1,MPI_DOUBLE_PRECISION,MPI_SUM,master,MPI_COMM_WORLD,mpierr)
 CALL MPI_REDUCE(Cb_numFluids,Cb_numFluids_temp,1,MPI_INTEGER,MPI_SUM,master,MPI_COMM_WORLD,mpierr)
+
 Cb_global = Cb_global_temp/Cb_numFluids_temp
 Cb_numFLuids = Cb_numFluids_temp
+
 CALL MPI_BCast(Cb_global,1,MPI_DOUBLE_PRECISION,master,MPI_COMM_WORLD,mpierr)
 CALL MPI_BCast(Cb_numFluids,1,MPI_INTEGER,master,MPI_COMM_WORLD,mpierr)
 
@@ -883,164 +887,133 @@ END SUBROUTINE  Collect_Distribute_Global_Bulk_Scalar_Conc
 
 
 
+
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE Particle_MPI_Transfer		! transfer the particles to neighbouring partitions
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 TYPE(ParRecord), POINTER :: current  => NULL()
 TYPE(ParRecord), POINTER :: next => NULL()
-INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag		! number of send/recv requests
+INTEGER(lng) :: nreqs,source,sendtag,dest,recvtag					! number of send/recv requests
 INTEGER(lng) :: mpierr,commdir,iComm,par_num!,numparticlesDomain			! MPI standard error object
-LOGICAL :: probeflag
 INTEGER(lng) :: parsendindex(NumCommDirsPar), parrecvindex(NumCommDirsPar)
-
+LOGICAL      :: probeflag
 
 ! IMPORTANT NOTE: It is important for the partransfersend and partransferrecv arrays to store the particle data in columns, i.e. of 
 ! dimenions NumParVar x NumCommDirsPar as against NumCommDirsPar x  NumParVar as we are planning to send packets of data 
 ! corresponding to an entire particle across processors. In fortran and MPI, this requires that the entire particle data 
-!(all NumParVar  variables given by partransfersend(:,iComm)) need to be in column format so that they can be passed as a single array.
+! (all NumParVar  variables given by partransfersend(:,iComm)) need to be in column format so that they can be passed as a single array.
 ! For some yet-to-be understood reason, MPI dopes not accept passing an entire row of data, say, partransfersend(iComm,:) 
-!as a contiguous array into MPI_SEND or MPI_RECV. Hence the convetion used below. 
+! as a contiguous array into MPI_SEND or MPI_RECV. Hence the convetion used below. 
 
 nreqs = 0_lng
 partransfersend = 0.0_dbl
 partransferrecv = 0.0_dbl
 sendtag = 0_lng
 
-
-
-!Identify how many particles need to be transfererd in each direction
+!----- Identify how many particles need to be transfererd in each direction
 numpartransfer = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-		DO iComm = 1,NumCommDirsPar
-			IF (SubID(iComm).EQ.current%pardata%new_part) THEN
-				numpartransfer(iComm) = numpartransfer(iComm)+1_lng
-			END IF
-		END DO
-	END IF
-	! point to next node in the list
-	current => next
+   next => current%next 							! copy pointer of next node
+   IF (current%pardata%cur_part /= current%pardata%new_part) THEN 		! Transfer only if the particle has moved to another partition
+      DO iComm = 1,NumCommDirsPar
+         IF (SubID(iComm).EQ.current%pardata%new_part) THEN
+	    numpartransfer(iComm) = numpartransfer(iComm)+1_lng
+	 END IF
+      END DO
+   END IF
+   current => next								! point to next node in the list
 ENDDO
-! Now 'numpartransfer' contains the number of particles in each direction
 
-
-!numparticlesDomain = 1_lng!MAXVAL(numpartransfer)
+!----- Now 'numpartransfer' contains the number of particles in each direction
 ALLOCATE(ParSendArray(numparticlesDomain,NumCommDirsPar))
 ALLOCATE(ParRecvArray(numparticlesDomain,NumCommDirsPar))
+
 DO iComm = 1,NumCommDirsPar
-	DO par_num = 1,numparticlesDomain
-		ParSendArray(par_num,iComm) = ParInit
-		ParRecvArray(par_num,iComm) = ParInit
-	END DO
+   DO par_num = 1,numparticlesDomain
+      ParSendArray(par_num,iComm) = ParInit
+      ParRecvArray(par_num,iComm) = ParInit
+   END DO
 END DO
 
-
-! Pack data
+!----- Pack data
 parsendindex = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	IF (current%pardata%cur_part /= current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-		DO iComm = 1,NumCommDirsPar
-			IF (SubID(iComm).EQ.current%pardata%new_part) THEN
-				commdir = iComm
-				parsendindex(commdir) = parsendindex(commdir) + 1_lng
-				!write(*,*) 'data being packed in ',mySub,'for direction ',commdir
-			END IF
-		END DO
-		! PACK DATA INTO AN ARRAY
-
-		ParSendArray(parsendindex(commdir),commdir)		= current%pardata
-
-
-
-
-	END IF
-	! point to next node in the list
-	current => next
-	!write(*,*) current%parid
+   next => current%next ! copy pointer of next node
+   IF (current%pardata%cur_part /= current%pardata%new_part) THEN 			! Transfer only if the particle has moved to another partition
+      DO iComm = 1,NumCommDirsPar
+         IF (SubID(iComm).EQ.current%pardata%new_part) THEN
+	    commdir = iComm
+	    parsendindex(commdir) = parsendindex(commdir) + 1_lng
+	 END IF
+      END DO
+      
+      ParSendArray(parsendindex(commdir),commdir)= current%pardata      		! PACK DATA INTO AN ARRAY
+   END IF
+   current => next
 ENDDO
 
-
-! Post send
+!----- Post send
 DO iComm = 1,NumCommDirsPar
-	!write(*,*) 'In post send ',mySub,iComm,SubID(iComm)
-	IF(SubID(iComm) .NE. 0) THEN
-		nreqs 	= nreqs + 1_lng
-		dest	= SubID(iComm) - 1_lng ! rank of processing unit sending message TO this processing unit
-		sendtag = iComm + 20_lng
-		CALL MPI_ISEND(ParSendArray(1:max(parsendindex(iComm),1),iComm),max(parsendindex(iComm),1),mpipartransfertype,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
-	END IF
+   IF (SubID(iComm) .NE. 0) THEN
+      nreqs 	= nreqs + 1_lng
+      dest	= SubID(iComm) - 1_lng 						! rank of processing unit sending message TO this processing unit
+      sendtag = iComm + 20_lng
+      CALL MPI_ISEND(ParSendArray(1:max(parsendindex(iComm),1),iComm),max(parsendindex(iComm),1),mpipartransfertype,dest,sendtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)	! send data
+   END IF
 END DO
 
-
-! Post receives
+!----- Post receives
 parrecvindex = 0_lng
 DO iComm = 1,NumCommDirsPar
-	!write(*,*) 'In post receive ', mySub,iComm,SubID(OppCommDir(iComm))
-	IF(SubID(OppCommDir(iComm)) .NE. 0) THEN
-		nreqs 	= nreqs + 1_lng
-		source	= SubID(OppCommDir(iComm)) - 1_lng ! rank of processing unit sending message TO this processing unit
-		recvtag = iComm + 20_lng
-		!recvtag = source*1000_lng + iComm*1000_lng + 20_lng
-10		CALL MPI_PROBE(source,recvtag,MPI_COMM_WORLD,probestat,mpierr)
-		CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
-		IF (parrecvindex(iComm).LT.1_lng) THEN
-			GOTO 10
-		END IF
-
-		CALL MPI_IRECV(ParRecvArray(1:parrecvindex(iComm),iComm),parrecvindex(iComm),mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
-	END IF
+   IF (SubID(OppCommDir(iComm)) .NE. 0) THEN
+      nreqs 	= nreqs + 1_lng
+      source	= SubID(OppCommDir(iComm)) - 1_lng 				! rank of processing unit sending message TO this processing unit
+      recvtag = iComm + 20_lng
+10    CALL MPI_PROBE(source,recvtag,MPI_COMM_WORLD,probestat,mpierr)
+      CALL MPI_GET_COUNT(probestat,mpipartransfertype,parrecvindex(iComm),mpierr)	
+      IF (parrecvindex(iComm).LT.1_lng) THEN
+         GOTO 10
+      END IF
+      CALL MPI_IRECV(ParRecvArray(1:parrecvindex(iComm),iComm),parrecvindex(iComm),mpipartransfertype,source,recvtag,MPI_COMM_WORLD,parreqid(nreqs),mpierr)
+   END IF
 END DO
 
-
-! Wait for all communication to complete
+!----- Wait for all communication to complete
 CALL MPI_WAITALL(nreqs,parreqid(1:nreqs),parwtstat,mpierr)
 
-
-! Unpack data if recd.
+!----- Unpack data if recd.
 DO iComm = 1,NumCommDirsPar
-	DO par_num = 1,parrecvindex(iComm)
-		!IF (partransferrecv(1,iComm).GT.0_lng) THEN
-		IF (ParRecvArray(par_num,iComm)%parid.GT.0_lng) THEN
-			CALL list_insert(ParListHead)
-			current => ParListHead%next
-	
-			! UNPACK DATA
-			current%pardata 		=ParRecvArray(par_num,iComm)
-			current%pardata%cur_part 	= mySub!current%pardata%new_part
-		END IF
-	END DO
+   DO par_num = 1,parrecvindex(iComm)
+      IF (ParRecvArray(par_num,iComm)%parid.GT.0_lng) THEN
+         CALL list_insert(ParListHead)
+	 current => ParListHead%next
+	 !----- UNPACK DATA
+	 current%pardata = ParRecvArray(par_num,iComm)
+	 current%pardata%cur_part = mySub		
+      END IF
+  END DO
 END DO
 
-! If data was sent then remove sent particle from list
+!----- If data was sent then remove sent particle from list
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-	next => current%next ! copy pointer of next node
-	!write(*,*) 'traverse node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
-	!write(*,*) current%prev%next%pardata%parid,current%pardata%parid,iter
-	IF (current%pardata%cur_part .NE. current%pardata%new_part) THEN ! Transfer only if the particle has moved to another partition
-		!write(*,*) 'In delete node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part,iter
-		!PAUSE
-		CALL list_delete(current)
-
-
-		NULLIFY(current)
-	END IF
-	! point to next node in the list
-	current => next
+   next => current%next 							! copy pointer of next node
+   IF (current%pardata%cur_part .NE. current%pardata%new_part) THEN 		! Transfer only if the particle has moved to another partition
+      CALL list_delete(current)
+      NULLIFY(current)
+   END IF
+   current => next
 ENDDO
-!write(*,*) mySub,ParListHead%next%pardata%parid
+
 numparticlesSub = 0_lng
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
 	numparticlesSub = numparticlesSub + 1_lng
-	next => current%next ! copy pointer of next node
-	!write(*,*) 'leftover node',mySub,current%pardata%parid,current%pardata%cur_part,current%pardata%new_part
-	! point to next node in the list
+	next => current%next 
 	current => next
 ENDDO
 
@@ -1050,6 +1023,8 @@ DEALLOCATE(ParRecvArray)
 !------------------------------------------------
 END SUBROUTINE Particle_MPI_Transfer
 !------------------------------------------------
+
+
 
 
 
@@ -1102,9 +1077,6 @@ END DO
 END SUBROUTINE MPI_Transfer
 !------------------------------------------------
 
-
-
-
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE PostRecv(iComm,numReqs)	! receives information from a neighboring subdomain
 !--------------------------------------------------------------------------------------------------
@@ -1129,10 +1101,6 @@ CALL MPI_IRECV(msgRecv(msgStart:msgEnd),msgSize(OppCommDir(iComm)),MPI_DOUBLE_PR
 !------------------------------------------------
 END SUBROUTINE PostRecv
 !------------------------------------------------
-
-
-
-
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE SendData(iComm,numReqs)											! sends information to a neighboring subdomain

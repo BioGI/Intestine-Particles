@@ -18,7 +18,7 @@
 FC = mpif90
 # flags for debugging or for maximum performance, comment as necessary
 #FCFLAGS = -g -fbounds-check
-FCFLAGS = -O0 -g -ffree-line-length-none -ffree-form
+FCFLAGS = -g -ffree-line-length-none -ffree-form  -ffpe-trap=invalid,zero,overflow 
 # flags forall (e.g. look for system .mod files, required in gfortran)
 FCFLAGS += -I/usr/include
 FCFLAGS += -I/opt/local/include
@@ -31,12 +31,12 @@ FCFLAGS += -I/opt/local/include
 #MODULES = setup.o algorithm.o output.o
 #SRCOBJS = 3d.o
 PARFILES = SetParticle.o
-PROGRAMS = Intestine3D.exe
+PROGRAMS = Intestine.exe
 #OBJS = SetPrecision.o Setup.o LBM.o PassiveScalar.o \
-       Parallel.o Geometry.o ICBC.o Output.o \
+       Parallel.o Geometry.o ICBC.o Output.o ParticleDrug.o ParticleTracking.o \
        Main.o
 MODULES = SetPrecision.o Setup.o ICBC.o LBM.o PassiveScalar.o \
-       Parallel.o Geometry.o Output.o
+        Parallel.o Geometry.o Output.o ParticleDrug.o ParticleTracking.o 
 SRCOBJS = Main.o
 
 # "make" builds all
@@ -46,18 +46,18 @@ OBJS= $(SRCOBJS)
 
 all: 	
 	@$(MAKE) $(MODULES)
-	@$(MAKE) Intestine3D.exe
+	@$(MAKE) Intestine.exe
 	@$(MAKE) genparticles
 
 genparticles: $(PARFILES)
 	      $(FC) -o genparticles $(FCFLAGS) $(PARFILES)
-	      cp genparticles ../
+#	      cp genparticles ../
 
 
 
-Intestine3D.exe: $(OBJS)
-	     $(FC) -o Intestine3D.exe $(FCFLAGS) $(OBJS) $(MODULES)
-	     cp Intestine3D.exe ../
+Intestine.exe: $(OBJS)
+	     $(FC) -o Intestine.exe $(FCFLAGS) $(OBJS) $(MODULES)
+#	     cp Intestine.exe ../
 
 $(OBJS): $(MODULES)
 
@@ -181,6 +181,6 @@ veryclean: clean
 #	$(FC) -o redim $(FFLAGS) $(REDIMOBJS) $(FLIBS)
 #
 #clean:
-#	rm -f *.o *.mod Intestine3D.exe
+#	rm -f *.o *.mod Intestine.exe
 
 
