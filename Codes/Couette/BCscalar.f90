@@ -19,13 +19,12 @@ INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1				! index variables
 REAL(dbl), INTENT(OUT) :: phiBC     					! scalar contribution from the boundary condition
 INTEGER(lng) :: ip1,jp1,kp1 						! neighboring nodes (2 away from the wall)
 REAL(dbl) :: q								! distance ratio from the current node to the solid node
-REAL(dbl) :: rhoB,phiB							! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
-REAL(dbl) :: feq_m							! equilibrium distribution function in the mth direction
-REAL(dbl) :: fPlusBstar, rhoBstar, phiBstar, PkBstar I			! Values interpolated to Bstar location
+REAL(dbl) :: rhoAstar,phiAstar, PkAstar,feq_Astar						! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
+REAL(dbl) :: fPlusBstar, rhoBstar, phiBstar, PkBstar 			! Values interpolated to Bstar location
 REAL(dbl) :: phiijk_m							! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
 REAL(dbl) :: cosTheta, sinTheta						! COS(theta), SIN(theta)
 REAL(dbl) :: ub, vb, wb							! wall velocity (x-, y-, z- components)
-REAL(dbl) :: rijk ! radius of the solid node
+REAL(dbl) :: rijk 							! radius of the solid node
 REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt
 INTEGER(lng) :: it
 
@@ -53,15 +52,16 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
   kp1 = k
 END IF	
 
-!------ assign values to boundary (density, scalar, f)
-rhoB= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)		! extrapolate the density
-CALL Equilibrium_LOCAL(m,rhoB,ub,vb,wb,feq_m)			       	! calculate the equibrium distribution function in the mth direction
+!------ Computing values for A* (See Chpter 3 paper)
+rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
+phiAstar= phiWall							! getting phi at the solid surface
+CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)			       	! calculate the equibrium distribution function in the mth direction
 
 
 !----- Scalar  streamed from wall to current node (i,j,k) 
 !----- and from current node to neighboring node (ip1,jp1,kp1)
-phiB= (feq_m/rhoB - wt(m)*Delta)*phiWall				! contribution from the wall in the mth direction (zero if phiWall=0)
-phiijk_m= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)	! contribution from the current node to the next node in the mth direction
+PkAstar= (feq_Astar/rhoAstar - wt(m)*Delta)*phiAstar			! contribution from the wall in the mth direction (zero if phiWall=0)
+!phiijk_m= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)	! contribution from the current node to the next node in the mth direction
 
 fPlusBstar= q*fplus(m,ip1,jp1,kp1) + (1-q)*fplus(m,i,j,k)
 rhoBstar= q*rho(ip1,jp1,kp1) + (1-q)*rho(i,j,k)
@@ -69,7 +69,7 @@ phiBstar= q*phi(ip1,jp1,kp1) + (1-q)*phi(i,j,k)
 PkBstar= (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
 
 !----- extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
-phiBC= phiB+ (phiB- PkBstar)*(1-q)
+phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
 
 !------------------------------------------------
 END SUBROUTINE ScalarBC
