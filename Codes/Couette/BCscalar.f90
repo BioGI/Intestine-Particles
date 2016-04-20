@@ -59,9 +59,9 @@ phiAstar= phiWall							! getting phi at the solid surface
 PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in the mth direction (zero if phiWall=0)
 
 !------ Computing values at B* & scalar streamed from B* (Chpter 3 paper)
-fPlusBstar= q*fplus(m,ip1,jp1,kp1) + (1-q)*fplus(m,i,j,k)
-rhoBstar= q*rho(ip1,jp1,kp1) + (1-q)*rho(i,j,k)
-phiBstar= q*phi(ip1,jp1,kp1) + (1-q)*phi(i,j,k)
+fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q*fplus(m,i,j,k)
+rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
+phiBstar=   (1-q)*phi(ip1,jp1,kp1)     + q*phi(i,j,k)
 PkBstar= (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
 
 !----- extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
