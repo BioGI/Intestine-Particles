@@ -574,6 +574,11 @@ REAL(dbl)       :: phiSum, phiTemp      ! sum of the scalars of the neighboring 
 REAL(dbl)       :: feq                  ! equilibrium distribution function
 CHARACTER(7)    :: iter_char            ! iteration stored as a character
 REAL(dbl)       :: usum,vsum,wsum
+REAL(dbl)       :: h1, h2, time, q
+REAL(dbl) :: D_X, D_Y
+D_X = 20*D 
+D_Y = D
+
 
 !----- initialize the sum of surrounding densities
 rhoSum = 0.0_dbl
@@ -622,7 +627,21 @@ END IF
 
 !----- enforcing boundary values of density
  rho(i,j,k) = denL
- phi(i,j,k) = phiWall
+ ! phi(i,j,k) = phiWall
+ time = iter*tcf
+ h2 = -0.38 * D_x + s1*time 	! 0.4_dbl*D   
+ h1 = -0.48 * D_x + s1*time 	!-0.4_dbl*D
+
+ if (x(i) < 0.5*(h1+h2) ) then
+    !Left piston   
+    q = (x(i) - h1)/xcf
+    phi(i,j,k) = (phi(i+1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
+ else
+    !Right piston
+    q = (h2 - x(i))/xcf
+    phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
+ end if
+ 
  u(i,j,k) = ubx                                                                         ! wall velocity
  v(i,j,k) = uby
  w(i,j,k) = ubz
