@@ -57,13 +57,15 @@ REAL(dbl) :: phiBC						! scalar contribution from boundary
 REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
 REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
 REAL(dbl) :: zcf3						! Cell volume
-
+REAL(dbl):: phiAbsorbedSleft, phiAbsorbedSright
 CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
 !----- store the previous scalar values
 phiTemp = phi
 Negative_phi_Counter = 0
 Negative_phi_Worst= 0
+phiAbsorbedSleft= 0.0
+phiAbsorbedSright=0.0
 
 !----- Stream the scalar
 DO k=1,nzSub
@@ -101,11 +103,9 @@ DO k=1,nzSub
           IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
 	     phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN				! macro- boundary
-!            CALL ScalarBC2(m,i,j,k,im1,jm1,km1,phiBC,phiOutSurf,phiInSurf)	! Wang: scalar flux  BC (using BB f's)	
              CALL Scalar_Fixed_BC(m,i,j,k,im1,jm1,km1,phiBC)				! Wang: scalar BC
              phi(i,j,k) = phi(i,j,k) + phiBC     
-!            CALL AbsorbedScalarS2(i,j,k,m,phiOutSurf,phiInSurf)		! measure the absorption rate
-             CALL AbsorbedScalarS(i,j,k,m,phiBC)				! measure the absorption rate
+             CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright) 				! measure the absorption rate
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi
              CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)						! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
              phi(i,j,k) = phi(i,j,k) + phiBC     
@@ -148,6 +148,8 @@ DO k=1,nzSub
   END DO
 END DO
 
+write(*,*) iter, phiAbsorbedS, phiAbsorbedSleft, phiAbsorbedSright
+
 IF (Negative_phi_Counter.LT. 1.0) THEN
    Negative_phi_Counter = 1.0
 ENDIF 
@@ -166,21 +168,26 @@ END SUBROUTINE Scalar
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE AbsorbedScalarS(i,j,k,m,phiBC)		! measures the total absorbed scalar
+SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright)		! measures the total absorbed scalar
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: i,j,k,m						! index variables
+INTEGER(lng), INTENT(IN) :: i,j,k,m,im1						! index variables
 REAL(dbl), INTENT(IN) :: phiBC   		  				! scalar contribution from the boundary condition
 REAL(dbl) :: phiOUT, phiIN							! scalar values exchanged with the wall
-
+REAL(dbl) :: phiAbsorbedSleft,phiAbsorbedSright
 phiIN= phiBC									! contribution from the wall to the crrent node (in)
 phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)	! contribution to the wall from the current node (out)
 phiAbsorbedS = phiAbsorbedS + (phiOUT - phiIN)					!- wt(m)*Delta*phiWall	! add the amount of scalar that has been absorbed at the current location in the current direction
+
+IF (i.GT.im1) THEN
+   phiAbsorbedSleft  = phiAbsorbedSleft  + (phiOUT - phiIN)                           !- wt(m)*Delta*phiWall  ! add the amount of scalar that has been absorbed at the current location in the current direction
+ELSE IF (i .LT. im1) THEN
+   phiAbsorbedSright = phiAbsorbedSright + (phiOUT - phiIN)  
+END IF
 !------------------------------------------------
 END SUBROUTINE AbsorbedScalarS
 !------------------------------------------------
-
 
 
 
