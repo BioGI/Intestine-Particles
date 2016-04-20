@@ -635,11 +635,11 @@ END IF
  if (x(i) < 0.5*(h1+h2) ) then
     !Left piston   
     q = (x(i) - h1)/xcf
-    phi(i,j,k) = (phiWall- phi(i+1,j,k))*q/(1.0_dbl+q)  +phi(i+1,j,k)
+    phi(i,j,k) = (phi(i+1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
  else
     !Right piston
     q = (h2 - x(i))/xcf
-    phi(i,j,k) = (phiWall-phi(i-1,j,k))*q/(1.0_dbl+q)  + phi(i-1,j,k)
+    phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall 
  end if
 
  u(i,j,k) = ubx                                                                         ! wall velocity
