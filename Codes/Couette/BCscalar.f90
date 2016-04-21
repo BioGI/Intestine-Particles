@@ -28,7 +28,7 @@ REAL(dbl) :: rijk 							! radius of the solid node
 REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt
 INTEGER(lng) :: it
 
-CALL qCalcFarhad2(m,i,j,k,im1,jm1,km1,q)		
+CALL qCalcFarhad(i,q)		
 
 IF (rijk .GE. rOut(k)) THEN
    ub = velOut(km1) 			

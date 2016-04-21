@@ -511,180 +511,34 @@ END SUBROUTINE qCalcBalaji
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE qCalcFarhad(m,i,j,k,im1,jm1,km1,q)                 ! calculates q (boundary distance ratio) using "ray tracing" - see wikipedia article
+SUBROUTINE qCalcFarhad(i,q)  
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1 ! current node, and neighboring node
-REAL(dbl), INTENT(OUT) :: q                                                     ! distance ratio
-REAL(dbl) :: Ax,Ay,Az                                                                   ! current node
-REAL(dbl) :: Bx,By,Bz                                                                   ! solid node
-REAL(dbl) :: AB,AP                                                                              ! distances between current and solid nodes, and between current node and the wall
-REAL(dbl) :: dx,dy,dz                                                                   ! unit vector pointing from A to B
-REAL(dbl) :: r1,r2,z1,z2,slope,intercept                        ! radius and z location at k and km1, slope of line connecting those two points, z-intercept of the r-equation
-REAL(dbl) :: slope2,term1,term2                                         ! terms used in calculation
-REAL(dbl) :: h1,h2, time 				! Height of the lower and upper pistons and the physical time
-REAL(dbl) :: x1,y1,x2,y2,xt,yt,zt,ht,rt,vt
-REAL(dbl) :: rijk
-INTEGER(lng) :: it
-
-rijk = x(im1)								! height at current location
-!----- Initial fluid node guess
-x1=x(i)
-y1=y(j)
-z1=z(k)
-                
-!----- Initial solid node guess
-x2=x(im1)
-y2=y(jm1)
-z2=z(km1)
-                 
-IF (i.NE.im1) THEN
-   DO it=1,qitermax
-      !----- guess of boundary location 
-      xt=(x1+x2)/2.0_dbl
-      yt=(y1+y2)/2.0_dbl
-      zt=(z1+z2)/2.0_dbl
-
-      rt = xt
-      IF (rijk .GE. rOut(k)) THEN
-	  ht = ((xt-x(i))*rOut(km1)+(x(im1)-xt)*rOut(k))/(x(im1)-x(i))
-      ELSE
-          ht = ((xt-x(i))*rIn(km1)+(x(im1)-xt)*rIn(k))/(x(im1)-x(i))
-      END IF
-
-      IF (rt.GT.ht) then
-         x2=xt
-         y2=yt
-         z2=zt
-      ELSE
-         x1=xt
-         y1=yt
-         z1=zt
-      END IF
-   
-   END DO
-   x1=x(i)
-   y1=y(j)
-   z1=z(k)
-                
-   x2=x(im1)
-   y2=y(jm1)
-   z2=z(km1)
- 
-   q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-
-ELSE
-   DO it=1,qitermax
-      !----- guess of boundary location 
-      xt=(x1+x2)/2.0_dbl
-      yt=(y1+y2)/2.0_dbl
-      zt=(z1+z2)/2.0_dbl
-
-      rt = xt
-      IF (rijk .GE. rOut(k)) THEN
-         ht = (rOut(km1)+rOut(k))/2.0_dbl
-      ELSE
-         ht = (rIn(km1)+rIn(k))/2.0_dbl
-      END IF
-
-      IF (rt.GT.ht) then
-         x2=xt
-         y2=yt
-         z2=zt
-      ELSE
-         x1=xt
-         y1=yt
-         z1=zt
-      END IF
-   END DO
-
-   x1=x(i)
-   y1=y(j)
-   z1=z(k)
-                
-   x2=x(im1)
-   y2=y(jm1)
-   z2=z(km1)
- 
-   q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-ENDIF
-
-
-! make sure 0<q<1
-IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN
-  OPEN(1000,FILE="error.txt")
-  WRITE(1000,*) "Farhad"
-  WRITE(1000,*) "q=",q
-  WRITE(1000,*) "m=",m
-  WRITE(1000,*) "i=",i,"j=",j,"k=",k
-  WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
-  WRITE(1000,*) "Ax=",Ax,"Ay=",Ay,"Az=",Az
-  WRITE(1000,*) "Bx=",Bx,"By=",By,"Bz=",Bz
-  WRITE(1000,*) "dx=",dx,"dy=",dy,"dz=",dz
-  WRITE(1000,*) "r1=",r1,"r2=",r2
-  WRITE(1000,*) "z1=",z1,"z2=",z2
-  WRITE(1000,*) "slope=",slope
-  WRITE(1000,*) "term1=",term1,"term2=",term2
-  WRITE(1000,*) "intercept=",intercept
-  WRITE(1000,*) "AB=",AB,"AP=",AP
-  CLOSE(1000)
-  STOP
-END IF
-
-!------------------------------------------------
-END SUBROUTINE qCalcFarhad
-!------------------------------------------------
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE qCalcFarhad2(m,i,j,k,im1,jm1,km1,q)  
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng) :: m,i,j,k,im1,jm1,km1
-REAL(dbl)    :: h1, h2, time, q, D_X, D_Y
+INTEGER(lng) :: i
+REAL(dbl)    :: h1,h2,time,D_X,D_Y,q
 
 time = iter*tcf
 D_X= 20*D 
 D_Y= D
-h2= -0.38* D_x+ s1*time    
-h1= -0.48* D_x+ s1*time 
+h2=(-0.38* D_x)+ (s1*time)    
+h1=(-0.48* D_x)+ (s1*time) 
 
-IF (x(i) < 0.5*(h1+h2) ) then 		  			!Left    
+IF (x(i) .LT. 0.5*(h1+h2) ) then 		  			!Left    
    q= (x(i)-h1)/xcf
 ELSE						  	 	!Right 
    q= (h2-x(i))/xcf
 END IF
 
-IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN
+IF ((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN
   OPEN(1000,FILE="error.txt")
   WRITE(1000,*) "Farhad q", q
   CLOSE(1000)
   STOP
 END IF
 !------------------------------------------------
-END SUBROUTINE qCalcFarhad2
+END SUBROUTINE qCalcFarhad
 !------------------------------------------------
 
 
