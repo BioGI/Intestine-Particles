@@ -53,8 +53,8 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
 END IF	
 
 !------ Computing values at A* & scalar streamed from A* (Chpter 3 paper)
-CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)		       	! calculate the equibrium distribution function in the mth direction
 rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
+CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)		       	! calculate the equibrium distribution function in the mth direction
 phiAstar= phiWall							! getting phi at the solid surface
 PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in the mth direction (zero if phiWall=0)
 
@@ -63,9 +63,9 @@ fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q*fplus(m,i,j,k)
 rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
 phiBstar=   (1-q)*phi(ip1,jp1,kp1)     + q*phi(i,j,k)
 PkBstar= (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
-
-!----- extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
 phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
+
+
 
 !! assign values to boundary (density, scalar, f)
 !rhoB = (rho(i,j,k) - rho(ip1,jp1,kp1))*(1+q) + rho(ip1,jp1,kp1)		! extrapolate the density
