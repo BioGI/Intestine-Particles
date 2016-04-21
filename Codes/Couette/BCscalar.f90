@@ -18,7 +18,7 @@ IMPLICIT NONE
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1				! index variables
 REAL(dbl), INTENT(OUT) :: phiBC     					! scalar contribution from the boundary condition
 INTEGER(lng) :: ip1,jp1,kp1 						! neighboring nodes (2 away from the wall)
-REAL(dbl) :: q								! distance ratio from the current node to the solid node
+REAL(dbl) :: q, rhoB,phiB,feq_m								! distance ratio from the current node to the solid node
 REAL(dbl) :: rhoAstar,phiAstar, PkAstar,feq_Astar						! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
 REAL(dbl) :: fPlusBstar, rhoBstar, phiBstar, PkBstar 			! Values interpolated to Bstar location
 REAL(dbl) :: phiijk_m							! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
@@ -66,6 +66,19 @@ PkBstar= (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
 
 !----- extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
 phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
+
+!! assign values to boundary (density, scalar, f)
+!rhoB = (rho(i,j,k) - rho(ip1,jp1,kp1))*(1+q) + rho(ip1,jp1,kp1)		! extrapolate the density
+!CALL Equilibrium_LOCAL(m,rhoB,ub,vb,wb,feq_m)			        ! calculate the equibrium distribution function in the mth direction
+!!----- find the contribution of scalar streamed from the wall to the current node (i,j,k), and from the current node to the next neighboring node (ip1,jp1,kp1)
+!phiB	= (feq_m/rhoB - wt(m)*Delta)*phiWall				! contribution from the wall in the mth direction (zero if phiWall=0)
+!phiijk_m= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)	! contribution from the current node to the next node in the mth direction
+!!----- if q is too small, the extrapolation to phiBC can create a large error...
+!IF(q .LT. 0.25) THEN
+!  q = 0.25_dbl  							! approximate the distance ratio as 0.25
+!END IF
+!!----- extrapolate using phiB and phijk_m to obtain contribution from the solid node to the current node
+!phiBC= ((phiB - phiijk_m)/q) + phiB	
 
 !------------------------------------------------
 END SUBROUTINE Scalar_Fixed_BC
