@@ -238,10 +238,10 @@ IF(iter .EQ. phiStart) THEN
       END DO
 
     CASE(UNIFORM)						! uniform initial distribution
-       !phi(:,:,:) = phiIC			! set the full scalar field to phiIC
-       DO i=0,nxSub+1
-          phi(i,:,:) = phiIC * (i-18)*(97-i)/1600 
-       END DO
+       phi(:,:,:) = phiIC			! set the full scalar field to phiIC
+       !DO i=0,nxSub+1
+       !   phi(i,:,:) = phiIC * (i-18)*(97-i)/1600 
+       !END DO
     CASE DEFAULT
    
       OPEN(1000,FILE="error.txt")

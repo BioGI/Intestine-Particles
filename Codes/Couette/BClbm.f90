@@ -520,15 +520,15 @@ INTEGER(lng) :: i
 REAL(dbl)    :: h1,h2,time,D_X,D_Y,q
 
 time = iter*tcf
-D_X= 20*D 
+D_X= 20.0_dbl *D 
 D_Y= D
-h2=(-0.38* D_x)+ (s1*time)    
-h1=(-0.48* D_x)+ (s1*time) 
-
+h2=(-0.38_dbl* D_x)+ 5.0000e-5 + (s1*time)    
+h1=(-0.48_dbl* D_x)+ 5.0000e-5 + (s1*time) 
 IF (x(i) .LT. 0.5*(h1+h2) ) then 		  			!Left    
    q= (x(i)-h1)/xcf
-ELSE						  	 	!Right 
+ELSE							  	 	!Right 
    q= (h2-x(i))/xcf
+   !write(*,*) i,x(i),h2,q 
 END IF
 
 IF ((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN

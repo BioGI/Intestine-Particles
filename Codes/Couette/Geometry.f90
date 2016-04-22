@@ -29,7 +29,7 @@ REAL(dbl) :: macroFreq										! macroscopic contraction frequency
 INTEGER(lng) :: xaxis,yaxis								! axes index variables
 
 REAL(dbl) :: D_X, D_Y
-D_X = 20*D 
+D_X = 20.000_dbl * D 
 D_Y = D
 
 ! Define the lattice <=> physical conversion factors
@@ -311,8 +311,8 @@ D_Y = D
 
 time	= iter*tcf
 DO i=0,nz-1
-   h1Out(i) = -0.38 * D_x + s1*time 	! 0.4_dbl*D   
-   h1In(i)  = -0.48 * D_x + s1*time 	!-0.4_dbl*D 
+   h1Out(i) = -0.38_dbl*D_x + 5.0000e-5 + s1*time 	   
+   h1In(i)  = -0.48_dbl*D_x + 5.0000e-5 +s1*time 	 
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
@@ -629,8 +629,8 @@ END IF
  rho(i,j,k) = denL
  ! phi(i,j,k) = phiWall
  time = iter*tcf
- h2 = -0.38 * D_x + s1*time 	! 0.4_dbl*D   
- h1 = -0.48 * D_x + s1*time 	!-0.4_dbl*D
+ h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time 	! 0.4_dbl*D   
+ h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time 	!-0.4_dbl*D
 
  if (x(i) < 0.5*(h1+h2) ) then
     !Left piston   
