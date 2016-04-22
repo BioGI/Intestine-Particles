@@ -57,15 +57,23 @@ REAL(dbl) :: phiBC						! scalar contribution from boundary
 REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
 REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
 REAL(dbl) :: zcf3						! Cell volume
-REAL(dbl):: phiAbsorbedSleft, phiAbsorbedSright
+REAL(dbl) :: phiAbsorbedSleft, phiAbsorbedSright
+REAL(dbl) :: phiINleft, phiINright, phiOUTright,phiOUTleft 
+
 CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
 !----- store the previous scalar values
 phiTemp = phi
 Negative_phi_Counter = 0
 Negative_phi_Worst= 0
+
 phiAbsorbedSleft= 0.0
 phiAbsorbedSright=0.0
+
+phiINleft =0.0_dbl
+phiINright=0.0_dbl
+phiOUTright=0.0_dbl
+phiOUTleft=0.0_dbl
 
 !----- Stream the scalar
 DO k=1,nzSub
@@ -102,14 +110,15 @@ DO k=1,nzSub
 
           IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
 	     phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
-          ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN				! macro- boundary
-             CALL Scalar_Fixed_BC(m,i,j,k,im1,jm1,km1,phiBC)				! Wang: scalar BC
+          ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN			! macro- boundary
+             CALL Scalar_Fixed_Scalar(m,i,j,k,im1,jm1,km1,phiBC)							! Wang: scalar BC
              phi(i,j,k) = phi(i,j,k) + phiBC     
-             CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright) 				! measure the absorption rate
-          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi
-             CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)						! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
+             !CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright) 			! measure the absorption rate
+             CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)  
+          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN			! villi
+             CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)					! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
              phi(i,j,k) = phi(i,j,k) + phiBC     
-             CALL AbsorbedScalarV(i,j,k,m,phiBC)									! measure the absorption rate
+             CALL AbsorbedScalarV(i,j,k,m,phiBC)								! measure the absorption rate
           ELSE
              OPEN(1000,FILE="error.txt")
              WRITE(1000,'(A75)') "error in PassiveScalar.f90 at Line 89: node(im1,jm1,km1) is out of range"
@@ -148,7 +157,11 @@ DO k=1,nzSub
   END DO
 END DO
 
-write(*,*) iter, phiAbsorbedS, phiAbsorbedSleft, phiAbsorbedSright
+
+!write(*,*) iter, phiAbsorbedS, phiAbsorbedSleft, phiAbsorbedSright
+
+write(*,*) iter, phiOUTleft,phiINleft,phiOUTright, phiINright
+
 
 IF (Negative_phi_Counter.LT. 1.0) THEN
    Negative_phi_Counter = 1.0
@@ -168,7 +181,7 @@ END SUBROUTINE Scalar
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright)		! measures the total absorbed scalar
+SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)		! measures the total absorbed scalar
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -176,13 +189,19 @@ INTEGER(lng), INTENT(IN) :: i,j,k,m,im1						! index variables
 REAL(dbl), INTENT(IN) :: phiBC   		  				! scalar contribution from the boundary condition
 REAL(dbl) :: phiOUT, phiIN							! scalar values exchanged with the wall
 REAL(dbl) :: phiAbsorbedSleft,phiAbsorbedSright
+REAL(dbl) :: phiINleft, phiINright, phiOUTright,phiOUTleft
+
 phiIN= phiBC									! contribution from the wall to the crrent node (in)
 phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)	! contribution to the wall from the current node (out)
 phiAbsorbedS = phiAbsorbedS + (phiOUT - phiIN)					!- wt(m)*Delta*phiWall	! add the amount of scalar that has been absorbed at the current location in the current direction
 
 IF (i.GT.im1) THEN
-   phiAbsorbedSleft  = phiAbsorbedSleft  + (phiOUT - phiIN)                           !- wt(m)*Delta*phiWall  ! add the amount of scalar that has been absorbed at the current location in the current direction
+   phiINleft = phiINleft + phiIN
+   phiOUTleft= phiOUTleft+ phiOUT 
+   phiAbsorbedSleft  = phiAbsorbedSleft  + (phiOUT - phiIN)                     !Scalar absorbed at current location in current direction
 ELSE IF (i .LT. im1) THEN
+   phiINright = phiINright + phiIN
+   phiOUTright= phiOUTright+ phiOUT
    phiAbsorbedSright = phiAbsorbedSright + (phiOUT - phiIN)  
 END IF
 !------------------------------------------------

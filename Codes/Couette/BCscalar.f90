@@ -11,7 +11,7 @@ CONTAINS
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE Scalar_Fixed_BC(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
+SUBROUTINE Scalar_Fixed_Scalar(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -84,7 +84,7 @@ phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
 
 
 !------------------------------------------------
-END SUBROUTINE Scalar_Fixed_BC
+END SUBROUTINE Scalar_Fixed_Scalar
 !------------------------------------------------
 
 
@@ -92,7 +92,82 @@ END SUBROUTINE Scalar_Fixed_BC
 
 
 
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE Scalar_Fixed_Flux(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
 
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1				! index variables
+REAL(dbl), INTENT(OUT) :: phiBC     					! scalar contribution from the boundary condition
+INTEGER(lng) :: ip1,jp1,kp1 						! neighboring nodes (2 away from the wall)
+REAL(dbl) :: q, rhoB,phiB,feq_m						! distance ratio from the current node to the solid node
+REAL(dbl) :: rhoAstar,phiAstar, PkAstar,feq_Astar,feq_Bstar 		! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
+REAL(dbl) :: fPlusBstar, rhoBstar, phiBstar, PkBstar 			! Values interpolated to Bstar location
+REAL(dbl) :: phiijk_m							! contribution of scalar streamed in the mth direction to (ip1,jp1,kp1)
+REAL(dbl) :: cosTheta, sinTheta						! COS(theta), SIN(theta)
+REAL(dbl) :: ub, vb, wb, ubb,vbb,wbb							! wall velocity (x-, y-, z- components)
+REAL(dbl) :: rijk 							! radius of the solid node
+REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt
+INTEGER(lng) :: it
+
+CALL qCalcFarhad(i,q)		
+
+!IF ((j.EQ.21).AND.(k.EQ.3)) THEN
+!   write(*,*) iter,i,q
+!END IF
+
+IF (rijk .GE. rOut(k)) THEN
+   ub = velOut(km1) 			
+   vb = 0.0_dbl 				
+   wb = 0.0_dbl 							
+ELSE IF (rijk .LE. rIn(k)) THEN
+   ub = velIn(km1) 				
+   vb = 0.0_dbl					
+   wb = 0.0_dbl 					
+END IF		
+
+!----- neighboring node (fluid side)	
+ip1 = i + ex(m) 			
+jp1 = j + ey(m)			
+kp1 = k + ez(m)		
+
+!------ if (ip1,jp1,kp1) is not in the fluid domain, use values from the current node as an approximation
+IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
+  ip1 = i
+  jp1 = j
+  kp1 = k
+END IF	
+
+ubb= ub		 !0.0
+vbb= vb 	!0.0
+wbb= wb 	!0.0
+
+!----- Computing values at A* & scalar streamed from A* (Chpter 3 paper)
+rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
+CALL Equilibrium_LOCAL(m,rhoAstar,ubb,vbb,wbb,feq_Astar)		! calculate the equibrium distribution function in the mth direction
+phiAstar= phiWall							! getting phi at the solid surface
+PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in mth direction (0 if phiWall=0)
+
+!------ Computing values at B* & scalar streamed from B* (Chpter 3 paper)
+rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
+phiBstar=   (1-q)*phi(ip1,jp1,kp1)     + q*phi(i,j,k)
+
+fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q*fplus(m,i,j,k)
+PkBstar=    (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
+
+CALL Equilibrium_LOCAL(m,rhoBstar,ubb,vbb,wbb,feq_Bstar)
+!PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
+
+phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
+
+!IF ((j.EQ.21).AND.(k.EQ.3)) THEN
+!   write(*,*) iter, i, feq_Bstar, fPlusBstar, PkBstar 
+!END IF
+
+
+!------------------------------------------------
+END SUBROUTINE Scalar_Fixed_Flux
+!------------------------------------------------
 
 
 
