@@ -111,8 +111,9 @@ DO k=1,nzSub
           IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
 	     phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN			! macro- boundary
-             CALL Scalar_Fixed_Scalar(m,i,j,k,im1,jm1,km1,phiBC)							! Wang: scalar BC
-             phi(i,j,k) = phi(i,j,k) + phiBC     
+             !CALL Scalar_Fixed_Scalar(m,i,j,k,im1,jm1,km1,phiBC)							! Wang: scalar BC
+             CALL Scalar_Fixed_Flux(m,i,j,k,im1,jm1,km1,phiBC)
+ 	     phi(i,j,k) = phi(i,j,k) + phiBC     
              !CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright) 			! measure the absorption rate
              CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)  
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN			! villi
