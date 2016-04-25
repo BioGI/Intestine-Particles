@@ -102,9 +102,23 @@ REAL(dbl), INTENT(OUT) :: phiBC     					! scalar contribution from the boundary
 REAL(dbl) :: phiIN, phiOUT
 
 phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
-phiIN=  phiOUT
+IF ((j.EQ.21).AND.(k.EQ.3)) THEN  
+   IF ((j.EQ.jm1).AND.(k.EQ.km1)) THEN
+       write(*,*) iter,i,fplus(bb(m),i,j,k), rho(i,j,k), phiTemp(i,j,k),wt(bb(m)),  phiOUT
+   END IF
+END IF
+
+IF ((j.EQ.jm1).AND.(k.EQ.km1)) THEN
+   phiIN=  0.5 * phiOUT
+ELSE 
+   phiIN= phiOUT
+END IF
+
 phiBC=  phiIN
 
+IF ((j.EQ.21).AND.(k.EQ.3)) THEN 
+   !write(*,*) iter,i,j,k,im1,jm1,km1, phiIN, phiOUT
+END IF
 !------------------------------------------------
 END SUBROUTINE Scalar_Fixed_Flux
 !------------------------------------------------
