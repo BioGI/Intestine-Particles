@@ -11,7 +11,7 @@ CONTAINS
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE Scalar_Fixed_Scalar(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
+SUBROUTINE Scalar_Fixed_Scalar(m,i,j,k,im1,jm1,km1,phiBC,PkAO_Correction)				! implements the scalar BCs 
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -26,6 +26,7 @@ REAL(dbl) :: cosTheta, sinTheta						! COS(theta), SIN(theta)
 REAL(dbl) :: ub, vb, wb, ubb,vbb,wbb							! wall velocity (x-, y-, z- components)
 REAL(dbl) :: rijk 							! radius of the solid node
 REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt
+REAL(dbl):: fplusAO, feq_AO_u0, rhoA,phiA,PkAO,PkAO_u0,PkAO_Correction
 INTEGER(lng) :: it
 
 CALL qCalcFarhad(i,q)		
@@ -56,9 +57,9 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
   kp1 = k
 END IF	
 
-ubb= ub		 !0.0
-vbb= vb 	!0.0
-wbb= wb 	!0.0
+ubb= 0.0 
+vbb= 0.0
+wbb= 0.0
 
 !----- Computing values at A* & scalar streamed from A* (Chpter 3 paper)
 rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
@@ -70,17 +71,30 @@ PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wa
 rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
 phiBstar=   (1-q)*phi(ip1,jp1,kp1)     + q*phi(i,j,k)
 
-fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q*fplus(m,i,j,k)
-PkBstar=    (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
-
 CALL Equilibrium_LOCAL(m,rhoBstar,ubb,vbb,wbb,feq_Bstar)
-!PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
+PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
+
+fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q*fplus(m,i,j,k)
+!PkBstar=    (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
 
 phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
 
-!IF ((j.EQ.21).AND.(k.EQ.3)) THEN
-!   write(*,*) iter, i, feq_Bstar, fPlusBstar, PkBstar 
-!END IF
+
+
+!---- Correction to remove the effects of the moving boundary
+fplusAO= fplus(bb(m),i,j,k)
+rhoA= rho(i,j,k) 
+phiA= phi(i,j,k)  
+CALL Equilibrium_LOCAL(bb(m),rhoA,ubb,vbb,wbb,feq_AO_u0)
+
+PkAO    = (fplusAO/rhoA   - wt(bb(m))*Delta)*phiA
+PkAO_u0 = (feq_AO_u0/rhoA - wt(bb(m))*Delta)*phiA
+
+PkAO_Correction= PkAO- PkAO_u0
+
+IF ((j.EQ.21).AND.(k.EQ.3)) THEN
+!   write(*,*) 'A:', iter, i, feq_Bstar, rhoBstar, phiBstar, PkBstar,phiBC 
+END IF
 
 
 !------------------------------------------------
