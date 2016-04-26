@@ -151,7 +151,7 @@ lambda1		= L/numw1							! wavelength
 aOVERlam1	= a1/lambda1							! ratio of mean half-width to wavelength 
 kw1		= (2.0_dbl*PI)/lambda1						! wave number
 amp1		= 0.5_dbl*((0.5_dbl*D)-eps1)					! amplitude of the wave
-Tp		= lambda1/s1							! peristaltic period
+Tp		= 1.0_dbl 		! lambda1/s1							! peristaltic period
 Re1		= ((s1*(0.5_dbl*D))/nu)*((0.5_dbl*D)/lambda1)			! Reynolds number based on mode 1
 
 ! Mode 2 - Segmental Contractions
