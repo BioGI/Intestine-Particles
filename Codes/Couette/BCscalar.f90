@@ -27,6 +27,10 @@ REAL(dbl) :: ub, vb, wb, ubb,vbb,wbb							! wall velocity (x-, y-, z- component
 REAL(dbl) :: rijk 							! radius of the solid node
 REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt
 INTEGER(lng) :: it
+REAL(dbl) :: dPhiDn ! Gradient at the wall
+REAL(dbl) :: Pw !Permeability
+
+Pw = Dm !Permeability is set equal to Dm
 
 CALL qCalcFarhad(i,q)		
 
@@ -53,6 +57,7 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
 END IF	
 
 !----- Computing values at A* & scalar streamed from A* (Chpter 3 paper)
+phiWall = ( (phi(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(ip1,jp1,kp1)*q*q/(1.0+2.0*q)) ) /( 1.0 - (Pw/Dm)*q*(1+q)/(1+2.0*q) )	! calculate phiWall for flux BC (eq. 28 in paper)
 rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
 CALL Equilibrium_LOCAL(m,rhoAstar,ubb,vbb,wbb,feq_Astar)		! calculate the equibrium distribution function in the mth direction
 phiAstar= phiWall							! getting phi at the solid surface
