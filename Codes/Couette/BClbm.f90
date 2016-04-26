@@ -504,7 +504,8 @@ REAL(dbl)    :: h1,h2,time,D_X,D_Y,q
 
 time = iter*tcf
 D_X= 20.0_dbl *D 
-D_Y= D
+D_Y= 0.50_dbl *D
+
 h2=(-0.38_dbl* D_x)+ 5.0000e-5 + (s1*time)    
 h1=(-0.48_dbl* D_x)+ 5.0000e-5 + (s1*time) 
 IF (x(i) .LT. 0.5*(h1+h2) ) then 		  			!Left    

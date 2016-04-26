@@ -30,7 +30,7 @@ INTEGER(lng) :: xaxis,yaxis								! axes index variables
 
 REAL(dbl) :: D_X, D_Y
 D_X = 20.000_dbl * D 
-D_Y = D
+D_Y= 0.50_dbl *D
 
 ! Define the lattice <=> physical conversion factors
 IF(domaintype .EQ. 0) THEN
@@ -307,7 +307,7 @@ rDomIn	= 0.0_dbl				! summed height
 rDomOut	= 0.0_dbl				! summed height
 
 D_X = 20*D
-D_Y = D
+D_Y= 0.50_dbl *D
 
 time	= iter*tcf
 DO i=0,nz-1
@@ -577,8 +577,7 @@ REAL(dbl)       :: usum,vsum,wsum
 REAL(dbl)       :: h1, h2, time, q
 REAL(dbl) :: D_X, D_Y
 D_X = 20*D 
-D_Y = D
-
+D_Y= 0.50_dbl *D
 
 !----- initialize the sum of surrounding densities
 rhoSum = 0.0_dbl
@@ -628,10 +627,10 @@ END IF
 !----- enforcing boundary values of density
  rho(i,j,k) = denL
  ! phi(i,j,k) = phiWall
+
  time = iter*tcf
  h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time 	! 0.4_dbl*D   
  h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time 	!-0.4_dbl*D
-
  if (x(i) < 0.5*(h1+h2) ) then
     !Left piston   
     q = (x(i) - h1)/xcf
