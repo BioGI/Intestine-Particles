@@ -56,20 +56,20 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
   kp1 = k
 END IF	
 
+phiWall= ( (phiTemp(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phiTemp(ip1,j,k)*q*q/(1.0+2.0*q)) ) / ( 1.0 + (Pw/Dm)*q*(1+q)/(1+2.0*q) )	! calculate phiWall for flux BC (eq. 28 in paper)
+
 !----- Computing values at A* & scalar streamed from A* (Chpter 3 paper)
-phiWall = ( (phi(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(ip1,j,k)*q*q/(1.0+2.0*q)) ) /( 1.0 + (Pw/Dm)*q*(1+q)/(1+2.0*q) )	! calculate phiWall for flux BC (eq. 28 in paper)
 rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
-CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)		! calculate the equibrium distribution function in the mth direction
+CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)    		! calculate the equibrium distribution function in the mth direction
 phiAstar= phiWall							! getting phi at the solid surface
 PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in mth direction (0 if phiWall=0)
 
 !------ Computing values at B* & scalar streamed from B* (Chpter 3 paper)
-rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
-phiBstar=   (1-q)*phi(ip1,jp1,kp1)     + q*phi(i,j,k)
-fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q*fplus(m,i,j,k)
+rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q* rho(i,j,k)
+phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q* phiTemp(i,j,k)
+fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q* fplus(m,i,j,k)
 PkBstar=    (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
 
-phiBC= PkAstar+ (PkAstar- PkBstar)*(1-q)
 
 !------------------------------------------------
 END SUBROUTINE Scalar_Fixed_Scalar
