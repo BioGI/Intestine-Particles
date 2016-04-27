@@ -70,7 +70,7 @@ phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q* phiTemp(i,j,k)
 fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q* fplus(m,i,j,k)
 PkBstar=    (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
 
-
+phiBC=      PkAstar+ (PkAstar- PkBstar)*(1-q)
 !------------------------------------------------
 END SUBROUTINE Scalar_Fixed_Scalar
 !------------------------------------------------
