@@ -56,7 +56,15 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
   kp1 = k
 END IF	
 
-phiWall= ( (phiTemp(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phiTemp(ip1,j,k)*q*q/(1.0+2.0*q)) ) / ( 1.0 + (Pw/Dm)*q*(1+q)/(1+2.0*q) )	! calculate phiWall for flux BC (eq. 28 in paper)
+if ( coeffGrad .eq. 0) then
+
+   phiWall = coeffConst/coeffPhi
+
+else
+
+   phiWall = ( (phiTemp(i,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phiTemp(ip1,j,k)*q*q/(1.0+2.0*q)) - q*(1+q)/(1+2.0*q) * (coeffConst/coeffGrad) ) / ( 1.0 - q*(1+q)/(1+2.0*q) * (coeffPhi/coeffGrad) )	! calculate phiWall for flux BC (eq. 28 in paper)
+
+end if
 
 !----- Computing values at A* & scalar streamed from A* (Chpter 3 paper)
 rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density

@@ -25,9 +25,6 @@ Dm= nuL/Sc								! binary molecular diffusivity (scalar in fluid)
 Dmcf= (zcf*zcf)/tcf							! conversion factor for diffusivity
 Delta= 1.0_dbl - 6.0_dbl*Dm						! scalar diffusion parameter
 
-!-----set scalar values at sources/sinks
-phiWall= 0.0_dbl							! value of scalar at the boundary
-
 !-----set the scalar standard devation for gaussian distributions
 sigma= 0.1_dbl*D							! 1/10 of the Diameter
 

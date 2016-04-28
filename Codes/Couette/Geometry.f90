@@ -625,21 +625,24 @@ ELSE
 END IF
 
 !----- enforcing boundary values of density
- rho(i,j,k) = denL
- ! phi(i,j,k) = phiWall
+rho(i,j,k) = denL
 
- ! time = iter*tcf
- ! h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time 	! 0.4_dbl*D   
- ! h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time 	!-0.4_dbl*D
- ! if (x(i) < 0.5*(h1+h2) ) then
- !    !Left piston   
- !    q = (x(i) - h1)/xcf
- !    phi(i,j,k) = (phi(i+1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
- ! else
- !    !Right piston
- !    q = (h2 - x(i))/xcf
- !    phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall 
- ! end if
+if (coeffGrad .eq. 0) then
+
+ time = iter*tcf
+ h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time 	! 0.4_dbl*D   
+ h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time 	!-0.4_dbl*D
+ if (x(i) < 0.5*(h1+h2) ) then
+    !Left piston   
+    q = (x(i) - h1)/xcf
+    phi(i,j,k) = (phi(i+1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
+ else
+    !Right piston
+    q = (h2 - x(i))/xcf
+    phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall 
+ end if
+
+end if
 
  u(i,j,k) = ubx                                                                         ! wall velocity
  v(i,j,k) = uby

@@ -32,6 +32,9 @@
 4		! initial/maintained scalar distribution [1=BLOB,2=LINE,3=INLET,4=UNIFORM]	(sclrIC)
 0		! period at which to start the scalar calculation				(phiPer)
 1.0		! maximum value of scalar distribution                                	        (phiIC)
+1.0             ! coeffPhi
+2.0		! coeffGrad
+0.0		! coeffConst
 5.000		!	(nPers)
 10      	! approximate number of output files						(numOuts)
 .FALSE.		! restart flag, .TRUE. or .FALSE						(restart)
