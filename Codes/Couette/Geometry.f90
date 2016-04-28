@@ -575,58 +575,51 @@ REAL(dbl)       :: feq                  ! equilibrium distribution function
 CHARACTER(7)    :: iter_char            ! iteration stored as a character
 REAL(dbl)       :: usum,vsum,wsum
 REAL(dbl)       :: h1, h2, time, q
-REAL(dbl) :: D_X, D_Y
-D_X = 20*D 
+REAL(dbl) 	:: D_X, D_Y
+
+D_X= 20.0*D 
 D_Y= 0.50_dbl *D
 
-!----- initialize the sum of surrounding densities
-rhoSum = 0.0_dbl
-phiSum = 0.0_dbl
+!----- initialize sum of surrounding densities
 numFLUIDs = 0_lng
-usum = 0.0_dbl
-vsum = 0.0_dbl
-wsum = 0.0_dbl
+rhoSum    = 0.0_dbl
+phiSum    = 0.0_dbl
 
-!----- calculate the average density of the current node's neighbors
+!-----  averaging uncovered node's neighbors
 DO m=1,NumDistDirs
-   ii = i + ex(m)
-   jj = j + ey(m)
-   kk = k + ez(m)
+   ii= i+ ex(m)
+   jj= j+ ey(m)
+   kk= k+ ez(m)
    IF (((ii .GE. 0) .AND. (ii .LE. nxSub+1_lng)) .AND.  &
-      ((jj .GE. 0) .AND. (jj .LE. nySub+1_lng)) .AND.   &
-      ((kk .GE. 0) .AND. (kk .LE. nzSub+1_lng))) THEN
-      IF (node(ii,jj,kk) .EQ. FLUID) THEN
-         IF ((rho(ii,jj,kk).GT.0.0000001_dbl).AND.(rho(ii,jj,kk).GT.0.0000001_dbl)) THEN
-            usum = usum + u(i,j,k)
-            vsum = vsum + v(i,j,k)
-            wsum = wsum + w(i,j,k)
-            rhoSum = rhoSum + rho(ii,jj,kk)
-            phiSum = phiSum + phi(ii,jj,kk)
-            numFLUIDs = numFLUIDs + 1_lng
-         ENDIF
-      END IF
+       ((jj .GE. 0) .AND. (jj .LE. nySub+1_lng)) .AND.  &
+       ((kk .GE. 0) .AND. (kk .LE. nzSub+1_lng))) THEN
+       IF (node(ii,jj,kk) .EQ. FLUID) THEN
+          IF (rho(ii,jj,kk).GT.0.0000001_dbl) THEN
+             rhoSum   = rhoSum   + rho(ii,jj,kk)
+             phiSum   = phiSum   + phi(ii,jj,kk)
+             numFLUIDs= numFLUIDs+ 1_lng
+          ENDIF
+       END IF
    END IF
 END DO
 
-!----- This should rarely happen...
+!----- This rarely happens...
 IF (numFLUIDs .NE. 0_lng) THEN
    rho(i,j,k) = rhoSum/numFLUIDs
    phi(i,j,k) = phiSum/numFLUIDs
-   u(i,j,k)   = usum/numFLUIDs
-   v(i,j,k)   = vsum/numFLUIDs
-   w(i,j,k)   = wsum/numFLUIDs
 ELSE
-   write(8,*) i,j,k, "numFluids in Set Properties is zero"
+   write(8,*) i,j,k, "numFluids in SetProperties is zero"
    rho(i,j,k) = denL
    phi(i,j,k) = phiWall
-   u(i,j,k)   = ubx 
-   v(i,j,k)   = uby
-   w(i,j,k)   = ubz
 END IF
 
-!----- enforcing boundary values of density
+!----- enforcing values 
 rho(i,j,k) = denL
+u(i,j,k)   = ubx                                         
+v(i,j,k)   = uby
+w(i,j,k)   = ubz
 
+!----- estimating  phi
 time = iter*tcf
 h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time   ! 0.4_dbl*D
 h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time   !-0.4_dbl*D
@@ -639,7 +632,7 @@ IF (coeffGrad .eq. 0) then								!Dirichlet BC
       q = (h2 - x(i))/xcf
       phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall 
    END IF
-ELSE
+ELSE											!Neumann or Mixed BC
    IF (x(i) < 0.5*(h1+h2) ) then                                                        
       q = 1.0_dbl
       phi(i,j,k) = ( (phi(i+1,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(i+2,j,k)*q*q/(1.0+2.0*q)) - q*(1+q)/(1+2.0*q) * (coeffConst/coeffGrad) ) / ( 1.0 - (q*(1+q)/(1+2.0*q))*(coeffPhi/coeffGrad) )  
@@ -649,13 +642,9 @@ ELSE
    END IF
 END IF
 
-u(i,j,k) = ubx                                                                         ! wall velocity
-v(i,j,k) = uby
-w(i,j,k) = ubz
-
-!----- distribution functions (set to equilibrium)
+!----- distribution functions set to equilibrium
 DO m=0,NumDistDirs
-  CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)                   ! distribution functions
+  CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)                   
   f(m,i,j,k) = feq
 END DO
 
