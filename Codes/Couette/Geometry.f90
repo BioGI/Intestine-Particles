@@ -612,41 +612,46 @@ END DO
 IF (numFLUIDs .NE. 0_lng) THEN
    rho(i,j,k) = rhoSum/numFLUIDs
    phi(i,j,k) = phiSum/numFLUIDs
-   u(i,j,k)     = usum/numFLUIDs
-   v(i,j,k)     = vsum/numFLUIDs
-   w(i,j,k)     = wsum/numFLUIDs
+   u(i,j,k)   = usum/numFLUIDs
+   v(i,j,k)   = vsum/numFLUIDs
+   w(i,j,k)   = wsum/numFLUIDs
 ELSE
+   write(8,*) i,j,k, "numFluids in Set Properties is zero"
    rho(i,j,k) = denL
    phi(i,j,k) = phiWall
-   write(9,*) i,j,k, "numFluids in Set Properties is zero"
-   u(i,j,k)     = ubx                                                                   ! wall velocity
-   v(i,j,k)     = uby
-   w(i,j,k)     = ubz
+   u(i,j,k)   = ubx 
+   v(i,j,k)   = uby
+   w(i,j,k)   = ubz
 END IF
 
 !----- enforcing boundary values of density
 rho(i,j,k) = denL
 
-if (coeffGrad .eq. 0) then
+time = iter*tcf
+h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time   ! 0.4_dbl*D
+h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time   !-0.4_dbl*D
 
- time = iter*tcf
- h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time 	! 0.4_dbl*D   
- h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time 	!-0.4_dbl*D
- if (x(i) < 0.5*(h1+h2) ) then
-    !Left piston   
-    q = (x(i) - h1)/xcf
-    phi(i,j,k) = (phi(i+1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
- else
-    !Right piston
-    q = (h2 - x(i))/xcf
-    phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall 
- end if
+IF (coeffGrad .eq. 0) then								!Dirichlet BC
+   IF (x(i) < 0.5*(h1+h2) ) then							   
+      q = (x(i) - h1)/xcf
+      phi(i,j,k) = (phi(i+1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
+   ELSE											
+      q = (h2 - x(i))/xcf
+      phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall 
+   END IF
+ELSE
+   IF (x(i) < 0.5*(h1+h2) ) then                                                        
+      q = 1.0_dbl
+      phi(i,j,k) = ( (phi(i+1,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(i+2,j,k)*q*q/(1.0+2.0*q)) - q*(1+q)/(1+2.0*q) * (coeffConst/coeffGrad) ) / ( 1.0 - (q*(1+q)/(1+2.0*q))*(coeffPhi/coeffGrad) )  
+   ELSE                                                                                
+      q = 1.0_dbl
+      phi(i,j,k) = ( (phi(i-1,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(i-2,j,k)*q*q/(1.0+2.0*q)) - q*(1+q)/(1+2.0*q) * (coeffConst/coeffGrad) ) / ( 1.0 - (q*(1+q)/(1+2.0*q))*(coeffPhi/coeffGrad) )  
+   END IF
+END IF
 
-end if
-
- u(i,j,k) = ubx                                                                         ! wall velocity
- v(i,j,k) = uby
- w(i,j,k) = ubz
+u(i,j,k) = ubx                                                                         ! wall velocity
+v(i,j,k) = uby
+w(i,j,k) = ubz
 
 !----- distribution functions (set to equilibrium)
 DO m=0,NumDistDirs
