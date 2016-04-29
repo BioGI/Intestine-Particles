@@ -565,23 +565,23 @@ SUBROUTINE SetProperties(i,j,k,ubx,uby,ubz)
 ! Set properties to nodes that just came into the fluid domain (uncovered)
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: i,j,k       	! current node location
-REAL(dbl)   , INTENT(IN) :: ubx,uby,ubz 	! velocity of the boundary
-INTEGER(lng)    :: m 		          	! Direction index
-INTEGER(lng)    :: ip1,jp1,kp1,ipB,jpB,kpB      ! First neighboring node location
-INTEGER(lng)    :: ip2,jp2,kp2,ipC,jpC,kpC      ! Second neighboring node location
-CHARACTER(7)    :: iter_char            	! iteration stored as a character
-REAL(dbl)       :: feq                  	! equilibrium distribution function
-REAL(dbl)	:: Geom_norm_x,Geom_norm_y,Geom_norm_z
-REAL(dbl)	:: q, n_prod, n_prod_max
+INTEGER(lng),INTENT(IN) :: i,j,k       			! current node location
+REAL(dbl)   ,INTENT(IN) :: ubx,uby,ubz 			! velocity of the boundary
+INTEGER(lng)    :: m 		          		! Direction index
+INTEGER(lng)    :: ip1,jp1,kp1,iB,jB,kB  		! First neighboring node location
+INTEGER(lng)    :: ip2,jp2,kp2,iC,jC,kC     	 	! Second neighboring node location
+CHARACTER(7)    :: iter_char            		! iteration stored as a character
+REAL(dbl)       :: feq                  		! equilibrium distribution function
+REAL(dbl)	:: Geom_norm_x,Geom_norm_y,Geom_norm_z	! geometry normal vector
+REAL(dbl)	:: q,n_prod,n_prod_max
 
 !----- Enforcing velocity and denisty for the uncovered nodes ignoring the averaged value ----------
-rho(i,j,k) = denL
-u(i,j,k)   = ubx                                         
-v(i,j,k)   = uby
-w(i,j,k)   = ubz
+rho(i,j,k)= denL
+u(i,j,k)  = ubx                                         
+v(i,j,k)  = uby
+w(i,j,k)  = ubz
 
-!----- Estimating phi at uncovered node based on the prescribed BC ---------------------------------
+!----- Estimating phi for uncovered node based on the prescribed BC --------------------------------
 Geom_norm_x= 1.0
 Geom_norm_y= 0.0
 Geom_norm_z= 0.0
@@ -604,14 +604,14 @@ IF (coeffGrad .eq. 0) then
          n_prod= abs( Geom_norm_x * (ip1-i) + Geom_norm_y * (jp1-j) + Geom_norm_z * (kp1-k))	
          IF (n_prod_max .LT. n_prod)THEN
             n_prod_max= n_prod
-            ipB= ip1
-            jpB= jp1
-            kpB= kp1
+            iB= ip1
+            jB= jp1
+            kB= kp1
          END IF
       END IF
    END DO
    CALL qCalcFarhad(i,q)
-   phi(i,j,k)= (phi(ipB,jpB,kpB)-phiWall)*q/(1.0_dbl+q) + phiWall
+   phi(i,j,k)= (phi(iB,jB,kB)-phiWall)*q/(1.0_dbl+q) + phiWall
 END IF
 
 !---------------------------------------------------------------------------------------------------
@@ -657,20 +657,20 @@ IF (coeffGrad .ne. 0) then
             n_prod= abs( Geom_norm_x*(ip1-i) + Geom_norm_y*(jp1-j) + Geom_norm_z*(kp1-k))
             IF (n_prod_max .LT. n_prod)THEN
                n_prod_max= n_prod
-               ipB= ip1
-               jpB= jp1
-               kpB= kp1
-               ipC= ip2
-               jpC= jp2
-               kpC= kp2
+               iB= ip1
+               jB= jp1
+               kB= kp1
+               iC= ip2
+               jC= jp2
+               kC= kp2
             END IF
          END IF
       END IF  
    END DO
    
    q= 1.0_dbl	! approximating that uncovered node is at the wall (it is close enough ...)
-   phi(i,j,k)= ( (phi(ipB,jpB,kpB)*(1.0+q)*(1.0+q)/(1.0+2.0*q))	&
- 	       - (phi(ipC,jpC,kpC)*q*q/(1.0+2.0*q)) 		&
+   phi(i,j,k)= ( (phi(iB,jB,kB)*(1.0+q)*(1.0+q)/(1.0+2.0*q))	&
+ 	       - (phi(iC,jC,kC)*q*q/(1.0+2.0*q)) 		&
                - (q*(1+q)/(1+2.0*q))*(coeffConst/coeffGrad) ) 	&
 	       / (1.0 - (q*(1+q)/(1+2.0*q))*(coeffPhi/coeffGrad))  
 END IF
