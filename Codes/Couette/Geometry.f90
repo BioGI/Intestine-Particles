@@ -34,12 +34,12 @@ D_Y= 0.50_dbl *D
 
 ! Define the lattice <=> physical conversion factors
 IF(domaintype .EQ. 0) THEN
-        xcf 		= (0.5_lng*D_x)/(nx-1_lng)		! length conversion factor: x-direction
-        ycf 		= (0.5_lng*D_y)/(ny-1_lng)		! length conversion factor: y-direction
+        xcf 		= (0.5_lng*D_x)/(nx-1_lng)	! length conversion factor: x-direction
+        ycf 		= (0.5_lng*D_y)/ny		! length conversion factor: y-direction
 ELSE
         ! begin Balaji added
-        xcf 		= (1.0_lng*D_x)/(nx-1_lng)		! length conversion factor: x-direction
-        ycf 		= (1.0_lng*D_y)/(ny-1_lng)		! length conversion factor: y-direction
+        xcf 		= (1.0_lng*D_x)/(nx-1_lng)	! length conversion factor: x-direction
+        ycf 		= (1.0_lng*D_y)/ny		! length conversion factor: y-direction
         ! end Balaji added
 ENDIF
 
@@ -291,9 +291,9 @@ SUBROUTINE BoundaryPosition		! Calculates the position of the wall at the curren
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-REAL(dbl) :: h1(0:nz+1)				! Mode 1 (peristalsis)
-REAL(dbl) :: h1In(0:nz+1),h1Out(0:nz+1)		! Mode 1 (Couette device)
-REAL(dbl) :: h2(0:nz+1)				! Mode 2	(segmental)
+REAL(dbl) :: h1(0:ny+1)				! Mode 1 (peristalsis)
+REAL(dbl) :: h1In(0:ny+1),h1Out(0:ny+1)		! Mode 1 (Couette device)
+REAL(dbl) :: h2(0:ny+1)				! Mode 2	(segmental)
 REAL(dbl) :: Ac, lambdaC, shiftC		! temporary variables for the cos slopes
 REAL(dbl) :: time				! time
 INTEGER(lng) :: i,j,ii,k			! indices
@@ -310,25 +310,25 @@ D_X = 20*D
 D_Y= 0.50_dbl *D
 
 time	= iter*tcf
-DO i=0,nz-1
-   h1Out(i) = -0.38_dbl*D_x + 5.0000e-5 + s1*time 	   
-   h1In(i)  = -0.48_dbl*D_x + 5.0000e-5 +s1*time 	 
+DO i=1,ny
+   h1Out(i) = -0.38_dbl*D_x + D_Y*0.5*(1.0_dbl + cos(2.0_dbl*y(i)*pi/D_Y) ) + 5.0000e-5 + s1*time 	   
+   h1In(i)  = -0.48_dbl*D_x + D_Y*0.5*(1.0_dbl + cos(2.0_dbl*y(i)*pi/D_Y) ) + 5.0000e-5 + s1*time
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
 !----- set h1(nz) to h1(0) and h1(nz+1) to h(1) to ensure periodicity
-h1In(nz)   = h1In(0)
-h1In(nz+1) = h1In(1)
-h1Out(nz)  = h1Out(0)
-h1Out(nz+1)= h1Out(1)
+h1In(ny+1)   = h1In(1)
+h1In(0) = h1In(ny)
+h1Out(ny+1)   = h1Out(1)
+h1Out(0) = h1Out(ny)
 
-DO i=0,nz+1
+DO i=0,ny+1
   rDomIn(i) = h1In(i)
   rDomOut(i)= h1Out(i)
 END DO
 
-rIn(0:nzSub+1) = rDomIn(kMin-1:kMax+1)
-rOut(0:nzSub+1)= rDomOut(kMin-1:kMax+1)
+rIn(0:nySub+1) = rDomIn(jMin-1:jMax+1)
+rOut(0:nySub+1)= rDomOut(jMin-1:jMax+1)
 
 IF (myid .EQ. master) THEN
    CALL SurfaceArea

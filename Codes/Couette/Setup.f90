@@ -1163,10 +1163,10 @@ ALLOCATE(msgSize(NumCommDirs))								! array of the number of elements sent for
 ALLOCATE(req(2*NumCommDirs))									! allocate the MPI send request array
 
 ! Geometry Arrays
-ALLOCATE(rDom0In(0:nz+1),rDomIn(0:nz+1),rIn(0:nzSub+1))		! intial and current radius (global), current radius (local)
-ALLOCATE(rDom0Out(0:nz+1),rDomOut(0:nz+1),rOut(0:nzSub+1))	! intial and current radius (global), current radius (local)
-ALLOCATE(velDomIn(0:nz+1),velIn(0:nzSub+1))					! global and local wall velocities
-ALLOCATE(velDomOut(0:nz+1),velOut(0:nzSub+1))					! global and local wall velocities
+ALLOCATE(rDom0In(0:ny+1),rDomIn(0:ny+1),rIn(0:nySub+1))		! intial and current radius (global), current radius (local)
+ALLOCATE(rDom0Out(0:ny+1),rDomOut(0:ny+1),rOut(0:nySub+1))	! intial and current radius (global), current radius (local)
+ALLOCATE(velDomIn(0:ny+1),velIn(0:nySub+1))					! global and local wall velocities
+ALLOCATE(velDomOut(0:ny+1),velOut(0:nySub+1))					! global and local wall velocities
 ALLOCATE(x(0:nxSub+1),y(0:nySub+1),z(0:nzSub+1))		! x, y, z, physical coordinate arrays (local)
 ALLOCATE(xx(0:nx+1),yy(0:ny+1),zz(0:nz+1))				! x, y, z, physical coordinate arrays (global)
 

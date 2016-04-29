@@ -1,6 +1,6 @@
 1		! domain type 0-for 1 quadrant of a cylinder and 1 for a full cylinder
 801		! number of nodes in the x-direction						(nx)
-21		! number of nodes in the y-direction						(ny)
+40		! number of nodes in the y-direction						(ny)
 5      		! number of nodes in the z-direction						(nz)
 1		! number of x-subdomains							(NumSubsX)
 1		! number of y-subdomains							(NumSubsY)
