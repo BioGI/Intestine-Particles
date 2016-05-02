@@ -265,13 +265,9 @@ DO k=2,nzSub-1
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
-	    ! Balaji added after commenting out the earlier method
-            CALL BounceBack2New(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
-            !CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBack2(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackV2(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
-            f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
             WRITE(1000,'(A75)') "error in LBM.f90 at Line 274: node(im1,jm1,km1) is out of range"
@@ -315,8 +311,6 @@ DO k=1,nzSub,(nzSub-1)
             CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  				! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
-            f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
             WRITE(1000,'(A75)') "error in LBM.f90 at Line 312: node(im1,jm1,km1) is out of range"
@@ -360,8 +354,6 @@ DO j=1,nySub,(nySub-1)
             CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  				! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
-            f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
             WRITE(1000,'(A75)') "error in LBM.f90 at Line :350 node(im1,jm1,km1) is out of range"
@@ -398,8 +390,6 @@ DO i=1,nxSub,(nxSub-1)
             CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  				! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-            CALL BounceBackVL(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),fbb)				! implement the bounceback BCs [MODULE: ICBC]
-            f(m,i,j,k) = fbb
           ELSE
             OPEN(1000,FILE="error.txt")
 	    WRITE(1000,'(A75)') "error in LBM.f90 at Line 388: node(im1,jm1,km1) is out of range"

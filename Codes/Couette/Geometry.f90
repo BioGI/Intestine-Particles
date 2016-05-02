@@ -269,7 +269,6 @@ SUBROUTINE AdvanceGeometry	! advances the geometry in time
 IMPLICIT NONE 
 
 CALL BoundaryPosition		! Calculate the radius at the current time step
-CALL VilliPosition
 CALL BoundaryVelocity		! Calculate the velocity at boundary point
 CALL SetNodes			! Flag the fluid/solid nodes based on the new geometry
 !------------------------------------------------
@@ -542,8 +541,6 @@ DO iComm=5,6
 END DO
 
 
-CALL SetNodesVilli							! set the villi node flags
-
 IF (domaintype .EQ. 0) THEN  						! only needed when planes of symmetry exist
    CALL SymmetryBC							! ensure symmetric node placement
 ENDIF
@@ -568,6 +565,7 @@ IMPLICIT NONE
 INTEGER(lng),INTENT(IN) :: i,j,k       			! current node location
 REAL(dbl)   ,INTENT(IN) :: ubx,uby,ubz 			! velocity of the boundary
 INTEGER(lng)    :: m 		          		! Direction index
+INTEGER(lng)    :: iO,jO,kO		                ! First neighboring node in Solid
 INTEGER(lng)    :: ip1,jp1,kp1,iB,jB,kB  		! First neighboring node location
 INTEGER(lng)    :: ip2,jp2,kp2,iC,jC,kC     	 	! Second neighboring node location
 CHARACTER(7)    :: iter_char            		! iteration stored as a character
@@ -607,10 +605,13 @@ IF (coeffGrad .eq. 0) then
             iB= ip1
             jB= jp1
             kB= kp1
+            iO= i- ex(m)
+            jO= j- ey(m)
+            kO= k- ez(m)		
          END IF
       END IF
    END DO
-   CALL qCalcFarhad(i,q)
+   CALL qCalc(m,i,j,k,iO,jO,kO,q)
    phi(i,j,k)= (phi(iB,jB,kB)-phiWall)*q/(1.0_dbl+q) + phiWall
 END IF
 
@@ -755,357 +756,6 @@ END SUBROUTINE SurfaceArea
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliPosition		! Calculates the position of the villi at the current time step
-!--------------------------------------------------------------------------------------------------
-!!!!!! NOTE: FOR ALL THE VILLI STUFF, Output stuff WE USE rDomOut for the time being instead of rDom. Need to modify to include rDomIn if needed 
-!!!!!! This is temporary to prevent the code from blowing up as we are not interested in using the villi at this time. 
-
-
-IMPLICIT NONE
-
-CALL VilliBase						! determine the x,y,z location of each villus base
-CALL VilliMove						! specify the movement of the villi
-CALL VilliTip						! determine the x,y,z locatin of each villus tip
-
-!------------------------------------------------
-END SUBROUTINE VilliPosition
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliBase				! Calculates the x,y,z location of each villus base
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng) :: nvz,nvt,n		! index variables
-INTEGER(lng) :: ivz				! k location of each villus
-REAL(dbl) :: vx,vy,vz,vt		! x,y,z, and theta locations of each villus
-
-! initialize the villi counter
-n = 0_lng
-
-DO nvz=1,numVilliZ
-
-  vz 	= L*(REAL(nvz - 0.5_dbl)/(REAL(numVilliZ)))							! z location of the villus (real)
-  ivz	= NINT(vz/zcf)																	! k location of the villus (integer)												
-
-  DO nvt=1,numVilliTheta 
-      
-    n = n + 1_lng																		! count the number of villi
- 
-    vt = (REAL(nvt - 0.5_dbl))*((0.5_dbl*PI)/(REAL(numVilliTheta)))	! theta location of the villus
-
-    vx = rDomOut(ivz)*COS(vt)															! x location of the villus
-    vy = rDomOut(ivz)*SIN(vt)															! y location of the villus
-
-    ! store the real location of each villus
-    villiLoc(n,1) = vx
-    villiLoc(n,2) = vy
-    villiLoc(n,3) = vz
-
-  END DO
-    
-END DO
-
-!------------------------------------------------
-END SUBROUTINE VilliBase
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliMove						! specifies the movement of each villus
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng) :: n							! index variable
-INTEGER(lng) :: ivz						! k location of each villus
-REAL(dbl) :: vx,vy,vz					! x,y,z, and theta locations of each villus
-REAL(dbl) :: rL,rR						! radii of the nodes to the left and right of the current villus location
-REAL(dbl) :: zL,zR						! axial locations of the nodes to the left and right of the current villus location
-REAL(dbl) :: thetaR, thetaX			! angles of each villus with respect to the radius and x axis
-REAL(dbl) :: time							! time
-
-DO n=1,numVilli
-
-  ! current time
-  time = iter*tcf
-
-  ! store thetaR and thetaX from the previous iteration
-  villiLoc(n,9) = villiLoc(n,5)		! thetaR at previous timestep
-  villiLoc(n,10) = villiLoc(n,4)		! thetaX at previous timestep
-
-  ! x,y,z location of the villous base
-  vx = villiLoc(n,1)						
-  vy = villiLoc(n,2)
-  vz = villiLoc(n,3)
-
-  ! ---------------- passive movement from "riding" on the intestinal wall ------------------------
-  ivz = vz/zcf									! k node location (along axial direction)
-  rL = rDomOut(ivz-1)							! radius of the node to the left of the current villus (k-1)
-  rR = rDomOut(ivz+1)							! radius of the node to the right of the current villus (k+1)
-  zL = zz(ivz-1)								! axial distance of the node to the left of the current villus (k-1)
-  zR = zz(ivz+1)								! axial distance of the node to the right of the current villus (k+1)
-  thetaR = ATAN((rR - rL)/(zR - zL))	! angle of the villus with respect to the radius
-  thetaX = ATAN(vy/vx)						! angle of the villus with respect to the x-axis
-  ! -----------------------------------------------------------------------------------------------
-
-  ! ---------------- active movement from specified villous motion --------------------------------
-  IF(MOD(villiGroup(n),2_lng) .EQ. 0) THEN		! even groups
-    IF(randORord .EQ. RANDOM) THEN
-      thetaX = thetaX - (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time + rnd(n)*2.0_dbl*PI))						! azimuthal direction (random)
-      thetaR = thetaR - (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time + (rnd(n+numVilli)*2.0_dbl*PI)))			! axial direction (random)
-    ELSE IF(randORord .EQ. ORDERED) THEN
-      thetaX = thetaX - (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time))													! azimuthal direction (ordered) 
-      thetaR = thetaR - (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time))													! axial direction (ordered)
-    ELSE
-      OPEN(1000,FILE="error.txt")
-      WRITE(1000,*) "Error in VilliMove in Geometry.f90 at line 535: randORord is not RANDOM(1) or ORDERED(2)..."
-      WRITE(1000,*) "randORord=", randORord
-      CLOSE(1000)
-      STOP
-    END IF
-  ELSE
-    IF(randORord .EQ. RANDOM) THEN		! odd groups
-      thetaX = thetaX + (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time + rnd(n)*2.0_dbl*PI))						! azimuthal direction (random)
-      thetaR = thetaR + (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time + (rnd(n+numVilli)*2.0_dbl*PI)))			! axial direction (random)
-    ELSE IF(randORord .EQ. ORDERED) THEN
-      thetaX = thetaX + (activeVflagT)*(villiAngle*SIN(2.0_dbl*PI*vFreqT*time))													! azimuthal direction (ordered) 
-      thetaR = thetaR + (activeVflagZ)*(villiAngle*SIN(2.0_dbl*PI*vFreqZ*time))													! axial direction (ordered)
-    ELSE
-      OPEN(1000,FILE="error.txt")
-      WRITE(1000,*) "Error in VilliMove in Geometry.f90 at line 535: randORord is not RANDOM(1) or ORDERED(2)..."
-      WRITE(1000,*) "randORord=", randORord
-      CLOSE(1000)
-      STOP
-    END IF
-  END IF
-  ! -----------------------------------------------------------------------------------------------
-
-  ! store the angles for each villus
-  villiLoc(n,4) = thetaX
-  villiLoc(n,5) = thetaR
-    
-END DO
-
-!------------------------------------------------
-END SUBROUTINE VilliMove
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE VilliTip						! Calculates the x,y,z location of each villus tip (minus the half hemisphere)
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
-
-INTEGER(lng) :: n							! index variables
-REAL(dbl) :: vx,vy,vz					! x,y,z, and theta locations of each villus
-REAL(dbl) :: thetaR, thetaX			! angles of each villus with respect to the radius and x axis
-REAL(dbl) :: vx2,vy2,vz2				! x,y,z location of each villus endpoint
-
-DO n=1,numVilli
-
-  ! x,y,z location and angles of the villus
-  vx = villiLoc(n,1)						
-  vy = villiLoc(n,2)
-  vz = villiLoc(n,3)
-  thetaX = villiLoc(n,4) 
-  thetaR = villiLoc(n,5)
-
-  ! calculate the end point of the villus (minus the hemisphere)
-  vx2 = vx - (Lv-Rv)*COS(thetaR)*COS(thetaX)
-  vy2 = vy - (Lv-Rv)*COS(thetaR)*SIN(thetaX)
-  vz2 = vz + (Lv-Rv)*SIN(thetaR)
-
-  ! store the location of the endpoints for each villus
-  villiLoc(n,6) = vx2
-  villiLoc(n,7) = vy2
-  villiLoc(n,8) = vz2
-    
-END DO
-
-!------------------------------------------------
-END SUBROUTINE VilliTip
-!------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE SetNodesVilli					! defines the geometry of the villi via the "node" array of flags
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE 
-
-INTEGER(lng)	:: n,i,j,k					! index variables
-INTEGER(lng)	:: ii,jj,kk					! index variables
-INTEGER(lng)   :: nvz,nvt					! index variables
-INTEGER(lng)	:: iminV,imaxV				! i-indices of the current block to be checked
-INTEGER(lng)	:: jminV,jmaxV				! j-indices of the current block to be checked
-INTEGER(lng)	:: kminV,kmaxV				! k-indices of the current block to be checked
-REAL(dbl)		:: villiVec(3)				! vector from each villus base to the top of the villus cylinder
-REAL(dbl)		:: pointVec(3)				! vector from each villus base to the current point
-REAL(dbl)		:: dotProd, crossProd	! dot and cross products between the current point and the current villus
-REAL(dbl)		:: sinTheta, cosTheta	! sine and cosine of the angles between the two vectors
-REAL(dbl)		:: magVilli, magPoint	! magnitudes of the two vectors
-REAL(dbl)		:: dist						! distance from the current point to the villus
-REAL(dbl)		:: Cx,Cy,Cz					! vector between villous base and point on the villus closest to the current point
-REAL(dbl)		:: uV,vV,wV					! velocity used at the uncovered nodes
-
-DO nvz=1,numVilliZ
-
-  IF((MOD(nvz,(numVilliZ/numVilliGroups)) .NE. 0) .OR. (numVilliGroups .EQ. 1)) THEN		! skip a row of villi between groups (unless only 1 group)
-
-    DO nvt=1,numVilliTheta
-
-      n = (nvz-1_lng)*numVilliTheta + nvt										! villus number
-
-      iminV = MIN(villiLoc(n,1)/xcf, villiLoc(n,6)/xcf) - INT(ANINT(1.5_dbl*Rv/xcf))
-      imaxV = MAX(villiLoc(n,1)/xcf, villiLoc(n,6)/xcf) + INT(ANINT(1.5_dbl*Rv/xcf))
-      jminV = MIN(villiLoc(n,2)/ycf, villiLoc(n,7)/ycf) - INT(ANINT(1.5_dbl*Rv/ycf))
-      jmaxV = MAX(villiLoc(n,2)/ycf, villiLoc(n,7)/ycf) + INT(ANINT(1.5_dbl*Rv/ycf))
-      kminV = MIN((villiLoc(n,3)/zcf+0.5_dbl), (villiLoc(n,8)/zcf+0.5_dbl)) - INT(ANINT(1.5_dbl*Rv/zcf))
-      kmaxV = MAX((villiLoc(n,3)/zcf+0.5_dbl), (villiLoc(n,8)/zcf+0.5_dbl)) + INT(ANINT(1.5_dbl*Rv/zcf))
-
-      DO kk=kminV,kmaxV
-        DO jj=jminV,jmaxV
-          DO ii=iminV,imaxV
-
-            ! check to if the point is in the subdomain
-            IF(((ii .GE. iMin-1_lng) .AND. (ii .LE. iMax+1_lng)) .AND.	&
-               ((jj .GE. jMin-1_lng) .AND. (jj .LE. jMax+1_lng)) .AND.	&
-               ((kk .GE. kMin-1_lng) .AND. (kk .LE. kMax+1_lng))) THEN
-
-              ! transform into local subdomain coordinates
-              i = ii - (iMin - 1_lng)
-              j = jj - (jMin - 1_lng)
-              k = kk - (kMin - 1_lng)
-
-              ! ignore the solid nodes
-              IF(node(i,j,k) .NE. SOLID) THEN
-
-                ! define a vector between the villus base and the current point
-                pointVec(1) = (xx(ii)-villiLoc(n,1))					! x-coordinate
-                pointVec(2) = (yy(jj)-villiLoc(n,2))					! y-coordinate
-                pointVec(3) = (zz(kk)-villiLoc(n,3))					! z-coordinate
-
-                ! define a vector between the villus base and the top of the villus cylinder
-                villiVec(1) = (villiLoc(n,6)-villiLoc(n,1))			! x-coordinate
-                villiVec(2) = (villiLoc(n,7)-villiLoc(n,2))			! y-coordinate
-                villiVec(3) = (villiLoc(n,8)-villiLoc(n,3))			! z-coordinate
-
-                ! compute the dot product of villiVec and pointVec
-                dotProd = villiVec(1)*pointVec(1) + villiVec(2)*pointVec(2) + villiVec(3)*pointVec(3)
-          
-                ! calculate the magnitudes of villiVec and pointVec
-                magVilli = SQRT(villiVec(1)*villiVec(1) + villiVec(2)*villiVec(2) + villiVec(3)*villiVec(3))
-                magPoint = SQRT(pointVec(1)*pointVec(1) + pointVec(2)*pointVec(2) + pointVec(3)*pointVec(3))
-
-                ! get the cosine of the angle between the two vectors
-                cosTheta = dotProd/(magVilli*magPoint)
-
-                ! check to see if the point is above or below the top of the villus cylinder and calculate the proper distance between the point and the villus
-                IF(magPoint*cosTheta .LE. magVilli) THEN				! below
-                  ! calcualte the shortest distance between the point and the centerline of the villus cylinder
-                  sinTheta = SQRT(1.0_dbl-cosTheta*cosTheta)		! sine of the angle between the two vectors
-                  dist = magPoint*sinTheta								! distance between the point and the CL
-                ELSE																! above
-                  ! calculate the distance between the current point and the top of the villus cylinder (base of hemisphere)
-                  dist = SQRT((xx(ii)-villiLoc(n,6))**2 + (yy(jj)-villiLoc(n,7))**2 + (zz(kk)-villiLoc(n,8))**2)
-                END IF
-
-                ! check to see if the villus is covering the node
-                IF(dist .LE. Rv) THEN				! covers
-                  node(i,j,k) = -n					! flag the node as being covered by the nth villus (-n)
-                ELSE
-                  IF(node(i,j,k) .EQ. -n) THEN
-                    ! find the influence of villous velocity on the current point
-                    CALL CalcC(i,j,k,n,Cx,Cy,Cz)
-                    CALL VilliVelocity(n,Cx,Cy,Cz,uV,vV,wV)
-!                    CALL NeighborVelocity(i,j,k,uV,vV,wV)
-                    CALL SetProperties(i,j,k,uV,vV,wV)
-                    node(i,j,k) = FLUID				! fluid node that was covered last time step
-                  END IF
-                END IF
-
-              END IF
- 
-            END IF
-
-          END DO
-        END DO
-      END DO
-
-    END DO 
-
-  END IF
-
-END DO
-
-!------------------------------------------------
-END SUBROUTINE SetNodesVilli
-!------------------------------------------------
 
 
 
