@@ -35,7 +35,8 @@ REAL(dbl)    :: q, n_prod, n_prod_max
 ! BC-Permeability:      coeffPhi=Pw/Dm  coeffGrad=-1    coeffConst= 0
 !===========================================================================
 
-CALL qCalcFarhad(i,q)		
+!CALL qCalcFarhad(i,q)		
+CALL qCalc(m,i,j,k,im1,jm1,km1,q)
 
 IF (rijk .GE. rOut(k)) THEN
    ub = velOut(km1) 			
