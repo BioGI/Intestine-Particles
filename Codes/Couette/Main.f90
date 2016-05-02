@@ -78,9 +78,9 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
 	CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
 	CALL Macro							! calcuate the macroscopic quantities [MODULE: Algorithm]
 
-	! IF(iter .GE. phiStart) THEN
-        !    CALL Scalar							! calcuate the evolution of scalar in the domain [MODULE: Algorithm]
-	! END IF
+	IF(iter .GE. phiStart) THEN
+           CALL Scalar							! calcuate the evolution of scalar in the domain [MODULE: Algorithm]
+	END IF
 
 	IF (myid .EQ. 0) THEN
 	   open(70,file='t-history.dat',position='append')

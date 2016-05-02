@@ -505,93 +505,138 @@ ENDIF
 END SUBROUTINE SetNodes
 !------------------------------------------------
 
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE SetProperties(i,j,k,ubx,uby,ubz)     ! give properties to nodes that just came into the fluid domain (uncovered)
-!--------------------------------------------------------------------------------------------------
-IMPLICIT NONE
+!===================================================================================================
+SUBROUTINE SetProperties(i,j,k,ubx,uby,ubz)
+  !===================================================================================================
+  ! Set properties to nodes that just came into the fluid domain (uncovered)
+  IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: i,j,k       ! current node location
-REAL(dbl), INTENT(IN) :: ubx,uby,ubz    ! velocity of the boundary
-INTEGER(lng)    :: m,ii,jj,kk           ! index variables
-INTEGER(lng)    :: numFLUIDs            ! number of fluid nodes
-REAL(dbl)       :: rhoSum, rhoTemp      ! sum of the densities of the neighboring fluid nodes, pre-set density
-REAL(dbl)       :: phiSum, phiTemp      ! sum of the scalars of the neighboring fluid nodes, pre-set density
-REAL(dbl)       :: feq                  ! equilibrium distribution function
-CHARACTER(7)    :: iter_char            ! iteration stored as a character
-REAL(dbl)       :: usum,vsum,wsum
-REAL(dbl)       :: h1, h2, time, q
+  INTEGER(lng),INTENT(IN) :: i,j,k       ! current node location
+  REAL(dbl)   ,INTENT(IN) :: ubx,uby,ubz ! velocity of the boundary
+  INTEGER(lng)    :: m           ! Direction index
+  INTEGER(lng)    :: im1, jm1, km1         ! Node inside the wall
+  INTEGER(lng)    :: ip1,jp1,kp1,iB,jB,kB  ! First neighboring node location
+  INTEGER(lng)    :: ip2,jp2,kp2,iC,jC,kC      ! Second neighboring node location
+  CHARACTER(7)    :: iter_char            ! iteration stored as a character
+  REAL(dbl)       :: feq                  ! equilibrium distribution function
+  REAL(dbl):: Geom_norm_x,Geom_norm_y,Geom_norm_z! geometry normal vector
+  REAL(dbl):: q,n_prod,n_prod_max
 
-!----- initialize sum of surrounding densities
-numFLUIDs = 0_lng
-rhoSum    = 0.0_dbl
-phiSum    = 0.0_dbl
+  !----- Enforcing velocity and denisty for the uncovered nodes ignoring the averaged value ----------
+  rho(i,j,k)= denL
+  u(i,j,k)  = ubx
+  v(i,j,k)  = uby
+  w(i,j,k)  = ubz
 
-!-----  averaging uncovered node's neighbors
-DO m=1,NumDistDirs
-   ii= i+ ex(m)
-   jj= j+ ey(m)
-   kk= k+ ez(m)
-   IF (((ii .GE. 0) .AND. (ii .LE. nxSub+1_lng)) .AND.  &
-       ((jj .GE. 0) .AND. (jj .LE. nySub+1_lng)) .AND.  &
-       ((kk .GE. 0) .AND. (kk .LE. nzSub+1_lng))) THEN
-       IF (node(ii,jj,kk) .EQ. FLUID) THEN
-          IF (rho(ii,jj,kk).GT.0.0000001_dbl) THEN
-             rhoSum   = rhoSum   + rho(ii,jj,kk)
-             phiSum   = phiSum   + phi(ii,jj,kk)
-             numFLUIDs= numFLUIDs+ 1_lng
-          ENDIF
-       END IF
-   END IF
-END DO
+  !----- Estimating phi for uncovered node based on the prescribed BC --------------------------------
+  Geom_norm_x= 1.0
+  Geom_norm_y= 0.0
+  Geom_norm_z= 0.0
 
-!----- This rarely happens...
-IF (numFLUIDs .NE. 0_lng) THEN
-   rho(i,j,k) = rhoSum/numFLUIDs
-   phi(i,j,k) = phiSum/numFLUIDs
-ELSE
-   write(8,*) i,j,k, "numFluids in SetProperties is zero"
-   rho(i,j,k) = denL
-   phi(i,j,k) = phiWall
-END IF
+  n_prod_max= 0.0_dbl
 
-!----- enforcing values 
-rho(i,j,k) = denL
-u(i,j,k)   = ubx                                         
-v(i,j,k)   = uby
-w(i,j,k)   = ubz
+  !---------------------------------------------------------------------------------------------------
+  !----- Estimating  phi for uncovered node in case of Dirichlet BC ----------------------------------
+  !----- One Fluid neighboring node is needed for interpolation --------------------------------------
+  ! ---- Uncoverd node is A and neighbor is B --------------------------------------------------------
+  !---------------------------------------------------------------------------------------------------
+  IF (coeffGrad .eq. 0) then
+     !----- Finding the mth direction closest to normal vector
+     !----- Only one fluid neighboring node is needed for interpolation
+     DO m=0,NumDistDirs
+        ip1= i + ex(m)
+        jp1= j + ey(m)
+        kp1= k + ez(m)
+        im1= i - ex(m)
+        jm1= j - ey(m)
+        km1= k - ez(m)
+        IF (node(ip1,jp1,kp1) .EQ. FLUID) THEN
+           n_prod= abs( Geom_norm_x * (ip1-i) + Geom_norm_y * (jp1-j) + Geom_norm_z * (kp1-k))
+           IF (n_prod_max .LT. n_prod)THEN
+              n_prod_max= n_prod
+              iB= ip1
+              jB= jp1
+              kB= kp1
+           END IF
+        END IF
+     END DO
+     
+     CALL qCalc(m,i,j,k,im1,jm1,km1,q)
+     
+     phi(i,j,k)= (phi(iB,jB,kB)-phiWall)*q/(1.0_dbl+q) + phiWall
+  END IF
 
-!----- estimating  phi
-time = iter*tcf
-h2 = -0.38_dbl * D_x + 5.0000e-5 + s1*time   ! 0.4_dbl*D
-h1 = -0.48_dbl * D_x + 5.0000e-5 + s1*time   !-0.4_dbl*D
+  !---------------------------------------------------------------------------------------------------
+  !----- Estimating  phi for the uncovered node in case of Neumann BC --------------------------------
+  !----- Two Fluid neighboring nodes are needed for extrapolation ------------------------------------
+  !----- Uncovered node is A, first neighbor is B and second neighbor is C ---------------------------
+  !---------------------------------------------------------------------------------------------------
+  IF (coeffGrad .ne. 0) then
+     DO m=0,NumDistDirs
+        !----- Finding the two neighboring nodes in mth direction -----------------------------------
+        ip1= i+ ex(m)
+        jp1= j+ ey(m)
+        kp1= k+ ez(m)
+        ip2= i+ 2* ex(m)
+        jp2= j+ 2* ey(m)
+        kp2= k+ 2* ez(m)
 
-IF (coeffGrad .eq. 0) then								!Dirichlet BC
-   IF (x(i) < 0.5*(h1+h2) ) then							   
-      q = (x(i) - h1)/xcf
-      phi(i,j,k) = (phi(i+1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall
-   ELSE											
-      q = (h2 - x(i))/xcf
-      phi(i,j,k) = (phi(i-1,j,k)-phiWall)*q/(1.0_dbl+q)  + phiWall 
-   END IF
-ELSE											!Neumann or Mixed BC
-   IF (x(i) < 0.5*(h1+h2) ) then                                                        
-      q = 1.0_dbl
-      phi(i,j,k) = ( (phi(i+1,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(i+2,j,k)*q*q/(1.0+2.0*q)) - q*(1+q)/(1+2.0*q) * (coeffConst/coeffGrad) ) / ( 1.0 - (q*(1+q)/(1+2.0*q))*(coeffPhi/coeffGrad) )  
-   ELSE                                                                                
-      q = 1.0_dbl
-      phi(i,j,k) = ( (phi(i-1,j,k)*(1.0+q)*(1.0+q)/(1.0+2.0*q)) - (phi(i-2,j,k)*q*q/(1.0+2.0*q)) - q*(1+q)/(1+2.0*q) * (coeffConst/coeffGrad) ) / ( 1.0 - (q*(1+q)/(1+2.0*q))*(coeffPhi/coeffGrad) )  
-   END IF
-END IF
+        !------ Taking care of y-dir and z-dir periodicity for two neighboring nodes -----------------
+        IF (jp1 .GT. ny) THEN
+           jp1= jp1- ny
+        ELSE IF (jp1 .LT. 1) THEN
+           jp1= jp1+ny
+        END IF
+        IF (jp2 .GT. ny) THEN
+           jp2= jp2- ny
+        ELSE IF (jp2 .LT. 1) THEN
+           jp2= jp2+ ny
+        END IF
+        IF (kp1 .GT. nz) THEN
+           kp1= kp1- nz
+        ELSE IF (kp1 .LT. 1) THEN
+           kp1= kp1+ nz
+        END IF
+        IF (kp2 .GT. nz) THEN
+           kp2= kp2- nz
+        ELSE IF (kp2 .LT. 1) THEN
+           kp2= kp2+ nz
+        END IF
+        !----- Finding the mth direction vetor closest to normal vector ------------------------------
+        IF (node(ip2,jp1,kp1) .EQ. FLUID) THEN
+           IF (node(ip2,jp2,kp2) .EQ. FLUID) THEN
+              n_prod= abs( Geom_norm_x*(ip1-i) + Geom_norm_y*(jp1-j) + Geom_norm_z*(kp1-k))
+              IF (n_prod_max .LT. n_prod)THEN
+                 n_prod_max= n_prod
+                 iB= ip1
+                 jB= jp1
+                 kB= kp1
+                 iC= ip2
+                 jC= jp2
+                 kC= kp2
+              END IF
+           END IF
+        END IF
+     END DO
 
-!----- distribution functions set to equilibrium
-DO m=0,NumDistDirs
-  CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)                   
-  f(m,i,j,k) = feq
-END DO
+     q= 1.0_dbl! approximating that uncovered node is at the wall (it is close enough ...)
+     phi(i,j,k)= ( (phi(iB,jB,kB)*(1.0+q)*(1.0+q)/(1.0+2.0*q))&
+          - (phi(iC,jC,kC)*q*q/(1.0+2.0*q)) &
+          - (q*(1+q)/(1+2.0*q))*(coeffConst/coeffGrad) ) &
+          / (1.0 - (q*(1+q)/(1+2.0*q))*(coeffPhi/coeffGrad))
+  END IF
 
-!------------------------------------------------
+  !---------------------------------------------------------------------------------------------------
+  !----- distribution functions set to equilibrium at the uncovered node -----------------------------
+  !---------------------------------------------------------------------------------------------------
+  DO m=0,NumDistDirs
+     CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)
+     f(m,i,j,k) = feq
+  END DO
+
+  !===================================================================================================
 END SUBROUTINE SetProperties
-!------------------------------------------------
+!===================================================================================================
 
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE SurfaceArea			! calculate the surface area at the current time and write it to a file
