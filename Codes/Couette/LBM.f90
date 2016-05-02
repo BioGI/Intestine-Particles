@@ -265,7 +265,7 @@ DO k=2,nzSub-1
           IF(node(im1,jm1,km1) .EQ. FLUID) THEN 
             f(m,i,j,k) = fplus(m,im1,jm1,km1)
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN		! macro- boundary
-            CALL BounceBack2New(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
+            CALL BounceBack2(m,i,j,k,im1,jm1,km1,fbb)							! implement the bounceback BCs [MODULE: ICBC]
             f(m,i,j,k) = fbb
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
 
