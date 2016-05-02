@@ -75,7 +75,7 @@ kp2 = k + 2_lng*ez(m)				! k location of 2nd neighbor in the m direction
 
 IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN 	!2nd order BB if two positive neighbors are in fluid (most cases)
    CALL qCalc(m,i,j,k,im1,jm1,km1,q) 
-   CALL qCalcFarhad(i,q)
+!  CALL qCalcFarhad(i,q)
 
    ub = velIn(km1)								! x-component of the velocity at i,j,k
    vb = 0.0_dbl									! y-component of the velocity at i,j,k
