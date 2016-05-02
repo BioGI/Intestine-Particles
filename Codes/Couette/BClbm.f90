@@ -333,20 +333,21 @@ REAL(dbl) :: Bx,By,Bz									! solid node
 REAL(dbl) :: AB,AP										! distances between current and solid nodes, and between current node and the wall
 REAL(dbl) :: dx,dy,dz									! unit vector pointing from A to B
 REAL(dbl) :: r1,r2,z1,z2,slope,intercept			! radius and z location at k and km1, slope of line connecting those two points, z-intercept of the r-equation
-REAL(dbl) :: slope2,term1,term2						! terms used in calculation
+REAL(dbl) :: slope2,term1,term2	,s1_acc					! terms used in calculation
 REAL(dbl) :: h1,h2, time ! Height of the lower and upper pistons and the physical time
 
 
 !Get location of upper and lower pistons
 
 time = iter*tcf
+s1_acc= ((5.0_dbl-time)/(5.0_dbl)) * s1
 
 !h1 = lowerPistonVel * time		 !Ganesh
 !h2 = upperPistonVel * time + initHeight !Ganesh
 
 
-h2 = -0.0 *D + s1*time 
-h1 = -0.4 *D + s1*time
+h2 = -0.0 *D + s1_acc*time 
+h1 = -0.4 *D + s1_acc**time
  
 
 ! RAY
@@ -500,14 +501,15 @@ SUBROUTINE qCalcFarhad(i,q)
 IMPLICIT NONE
 
 INTEGER(lng) :: i
-REAL(dbl)    :: h1,h2,time,D_X,D_Y,q
+REAL(dbl)    :: h1,h2,time,D_X,D_Y,q,s1_acc
 
 time = iter*tcf
+s1_acc= ((5.0_dbl-time)/(5.0_dbl)) * s1
 D_X= 20.0_dbl *D 
 D_Y= 0.50_dbl *D
 
-h2=(-0.38_dbl* D_x)+ 5.0000e-5 + (s1*time)    
-h1=(-0.48_dbl* D_x)+ 5.0000e-5 + (s1*time) 
+h2=(-0.38_dbl* D_x)+ 5.0000e-5 + (s1_acc*time)    
+h1=(-0.48_dbl* D_x)+ 5.0000e-5 + (s1_acc*time) 
 IF (x(i) .LT. 0.5*(h1+h2) ) then 		  			!Left    
    q= (x(i)-h1)/xcf
 ELSE							  	 	!Right 

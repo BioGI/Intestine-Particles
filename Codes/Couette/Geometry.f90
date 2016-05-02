@@ -297,7 +297,7 @@ REAL(dbl) :: h2(0:nz+1)				! Mode 2	(segmental)
 REAL(dbl) :: Ac, lambdaC, shiftC		! temporary variables for the cos slopes
 REAL(dbl) :: time				! time
 INTEGER(lng) :: i,j,ii,k			! indices
-REAL(dbl) :: D_X, D_Y
+REAL(dbl) :: D_X, D_Y, s1_acc
 
 !----- Initialize Variables
 time 	= 0.0_dbl				! time					
@@ -310,9 +310,12 @@ D_X = 20*D
 D_Y= 0.50_dbl *D
 
 time	= iter*tcf
+
+s1_acc= ((5.0_dbl-time)/(5.0_dbl)) * s1 
+write(*,*) 'Velocity',s1_acc
 DO i=0,nz-1
-   h1Out(i) = -0.38_dbl*D_x + 5.0000e-5 + s1*time 	   
-   h1In(i)  = -0.48_dbl*D_x + 5.0000e-5 +s1*time 	 
+   h1Out(i) = -0.38_dbl*D_x + 5.0000e-5 + s1_acc*time 	   
+   h1In(i)  = -0.48_dbl*D_x + 5.0000e-5 + s1_acc*time 	 
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
@@ -354,7 +357,7 @@ IMPLICIT NONE
 REAL(dbl) :: v1(0:nz+1), v2(0:nz+1)		! velocity arrays for each mode
 REAL(dbl) :: v1In(0:nz+1), v1Out(0:nz+1)	! velocity arrays for each mode
 REAL(dbl) :: lambdaC				! wavelength of the cos segments (mode 2)
-REAL(dbl) :: time				! time
+REAL(dbl) :: time, s1_acc				! time
 INTEGER(lng) :: i,j,ii				! indices
 
 !----- Initialize Variables
@@ -365,10 +368,11 @@ v1In	  = 0.0_dbl				! mode 1 velocity
 v1Out	  = 0.0_dbl				! mode 1 velocity
 
 time = iter*tcf
+s1_acc= ((5.0_dbl-time)/(5.0_dbl)) * s1
 
 DO i=0,nz-1  					! Balaji added to ensure periodicity just like in h1. 
-   v1In(i) = s1 	! s1* 0.5_dbl   
-   v1Out(i)= s1 	!-s1* 0.5_dbl
+   v1In(i) = s1_acc
+   v1Out(i)= s1_acc
 END DO
 
 v1In(nz)=   v1In(0)

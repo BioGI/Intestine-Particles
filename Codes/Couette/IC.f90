@@ -66,7 +66,7 @@ ELSE															! clean start
   DO k=0,nzSub+1_lng
      DO j=0,nySub+1_lng
         DO i=0,nxSub+1_lng
-           u(i,j,k)   = s1/vcf		! 0.0_dbl							! x-velocity
+           u(i,j,k)   = 0.0_dbl !s1/vcf		! 0.0_dbl							! x-velocity
            v(i,j,k)   = 0.0_dbl							! y-velocity
 	   IF (node(i,j,k).EQ.FLUID) THEN        
 	      w(i,j,k) = 0.0_dbl  	! (0.5_dbl*s1/vcf)*(xmid-xx(i+iMin-1))/(xmid-xmin)! z-velocity
