@@ -28,10 +28,6 @@ INTEGER(lng) :: mpierr										! MPI standard error variable
 REAL(dbl) :: macroFreq										! macroscopic contraction frequency
 INTEGER(lng) :: xaxis,yaxis								! axes index variables
 
-REAL(dbl) :: D_X, D_Y
-D_X = 20.000_dbl * D 
-D_Y= 0.50_dbl *D
-
 ! Define the lattice <=> physical conversion factors
 IF(domaintype .EQ. 0) THEN
         xcf 		= (0.5_lng*D_x)/(nx-1_lng)	! length conversion factor: x-direction
@@ -276,28 +272,17 @@ CALL SetNodes			! Flag the fluid/solid nodes based on the new geometry
 END SUBROUTINE AdvanceGeometry
 !------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE BoundaryPosition		! Calculates the position of the wall at the current time step
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-REAL(dbl) :: h1(0:ny+1)				! Mode 1 (peristalsis)
-REAL(dbl) :: h1In(0:ny+1),h1Out(0:ny+1)		! Mode 1 (Couette device)
-REAL(dbl) :: h2(0:ny+1)				! Mode 2	(segmental)
+REAL(dbl) :: h1(0:nz+1)				! Mode 1 (peristalsis)
+REAL(dbl) :: h1In(0:nz+1),h1Out(0:nz+1)		! Mode 1 (Couette device)
+REAL(dbl) :: h2(0:nz+1)				! Mode 2	(segmental)
 REAL(dbl) :: Ac, lambdaC, shiftC		! temporary variables for the cos slopes
 REAL(dbl) :: time				! time
 INTEGER(lng) :: i,j,ii,k			! indices
-REAL(dbl) :: D_X, D_Y
 
 !----- Initialize Variables
 time 	= 0.0_dbl				! time					
@@ -306,29 +291,26 @@ h1Out 	= 0.0_dbl				! mode 2 height
 rDomIn	= 0.0_dbl				! summed height
 rDomOut	= 0.0_dbl				! summed height
 
-D_X = 20*D
-D_Y= 0.50_dbl *D
-
 time	= iter*tcf
-DO i=1,ny
-   h1Out(i) = -0.38_dbl*D_x + D_Y*0.5*(1.0_dbl + cos(2.0_dbl*y(i)*pi/D_Y) ) + 5.0000e-5 + s1*time 	   
-   h1In(i)  = -0.48_dbl*D_x + D_Y*0.5*(1.0_dbl + cos(2.0_dbl*y(i)*pi/D_Y) ) + 5.0000e-5 + s1*time
+DO i=1,nz
+   h1Out(i) = -0.38_dbl*D_x + L*0.5*(1.0_dbl + cos(2.0_dbl*z(i)*pi/L) ) + 5.0000e-5 + s1*time 	   
+   h1In(i)  = -0.48_dbl*D_x + L*0.5*(1.0_dbl + cos(2.0_dbl*z(i)*pi/L) ) + 5.0000e-5 + s1*time
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
 !----- set h1(nz) to h1(0) and h1(nz+1) to h(1) to ensure periodicity
-h1In(ny+1)   = h1In(1)
-h1In(0) = h1In(ny)
-h1Out(ny+1)   = h1Out(1)
-h1Out(0) = h1Out(ny)
+h1In(nz+1)   = h1In(1)
+h1In(0) = h1In(nz)
+h1Out(nz+1)   = h1Out(1)
+h1Out(0) = h1Out(nz)
 
-DO i=0,ny+1
+DO i=0,nz+1
   rDomIn(i) = h1In(i)
   rDomOut(i)= h1Out(i)
 END DO
 
-rIn(0:nySub+1) = rDomIn(jMin-1:jMax+1)
-rOut(0:nySub+1)= rDomOut(jMin-1:jMax+1)
+rIn(0:nzSub+1) = rDomIn(kMin-1:kMax+1)
+rOut(0:nzSub+1)= rDomOut(kMin-1:kMax+1)
 
 IF (myid .EQ. master) THEN
    CALL SurfaceArea
@@ -575,10 +557,6 @@ REAL(dbl)       :: feq                  ! equilibrium distribution function
 CHARACTER(7)    :: iter_char            ! iteration stored as a character
 REAL(dbl)       :: usum,vsum,wsum
 REAL(dbl)       :: h1, h2, time, q
-REAL(dbl) 	:: D_X, D_Y
-
-D_X= 20.0*D 
-D_Y= 0.50_dbl *D
 
 !----- initialize sum of surrounding densities
 numFLUIDs = 0_lng

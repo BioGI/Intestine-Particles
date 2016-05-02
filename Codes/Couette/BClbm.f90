@@ -263,7 +263,7 @@ IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN 	!
    !   END IF
    !ENDIF
 
-   CALL qCalcFarhad(i,q)
+!   CALL qCalcFarhad(i,q)
    ub = velIn(km1)								! x-component of the velocity at i,j,k
    vb = 0.0_dbl									! y-component of the velocity at i,j,k
    wb = 0.0_dbl									! only z-component in this case)
@@ -500,11 +500,9 @@ SUBROUTINE qCalcFarhad(i,q)
 IMPLICIT NONE
 
 INTEGER(lng) :: i
-REAL(dbl)    :: h1,h2,time,D_X,D_Y,q
+REAL(dbl)    :: h1,h2,time,q
 
 time = iter*tcf
-D_X= 20.0_dbl *D 
-D_Y= 0.50_dbl *D
 
 h2=(-0.38_dbl* D_x)+ 5.0000e-5 + (s1*time)    
 h1=(-0.48_dbl* D_x)+ 5.0000e-5 + (s1*time) 
