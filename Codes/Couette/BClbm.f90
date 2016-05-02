@@ -74,92 +74,9 @@ kp2 = k + 2_lng*ez(m)				! k location of 2nd neighbor in the m direction
 
 
 IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN 	!2nd order BB if two positive neighbors are in fluid (most cases)
-   rijk = x(im1)								! height at current location
-   !----- Initial fluid node guess
-   x1=x(i)
-   y1=y(j)
-   z1=z(k)
-                
-   !----- Initial solid node guess
-   x2=x(im1)
-   y2=y(jm1)
-   z2=z(km1)
-                 
-   IF (k.NE.km1) THEN
-      DO it=1,qitermax
-         !----- guess of boundary location 
-         xt=(x1+x2)/2.0_dbl
-         yt=(y1+y2)/2.0_dbl
-         zt=(z1+z2)/2.0_dbl
-
-         rt = xt
-
-         IF (rijk .GE. rOut(k)) THEN
-            ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
-         ELSE
-            ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
-         END IF
-
-         IF (rt.GT.ht) then
-            x2=xt
-            y2=yt
-            z2=zt
-         ELSE
-            x1=xt
-            y1=yt
-            z1=zt
-         END IF
-      END DO
-
-      x1=x(i)
-      y1=y(j)
-      z1=z(k)
-                 
-      x2=x(im1)
-      y2=y(jm1)
-      z2=z(km1)
- 
-      q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-   ELSE
-      DO it=1,qitermax
-         !----- guess of boundary location 
-         xt=(x1+x2)/2.0_dbl
-         yt=(y1+y2)/2.0_dbl
-         zt=(z1+z2)/2.0_dbl
-
-         rt = xt
-
-         IF (rijk .GE. rOut(k)) THEN
-            ht = (rOut(km1)+rOut(k))/2.0_dbl
-         ELSE
-            ht = (rIn(km1)+rIn(k))/2.0_dbl
-         END IF
-
-         IF (rt.GT.ht) then
-            x2=xt
-            y2=yt
-            z2=zt
-         ELSE
-            x1=xt
-            y1=yt
-            z1=zt
-         END IF
-      END DO
-
-      x1=x(i)
-      y1=y(j)
-      z1=z(k)
-                 
-      x2=x(im1)
-      y2=y(jm1)
-      z2=z(km1)
- 
-      q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-   ENDIF
-
-
-
+   CALL qCalc(m,i,j,k,im1,jm1,km1,q) 
    CALL qCalcFarhad(i,q)
+
    ub = velIn(km1)								! x-component of the velocity at i,j,k
    vb = 0.0_dbl									! y-component of the velocity at i,j,k
    wb = 0.0_dbl									! only z-component in this case)
@@ -181,7 +98,6 @@ IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN 	!
       fbb = q*(1.0_dbl + 2.0_dbl*q)*fplus(bb(m),i,j,k) 				&
           + (1.0_dbl - 4.0_dbl*q*q)*fplus(bb(m),ip1,jp1,kp1)    	  	& 
           - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) 			&
-         !+ 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)) 		! use actual rho
           + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)) 		! use rho = 1.0
 
 	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
@@ -191,7 +107,6 @@ IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN 	!
       fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 			&
         + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q	    		   	&
         - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1)	&
-        !+ (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))	! Use actual rho
         + (6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))		! Use rho = 1.0
 
 	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
