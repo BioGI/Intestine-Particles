@@ -110,16 +110,13 @@ DO k=1,nzSub
              !-----  Scalar contribution form neighboring nodes (Fluid nodes or Boundary) ----------
              IF (node(im1,jm1,km1) .EQ. FLUID) THEN 								! Interior Node
     	        phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1)- wt(m)*Delta)*phiTemp(im1,jm1,km1)
-
              ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN			! Solid Boundary
                 CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC)							
                 phi(i,j,k) = phi(i,j,k) + phiBC     
                 CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)  
 
              ELSE IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN			! Villi
-                CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)		
-                phi(i,j,k) = phi(i,j,k) + phiBC     
-                CALL AbsorbedScalarV(i,j,k,m,phiBC)							
+
              ELSE												! Error
                 OPEN(1000,FILE="error.txt")
                 WRITE(1000,'(A75)') "error in PassiveScalar.f90 at Line 118: node(im1,jm1,km1) is out of range"
@@ -158,8 +155,8 @@ ENDIF
 !----- Monitorin the Negative phi issue
 write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
 
-!----- Add the amount of scalar absorbed through the outer and villous surfaces
-phiAbsorbed = 	phiAbsorbedS + phiAbsorbedV						
+!----- Add the amount of scalar absorbed through the outer surfaces
+phiAbsorbed = 	phiAbsorbedS 						
       
 write(*,*) iter, phiOUTleft,phiINleft,phiOUTright, phiINright
 !===================================================================================================
@@ -252,25 +249,6 @@ END SUBROUTINE AbsorbedScalarS
 
 
 
-
-
-
-
-!===================================================================================================
-SUBROUTINE AbsorbedScalarV(i,j,k,m,phiBC)		! measures the total absorbed scalar
-!===================================================================================================
-IMPLICIT NONE
-
-INTEGER(lng), INTENT(IN) :: i,j,k,m						! index variables
-REAL(dbl), INTENT(IN) :: phiBC     						! scalar contribution from the boundary condition
-REAL(dbl) :: phiOUT, phiIN							! scalar values exchanged with the wall
-
-phiIN 	= phiBC									! contribution from the wall to the crrent node (in)
-phiOUT	= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)	! contribution to the wall from the current node (out)
-phiAbsorbedV = phiAbsorbedV + (phiOUT - phiIN)					! add the amount of scalar that has been absorbed at the current location in the current direction
-!===================================================================================================
-END SUBROUTINE AbsorbedScalarV
-!===================================================================================================
 
 
 
