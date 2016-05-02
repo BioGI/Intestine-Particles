@@ -110,11 +110,7 @@ DO k=1,nzSub
           ELSE IF((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN			! macro- boundary
              CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC)								! Wang: scalar BC
              phi(i,j,k) = phi(i,j,k) + phiBC     
-             CALL AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)  
-          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN			! villi
-             CALL ScalarBCV(m,i,j,k,im1,jm1,km1,(-node(im1,jm1,km1)),phiBC)					! implement scalar boundary condition (using BB f's)	[MODULE: ICBC]
-             phi(i,j,k) = phi(i,j,k) + phiBC     
-             CALL AbsorbedScalarV(i,j,k,m,phiBC)								! measure the absorption rate
+             CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)  
           ELSE
              OPEN(1000,FILE="error.txt")
              WRITE(1000,'(A75)') "error in PassiveScalar.f90 at Line 89: node(im1,jm1,km1) is out of range"
@@ -175,11 +171,11 @@ END SUBROUTINE Scalar
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)		! measures the total absorbed scalar
+SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC,phiAbsorbedSleft,phiAbsorbedSright,phiINleft,phiINright,phiOUTleft,phiOUTright)		! measures the total absorbed scalar
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: i,j,k,m,im1						! index variables
+INTEGER(lng), INTENT(IN) :: i,j,k,m,im1,jm1,km1						! index variables
 INTEGER(lng) :: ip1,jp1,kp1
 REAL(dbl), INTENT(IN) :: phiBC   		  				! scalar contribution from the boundary condition
 REAL(dbl) :: phiOUT, phiIN							! scalar values exchanged with the wall
@@ -191,7 +187,7 @@ REAL(dbl) :: fPlusBstar, rhoBstar, phiBstar, PkBstar
 REAL(dbl) :: ub, vb, wb, ubb,vbb,wbb
 REAL(dbl) :: q
 
-CALL qCalcFarhad(i,q)
+CALL qCalc(m,i,j,k,im1,jm1,km1,q)
 
 ubb= 0.0_dbl
 vbb= 0.0_dbl
