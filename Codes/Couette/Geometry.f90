@@ -566,6 +566,7 @@ REAL(dbl)   ,INTENT(IN) :: ubx,uby,ubz 			! velocity of the boundary
 INTEGER(lng)    :: m 		          		! Direction index
 INTEGER(lng)    :: ip1,jp1,kp1,iB,jB,kB  		! First neighboring node location
 INTEGER(lng)    :: ip2,jp2,kp2,iC,jC,kC     	 	! Second neighboring node location
+INTEGER(lng)    :: iO,jO,kO		     	 	! Solid neighboring node location
 CHARACTER(7)    :: iter_char            		! iteration stored as a character
 REAL(dbl)       :: feq                  		! equilibrium distribution function
 REAL(dbl)	:: Geom_norm_x,Geom_norm_y,Geom_norm_z	! geometry normal vector
@@ -603,10 +604,14 @@ IF (coeffGrad .eq. 0) then
             iB= ip1
             jB= jp1
             kB= kp1
+            iO= i+ ex(bb(m))
+            jO= j+ ey(bb(m))
+            kO= k+ ez(bb(m))
          END IF
       END IF
    END DO
-   CALL qCalcFarhad(i,q)
+  !CALL qCalcFarhad(i,q)
+   CALL qCalc(m,i,j,k,iO,jO,kO,q)
    phi(i,j,k)= (phi(iB,jB,kB)-phiWall)*q/(1.0_dbl+q) + phiWall
 END IF
 

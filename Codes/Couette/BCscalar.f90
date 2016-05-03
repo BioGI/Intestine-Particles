@@ -38,10 +38,9 @@ REAL(dbl)    :: q, q1, n_prod, n_prod_max
 CALL qCalcFarhad(i,q1)		
 CALL qCalc(m,i,j,k,im1,jm1,km1,q)
 
-IF (abs(q-q1) .GT. 1e-5) THEN
-   write(*,*) 'cooie:', i,j,k, im1,jm1,km1,q1, q 
-END IF
-
+!IF (abs(q-q1) .GT. 1e-5) THEN
+!   write(*,*) 'Cookie:', i,j,k, im1,jm1,km1,q1, q 
+!END IF
 !write(*,*) 'q_farhad,q)iter', q1,q
 
 IF (rijk .GE. rOut(k)) THEN
