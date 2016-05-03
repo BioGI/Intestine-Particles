@@ -136,131 +136,106 @@ SUBROUTINE qCalc(m,i,j,k,im1,jm1,km1,q)			! calculates q (boundary distance rati
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1	! current node, and neighboring node
-REAL(dbl), INTENT(OUT) :: q							! distance ratio
-REAL(dbl) :: rijk ,htt,xo
-REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt
+REAL(dbl), INTENT(OUT)   :: q	   		! distance ratio
+REAL(dbl)    :: rijk ,htt,xo
+REAL(dbl)    :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt
 INTEGER(lng) :: it				! loop index variables
 
+rijk = x(im1)                    		! height at current location
+!----- Initial fluid node guess
+x1=x(i)
+y1=y(j)
+z1=z(k)
 
-   rijk = x(im1)                    		! height at current location
-   !----- Initial fluid node guess
+!----- Initial solid node guess
+x2=x(im1)
+y2=y(jm1)
+z2=z(km1)
+  
+xo= (rOut(k) +rIn(k)) / 2.0_dbl 		!location of origin which is the center of the piston              
+  
+IF (k.NE.km1) THEN
+   DO it=1,qitermax
+
+      !----- guess of boundary location 
+      xt=(x1+x2)/2.0_dbl
+      yt=(y1+y2)/2.0_dbl
+      zt=(z1+z2)/2.0_dbl
+
+      IF (rijk .GE. rOut(k)) THEN
+         ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
+      ELSE
+         ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
+      END IF
+
+      htt= abs(ht-xo)
+      rt = abs(xt-xo)
+
+      IF (rt.GT.htt) then
+         x2=xt
+         y2=yt
+         z2=zt
+      ELSE
+         x1=xt
+         y1=yt
+         z1=zt
+      END IF
+   END DO
+
    x1=x(i)
    y1=y(j)
    z1=z(k)
-                
-   !----- Initial solid node guess
+                 
    x2=x(im1)
    y2=y(jm1)
    z2=z(km1)
-   
-   xo= (rOut(k) +rIn(k)) / 2.0_dbl               
-   
-   IF (k.NE.km1) THEN
-      DO it=1,qitermax
-         !----- guess of boundary location 
-         xt=(x1+x2)/2.0_dbl
-         yt=(y1+y2)/2.0_dbl
-         zt=(z1+z2)/2.0_dbl
-
-
-         IF (rijk .GE. rOut(k)) THEN
-            ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
-         ELSE
-            ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
-         END IF
-
-         htt= abs(ht-xo)
-         rt = abs(xt-xo)
-
-         IF (rt.GT.htt) then
-            x2=xt
-            y2=yt
-            z2=zt
-         ELSE
-            x1=xt
-            y1=yt
-            z1=zt
-         END IF
-         IF ((I.EQ.97) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
-            !write(*,*) 'A:',x1,x2,xt,rt,ht
-         END IF
-
-      END DO
-
-      x1=x(i)
-      y1=y(j)
-      z1=z(k)
-                 
-      x2=x(im1)
-      y2=y(jm1)
-      z2=z(km1)
  
-      q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+   q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
 
-      IF ((I.EQ.97) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
-         !write(*,*) 'B:', x1,y1,z1,x2,y2,z2,xt,yt,zt,rt,ht,q
+ELSE
+   DO it=1,qitermax
+      !----- guess of boundary location 
+      xt=(x1+x2)/2.0_dbl
+      yt=(y1+y2)/2.0_dbl
+      zt=(z1+z2)/2.0_dbl
+
+      IF (rijk .GE. rOut(k)) THEN
+         ht = (rOut(km1)+rOut(k))/2.0_dbl
+      ELSE
+         ht = (rIn(km1)+rIn(k))/2.0_dbl
       END IF
 
+      htt= abs(ht-xo)
+      rt = abs(xt-xo) 
 
-   ELSE
-      DO it=1,qitermax
-         !----- guess of boundary location 
-         xt=(x1+x2)/2.0_dbl
-         yt=(y1+y2)/2.0_dbl
-         zt=(z1+z2)/2.0_dbl
-
-
-         IF (rijk .GE. rOut(k)) THEN
-            ht = (rOut(km1)+rOut(k))/2.0_dbl
-         ELSE
-            ht = (rIn(km1)+rIn(k))/2.0_dbl
-         END IF
-
-         htt= abs(ht-xo)
-         rt = abs(xt-xo) 
-
-         IF (rt.GT.htt) then
-            x2=xt
-            y2=yt
-            z2=zt
-         ELSE
-            x1=xt
-            y1=yt
-            z1=zt
-         END IF
-
-         IF ((I.EQ.18) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
-            !write(*,*) 'A:',x1,x2,xt,rt,ht
-         END IF
-      END DO
-
-      x1=x(i)
-      y1=y(j)
-      z1=z(k)
-                 
-      x2=x(im1)
-      y2=y(jm1)
-      z2=z(km1)
- 
-      q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-      IF ((I.EQ.18) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
-         !write(*,*) 'B:', x1,y1,z1,x2,y2,z2,xt,yt,zt,rt,ht,q
+      IF (rt.GT.htt) then
+          x2=xt
+          y2=yt
+          z2=zt
+      ELSE
+          x1=xt
+          y1=yt
+          z1=zt
       END IF
+   END DO
 
-   ENDIF
+   x1=x(i)
+   y1=y(j)
+   z1=z(k)
+                 
+   x2=x(im1)
+   y2=y(jm1)
+   z2=z(km1)
+ 
+   q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+ENDIF
 
-
-! make sure 0<q<1
-IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
+IF ((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
   OPEN(1000,FILE="error.txt")
-  WRITE(1000,*) "q    =",q
-  WRITE(1000,*) "m=",m
-  WRITE(1000,*) "i=",i,"j=",j,"k=",k
-  WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
+  WRITE(1000,*) "q,m,i,j,k,im1,jm1,km1=",q,m,i,j,k,im1,jm1,km1 
   CLOSE(1000)
   STOP
 END IF																																
-
 !------------------------------------------------
 END SUBROUTINE qCalc
 !------------------------------------------------
