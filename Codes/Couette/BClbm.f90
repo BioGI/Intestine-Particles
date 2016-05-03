@@ -137,7 +137,7 @@ IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1	! current node, and neighboring node
 REAL(dbl), INTENT(OUT) :: q							! distance ratio
-REAL(dbl) :: rijk
+REAL(dbl) :: rijk ,htt,xo
 REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt
 INTEGER(lng) :: it				! loop index variables
 
@@ -152,7 +152,9 @@ INTEGER(lng) :: it				! loop index variables
    x2=x(im1)
    y2=y(jm1)
    z2=z(km1)
-                 
+   
+   xo= (rOut(k) +rIn(k)) / 2.0_dbl               
+   
    IF (k.NE.km1) THEN
       DO it=1,qitermax
          !----- guess of boundary location 
@@ -160,7 +162,6 @@ INTEGER(lng) :: it				! loop index variables
          yt=(y1+y2)/2.0_dbl
          zt=(z1+z2)/2.0_dbl
 
-         rt = xt
 
          IF (rijk .GE. rOut(k)) THEN
             ht = ((zt-z(k))*rOut(km1)+(z(km1)-zt)*rOut(k))/(z(km1)-z(k))
@@ -168,7 +169,10 @@ INTEGER(lng) :: it				! loop index variables
             ht = ((zt-z(k))*rIn(km1)+(z(km1)-zt)*rIn(k))/(z(km1)-z(k))
          END IF
 
-         IF (rt.GT.ht) then
+         htt= abs(ht-xo)
+         rt = abs(xt-xo)
+
+         IF (rt.GT.htt) then
             x2=xt
             y2=yt
             z2=zt
@@ -177,6 +181,10 @@ INTEGER(lng) :: it				! loop index variables
             y1=yt
             z1=zt
          END IF
+         IF ((I.EQ.97) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
+            !write(*,*) 'A:',x1,x2,xt,rt,ht
+         END IF
+
       END DO
 
       x1=x(i)
@@ -188,6 +196,12 @@ INTEGER(lng) :: it				! loop index variables
       z2=z(km1)
  
       q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+
+      IF ((I.EQ.97) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
+         !write(*,*) 'B:', x1,y1,z1,x2,y2,z2,xt,yt,zt,rt,ht,q
+      END IF
+
+
    ELSE
       DO it=1,qitermax
          !----- guess of boundary location 
@@ -195,7 +209,6 @@ INTEGER(lng) :: it				! loop index variables
          yt=(y1+y2)/2.0_dbl
          zt=(z1+z2)/2.0_dbl
 
-         rt = xt
 
          IF (rijk .GE. rOut(k)) THEN
             ht = (rOut(km1)+rOut(k))/2.0_dbl
@@ -203,7 +216,10 @@ INTEGER(lng) :: it				! loop index variables
             ht = (rIn(km1)+rIn(k))/2.0_dbl
          END IF
 
-         IF (rt.GT.ht) then
+         htt= abs(ht-xo)
+         rt = abs(xt-xo) 
+
+         IF (rt.GT.htt) then
             x2=xt
             y2=yt
             z2=zt
@@ -211,6 +227,10 @@ INTEGER(lng) :: it				! loop index variables
             x1=xt
             y1=yt
             z1=zt
+         END IF
+
+         IF ((I.EQ.18) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
+            !write(*,*) 'A:',x1,x2,xt,rt,ht
          END IF
       END DO
 
@@ -223,6 +243,10 @@ INTEGER(lng) :: it				! loop index variables
       z2=z(km1)
  
       q=sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+      IF ((I.EQ.18) .AND. (j.EQ.1) .AND. (k.EQ.1))THEN
+         !write(*,*) 'B:', x1,y1,z1,x2,y2,z2,xt,yt,zt,rt,ht,q
+      END IF
+
    ENDIF
 
 
@@ -258,8 +282,8 @@ time = iter*tcf
 D_X= 20.0_dbl *D 
 D_Y= 0.50_dbl *D
 
-h2=(-0.38_dbl* D_x)+ 5.0000e-5 + (s1*time)    
-h1=(-0.48_dbl* D_x)+ 5.0000e-5 + (s1*time) 
+h2= 0.5_dbl*D_x - 0.38_dbl*D_x + 5.0000e-5 + (s1*time)    
+h1= 0.5_dbl*D_x - 0.48_dbl*D_x + 5.0000e-5 + (s1*time) 
 IF (x(i) .LT. 0.5*(h1+h2) ) then 		  			!Left    
    q= (x(i)-h1)/xcf
 ELSE							  	 	!Right 

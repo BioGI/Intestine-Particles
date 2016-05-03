@@ -109,8 +109,8 @@ IF(domaintype .EQ. 0) THEN
       Ck = ANINT(0.5_dbl*nz)
 
 ELSE
-      xaxis=ANINT(0.5_dbl*(nx+1))
-      yaxis=ANINT(0.5_dbl*(ny+1))
+      xaxis= 1 !ANINT(0.5_dbl*(nx+1))
+      yaxis= 1 !ANINT(0.5_dbl*(ny+1))
       
       ! Fill out x,y,z arrays (local)
       DO i=0,nxSub+1
@@ -310,8 +310,8 @@ D_Y= 0.50_dbl *D
 
 time	= iter*tcf
 DO i=0,nz-1
-   h1Out(i) = -0.38_dbl*D_x + 5.0000e-5 + s1*time 	   
-   h1In(i)  = -0.48_dbl*D_x + 5.0000e-5 +s1*time 	 
+   h1Out(i) = 0.5_dbl*D_x -0.38_dbl*D_x + 5.0000e-5 + s1*time 	   
+   h1In(i)  = 0.5_dbl*D_x -0.48_dbl*D_x + 5.0000e-5 +s1*time 	 
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
