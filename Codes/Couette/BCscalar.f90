@@ -35,7 +35,7 @@ REAL(dbl)    :: q, q1, n_prod, n_prod_max
 ! BC-Permeability:      coeffPhi=Pw/Dm  coeffGrad=-1    coeffConst= 0
 !===========================================================================
 
-CALL qCalcFarhad(i,q1)		
+!CALL qCalcFarhad(i,q1)		
 CALL qCalc(m,i,j,k,im1,jm1,km1,q)
 
 !IF (abs(q-q1) .GT. 1e-5) THEN
