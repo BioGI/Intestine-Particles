@@ -294,7 +294,7 @@ REAL(dbl) :: h1(0:nz+1)				! Mode 1 (peristalsis)
 REAL(dbl) :: h1In(0:nz+1),h1Out(0:nz+1)		! Mode 1 (Couette device)
 REAL(dbl) :: h2(0:nz+1)				! Mode 2	(segmental)
 REAL(dbl) :: Ac, lambdaC, shiftC		! temporary variables for the cos slopes
-REAL(dbl) :: time				! time
+REAL(dbl) :: time,aa1,aa2				! time
 INTEGER(lng) :: i,j,ii,k			! indices
 REAL(dbl) :: D_X, D_Y,s1_acc
 
@@ -308,12 +308,18 @@ rDomOut	= 0.0_dbl				! summed height
 D_X = 20*D
 D_Y= 0.50_dbl *D
 
-time	= iter*tcf
-s1_acc= ((time-0.0_dbl)/(1.0_dbl-0.0_dbl)) * s1
+aa1= 0.5_dbl*D_x -0.38_dbl*D_x + 5.0000e-5
+aa2= 0.5_dbl*D_x -0.48_dbl*D_x + 5.0000e-5
+DO i=1,iter
+   time = i*tcf
+   s1_acc= ((time-0.0_dbl)/(1.0_dbl-0.0_dbl)) * s1
+   aa1= aa1+ s1_acc*tcf
+   aa2= aa2+ s1_acc*tcf
+END DO
 
-DO i=0,nz-1
-   h1Out(i) = 0.5_dbl*D_x -0.38_dbl*D_x + 5.0000e-5 + s1_acc*time 	   
-   h1In(i)  = 0.5_dbl*D_x -0.48_dbl*D_x + 5.0000e-5 + s1_acc*time 	 
+DO i= 0,nz-1 
+   h1Out(i)= aa1
+   h1In(i) = aa2          
 END DO
 
 !----- since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
