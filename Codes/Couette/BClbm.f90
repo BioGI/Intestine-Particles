@@ -254,7 +254,7 @@ INTEGER(lng) :: i
 REAL(dbl)    :: h1,h2,time,D_X,D_Y,q,s1_acc
 
 time = iter*tcf
-s1_acc= ((time-0.0_dbl)/(1.0_dbl-0.0_dbl)) * s1
+s1_acc= ((time-0.0_dbl)/(5.0_dbl-0.0_dbl)) * s1
 
 D_X= 20.0_dbl *D 
 D_Y= 0.50_dbl *D
