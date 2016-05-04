@@ -366,6 +366,7 @@ v1In	  = 0.0_dbl				! mode 1 velocity
 v1Out	  = 0.0_dbl				! mode 1 velocity
 
 time = iter*tcf
+s1_acc= ((time-0.0_dbl)/(5.0_dbl-0.0_dbl)) * s1
 
 DO i=0,nz-1  					! Balaji added to ensure periodicity just like in h1. 
    v1In(i) = s1_acc 	! s1* 0.5_dbl   
