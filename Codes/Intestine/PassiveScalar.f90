@@ -4,6 +4,7 @@ MODULE PassiveScalar
 USE SetPrecision
 USE Setup
 USE ICBC
+USE BCscalar
 
 IMPLICIT NONE 
 
@@ -88,7 +89,7 @@ DO k=1,nzSub
           IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
              phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
           ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
-             CALL ScalarBC(m,i,j,k,im1,jm1,km1,phiBC)								        ! implement scalar BC
+             CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
              phi(i,j,k) = phi(i,j,k) + phiBC     
              CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 								! measure the absorption rate
           ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi

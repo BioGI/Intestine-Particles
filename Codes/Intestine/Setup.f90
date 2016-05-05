@@ -46,6 +46,7 @@ REAL(dbl) :: Sc 								! Schmidt number
 REAL(dbl) :: Dm,Dmcf								! binary molecular diffusivity (passive scalar in fluid), diffusivity conversion factor
 REAL(dbl) :: Delta								! scalar parameter
 REAL(dbl) :: phiIC, phiWall							! values of scalar: initial, wall, contribution from boundary
+REAL(dbl) :: coeffPhi, coeffGrad, coeffConst                                    ! Coefficients for the generalized scalar boundary condition (coeffPhi * phiWall + coeffGrad * dPhiDn_wall = coeffConst). 'n' is the direction from the wall into the fluid.
 REAL(dbl) :: phiAbsorbed							! total amount of scalar absorbed up to current time
 REAL(dbl) :: phiAbsorbedS							! total amount of scalar absorbed up to current time - through the macroscopic surface
 REAL(dbl) :: phiAbsorbedV							! total amount of scalar absorbed up to current time - through the villi
@@ -367,6 +368,11 @@ READ(10,*) Sc					! Schmidt number
 READ(10,*) sclrIC				! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
 READ(10,*) phiPer				! period at which to start the scalar
 READ(10,*) phiIC				! maximum scalar concentration
+
+! Coefficients for the generalized scalar boundary condition (coeffPhi * phiWall + coeffGrad * dPhiDn_wall = coeffConst). 'n' is the direction from the wall into the fluid.
+READ(10,*) coeffPhi
+READ(10,*) coeffGrad
+READ(10,*) coeffConst
 
 READ(10,*) nPers				! total number of periods to run
 READ(10,*) numOuts			! number of output files (roughly)
