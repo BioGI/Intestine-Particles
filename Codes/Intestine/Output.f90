@@ -75,13 +75,13 @@ END IF
 
 ! Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
-WRITE(2458,'(A81)') '#VARIABLES = "period","time", "mass_actual", "mass_theoretical"," fmovingsum "," fmovingrhosum "'
+WRITE(2458,'(A81)') '#VARIABLES = period, time, mass_actual, mass_theoretical, mass_err, f_moving_sum, f_moving_rho_sum'
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
 ! Drug Conservation
 OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-WRITE(2472,'(A120)') '#VARIABLES = "iter","time","Drug_Released_Total","Drug_Absorbed","Drug_Remained_in_Domain","Drug_Loss_Percent", "Drug_Loss_Modified_Percent"'
+WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
@@ -322,7 +322,7 @@ IF((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. (iter .EQ. iter0-1_lng) 
          pressure= (rho(i,j,k)-denL)*dcf*pcf
       
          IF ( pressure .LT. 1.0e-18) THEN
-            pressure=0.0_lng
+            !pressure=0.0_lng
          END IF
  
          WRITE(60,'(I3,2I4,3F11.7,E13.4,E12.4,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure,	&
@@ -557,8 +557,8 @@ IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k				! index variables
 REAL(dbl) :: mass_actual			! mass in the system (per unit volume)
-REAL(dbl) :: mass_theoretical		! mass in the system (per unit volume)
-REAL(dbl) :: volume, node_volume	! total volume and volume of a sincle node (cell)
+REAL(dbl) :: mass_theoretical			! mass in the system (per unit volume)
+REAL(dbl) :: volume, node_volume,mass_err	! total volume and volume of a sincle node (cell)
 
 ! calculate the node volume
 node_volume = xcf*ycf*zcf
@@ -584,8 +584,14 @@ END DO
 ! calcuate the theoretical amount of mass in the system
 mass_theoretical = den*volume
 
+IF (mass_theoretical .LT. 1e-40) THEN
+   mass_theoretical =1.0e-40
+ENDIF
+
+mass_err= 100*(mass_theoretical-mass_actual)/mass_theoretical
+
 ! print the mass to a file(s)
-WRITE(2458,'(I8,5E15.5)') iter, iter*tcf,mass_actual, mass_theoretical,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
+WRITE(2458,'(I8,6E21.12)') iter,iter*tcf,mass_actual, mass_theoretical,mass_err,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
 CALL FLUSH(2458)  
 
 !------------------------------------------------
@@ -632,7 +638,7 @@ IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k					! index variables
 INTEGER(lng) :: numFluids				! number of fluid nodes in the domain
-REAL(dbl)    :: phiDomain				! current amount of scalar in the domain
+REAL(dbl)    :: phiDomain, phiIC, Drug_Initial		! current amount of scalar in the domain
 REAL(dbl)    :: phiAverage				! average scalar in the domain
 REAL(dbl)    :: zcf3					! node volume in physical units
 TYPE(ParRecord), POINTER :: current
@@ -665,33 +671,35 @@ END IF
 zcf3 = 1000000.0_lng * zcf*zcf*zcf 
 
 !------ Computing the total drug released from particles      
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
+IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN
+   current => ParListHead%next
+   DO WHILE (ASSOCIATED(current))
+      next => current%next
+      Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+      current => next
+   ENDDO
+END IF
 
-   next => current%next
-   Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
-   current => next
-ENDDO
-
+Drug_Initial=  phiTotal *zcf3
 Drug_Absorbed = phiAbsorbed * zcf3
 Drug_Remained_in_Domain = phiDomain * zcf3
-Drug_Loss = Drug_Released_Total - (Drug_Absorbed + Drug_Remained_in_Domain)  
-Drug_Loss_Modified = (Drug_Released_Total- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
+Drug_Loss = (Drug_Released_Total + Drug_Initial) - (Drug_Absorbed + Drug_Remained_in_Domain)  
+Drug_Loss_Modified = (Drug_Released_Total+ Drug_Initial- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
 
 
 IF (Drug_Released_Total .LT. 1e-20) THEN
     Drug_Released_Total =1e-20
 END IF
 
-Drug_Loss_Percent = (Drug_Loss / Drug_Released_Total) * 100.0_lng
-Drug_Loss_Modified_Percent = (Drug_Loss_Modified / Drug_Released_Total) * 100.0_lng  
+Drug_Loss_Percent = (Drug_Loss / (Drug_Released_Total+Drug_Initial)) * 100.0_lng
+Drug_Loss_Modified_Percent = (Drug_Loss_Modified / (Drug_Released_Total+Drug_Initial)) * 100.0_lng  
 
 IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
    Drug_Absorbed = 0.0_lng
 ENDIF
 
 
-WRITE(2472,'(I7, F9.3, 5E19.11)') iter, iter*tcf, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+WRITE(2472,'(I7, F9.3, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
 CALL FLUSH(2472)
 
 !------------------------------------------------
@@ -1709,8 +1717,8 @@ IF(myid .EQ. master) THEN
 
   ! open and write to new combined file
   OPEN(2459,FILE='mass.dat')
-  WRITE(2459,*) 'VARIABLES = "period", "mass_actual", "mass_theoretical"'
-  WRITE(2459,*) 'ZONE F=POINT'
+  WRITE(2459,'(A81)') '#VARIABLES = "period","time" "mass_actual", "mass_theoretical","fmovingsum  ","fmovingrhosum  "'
+  WRITE(2459,*) '#ZONE F=POINT'
   DO nn=1,numLines
 
     ! initialize the summations
