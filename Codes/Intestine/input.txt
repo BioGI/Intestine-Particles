@@ -28,14 +28,14 @@
 998.2 		! density [kg/m^3]								(den)
 1.004e-6	! kinematic viscosity [m^2/s]							(nu)
 1.0		! relaxation parameter								(tau)
-50.0		! Schmidt Number								(Sc)
+10.0		! Schmidt Number								(Sc)
 4		! initial/maintained scalar distribution [1=BLOB,2=LINE,3=INLET,4=UNIFORM]	(sclrIC)
 0		! period at which to start the scalar calculation				(phiPer)
 1.0		! maximum value of scalar distribution                                	        (phiIC)
-2.0             ! coeffPhi
--1.00		! coeffGrad
+1.0             ! coeffPhi
+0.0		! coeffGrad
 0.0		! coeffConst
-5.000		!	(nPers)
+5.000		!Number of Periods 								(nPers)
 10      	! approximate number of output files						(numOuts)
 .FALSE.		! restart flag, .TRUE. or .FALSE						(restart)
 0		! flag to track particles (0 if off and 1 if on)				(ParticleTrack)
