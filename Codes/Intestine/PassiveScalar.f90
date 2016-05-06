@@ -11,7 +11,6 @@ IMPLICIT NONE
 CONTAINS
 
 
-
 !===================================================================================================
 SUBROUTINE Scalar_Setup	! sets up the passive scalar component
 !===================================================================================================
@@ -28,7 +27,7 @@ Delta= 	1.0_dbl- 6.0_dbl*Dm					! scalar diffusion parameter
 
 !---- scalar standard devation for gaussian distributions
 sigma= 0.1_dbl*D						! 1/10 of Diameter
-phiWall= 0.0_dbl							! value of scalar at the boundary
+!phiWall= 0.0_dbl						! value of scalar at the boundary
 
 !---- determine scalar starting iteration
 phiStart= NINT((phiPer*Tmix)/tcf)
@@ -69,61 +68,58 @@ Negative_phi_Worst  = 0.0_dbl
 
 !----- Stream the scalar
 DO k=1,nzSub
-  DO j=1,nySub
-    DO i=1,nxSub
-       IF (node(i,j,k) .EQ. FLUID) THEN
-          phi(i,j,k) = Delta*phiTemp(i,j,k)  
-	  phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) 	! Effects of drug release
-!         Removing SGS effects
-!	  tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
-!		   (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
-!	     	   (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
-!	  phi(i,j,k) = phi(i,j,k)+ tausgs 			.
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i,j,k) .EQ. FLUID) THEN
+            phi(i,j,k) = Delta*phiTemp(i,j,k)  
+	    phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) 	! Effects of drug release
+!           tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
+!	              (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
+!	     	      (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
+!	    phi(i,j,k) = phi(i,j,k)+ tausgs 			.
 
-          DO m=0,NumDistDirs
-             !-----  neighboring node --------------------------------------------------------------
-             im1= i- ex(m)
-             jm1= j- ey(m)
-             km1= k- ez(m)
+            DO m=0,NumDistDirs
+               !-----  neighboring node --------------------------------------------------------------
+               im1= i- ex(m)
+               jm1= j- ey(m)
+               km1= k- ez(m)
 
-          IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
-             phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
-          ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
-             CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
-             phi(i,j,k) = phi(i,j,k) + phiBC     
-             CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 								! measure the absorption rate
-          ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi
+               IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
+                  phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
+               ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
+                  CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
+                  phi(i,j,k) = phi(i,j,k) + phiBC     
+                  CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 								! measure the absorption rate
+               ELSE IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi
           
-          ELSE
-             OPEN(1000,FILE="error.txt")
-             WRITE(1000,'(A75)') "error in PassiveScalar.f90 at Line 89: node(im1,jm1,km1) is out of range"
-             WRITE(1000,*) "iter",iter,"m=",m,"i=",i,"j=",j,"k=",k
-             WRITE(1000,*) "x(i)=",x(i),"y(j)=",y(j),"z(k)=",z(k)
-             WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
-             WRITE(1000,*) "x(im1)=",x(im1),"y(jm1)=",y(jm1),"z(km1)=",z(km1)
-             WRITE(1000,*) "node(i,j,k)=",node(i,j,k),"node(im1,jm1,km1)=",node(im1,jm1,km1)
-             CLOSE(1000)
-             STOP
-          END IF
+               ELSE
+                  OPEN(1000,FILE="error.txt")
+                  WRITE(1000,'(A75)') "error in PassiveScalar.f90 at Line 89: node(im1,jm1,km1) is out of range"
+                  WRITE(1000,*) "iter",iter,"m=",m,"i=",i,"j=",j,"k=",k
+                  WRITE(1000,*) "x(i)=",x(i),"y(j)=",y(j),"z(k)=",z(k)
+                  WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
+                  WRITE(1000,*) "x(im1)=",x(im1),"y(jm1)=",y(jm1),"z(km1)=",z(km1)
+                  WRITE(1000,*) "node(i,j,k)=",node(i,j,k),"node(im1,jm1,km1)=",node(im1,jm1,km1)
+                  CLOSE(1000)
+                  STOP
+               END IF
+            END DO
 
-        END DO
+!---------- node volume in physical units (cm^3) so when printing the drung units are "mole
+            zcf3 = zcf*zcf*zcf
 
-!------ node volume in physical units (cm^3) so when printing the drung units are "mole
-        zcf3 = zcf*zcf*zcf
-
-!------ Monitoring the negative phi
-        IF (phi(i,j,k) .LT. 0.0_dbl) THEN
-           Negative_phi_Counter = Negative_phi_Counter +1.0
-           Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) * zcf3 
-           IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
-              Negative_phi_Worst = phi(i,j,k)
-           ENDIF
-	   phi(i,j,k) = 0.0_dbl
-        END IF
-
-     END IF
-    END DO
-  END DO
+!---------- Monitoring the negative phi
+            IF (phi(i,j,k) .LT. 0.0_dbl) THEN
+               Negative_phi_Counter = Negative_phi_Counter +1.0
+               Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) * zcf3 
+               IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
+                  Negative_phi_Worst = phi(i,j,k)
+               ENDIF
+	       phi(i,j,k) = 0.0_dbl
+            END IF
+         END IF
+      END DO
+   END DO
 END DO
 
 IF (Negative_phi_Counter.LT. 1.0) THEN
@@ -134,7 +130,7 @@ ENDIF
 write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
 
 !----- Add the amount of scalar absorbed through the outer surfaces
-phiAbsorbed = 	phiAbsorbedS 						
+phiAbsorbed = phiAbsorbedS 						
       
 !===================================================================================================
 END SUBROUTINE Scalar
@@ -147,10 +143,8 @@ END SUBROUTINE Scalar
 
 
 !===================================================================================================
-SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC)	
+SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 	  ! Monitoring the abosrption at boundaries	
 !===================================================================================================
-!Monitoring the abosrption for stationary or moving boundaries
-
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: i,j,k,m,im1,jm1,km1					! index variables
@@ -162,6 +156,7 @@ REAL(dbl)    :: phiAbsorbedSleft,phiAbsorbedSright
 REAL(dbl)    :: phiINleft, phiINright, phiOUTright,phiOUTleft
 REAL(dbl)    :: feq_AO_u0
 REAL(dbl)    :: rhoAstar,phiAstar, PkAstar,feq_Astar,feq_Bstar
+REAL(dbl)    :: rhoA, PkA, feq_A
 REAL(dbl)    :: fPlusBstar, rhoBstar, phiBstar, PkBstar
 REAL(dbl)    :: ub,vb,wb, ubb,vbb,wbb
 REAL(dbl)    :: q
@@ -205,6 +200,22 @@ phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q*phiTemp(i,j,k)
 PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
 
 phiIN= PkAstar+ (PkAstar- PkBstar)*(1-q)
+
+
+!---- Modification for moving boundary in case of using only A and A* for BC
+rhoA= rho(i,j,k)
+CALL Equilibrium_LOCAL(m,rhoA,ubb,vbb,wbb,feq_A) 
+PkA= (feq_A/rhoA - wt(m)*Delta)*phiTemp(i,j,k) 
+
+IF(q .LT. 0.25) THEN
+  q = 0.25_dbl
+END IF 
+
+phiIN   = ((PkAstar - PkA)/q) + PkAstar
+
+!--- No Modifications for moving boundaries
+!phiIN= phiBC                                                    	 ! contribution from wall to crrent node (in)
+!phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
 
 phiAbsorbedS = phiAbsorbedS + (phiOUT - phiIN)				! scalar absorbed at current location in mth direction
 !===================================================================================================
