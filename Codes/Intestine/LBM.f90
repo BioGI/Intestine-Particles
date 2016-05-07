@@ -3,7 +3,8 @@ MODULE LBM				! LBM Subroutines (Equilibrium, Collision, Stream, Macro, Scalar, 
 !==================================================================================================
 USE SetPrecision
 USE Setup
-USE ICBC
+USE IC
+USE BClbm
 USE MPI
 
 IMPLICIT NONE

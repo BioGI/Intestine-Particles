@@ -3,7 +3,8 @@ MODULE PassiveScalar
 !===================================================================================================
 USE SetPrecision
 USE Setup
-USE ICBC
+USE IC
+USE BClbm
 USE BCscalar
 
 IMPLICIT NONE 

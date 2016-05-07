@@ -9,7 +9,8 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
 	USE LBM      
 	USE Geometry
 	USE PassiveScalar
-	USE ICBC	
+	USE IC
+	USE BClbm	
 	USE Output
         USE ParticleTracking
         USE ParticleDrug

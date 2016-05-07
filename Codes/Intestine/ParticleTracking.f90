@@ -3,7 +3,7 @@ MODULE ParticleTracking
 !==================================================================================================
 USE SetPrecision
 USE Setup
-USE ICBC
+USE IC
 USE MPI
 USE ParticleDrug
 

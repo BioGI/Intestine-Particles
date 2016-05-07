@@ -3,7 +3,8 @@ MODULE BCscalar		! Sets Scalar Boundary Conditions
 !==================================================================================================
 USE SetPrecision
 USE Setup  
-USE ICBC
+USE IC
+USE BClbm
 USE MPI
 
 CONTAINS
