@@ -25,7 +25,7 @@ REAL(dbl)    :: ub, vb, wb						! wall velocity (x-, y-, z- components)
 REAL(dbl)    :: rijk 							! radius of the solid node
 REAL(dbl)    :: Geom_norm_x,Geom_norm_y,Geom_norm_z
 REAL(dbl)    :: q, q1, n_prod, n_prod_max
-
+REAL(dbl)    :: xt,yt,zt,rt,vt						! Location of the boundary between i,j,k node and im1,jm1,km1 node
 !===========================================================================
 ! HELP: How to set different boundary conditions
 ! BC Scalar-zero:       coeffPhi=1      coeffGrad= 0    coeffConst= 0
