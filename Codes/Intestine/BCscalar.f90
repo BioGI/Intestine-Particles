@@ -10,15 +10,15 @@ USE MPI
 CONTAINS
 
 
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 SUBROUTINE BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
-!--------------------------------------------------------------------------------------------------
+!===================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1				! index variables
 REAL(dbl),    INTENT(OUT):: phiBC     					! scalar contribution from the boundary condition
 INTEGER(lng) :: mm,ip1,jp1,kp1,iB,jB,kB    				! First neighboring node location
-REAL(dbl)    :: rhoAstar, phiAstar, feq_Astar,  PkAstar,PkA 		! values of density and at the boundary, and contribution of scalar from the boundary and solid nodes
+REAL(dbl)    :: rhoAstar, phiAstar, feq_Astar,  PkAstar,PkA 		! density at boundary and contribution of scalar from boundary
 REAL(dbl)    :: rhoBstar, phiBstar, fPlusBstar, PkBstar 		! Values interpolated to Bstar location
 REAL(dbl)    :: cosTheta, sinTheta					! COS(theta), SIN(theta)
 REAL(dbl)    :: ub, vb, wb						! wall velocity (x-, y-, z- components)
@@ -35,14 +35,26 @@ REAL(dbl)    :: q, q1, n_prod, n_prod_max
 ! BC-Permeability:      coeffPhi=Pw/Dm  coeffGrad=-1    coeffConst= 0
 !===========================================================================
 
-CALL qCalc(m,i,j,k,im1,jm1,km1,q)
+!CALL qCalc(m,i,j,k,im1,jm1,km1,q)
+!cosTheta = x(im1)/r(km1) 
+!sinTheta = y(jm1)/r(km1)  
+!ub = vel(km1)*cosTheta  		      			! x-component of the velocity at i,j,k
+!vb = vel(km1)*sinTheta        					! y-component of the velocity at i,j,k
+!wb = 0.0_dbl
 
-cosTheta = x(im1)/r(km1) 
-sinTheta = y(jm1)/r(km1)  
+CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
-ub = vel(km1)*cosTheta        	! x-component of the velocity at i,j,k
-vb = vel(km1)*sinTheta        	! y-component of the velocity at i,j,k
-wb = 0.0_dbl
+cosTheta= xt/rt
+sinTheta= yt/rt
+IF (k.NE.km1) THEN
+   vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
+ELSE
+   vt = (vel(k)+vel(km1))*0.5_dbl
+ENDIF
+
+ub = vt* cosTheta						! x-component of the velocity at i,j,k
+vb = vt* sinTheta						! y-component of the velocity at i,j,k
+wb = 0.0_dbl							! no z-component in this case)
 
 !---------------------------------------------------------------------------------------------------
 !----- Computing phi at the wall in case of Dirichlet BC -------------------------------------------
@@ -117,9 +129,9 @@ IF(q .LT. 0.25) THEN
 END IF
 phiBC	= ((PkAstar - PkA)/q) + PkAstar	
 
-!------------------------------------------------
+!===================================================================================================
 END SUBROUTINE BC_Scalar
-!------------------------------------------------
+!===================================================================================================
 
 
 
@@ -127,15 +139,6 @@ END SUBROUTINE BC_Scalar
 
 
 
-
-
-
-
-
-
-
-
-
-!================================================
+!===================================================================================================
 END MODULE BCscalar
-!================================================
+!===================================================================================================
