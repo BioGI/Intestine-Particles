@@ -11,31 +11,33 @@ CONTAINS
 
 
 
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			! implements the (moving) bounceback boundary conditions (1st order accurate - Ladd)
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
+SUBROUTINE BounceBackL(m,i,j,k,im1,jm1,km1,fbb)		
+!==================================================================================================
+! implements the (moving) bounceback boundary conditions (1st order accurate - Ladd)
+
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1						! index variables
-REAL(dbl), INTENT(OUT) :: fbb								! bounced back distribution function
-REAL(dbl) :: cosTheta, sinTheta								! COS(theta), SIN(theta)
-REAL(dbl) :: ub, vb, wb									! wall velocity (x-, y-, z- components)
-REAL(dbl) :: rijk									! radius of current node
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1			! index variables
+REAL(dbl), INTENT(OUT) :: fbb					! bounced back distribution function
+REAL(dbl) :: cosTheta, sinTheta					! COS(theta), SIN(theta)
+REAL(dbl) :: ub, vb, wb						! wall velocity (x-, y-, z- components)
+REAL(dbl) :: rijk						! radius of current node
 
-rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))						! radius at current location
+rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))			! radius at current location
 
-cosTheta = x(im1)/rijk									! COS(theta)
-sinTheta = y(jm1)/rijk									! SIN(theta)
+cosTheta = x(im1)/rijk						! COS(theta)
+sinTheta = y(jm1)/rijk						! SIN(theta)
 
-ub = vel(km1)*cosTheta									! x-component of the velocity at i,j,k
-vb = vel(km1)*sinTheta									! y-component of the velocity at i,j,k
-wb = 0.0_dbl										! no z-component in this case			
+ub = vel(km1)*cosTheta						! x-component of the velocity at i,j,k
+vb = vel(km1)*sinTheta						! y-component of the velocity at i,j,k
+wb = 0.0_dbl							! no z-component in this case			
 
-fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))	! bounced back distribution function with added momentum
+fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))
 
-!------------------------------------------------
+!==================================================================================================
 END SUBROUTINE BounceBackL
-!------------------------------------------------
+!==================================================================================================
 
 
 
@@ -44,9 +46,9 @@ END SUBROUTINE BounceBackL
 
 
 
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
 SUBROUTINE BounceBack2(m,i,j,k,im1,jm1,km1,fbb)			! (moving) bounceback BC (2nd order-Lallemand)
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1			! index variables
@@ -107,9 +109,9 @@ ELSE
   CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)
 END IF
 
-!------------------------------------------------
+!==================================================================================================
 END SUBROUTINE BounceBack2
-!------------------------------------------------
+!==================================================================================================
 
 
 
@@ -118,10 +120,9 @@ END SUBROUTINE BounceBack2
 
 
 
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
 SUBROUTINE BounceBack2New(m,i,j,k,im1,jm1,km1,fbb)	! (moving) bounceback BC (2nd order accurate - Lallemand)
-! Implemented by Balaji 10/28/2014 using a method similar to Yanxing
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1			! index variables
@@ -273,9 +274,9 @@ ELSE
   CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)
 END IF
 
-!------------------------------------------------
+!==================================================================================================
 END SUBROUTINE BounceBack2New
-!------------------------------------------------
+!==================================================================================================
 
 
 
@@ -284,10 +285,95 @@ END SUBROUTINE BounceBack2New
 
 
 
+!==================================================================================================
+SUBROUTINE qCalci_iter(m,i,j,k,im1,jm1,km1,q)                 		! calculates q itteratively
+!==================================================================================================
+IMPLICIT NONE
 
-!--------------------------------------------------------------------------------------------------
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1                 ! index variables
+REAL(dbl), INTENT(OUT) :: q 	    				! ilocal wall distance ratio
+
+INTEGER(lng) :: ip1,jp1,kp1,ip2,jp2,kp2                         ! index variables
+INTEGER(lng) :: it                                              ! loop index variables
+REAL(dbl) :: rijk                                               ! radius of current node
+REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt                ! temporary coordinates to search for exact boundary coordinate (instead of ray tracing)
+
+!----- Initial fluid node guess
+x1= x(i)
+y1= y(j)
+z1= z(k)
+                
+!----- Initial solid node guess
+x2= x(im1)
+y2= y(jm1)
+z2= z(km1)
+                 
+IF (k.NE.km1) THEN
+    DO it=1,10
+       !----- guess of boundary location 
+       xt= (x1+x2)/2.0_dbl
+       yt= (y1+y2)/2.0_dbl
+       zt= (z1+z2)/2.0_dbl
+       rt= SQRT(xt*xt + yt*yt)
+       ht= ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
+       IF (rt .GT. ht) then
+          x2= xt
+          y2= yt
+          z2= zt
+       ELSE
+          x1= xt
+          y1= yt
+          z1= zt
+       END IF
+    END DO
+    x1= x(i)
+    y1= y(j)
+    z1= z(k)
+    x2= x(im1)
+    y2= y(jm1)
+    z2= z(km1)
+    q= sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+ ELSE
+    DO it=1,10
+       !----- guess of boundary location 
+       xt= (x1+x2)/2.0_dbl
+       yt= (y1+y2)/2.0_dbl
+       zt= (z1+z2)/2.0_dbl
+       rt = SQRT(xt*xt + yt*yt)
+       ht = (r(km1)+r(k))/2.0_dbl
+       IF (rt.GT.ht) then
+          x2= xt
+          y2= yt
+          z2= zt
+       ELSE
+          x1= xt
+          y1= yt
+          z1= zt
+       END IF
+    END DO
+    x1= x(i)
+    y1= y(j)
+    z1= z(k)
+    x2= x(im1)
+    y2= y(jm1)
+    z2= z(km1)
+    q= sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+END IF
+
+!==================================================================================================
+END SUBROUTINE qCalci_iter 
+!==================================================================================================
+
+
+
+
+
+
+
+
+!==================================================================================================
 SUBROUTINE qCalc(m,i,j,k,im1,jm1,km1,q)			! calculates q (boundary distance ratio) using "ray tracing" - see wikipedia article
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1		! current node, and neighboring node
@@ -368,9 +454,9 @@ IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN
   STOP
 END IF																																
 
-!------------------------------------------------
+!==================================================================================================
 END SUBROUTINE qCalc
-!------------------------------------------------
+!==================================================================================================
 
 
 
@@ -380,9 +466,9 @@ END SUBROUTINE qCalc
 
 
 
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE PrintFieldsTEST			! print velocity, density, and scalar to output files
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
+SUBROUTINE PrintFieldsTEST		       ! printis velocity, density & scalar to output files
+!==================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
@@ -415,9 +501,9 @@ CHARACTER(7)	:: iter_char			! iteration stored as a character
 
   CLOSE(60)
 
-!------------------------------------------------
+!==================================================================================================
 END SUBROUTINE PrintFieldsTEST
-!------------------------------------------------
+!==================================================================================================
 
 
 
@@ -426,9 +512,9 @@ END SUBROUTINE PrintFieldsTEST
 
 
 
-!--------------------------------------------------------------------------------------------------
-SUBROUTINE SymmetryBC						! implements symmetry boundary conditions
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
+SUBROUTINE SymmetryBC			   				   ! implements symmetry BC
+!==================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng) 	:: i,j,k,m,ii,jj,iComm				! index variables
@@ -486,9 +572,9 @@ END IF
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)				! synchronize all processing units
 
-!------------------------------------------------
+!==================================================================================================
 END SUBROUTINE SymmetryBC
-!------------------------------------------------
+!==================================================================================================
 
 
 
@@ -497,9 +583,9 @@ END SUBROUTINE SymmetryBC
 
 
 
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
 SUBROUTINE SymmetryBC_NODE				! implements symmetry boundary conditions
-!--------------------------------------------------------------------------------------------------
+!==================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng) 	:: i,j,k,m,ii,jj,iComm			! index variables
@@ -531,15 +617,15 @@ IF (SubID(iComm) .EQ. 0) THEN				! if no neighbor in the iComm communication dir
 END IF
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)	! synchronize all processing units
-!------------------------------------------------
+!==================================================================================================
 END SUBROUTINE SymmetryBC_NODE
-!------------------------------------------------
+!==================================================================================================
 
 
 
 
 
 
-!================================================
+!==================================================================================================
 END MODULE BClbm
-!================================================
+!==================================================================================================
