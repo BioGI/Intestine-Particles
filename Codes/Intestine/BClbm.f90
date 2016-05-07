@@ -49,7 +49,7 @@ END SUBROUTINE BounceBackL
 
 
 !==================================================================================================
-SUBROUTINE BounceBack2New(m,i,j,k,im1,jm1,km1,fbb)	! (moving) bounceback BC (2nd order accurate - Lallemand)
+SUBROUTINE BounceBack2(m,i,j,k,im1,jm1,km1,fbb)	      !(moving) bounceback BC (2nd order-Lallemand)
 !==================================================================================================
 IMPLICIT NONE
 
@@ -113,7 +113,7 @@ ELSE
 END IF
 
 !==================================================================================================
-END SUBROUTINE BounceBack2New
+END SUBROUTINE BounceBack2
 !==================================================================================================
 
 
