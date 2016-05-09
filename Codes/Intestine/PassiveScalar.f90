@@ -143,11 +143,11 @@ SUBROUTINE AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 	  ! Monitoring the abosrp
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: i,j,k,m,im1,jm1,km1					! index variables
-REAL(dbl),    INTENT(IN) :: phiBC   		  				! scalar contribution from the boundary condition
+INTEGER(lng), INTENT(IN) :: i,j,k,m,im1,jm1,km1			! index variables
+REAL(dbl),    INTENT(IN) :: phiBC   		  		! scalar contribution from the boundary condition
 
 INTEGER(lng) :: ip1,jp1,kp1
-REAL(dbl)    :: phiOUT, phiIN							! scalar values exchanged with the wall
+REAL(dbl)    :: phiOUT, phiIN					! scalar values exchanged with the wall
 REAL(dbl)    :: phiAbsorbedSleft,phiAbsorbedSright
 REAL(dbl)    :: phiINleft, phiINright, phiOUTright,phiOUTleft
 REAL(dbl)    :: feq_AO_u0
@@ -156,8 +156,9 @@ REAL(dbl)    :: rhoA, PkA, feq_A
 REAL(dbl)    :: fPlusBstar, rhoBstar, phiBstar, PkBstar
 REAL(dbl)    :: ub,vb,wb, ubb,vbb,wbb
 REAL(dbl)    :: q
+REAL(dbl)    :: xt,yt,zt,rt			             	! boundary coordinate
 
-CALL qCalc_iter(m,i,j,k,im1,jm1,km1,q)
+CALL  qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
 ubb= 0.0_dbl
 vbb= 0.0_dbl
