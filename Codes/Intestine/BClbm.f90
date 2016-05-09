@@ -19,7 +19,7 @@ SUBROUTINE BounceBackL(m,i,j,k,im1,jm1,km1,fbb)
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1			! index variables
-REAL(dbl), INTENT(OUT) :: fbb					! bounced back distribution function
+REAL(dbl), INTENT(OUT)   :: fbb					! bounced back distribution function
 REAL(dbl) :: cosTheta, sinTheta					! COS(theta), SIN(theta)
 REAL(dbl) :: ub, vb, wb						! wall velocity (x-, y-, z- components)
 REAL(dbl) :: rijk						! radius of current node
@@ -61,14 +61,13 @@ REAL(dbl) :: ub, vb, wb						! wall velocity (x-, y-, z- components)
 REAL(dbl) :: q							! local wall distance ratio [(distance from current node to wall)/(distance to next node in that direction)]
 REAL(dbl) :: rijk						! radius of current node
 REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt		! temporary coordinates to search for exact boundary coordinate (instead of ray tracing) 
-INTEGER(lng) :: it						! loop index variables
 
-ip1 = i + ex(m)							! i location of 1st neighbor in the m direction
-jp1 = j + ey(m)							! j location of 1st neighbor in the m direction
-kp1 = k + ez(m)							! k location of 1st neighbor in the m direction
-ip2 = i + 2_lng*ex(m)						! i location of 2nd neighbor in the m direction
-jp2 = j + 2_lng*ey(m)						! j location of 2nd neighbor in the m direction
-kp2 = k + 2_lng*ez(m)						! k location of 2nd neighbor in the m direction
+ip1= i + ex(m)							! i location of 1st neighbor in the m direction
+jp1= j + ey(m)							! j location of 1st neighbor in the m direction
+kp1= k + ez(m)							! k location of 1st neighbor in the m direction
+ip2= i + 2_lng*ex(m)						! i location of 2nd neighbor in the m direction
+jp2= j + 2_lng*ey(m)						! j location of 2nd neighbor in the m direction
+kp2= k + 2_lng*ez(m)						! k location of 2nd neighbor in the m direction
 
 !----- 2nd order BB if two positive neighbors are in fluid (most cases)
 IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		
@@ -77,39 +76,38 @@ IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN
    cosTheta= xt/rt
    sinTheta= yt/rt
    IF (k.NE.km1) THEN
-     vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
+      vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
    ELSE
-     vt = (vel(k)+vel(km1))*0.5_dbl
+      vt = (vel(k)+vel(km1))*0.5_dbl
    ENDIF
    ub = vt* cosTheta						! x-component of the velocity at i,j,k
    vb = vt* sinTheta						! y-component of the velocity at i,j,k
    wb = 0.0_dbl							! no z-component in this case)
 
-  !------ bounced back distribution function with added momentum
-  IF((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN	! use rho = 1.0
-    fbb = q*(1.0_dbl + 2.0_dbl*q)*fplus(bb(m),i,j,k) 							&
-        + (1.0_dbl - 4.0_dbl*q*q)*fplus(bb(m),ip1,jp1,kp1) 						& 
-        - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) 						&
-        + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)) 
-	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
-  ELSE IF((q .GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN ! Use rho = 1.0 
-    fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 							&
-        + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q							&
-        - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1)				&
-        + (6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))		
-	fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
-	fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
-  ELSE
-    OPEN(1000,FILE='error-'//sub//'.txt')
-    WRITE(1000,*) "Error in BounceBack2: q is not between 0 and 1. Aborting."
-    WRITE(1000,*) "q=",q,"(i,j,k):",i,j,k
-    CLOSE(1000)
-    STOP
-  END IF
-
+   !------ bounced back distribution function with added momentum
+   IF ((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN	! use rho = 1.0
+      fbb = q*(1.0_dbl + 2.0_dbl*q)*fplus(bb(m),i,j,k) 							&
+          +   (1.0_dbl - 4.0_dbl*q*q)*fplus(bb(m),ip1,jp1,kp1) 						& 
+          - q*(1.0_dbl - 2.0_dbl*q)*fplus(bb(m),ip2,jp2,kp2) 						&
+          + 6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)) 
+      fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+      fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))
+   ELSE IF((q .GE. 0.5_dbl) .AND. (q .LT. 1.00000001_dbl)) THEN ! Use rho = 1.0 
+      fbb = fplus(bb(m),i,j,k)/(q*(2.0_dbl*q + 1.0_dbl)) 						&
+          + ((2.0_dbl*q - 1.0_dbl)*fplus(m,i,j,k))/q							&
+          - ((2.0_dbl*q - 1.0_dbl)/(2.0_dbl*q + 1.0_dbl))*fplus(m,ip1,jp1,kp1)				&
+          + (6.0_dbl*wt(m)*1.0_dbl*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))		
+      fmovingsum = fmovingsum + (6.0_dbl*wt(m)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+      fmovingrhosum = fmovingrhosum + (6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m)))/(q*(2.0_dbl*q + 1.0_dbl))
+   ELSE
+      OPEN(1000,FILE='error-'//sub//'.txt')
+      WRITE(1000,*) "Error in BounceBack2: q is not between 0 and 1. Aborting."
+      WRITE(1000,*) "q=",q,"(i,j,k):",i,j,k
+      CLOSE(1000)
+      STOP
+   END IF
 ELSE
-  CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)
+   CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)
 END IF
 
 !==================================================================================================
@@ -129,12 +127,11 @@ SUBROUTINE qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)	! calculates q itterati
 IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1                 ! index variables
-REAL(dbl), INTENT(OUT) :: q 	    				! ilocal wall distance ratio
-
+REAL(dbl), INTENT(OUT)   :: q 	    				! ilocal wall distance ratio
 INTEGER(lng) :: ip1,jp1,kp1,ip2,jp2,kp2                         ! index variables
 INTEGER(lng) :: it                                              ! loop index variables
-REAL(dbl) :: rijk                                               ! radius of current node
-REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt                ! temporary coordinates to search for exact boundary coordinate (instead of ray tracing)
+REAL(dbl)    :: rijk                                            ! radius of current node
+REAL(dbl)    :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt             ! temporary coordinates to search for exact boundary coordinate 
 
 !----- Initial fluid node guess
 x1= x(i)
@@ -147,7 +144,7 @@ y2= y(jm1)
 z2= z(km1)
                  
 IF (k.NE.km1) THEN
-    DO it=1,10
+    DO it=1,15
        !----- guess of boundary location 
        xt= (x1+x2)/2.0_dbl
        yt= (y1+y2)/2.0_dbl
@@ -172,7 +169,7 @@ IF (k.NE.km1) THEN
     z2= z(km1)
     q= sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
  ELSE
-    DO it=1,10
+    DO it=1,15
        !----- guess of boundary location 
        xt= (x1+x2)/2.0_dbl
        yt= (y1+y2)/2.0_dbl
