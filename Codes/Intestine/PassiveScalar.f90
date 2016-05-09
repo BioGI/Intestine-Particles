@@ -13,7 +13,7 @@ CONTAINS
 
 
 !===================================================================================================
-SUBROUTINE Scalar_Setup	! sets up the passive scalar component
+SUBROUTINE Scalar_Setup					      ! sets up the passive scalar component
 !===================================================================================================
 IMPLICIT NONE
 
@@ -157,7 +157,7 @@ REAL(dbl)    :: fPlusBstar, rhoBstar, phiBstar, PkBstar
 REAL(dbl)    :: ub,vb,wb, ubb,vbb,wbb
 REAL(dbl)    :: q
 
-!CALL qCalc(m,i,j,k,im1,jm1,km1,q)
+!CALL qCalc_iter(m,i,j,k,im1,jm1,km1,q)
 !ubb= 0.0_dbl
 !vbb= 0.0_dbl
 !wbb= 0.0_dbl
@@ -231,21 +231,21 @@ DO iComm=5,6
          DO i=1,nxSub
             IF ((node(im1,jm1,km1) .EQ. SOLID).OR.(node(im1,jm1,km1) .EQ. SOLID2)) THEN
                DO m=1,NumFs_face
-               !----- i,j,k location of neighboring node
-               im1 = i - ex(bb(f_Comps(iComm,m)))
-               jm1 = j - ey(bb(f_Comps(iComm,m)))
-               km1 = k - ez(bb(f_Comps(iComm,m)))
-               IF (node(im1,jm1,km1) .EQ. SOLID) THEN
-                  phiIN= (fplus(bb(f_Comps(iComm,m)),im1,jm1,km1)/rho(im1,jm1,km1) - wt(bb(f_Comps(iComm,m)))*Delta)	&	! scalar contribution from inlet/outlet to current node
-                         *phiTemp(im1,jm1,km1)		
-                  phiOUT= (fplus(f_Comps(iComm,m),i,j,k)/rho(i,j,k) - wt(f_Comps(iComm,m))*Delta)*phiTemp(i,j,k)		! scalar contribution from current node to inlet/outlet
-                  phiInOut= phiInOut + (phiOUT - phiIN)
+                  !----- i,j,k location of neighboring node
+                  im1 = i - ex(bb(f_Comps(iComm,m)))
+                  jm1 = j - ey(bb(f_Comps(iComm,m)))
+                  km1 = k - ez(bb(f_Comps(iComm,m)))
+                  IF (node(im1,jm1,km1) .EQ. SOLID) THEN
+                     phiIN= (fplus(bb(f_Comps(iComm,m)),im1,jm1,km1)/rho(im1,jm1,km1) - wt(bb(f_Comps(iComm,m)))*Delta)	&	! scalar contribution from inlet/outlet to current node
+                            *phiTemp(im1,jm1,km1)		
+                     phiOUT= (fplus(f_Comps(iComm,m),i,j,k)/rho(i,j,k) - wt(f_Comps(iComm,m))*Delta)*phiTemp(i,j,k)		! scalar contribution from current node to inlet/outlet
+                     phiInOut= phiInOut + (phiOUT - phiIN)
+                  END IF
+               END DO
             END IF
-          END DO
-        END IF
+         END DO
       END DO
-    END DO
-  END IF
+   END IF
 END DO
 !===================================================================================================
 END SUBROUTINE ScalarInOut

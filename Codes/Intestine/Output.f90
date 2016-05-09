@@ -228,28 +228,25 @@ SUBROUTINE PrintFinalRestart		! prints restart file periodically to guard agains
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k,m				! index variables
+INTEGER(lng) :: i,j,k,m			! index variables
 
-! Write restart file (restart.XX) and corresponding starting iteration file (iter0.dat)
+!----- Write restart file (restart.XX) and corresponding starting iteration file (iter0.dat)
 OPEN(500,FILE='restart.'//sub)
 
 DO k=0,nzSub+1
-  DO j=0,nySub+1
-    DO i=0,nxSub+1
-
-      WRITE(500,*) node(i,j,k)
-      WRITE(500,*) u(i,j,k)
-      WRITE(500,*) v(i,j,k)
-      WRITE(500,*) w(i,j,k)
-      WRITE(500,*) rho(i,j,k)
-      WRITE(500,*) phi(i,j,k)
-
-      DO m=0,NumDistDirs
-        WRITE(500,*) f(m,i,j,k)
+   DO j=0,nySub+1
+      DO i=0,nxSub+1
+         WRITE(500,*) node(i,j,k)
+         WRITE(500,*) u(i,j,k)
+         WRITE(500,*) v(i,j,k)
+         WRITE(500,*) w(i,j,k)
+         WRITE(500,*) rho(i,j,k)
+         WRITE(500,*) phi(i,j,k)
+         DO m=0,NumDistDirs
+            WRITE(500,*) f(m,i,j,k)
+         END DO
       END DO
-
-    END DO
-  END DO
+   END DO
 END DO
 
 WRITE(500,*) phiAbsorbed
@@ -259,14 +256,11 @@ WRITE(500,*) phiInOut
 
 CLOSE(500)
 
-IF(myid .EQ. master) THEN
-    
-  OPEN(550,FILE='iter0.dat')
-  WRITE(550,*) iter
-  CLOSE(550)
-
+IF (myid .EQ. master) THEN
+   OPEN(550,FILE='iter0.dat')
+   WRITE(550,*) iter
+   CLOSE(550)
 END IF
-
 !===================================================================================================
 END SUBROUTINE PrintFinalRestart
 !===================================================================================================
@@ -283,14 +277,13 @@ SUBROUTINE PrintFields			       ! print velocity, density, scalar to output file
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
-CHARACTER(7)	:: iter_char				! iteration stored as a character
-REAL(lng)       :: pressure				
+INTEGER(lng):: i,j,k,ii,jj,kk,n			! index variables (local and global)
+CHARACTER(7):: iter_char			! iteration stored as a character
+REAL(lng)   :: pressure				
 
 IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. &
-    (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)  .OR. &
-    (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
-
+   (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)  .OR. &
+   (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
    !----- scale the iteration by 1/10 such that the numbers used in the output file aren't too large
    WRITE(iter_char(1:7),'(I7.7)') iter
 
@@ -302,7 +295,6 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. &
    OPEN(60,FILE='out-'//iter_char//'-'//sub//'.dat')
    WRITE(60,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
    WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
-
    DO k=1,nzSub
       DO j=1,nySub
          DO i=1,nxSub
@@ -314,7 +306,6 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. &
                phi(i,j,k)=0.0_lng
             END IF   
             pressure= (rho(i,j,k)-denL)*dcf*pcf
-      
             WRITE(60,'(I3,2I4,3F11.7,E13.4,E12.4,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf,         &
                                                        w(i,j,k)*vcf, pressure, phi(i,j,k), node(i,j,k)
          END DO
@@ -330,7 +321,6 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. &
       radcount = radcount + 1_lng 
    END IF
 END IF
-
 !===================================================================================================
 END SUBROUTINE PrintFields
 !===================================================================================================
@@ -358,7 +348,6 @@ yaxis=ANINT(0.5_dbl*(ny+1))
 IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
    .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0) &
    .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
-
    !------ scale the iteration by 1/10 such that the numbers used in the output file aren't too large
    WRITE(iter_char(1:7),'(I7.7)') iter
 
@@ -369,14 +358,11 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
    !------ open the proper output file
    OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
    WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
-
-   !------ Using linked lists
-   current => ParListHead%next
+   current => ParListHead%next					 ! Using linked lists
 
    DO WHILE (ASSOCIATED(current))
       numParticlesSub = numParticlesSub + 1_lng
       next => current%next 					! copy pointer of next node
-
       WRITE(160,1001)   current%pardata%cur_part  ,',', &
 		 	current%pardata%xp 	  ,',',	&
 			current%pardata%yp  	  ,',',	&
@@ -393,9 +379,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
 			current%pardata%S 	  ,',',	&
 			current%pardata%Veff 	  ,',',	&
 			current%pardata%Nbj
-
 1001 format (I3,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
-
      current => next   						! point to next node in the list
   ENDDO
 
@@ -428,7 +412,6 @@ INTEGER(lng) :: mpierr				! MPI standard error variable
 IF(iter .EQ. 0) THEN				! start the "timer"
   tStart = MPI_WTIME()				! start time [intrinsic: MPI_WTIME() tracks wall time]
 ELSE IF(iter .EQ. nt+1) THEN
-  !----- Calulate Code Run-time
   tEnd	= MPI_WTIME()				! stop the "timer" 
   tTotal	= (tEnd - tStart)		! calculate the time (for each processing unit)
 
@@ -574,30 +557,22 @@ END SUBROUTINE PrintMass
 
 
 !===================================================================================================
-SUBROUTINE PrintVolume							!volume as a function of time
+SUBROUTINE PrintVolume						!volume as a function of time
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k							! index variables
-REAL(dbl) :: volume							! analytical volume
+INTEGER(lng) :: i,j,k						! index variables
+REAL(dbl) :: volume						! analytical volume
 
 IF (myid .EQ. master) THEN
-   volume = 0.0_dbl 							! initialize the volume
-
-   !----- cacluate volume in the system
-   DO k=1,nz
+   volume = 0.0_dbl 						! initialize the volume
+   DO k=1,nz							! cacluate volume in the system
       volume = volume + rDom(k)*rDom(k)*zcf
    END DO
    volume = PI*volume
-
-   !----- account for the villi
-   volume = volume - numVilliActual*(PI*Rv*Rv*(Lv-Rv))			! subtract the cylindrical volume
-   volume = volume - numVilliActual*((2.0_dbl/3.0_dbl)*PI*Rv*Rv*Rv)	! subtract the hemispherical volume
-
    WRITE(2460,'(2E15.5)') REAL(iter/(nt/nPers)), volume
    CALL FLUSH(2460)  
 END IF
-
 !===================================================================================================
 END SUBROUTINE PrintVolume
 !===================================================================================================
@@ -664,9 +639,8 @@ Drug_Remained_in_Domain = phiDomain * zcf3
 Drug_Loss = (Drug_Released_Total + Drug_Initial) - (Drug_Absorbed + Drug_Remained_in_Domain)  
 Drug_Loss_Modified = (Drug_Released_Total+ Drug_Initial- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
 
-
 IF (Drug_Released_Total .LT. 1e-20) THEN
-    Drug_Released_Total =1e-20
+   Drug_Released_Total =1e-20
 END IF
 
 Drug_Loss_Percent = (Drug_Loss / (Drug_Released_Total+Drug_Initial)) * 100.0_lng
@@ -676,10 +650,8 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
    Drug_Absorbed = 0.0_lng
 ENDIF
 
-
 WRITE(2472,'(I7, F9.3, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
 CALL FLUSH(2472)
-
 !===================================================================================================
 END SUBROUTINE PrintDrugConservation 
 !===================================================================================================
@@ -692,7 +664,7 @@ END SUBROUTINE PrintDrugConservation
 
 
 !===================================================================================================
-SUBROUTINE PrintParams	! prints the total amount of scalar absorbed through the walls 
+SUBROUTINE PrintParams	              ! prints the total amount of scalar absorbed through the walls 
 !===================================================================================================
 IMPLICIT NONE
 
@@ -763,7 +735,6 @@ IF (myid .EQ. 0) THEN
    WRITE(11,*) 'nt=', nt			! number of time steps
    CLOSE(11)
 END IF
-
 !===================================================================================================
 END SUBROUTINE PrintParams
 !===================================================================================================
@@ -818,10 +789,10 @@ CHARACTER(7) :: iter_char					! iteration stored as a character
 CHARACTER(5) :: nthSub						! current subdomain stored as a character
 
 !---- send subdomain information to the master
-tag = 60_lng							! starting message tag (arbitrary)
+tag = 60_lng										! starting message tag (arbitrary)
 
 IF (myid .NE. master) THEN
-   dest	= master						! send to master
+   dest	= master									! send to master
    !----- fill out nxSend array
    nxSend(1) = nxSub
    nxSend(2) = nySub
@@ -829,91 +800,84 @@ IF (myid .NE. master) THEN
    CALL MPI_SEND(nxSend(1:3),3,MPI_INTEGER,dest,tag,MPI_COMM_WORLD,mpierr)		! send nx-,ny-,nzSub
 ELSE
 
-  ALLOCATE(FieldData(nx,ny,nz,6))
+   ALLOCATE(FieldData(nx,ny,nz,6))
 
-  !----- initialize FieldData to 0
-  FieldData = 0.0_dbl
+   !----- initialize FieldData to 0
+   FieldData = 0.0_dbl
 
-  !----- print combining status...
-  CALL SYSTEM_CLOCK(combine1,rate)							! Restart the Timer
-  OPEN(5,FILE='status.dat',POSITION='APPEND')										
-  WRITE(5,*)
-  WRITE(5,*)
-  WRITE(5,*) 'Combining field output files and deleting originials...'
-  WRITE(5,*)     
-  CALL FLUSH(5)
+   !----- print combining status...
+   CALL SYSTEM_CLOCK(combine1,rate)							! Restart the Timer
+   OPEN(5,FILE='status.dat',POSITION='APPEND')										
+   WRITE(5,*)
+   WRITE(5,*)
+   WRITE(5,*) 'Combining field output files and deleting originials...'
+   WRITE(5,*)     
+   CALL FLUSH(5)
 
-  !----- fill out SubLimits for the master processor (1st subdomain)
-  SubLimits(1,1) = nxSub
-  SubLimits(1,2) = nySub
-  SubLimits(1,3) = nzSub
+   !----- fill out SubLimits for the master processor (1st subdomain)
+   SubLimits(1,1) = nxSub
+   SubLimits(1,2) = nySub
+   SubLimits(1,3) = nzSub
 
-  DO src = 1,(numprocs-1)
-    CALL MPI_RECV(nxRecv(1:3),3,MPI_INTEGER,src,tag,MPI_COMM_WORLD,stat,mpierr)		! receive nx-,ny-,nzSub from each subdomain
-    !----- fill out SubLimits for the master processor (1st subdomain)
-    SubLimits(src+1,1) = nxRecv(1)
-    SubLimits(src+1,2) = nxRecv(2)
-    SubLimits(src+1,3) = nxRecv(3)  
-  END DO
+   DO src = 1,(numprocs-1)
+     CALL MPI_RECV(nxRecv(1:3),3,MPI_INTEGER,src,tag,MPI_COMM_WORLD,stat,mpierr)	! receive nx-,ny-,nzSub from each subdomain
+     !----- fill out SubLimits for the master processor (1st subdomain)
+     SubLimits(src+1,1) = nxRecv(1)
+     SubLimits(src+1,2) = nxRecv(2)
+     SubLimits(src+1,3) = nxRecv(3)  
+   END DO
 
-  !----- combine the output files from each subdomain
-  DO n = 0,(fileCount-1)
-    !----- print combining status...
-    WRITE(5,*)
-    WRITE(5,*) 'combining field output file',n+1,'of',fileCount
-    WRITE(5,*) 'reading/deleting...'
-    CALL FLUSH(5)
-    DO nn = 1,NumSubsTotal
-       WRITE(nthSub(1:5),'(I5.5)') nn							! write subdomain number to 'nthSub' for output file exentsions
+   !----- combine the output files from each subdomain
+   DO n = 0,(fileCount-1)
+      !----- print combining status...
+      WRITE(5,*)
+      WRITE(5,*) 'combining field output file',n+1,'of',fileCount
+      WRITE(5,*) 'reading/deleting...'
+      CALL FLUSH(5)
+      DO nn = 1,NumSubsTotal
+         WRITE(nthSub(1:5),'(I5.5)') nn							! write subdomain number to 'nthSub' for output file exentsions
+         !----- open the nnth output file for the nth subdomain 
+         WRITE(iter_char(1:7),'(I7.7)') filenum(n)					! write the file number (iteration) to a charater
+         OPEN(60,FILE='out-'//iter_char//'-'//nthSub//'.dat')				! open file
 
-      ! open the nnth output file for the nth subdomain 
-      WRITE(iter_char(1:7),'(I7.7)') filenum(n)						! write the file number (iteration) to a charater
-      OPEN(60,FILE='out-'//iter_char//'-'//nthSub//'.dat')				! open file
-
-      ! read the output file
-      numLines = SubLimits(nn,1)*SubLimits(nn,2)*SubLimits(nn,3)			! determine number of lines to read
-      READ(60,*)									! first line is variable info
-      READ(60,*)									! second line is zone info
-      DO nnn = 1,numLines
-
-        READ(60,*) i,j,k,							&	! i,j,k node location
-                   FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),	&	! u,v,w @ i,j,k
-                   FieldData(i,j,k,4),						&	! rho(i,j,k)
-                   FieldData(i,j,k,5),						&	! phi(i,j,k)
-                   FieldData(i,j,k,6)							! node(i,j,k)
-
+         !----- read the output file
+         numLines = SubLimits(nn,1)*SubLimits(nn,2)*SubLimits(nn,3)			! determine number of lines to read
+         READ(60,*)									! first line is variable info
+         READ(60,*)									! second line is zone info
+         DO nnn = 1,numLines
+            READ(60,*) i,j,k,							&	! i,j,k node location
+            FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),		&	! u,v,w @ i,j,k
+            FieldData(i,j,k,4),							&	! rho(i,j,k)
+            FieldData(i,j,k,5),							&	! phi(i,j,k)
+            FieldData(i,j,k,6)								! node(i,j,k)
+         END DO	
+         CLOSE(60,STATUS='DELETE')							! close and delete current output file (subdomain)
       END DO
 
-      CLOSE(60,STATUS='DELETE')								! close and delete current output file (subdomain)
+      !----- print combining status...
+      WRITE(5,*) 'writing...'
+      CALL FLUSH(5)
 
-    END DO
-
-    !----- print combining status...
-    WRITE(5,*) 'writing...'
-    CALL FLUSH(5)
-
-    !----- open and write to new combined file
-    OPEN(685,FILE='out-'//iter_char//'.dat')
-    WRITE(685,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
-    WRITE(685,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',filenum(n)/(nt/nPers),'" I=',nx,' J=',ny,' K=',nz,'F=POINT'
-    DO k=1,nz
-       DO j=1,ny
-          DO i=1,nx
-             WRITE(685,'(3I6,5E15.5,I6)') i,j,k,					&	! x,y,z node location
-                         FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),	&	! u,v,w @ i,j,k
-                         FieldData(i,j,k,4),						&	! rho(i,j,k)
-                         FieldData(i,j,k,5),						&	! phi(i,j,k)
-                         INT(FieldData(i,j,k,6))						! node(i,j,k)									
-          END DO
-       END DO
-    END DO
-
-    CLOSE(685)											! close current output file (combined)
-
+      !----- open and write to new combined file
+      OPEN(685,FILE='out-'//iter_char//'.dat')
+      WRITE(685,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
+      WRITE(685,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',filenum(n)/(nt/nPers),'" I=',nx,' J=',ny,' K=',nz,'F=POINT'
+      DO k=1,nz
+         DO j=1,ny
+            DO i=1,nx
+               WRITE (685,'(3I6,5E15.5,I6)') i,j,k,				&	! x,y,z node location
+                     FieldData(i,j,k,1),FieldData(i,j,k,2),FieldData(i,j,k,3),	&	! u,v,w @ i,j,k
+                     FieldData(i,j,k,4),					&	! rho(i,j,k)
+                     FieldData(i,j,k,5),					&	! phi(i,j,k)
+                     INT(FieldData(i,j,k,6))						! node(i,j,k)									
+            END DO
+         END DO
+      END DO
+      CLOSE(685)									! close current output file (combined)
    END DO
 
    !----- End timer and print the amount of time it took for the combining
-   CALL SYSTEM_CLOCK(combine2,rate)								! End the Timer
+   CALL SYSTEM_CLOCK(combine2,rate)							! End the Timer
    WRITE(5,*)
    WRITE(5,*)
    WRITE(5,*) 'Total Time to Combine Files (min.):', ((combine2-combine1)/REAL(rate))/60.0_dbl
@@ -923,7 +887,7 @@ ELSE
    DEALLOCATE(FieldData)
 END IF
 
-CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)								! synchronize all processing units before next loop [Intrinsic]
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)							! synchronize all processing units before next loop [Intrinsic]
 
 !===================================================================================================
 END SUBROUTINE MergeFields
