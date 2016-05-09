@@ -77,7 +77,7 @@ END IF
 
 !----- Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
-WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_actual, mass_theoretical, mass_err, f_moving_sum, f_moving_rho_sum'
+WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory1, mass_theory2, mass_actual, mass_err1, mass_err2'
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
@@ -509,40 +509,38 @@ SUBROUTINE PrintMass					! checks the total mass in the system
 IMPLICIT NONE
 
 INTEGER(lng):: i,j,k				! index variables
-REAL(dbl)   :: mass_actual			! mass in the system (per unit volume)
-REAL(dbl)   :: mass_theoretical			! mass in the system (per unit volume)
-REAL(dbl)   :: volume, node_volume,mass_err	! total volume and volume of a sincle node (cell)
+REAL(dbl)   :: volume1, volume2 		! domain volume 
+REAL(dbl)   :: mass_theory1, mass_theory2	! mass in the system based on uniform density 
+REAL(dbl)   :: mass_actual			! mass in the system based on local density 
+REAL(dbl)   :: mass_err1,mass_err2		! mass error due to denisty variations
+REAL(dbl)   :: node_volume 			! Volume of each lattice cell
 
-!----- calculate the node volume
-node_volume= xcf*ycf*zcf
+node_volume= xcf*ycf*zcf			! calculate the node volume
 
-!----- initialize the mass and node count to 0
 mass_actual= 0.0_dbl
-volume     = 0.0_dbl
+volume1    = 0.0_dbl
+volume2    = 0.0_dbl
 
 !----- calculate the mass in the system based on the density and the number of fluid nodes
 DO k=1,nzSub
+   volume1 = volume1 + PI*rDom(k)*rDom(k)*zcf
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            volume	= volume      + node_volume
-            mass_actual = mass_actual + (rho(i,j,k)*dcf)*(node_volume)
+            volume2	= volume2     + node_volume
+            mass_actual = mass_actual + node_volume *rho(i,j,k)*dcf
          END IF 
       END DO
    END DO
 END DO
 
-!----- calcuate the theoretical amount of mass in the system
-mass_theoretical= den * volume
+mass_theory1 = volume1 *den 
+mass_theory2 = volume2 *den
 
-IF (mass_theoretical .LT. 1e-40) THEN
-   mass_theoretical= 1.0e-40
-ENDIF
+mass_err1= 100*(mass_theory1-mass_actual)/mass_theory1
+mass_err2= 100*(mass_theory2-mass_actual)/mass_theory2
 
-mass_err= 100*(mass_theoretical-mass_actual)/mass_theoretical
-
-!----- print the mass to a file(s)
-WRITE(2458,'(I8,6E21.12)') iter,iter*tcf,mass_actual, mass_theoretical,mass_err,fmovingsum*node_volume*dcf,fmovingrhosum*node_volume*dcf
+WRITE(2458,'(I8,6E21.12)') iter, iter*tcf, mass_theory1, mass_theory2, mass_actual, mass_err1, mass_err2 
 CALL FLUSH(2458)  
 
 !===================================================================================================
@@ -567,10 +565,9 @@ REAL(dbl) :: volume						! analytical volume
 IF (myid .EQ. master) THEN
    volume = 0.0_dbl 						! initialize the volume
    DO k=1,nz							! cacluate volume in the system
-      volume = volume + rDom(k)*rDom(k)*zcf
+      volume = volume + PI*rDom(k)*rDom(k)*zcf
    END DO
-   volume = PI*volume
-   WRITE(2460,'(2E15.5)') REAL(iter/(nt/nPers)), volume
+   WRITE(2460,'(I8,E15.7)') iter, volume
    CALL FLUSH(2460)  
 END IF
 !===================================================================================================
