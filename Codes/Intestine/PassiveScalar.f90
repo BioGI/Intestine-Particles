@@ -206,10 +206,12 @@ phiIN= PkAstar+ (PkAstar- PkBstar)*(1-q)
 !  q = 0.25_dbl
 !END IF 
 !phiIN   = ((PkAstar - PkA)/q) + PkAstar
+
 !--- No Modifications for moving boundaries
 !phiIN= phiBC                                                    	 ! contribution from wall to crrent node (in)
 !phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k)-wt(bb(m))*Delta)*phiTemp(i,j,k)
-!phiAbsorbedS = phiAbsorbedS + (phiOUT-phiIN)				! scalar absorbed at current location in mth direction
+
+phiAbsorbedS = phiAbsorbedS + (phiOUT-phiIN)				! scalar absorbed at current location in mth direction
 !===================================================================================================
 END SUBROUTINE AbsorbedScalarS
 !===================================================================================================
