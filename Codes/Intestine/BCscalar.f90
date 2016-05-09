@@ -46,6 +46,7 @@ CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
 cosTheta= xt/rt
 sinTheta= yt/rt
+
 IF (k.NE.km1) THEN
    vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
 ELSE
@@ -115,19 +116,20 @@ phiAstar= phiWall							! phi at solid surface
 PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! Contribution from A* to B*  
 
 !----- Computing values at B* & the scalar streamed from B* (Chpter 3 paper) -----------------------
-!rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q* rho(i,j,k)
-!phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q* phiTemp(i,j,k)
-!fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q* fplus(m,i,j,k)
-!PkBstar=    (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
+rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q* rho(i,j,k)
+phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q* phiTemp(i,j,k)
+fPlusBstar= (1-q)*fplus(m,ip1,jp1,kp1) + q* fplus(m,i,j,k)
+PkBstar=    (fplusBstar/rhoBstar - wt(m)*Delta)*phiBstar
+
 !----- Scalar contribution from wall to the node----------------------------------------------------
-!phiBC=      PkAstar+ (PkAstar- PkBstar)*(1-q)
+phiBC=      PkAstar+ (PkAstar- PkBstar)*(1-q)
 
 !----- Using only A and A* for interpolation (instead of A* and B*) 
-PkA= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)		! contribution from current node to next in the mth direction
-IF(q .LT. 0.25) THEN
-  q = 0.25_dbl
-END IF
-phiBC	= ((PkAstar - PkA)/q) + PkAstar	
+!PkA= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)		! contribution from current node to next in the mth direction
+!IF(q .LT. 0.25) THEN
+!  q = 0.25_dbl
+!END IF
+!phiBC	= ((PkAstar - PkA)/q) + PkAstar	
 
 !===================================================================================================
 END SUBROUTINE BC_Scalar
