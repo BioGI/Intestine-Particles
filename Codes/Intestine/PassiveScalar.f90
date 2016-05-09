@@ -157,40 +157,47 @@ REAL(dbl)    :: fPlusBstar, rhoBstar, phiBstar, PkBstar
 REAL(dbl)    :: ub,vb,wb, ubb,vbb,wbb
 REAL(dbl)    :: q
 
-!CALL qCalc_iter(m,i,j,k,im1,jm1,km1,q)
-!ubb= 0.0_dbl
-!vbb= 0.0_dbl
-!wbb= 0.0_dbl
+CALL qCalc_iter(m,i,j,k,im1,jm1,km1,q)
+
+ubb= 0.0_dbl
+vbb= 0.0_dbl
+wbb= 0.0_dbl
+
 !---------------------------------------------------------------------------------------------------
 !----- Computing phiOUT ----------------------------------------------------------------------------
 !---------------------------------------------------------------------------------------------------
-!CALL Equilibrium_LOCAL(bb(m),rho(i,j,k),ubb,vbb,wbb,feq_AO_u0)
-!phiOUT= (feq_AO_u0/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
+CALL Equilibrium_LOCAL(bb(m),rho(i,j,k),ubb,vbb,wbb,feq_AO_u0)
+phiOUT= (feq_AO_u0/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
+
 !---------------------------------------------------------------------------------------------------
 !---- Conmputing phiIN------------------------------------------------------------------------------
 !---------------------------------------------------------------------------------------------------
 !----- neighboring node (fluid side)	
-!ip1 = i + ex(m) 			
-!jp1 = j + ey(m)			
-!kp1 = k + ez(m)		
-!IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
-!  ip1 = i
-!  jp1 = j
-!  kp1 = k
-!END IF	
+ip1 = i + ex(m) 			
+jp1 = j + ey(m)			
+kp1 = k + ez(m)		
+IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
+  ip1 = i
+  jp1 = j
+  kp1 = k
+END IF	
+
 !----- Computing values at A* & scalar streamed from A* (Chpter 3 paper)
-!rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
-!CALL Equilibrium_LOCAL(m,rhoAstar,ubb,vbb,wbb,feq_Astar)		! calculate the equibrium distribution function in the mth direction
-!phiAstar= phiWall							! getting phi at the solid surface
-!PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in mth direction (0 if phiWall=0)
+rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
+CALL Equilibrium_LOCAL(m,rhoAstar,ubb,vbb,wbb,feq_Astar)		! calculate the equibrium distribution function in the mth direction
+phiAstar= phiWall							! getting phi at the solid surface
+PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in mth direction (0 if phiWall=0)
+
 !------ Computing values at B* & scalar streamed from B* (Chpter 3 paper)
-!rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
-!CALL Equilibrium_LOCAL(m,rhoBstar,ubb,vbb,wbb,feq_Bstar)
-!phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q*phiTemp(i,j,k)
-!PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
-!
-!phiIN= PkAstar+ (PkAstar- PkBstar)*(1-q)
-!!---- Modification for moving boundary in case of using only A and A* for BC
+rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
+CALL Equilibrium_LOCAL(m,rhoBstar,ubb,vbb,wbb,feq_Bstar)
+phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q*phiTemp(i,j,k)
+PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
+
+phiIN= PkAstar+ (PkAstar- PkBstar)*(1-q)
+
+
+!---- Modification for moving boundary in case of using only A and A* for BC
 !rhoA= rho(i,j,k)
 !CALL Equilibrium_LOCAL(m,rhoA,ubb,vbb,wbb,feq_A) 
 !PkA= (feq_A/rhoA - wt(m)*Delta)*phiTemp(i,j,k) 
@@ -198,11 +205,10 @@ REAL(dbl)    :: q
 !  q = 0.25_dbl
 !END IF 
 !phiIN   = ((PkAstar - PkA)/q) + PkAstar
-
 !--- No Modifications for moving boundaries
-phiIN= phiBC                                                    	 ! contribution from wall to crrent node (in)
-phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k)-wt(bb(m))*Delta)*phiTemp(i,j,k)
-phiAbsorbedS = phiAbsorbedS + (phiOUT-phiIN)				! scalar absorbed at current location in mth direction
+!phiIN= phiBC                                                    	 ! contribution from wall to crrent node (in)
+!phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k)-wt(bb(m))*Delta)*phiTemp(i,j,k)
+!phiAbsorbedS = phiAbsorbedS + (phiOUT-phiIN)				! scalar absorbed at current location in mth direction
 !===================================================================================================
 END SUBROUTINE AbsorbedScalarS
 !===================================================================================================
