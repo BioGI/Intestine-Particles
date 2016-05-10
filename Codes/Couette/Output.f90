@@ -85,6 +85,11 @@ WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, 
 WRITE(2472,*) '#ZONE F=POINT'
 CALL FLUSH(2472)
 
+! Left-Right absorptions
+OPEN(2558,FILE='Left_Right_Absorption-'//sub//'.dat')
+CALL FLUSH(2558)
+
+
 ! test output
 OPEN(9,FILE='testoutput-'//sub//'.dat',POSITION='append')
 CALL FLUSH(9)
@@ -124,6 +129,9 @@ CLOSE(2472)
 
 ! Test output
 CLOSE(9)
+
+! Left_Right_Absorption
+CLOSE(2558)
 
 !------------------------------------------------
 END SUBROUTINE CloseOutputFiles

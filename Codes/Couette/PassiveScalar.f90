@@ -158,7 +158,7 @@ write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst
 !----- Add the amount of scalar absorbed through the outer surfaces
 phiAbsorbed = 	phiAbsorbedS 						
       
-write(*,*) iter, phiOUTleft,phiINleft,phiOUTright, phiINright
+write(2558,*) iter, phiOUTleft,phiINleft,phiOUTright, phiINright
 !===================================================================================================
 END SUBROUTINE Scalar
 !===================================================================================================
