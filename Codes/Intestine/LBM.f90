@@ -501,7 +501,10 @@ DO k=1,nzSub
       END DO
    END DO
 END DO
+
 rho_ave= rho_sum / num_Fluid
+
+write(*,*) iter, 'Density Correction:',denL-rho_ave
 
 DO k=1,nzSub
    DO j=1,nySub
