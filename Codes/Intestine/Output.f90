@@ -77,7 +77,7 @@ END IF
 
 !----- Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
-WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory1, mass_theory2, mass_actual, mass_err1, mass_err2'
+WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory, mass_actual, mass_err'
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
@@ -509,38 +509,34 @@ SUBROUTINE PrintMass					! checks the total mass in the system
 IMPLICIT NONE
 
 INTEGER(lng):: i,j,k				! index variables
-REAL(dbl)   :: volume1, volume2 		! domain volume 
-REAL(dbl)   :: mass_theory1, mass_theory2	! mass in the system based on uniform density 
-REAL(dbl)   :: mass_actual			! mass in the system based on local density 
-REAL(dbl)   :: mass_err1,mass_err2		! mass error due to denisty variations
 REAL(dbl)   :: node_volume 			! Volume of each lattice cell
+REAL(dbl)   :: volume		 		! domain volume 
+REAL(dbl)   :: mass_theory			! mass in the system based on uniform density 
+REAL(dbl)   :: mass_actual			! mass in the system based on local density 
+REAL(dbl)   :: mass_err				! mass error due to denisty variations
 
 node_volume= xcf*ycf*zcf			! calculate the node volume
 
 mass_actual= 0.0_dbl
-volume1    = 0.0_dbl
-volume2    = 0.0_dbl
+volume    = 0.0_dbl
 
 !----- calculate the mass in the system based on the density and the number of fluid nodes
 DO k=1,nzSub
-   volume1 = volume1 + PI*rDom(k)*rDom(k)*zcf
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            volume2	= volume2     + node_volume
+            volume	= volume      + node_volume
             mass_actual = mass_actual + node_volume *rho(i,j,k)*dcf
          END IF 
       END DO
    END DO
 END DO
 
-mass_theory1 = volume1 *den 
-mass_theory2 = volume2 *den
+mass_theory = volume *den 
 
-mass_err1= 100*(mass_theory1-mass_actual)/mass_theory1
-mass_err2= 100*(mass_theory2-mass_actual)/mass_theory2
+mass_err= 100*(mass_theory-mass_actual)/mass_theory
 
-WRITE(2458,'(I8,6E21.12)') iter, iter*tcf, mass_theory1, mass_theory2, mass_actual, mass_err1, mass_err2 
+WRITE(2458,'(I8,6E21.12)') iter, iter*tcf, mass_theory, mass_actual, mass_err 
 CALL FLUSH(2458)  
 
 !===================================================================================================
