@@ -573,7 +573,7 @@ ELSE
 END IF
 
 !----- velocity and scalar (use boundary conditions)
-rho(i,j,k)= denL							! Density 
+!rho(i,j,k)= denL							! Density 
 u(i,j,k)  = ubx								! wall velocity			
 v(i,j,k)  = uby														
 w(i,j,k)  = ubz
