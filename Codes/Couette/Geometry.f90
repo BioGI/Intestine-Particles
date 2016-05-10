@@ -572,7 +572,8 @@ IMPLICIT NONE
 
 INTEGER(lng),INTENT(IN) :: i,j,k       			! current node location
 REAL(dbl)   ,INTENT(IN) :: ubx,uby,ubz 			! velocity of the boundary
-INTEGER(lng)    :: m 		          		! Direction index
+INTEGER(lng)    :: numFLUIDs            		! number of fluid nodes
+INTEGER(lng)    :: m,ii,jj,kk	          		! Direction index
 INTEGER(lng)    :: ip1,jp1,kp1,iB,jB,kB  		! First neighboring node location
 INTEGER(lng)    :: ip2,jp2,kp2,iC,jC,kC     	 	! Second neighboring node location
 INTEGER(lng)    :: iO,jO,kO		     	 	! Solid neighboring node location
@@ -580,9 +581,39 @@ CHARACTER(7)    :: iter_char            		! iteration stored as a character
 REAL(dbl)       :: feq                  		! equilibrium distribution function
 REAL(dbl)	:: Geom_norm_x,Geom_norm_y,Geom_norm_z	! geometry normal vector
 REAL(dbl)	:: q,n_prod,n_prod_max
+REAL(dbl)       :: rhoSum, rhoTemp
+ 
+!----- initialize the sum of surrounding densities
+rhoSum    = 0.0_dbl
+numFLUIDs = 0_lng
+
+!----- calculate the average density of the current node's neighbors
+DO m=1,NumDistDirs
+   ii = i + ex(m)
+   jj = j + ey(m)
+   kk = k + ez(m)
+   IF (((ii .GE. 0) .AND. (ii .LE. nxSub+1_lng)) .AND.  &
+      ((jj .GE. 0) .AND. (jj .LE. nySub+1_lng)) .AND.   &
+      ((kk .GE. 0) .AND. (kk .LE. nzSub+1_lng))) THEN
+      IF (node(ii,jj,kk) .EQ. FLUID) THEN
+         IF (rho(ii,jj,kk) .GT. 0.0000001_dbl) THEN
+            rhoSum = rhoSum + rho(ii,jj,kk)
+            numFLUIDs = numFLUIDs + 1_lng
+         ENDIF
+      END IF
+   END IF
+END DO
+
+!----- This should rarely happen...
+IF (numFLUIDs .NE. 0_lng) THEN
+   rho(i,j,k) = rhoSum/numFLUIDs
+ELSE
+   rho(i,j,k) = denL
+END IF
+
 
 !----- Enforcing velocity and denisty for the uncovered nodes ignoring the averaged value ----------
-rho(i,j,k)= denL
+!rho(i,j,k)= denL
 u(i,j,k)  = ubx                                         
 v(i,j,k)  = uby
 w(i,j,k)  = ubz
