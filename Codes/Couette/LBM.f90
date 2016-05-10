@@ -429,6 +429,8 @@ IMPLICIT NONE
 INTEGER(lng) :: i,j,k,m						! index variables
 INTEGER(lng) :: ii,jj,kk
 LOGICAL :: nodebounflag
+INTEGER(dbl) :: num_Fluid
+REAL(dbl)    :: rho_sum, rho_ave
 
 ! Balaji modified to include 0 to nzSub+1
 DO k=1,nzSub
@@ -486,6 +488,37 @@ DO k=1,nzSub
     END DO
   END DO
 END DO   
+
+!---- Since there is no pressure BC, the average pressure may drift from denL
+!---- This section makes sure that the average pressure= denL
+
+num_Fluid= 0
+rho_sum  = 0.0_dbl
+DO k=1,nzSub
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i,j,k) .EQ. FLUID) THEN
+            num_Fluid = num_Fluid + 1
+            rho_sum = rho_sum + rho(i,j,k)
+         END IF
+      END DO
+   END DO
+END DO
+rho_ave= rho_sum / num_Fluid
+
+write(*,*) iter, 'Mass Correction:',denL-rho_ave
+
+DO k=1,nzSub
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i,j,k) .EQ. FLUID) THEN
+            rho(i,j,k) = rho(i,j,k) + (denL - rho_ave)
+         END IF
+      END DO
+   END DO
+END DO
+
+
 !===================================================================================================
 END SUBROUTINE Macro
 !===================================================================================================
