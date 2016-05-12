@@ -190,24 +190,24 @@ phiAstar= phiWall							! getting phi at the solid surface
 PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in mth direction (0 if phiWall=0)
 
 !------ Computing values at B* & scalar streamed from B* (Chpter 3 paper)
-rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
-CALL Equilibrium_LOCAL(m,rhoBstar,ubb,vbb,wbb,feq_Bstar)
-phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q*phiTemp(i,j,k)
-PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
+!rhoBstar=   (1-q)*rho(ip1,jp1,kp1)     + q*rho(i,j,k)
+!CALL Equilibrium_LOCAL(m,rhoBstar,ubb,vbb,wbb,feq_Bstar)
+!phiBstar=   (1-q)*phiTemp(ip1,jp1,kp1) + q*phiTemp(i,j,k)
+!PkBstar=    (feq_Bstar/rhoBstar - wt(m)*Delta)*phiBstar
 
-phiIN= PkAstar+ (PkAstar- PkBstar)*(1-q)
+!phiIN= PkAstar+ (PkAstar- PkBstar)*(1-q)
 
 
 !---- Modification for moving boundary in case of using only A and A* for BC
-!rhoA= rho(i,j,k)
-!CALL Equilibrium_LOCAL(m,rhoA,ubb,vbb,wbb,feq_A) 
-!PkA= (feq_A/rhoA - wt(m)*Delta)*phiTemp(i,j,k) 
-!IF(q .LT. 0.25) THEN
-!  q = 0.25_dbl
-!END IF 
-!phiIN   = ((PkAstar - PkA)/q) + PkAstar
+rhoA= rho(i,j,k)
+CALL Equilibrium_LOCAL(m,rhoA,ubb,vbb,wbb,feq_A) 
+PkA= (feq_A/rhoA - wt(m)*Delta)*phiTemp(i,j,k) 
+IF(q .LT. 0.25) THEN
+  q = 0.25_dbl
+END IF 
+phiIN   = ((PkAstar - PkA)/q) + PkAstar
 
-!--- No Modifications for moving boundaries
+!--- No Modifications in book-keeping for moving boundaries
 !phiIN= phiBC                                                    	 ! contribution from wall to crrent node (in)
 !phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k)-wt(bb(m))*Delta)*phiTemp(i,j,k)
 
