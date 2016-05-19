@@ -31,7 +31,7 @@ FCFLAGS += -I/opt/local/include
 #MODULES = setup.o algorithm.o output.o
 #SRCOBJS = 3d.o
 
-PARFILES = SetParticle.o
+PARFILES = GenParticleList.o
 PARDIST  = GenParticleDistribution.o 
 PROGRAMS = Intestine.exe
 
