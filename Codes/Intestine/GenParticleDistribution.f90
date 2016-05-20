@@ -1,71 +1,81 @@
-       IMPLICIT NONE
+IMPLICIT NONE
 
-       real   ::   dmin,dmax,dcen
-       real   ::   dgmin,dgmax
-       real   ::   sigma,miu
-       real   ::   vd,vdmin,vdmax,vtot,deltd,ntot
-       real   ::   pi
-       real   ::   testnp,testv
+real   ::   dmin,dmax,dcen,dgmin,dgmax
+real   ::   sigma,miu,pi
+real   ::   vd,vdmin,vdmax,vtot,deltd,ntot
+real   ::   testnp,testv
+integer::   nptot,ngrp, i,j,k
 
-       integer   ::   nptot,ngrp
-       integer   ::   i,j,k
+real,    allocatable ::  vfrac(:),nfrac(:),np(:)
+integer, allocatable :: intnp(:)
 
-       real, allocatable  ::  vfrac(:),nfrac(:),np(:)
-       integer, allocatable  :: intnp(:)
+pi=4.*atan(1.0)
 
-       pi=4.*atan(1.0)
+!----- Read the input parameters -------------------------------------------------------------------
+write(*,*) "please enter the total number of particles"				!nptot=	500
+read(*,*) nptot
 
-       dmin = 3.0
-       dmax = 92.1
-       dcen = 52.0
+write(*,*) "please enter the total number of bins" 				!ngrp= 	20
+read(*,*) ngrp 
 
-       sigma = 17.32
-       miu=52.0
+write(*,*) "please enter the minimum diameter"					!dmin= 	3.0
+read(*,*) dmin
 
-       write(*,*) "please enter the total number of particles"
-       read(*,*) nptot
-       write(*,*) "please enter the total number of bins"
-       read(*,*) ngrp 
+write(*,*) "please enter the maximum diameter"					!dmax= 	92.1
+read(*,*) dmax 
 
-       allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
-       allocate(intnp(ngrp))
+write(*,*) "please enter the diameter at the center of the distribution"	!dcen= 52.0
+read(*,*) dcen
 
-       vtot=0.0
-       ntot=0.0
-       vfrac(:)=0.0
-       nfrac(:)=0.0
+write(*,*) "please enter the standard deviation"   				!sigma= 17.32
+read(*,*) sigma
+ 
+write(*,*) "please enter the medium diameter"	                                !miu= 52.0
+read(*,*) miu
 
-       deltd=(dmax-dmin)/(ngrp-1)
-       do k=1,ngrp
-         dgmin=dmin-deltd/2.+(k-1)*deltd
-         dgmax=dmin+deltd/2.+(k-1)*deltd
-         vdmin=1./sqrt(2.*pi*sigma**2)*exp(-(dgmin-miu)**2/(2.*sigma**2))                    
-         vdmax=1./sqrt(2.*pi*sigma**2)*exp(-(dgmax-miu)**2/(2.*sigma**2))                    
-         vfrac(k)=(vdmin+vdmax)*deltd/2.
-         vtot=vtot+vfrac(k)
-         nfrac(k)=vfrac(k)/(4./3.*pi*((dgmin+dgmax)/4.)**3)
-         ntot=ntot+nfrac(k)
-       end do
+!---------------------------------------------------------------------------------------------------
+allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
+allocate(intnp(ngrp))
+vtot=0.0
+ntot=0.0
+vfrac(:)=0.0
+nfrac(:)=0.0
+deltd =(dmax-dmin)/(ngrp-1)
 
-       vfrac=vfrac/vtot
-       nfrac=nfrac/ntot
-       np=nfrac*nptot
 
-       open(50,file='Par_Dist.dat')
-       do i=1,ngrp
-         dgmin=dmin-deltd/2.+(i-1)*deltd
-         dgmax=dmin+deltd/2.+(i-1)*deltd
-         write(50,*) (dgmin+dgmax)/2.,1./sqrt(2.*pi*sigma**2)*exp(-(dgmin/2.+dgmax/2.-miu)**2/(2.*sigma**2)),      &
-                  vfrac(i),np(i),int(np(i)+0.5)
-       end do
+do k= 1,ngrp
+   dgmin    = dmin- deltd/2.0 + (k-1)*deltd
+   dgmax    = dmin+ deltd/2.0 + (k-1)*deltd
+   vdmin    = 1.0/sqrt(2.*pi*sigma**2) * exp(-(dgmin-miu)**2/(2.*sigma**2))                    
+   vdmax    = 1.0/sqrt(2.*pi*sigma**2) * exp(-(dgmax-miu)**2/(2.*sigma**2))                    
+   vfrac(k) = (vdmin+vdmax)*deltd/2.0
+   vtot	    = vtot+vfrac(k)
+   nfrac(k) = vfrac(k) / (4.0/3.0*pi* ((dgmin+dgmax)/4.0)**3)
+   ntot	    =ntot+nfrac(k)
+end do
 
-       testnp=0.0
-       testv=0.0
-       do i=1,ngrp
-         testnp=testnp+np(i)
-         testv=testv+vfrac(i)
-       end do
-       write(*,*) testnp,testv
+vfrac = vfrac / vtot
+nfrac = nfrac / ntot
+np    = nfrac * nptot
 
-       stop
-       end
+open(50,file='Par_Dist.dat')
+do i= 1,ngrp
+   dgmin= (dmin-deltd)/2.0 + (i-1)*deltd
+   dgmax= (dmin+deltd)/2.0 + (i-1)*deltd
+   write(50,*) (dgmin+dgmax)/2.,1./sqrt(2.*pi*sigma**2)*exp(-(dgmin/2.+dgmax/2.-miu)**2/(2.*sigma**2)),      &
+               vfrac(i),np(i),int(np(i)+0.5)
+end do
+
+testnp=0.0
+testv=0.0
+
+do i= 1,ngrp
+   testnp= testnp+np(i)
+   testv= testv+vfrac(i)
+end do
+
+write(*,*) testnp,testv
+
+stop
+
+end
