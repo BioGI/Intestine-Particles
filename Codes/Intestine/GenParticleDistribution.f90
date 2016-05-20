@@ -1,15 +1,18 @@
+
+!===================================================================================================
+!This subroutine creates the particle distribution list 
+!===================================================================================================
+
 IMPLICIT NONE
 
-real   ::   dmin,dmax,dcen,dgmin,dgmax
-real   ::   sigma,miu,pi
-real   ::   vd,vdmin,vdmax,vtot,deltd,ntot
-real   ::   testnp,testv
-integer::   nptot,ngrp, i,j,k
+real   			::   dmin,dmax,dcen,dgmin,dgmax
+real   			::   sigma,miu,pi
+real   			::   vd,vdmin,vdmax,vtot,deltd,ntot
+real   			::   testnp,testv
+integer			::   nptot,ngrp, i,j,k
+real,    allocatable 	::  vfrac(:),nfrac(:),np(:)
+integer, allocatable 	:: intnp(:)
 
-real,    allocatable ::  vfrac(:),nfrac(:),np(:)
-integer, allocatable :: intnp(:)
-
-pi=4.*atan(1.0)
 
 !----- Read the input parameters -------------------------------------------------------------------
 write(*,*) "please enter the total number of particles"				!nptot=	500
@@ -36,12 +39,13 @@ read(*,*) miu
 !---------------------------------------------------------------------------------------------------
 allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
 allocate(intnp(ngrp))
-vtot=0.0
-ntot=0.0
-vfrac(:)=0.0
-nfrac(:)=0.0
-deltd =(dmax-dmin)/(ngrp-1)
 
+pi	= 4.0 * atan(1.0)
+deltd 	= (dmax-dmin)/(ngrp-1)
+vtot	= 0.0
+ntot	= 0.0
+vfrac(:)= 0.0
+nfrac(:)= 0.0
 
 do k= 1,ngrp
    dgmin    = dmin- deltd/2.0 + (k-1)*deltd
@@ -49,9 +53,9 @@ do k= 1,ngrp
    vdmin    = 1.0/sqrt(2.*pi*sigma**2) * exp(-(dgmin-miu)**2/(2.*sigma**2))                    
    vdmax    = 1.0/sqrt(2.*pi*sigma**2) * exp(-(dgmax-miu)**2/(2.*sigma**2))                    
    vfrac(k) = (vdmin+vdmax)*deltd/2.0
-   vtot	    = vtot+vfrac(k)
+   vtot	    = vtot + vfrac(k)
    nfrac(k) = vfrac(k) / (4.0/3.0*pi* ((dgmin+dgmax)/4.0)**3)
-   ntot	    =ntot+nfrac(k)
+   ntot	    = ntot + nfrac(k)
 end do
 
 vfrac = vfrac / vtot
@@ -66,14 +70,13 @@ do i= 1,ngrp
                vfrac(i),np(i),int(np(i)+0.5)
 end do
 
+!----- Testing total number of particles and total volume
 testnp=0.0
 testv=0.0
-
 do i= 1,ngrp
    testnp= testnp+np(i)
-   testv= testv+vfrac(i)
+   testv = testv+vfrac(i)
 end do
-
 write(*,*) testnp,testv
 
 stop
