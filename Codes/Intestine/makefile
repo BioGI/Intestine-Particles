@@ -169,7 +169,7 @@ $(OBJS): $(MODULES)
 .PHONY: clean veryclean
 
 clean:
-	rm -f *.o *.mod *.MOD
+	rm -f *.o *.mod *.MOD *.exe
 
 veryclean: clean
 	rm -f *~ $(PROGRAMS)
