@@ -85,7 +85,7 @@ ALLOCATE(Q0RdR(nbins))
 ALLOCATE(Q0RdRint(nbins))
 ALLOCATE(Radlist(np))
 
-!open(51,file='np250-nb20.txt')
+!open(51,file='Par_Dist.txt')
 !do i=1,nbins 
 !  read(51,*) Rbins(i),v0R(i),v0RdR(i),Q0RdR(i),Q0RdRint(i)
 !end do

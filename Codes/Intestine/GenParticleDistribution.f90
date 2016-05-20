@@ -51,7 +51,7 @@
        nfrac=nfrac/ntot
        np=nfrac*nptot
 
-       open(50,file='np.dat')
+       open(50,file='Par_Dist.dat')
        do i=1,ngrp
          dgmin=dmin-deltd/2.+(i-1)*deltd
          dgmax=dmin+deltd/2.+(i-1)*deltd
