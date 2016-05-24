@@ -37,8 +37,6 @@ integer, allocatable 	:: intnp(:)
 !read(*,*) miu
 !
 !---------------------------------------------------------------------------------------------------
-allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
-allocate(intnp(ngrp))
 
 nptot	= 500
 ngrp	= 20
@@ -47,6 +45,9 @@ dmax	= 195.0
 dcen	= 100.0
 miu	= 100.0
 sigma	= 30.0
+
+allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
+allocate(intnp(ngrp))
 
 pi	= 4.0 * atan(1.0)
 deltd 	= (dmax-dmin)/(ngrp-1)
