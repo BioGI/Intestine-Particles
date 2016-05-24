@@ -15,30 +15,38 @@ integer, allocatable 	:: intnp(:)
 
 
 !----- Read the input parameters -------------------------------------------------------------------
-write(*,*) "please enter the total number of particles"				!nptot=	500
-read(*,*) nptot
-
-write(*,*) "please enter the total number of bins" 				!ngrp= 	20
-read(*,*) ngrp 
-
-write(*,*) "please enter the minimum diameter"					!dmin= 	3.0
-read(*,*) dmin
-
-write(*,*) "please enter the maximum diameter"					!dmax= 	92.1
-read(*,*) dmax 
-
-write(*,*) "please enter the diameter at the center of the distribution"	!dcen= 52.0
-read(*,*) dcen
-
-write(*,*) "please enter the standard deviation"   				!sigma= 17.32
-read(*,*) sigma
- 
-write(*,*) "please enter the medium diameter"	                                !miu= 52.0
-read(*,*) miu
-
+!write(*,*) "please enter the total number of particles"				!nptot=	500
+!read(*,*) nptot
+!
+!write(*,*) "please enter the total number of bins" 				!ngrp= 	20
+!read(*,*) ngrp 
+!
+!write(*,*) "please enter the minimum diameter"					!dmin= 	3.0
+!read(*,*) dmin
+!
+!write(*,*) "please enter the maximum diameter"					!dmax= 	92.1
+!read(*,*) dmax 
+!
+!write(*,*) "please enter the diameter at the center of the distribution"	!dcen= 52.0
+!read(*,*) dcen
+!
+!write(*,*) "please enter the standard deviation"   				!sigma= 17.32
+!read(*,*) sigma
+! 
+!write(*,*) "please enter the medium diameter"	                                !miu= 52.0
+!read(*,*) miu
+!
 !---------------------------------------------------------------------------------------------------
 allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
 allocate(intnp(ngrp))
+
+nptot	= 500
+ngrp	= 20
+dmin	= 5
+dmax	= 195
+dcen	= 50
+miu	= 50
+sigma	= 30
 
 pi	= 4.0 * atan(1.0)
 deltd 	= (dmax-dmin)/(ngrp-1)
@@ -61,6 +69,10 @@ end do
 vfrac = vfrac / vtot
 nfrac = nfrac / ntot
 np    = nfrac * nptot
+
+do k= 1, ngrp
+   write(*,*) 'k,vfrac,nfrac,np',k,vfrac(k),nfrac(k),np(k)
+end do
 
 open(50,file='Par_Dist.dat')
 do i= 1,ngrp
