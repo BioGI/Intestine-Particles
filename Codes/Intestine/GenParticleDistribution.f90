@@ -42,11 +42,11 @@ allocate(intnp(ngrp))
 
 nptot	= 500
 ngrp	= 20
-dmin	= 5
-dmax	= 195
-dcen	= 50
-miu	= 50
-sigma	= 30
+dmin	= 5.0
+dmax	= 195.0
+dcen	= 100.0
+miu	= 100.0
+sigma	= 30.0
 
 pi	= 4.0 * atan(1.0)
 deltd 	= (dmax-dmin)/(ngrp-1)
