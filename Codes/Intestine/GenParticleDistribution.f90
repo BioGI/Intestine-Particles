@@ -14,7 +14,7 @@ real,    allocatable 	:: vfrac(:),nfrac(:),np(:)
 integer, allocatable 	:: intnp(:)
 
 V_c		= 9.424778e12 		! (\mu m) ^3
-C_tot_Over_Cs	= 0.100000000000	! dimensionless
+C_tot_Over_Cs	= 0.1000000000000	! dimensionless
 C_s		= 3.3e-19              	! mole / (\mu m ^3)
 nu_P		= 268.0e12 		! (\mu m ^3) / mole  		
 C_tot		= C_s * C_tot_Over_Cs   ! mole / (\mu m ^3)
@@ -25,7 +25,7 @@ ngrp	= 19
 dmin	= 10.0
 dmax	= 190.0
 miu	= 100.0
-sigma	= 20.0
+sigma	= 30.0
 
 allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
 
@@ -84,7 +84,10 @@ write(51,2) C_tot_Over_Cs, C_tot_Over_Cs
 write(51,2) Vp_tot, Vp_tot
 write(51,2) TestNp,TestNp 
 write(51,2) dmin, dmin
-write(51,2) sigma, sigma
+write(51,2) miu, miu
+write(51,2) dmax,dmax
+write(51,2) sigma,sigma
+
 DO i= 1, 2200
    dg= dmin
    dd = (dg-(deltd/2.0)) + ((i-1)+0.5) * ((dmax-dmin)/2000)
