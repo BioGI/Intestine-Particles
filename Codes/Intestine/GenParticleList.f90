@@ -71,8 +71,8 @@ fourbythreepi 	= 88.0_dbl/21.0_dbl
 
 x_center=      50.0
 y_center=      50.0
-z_center=      50.0
-rMax   =       45.0_dbl
+z_center=      45.0
+rMax   =       40.0_dbl
 teta1Max=      2*PI
 teta2Max=      2*PI
 
