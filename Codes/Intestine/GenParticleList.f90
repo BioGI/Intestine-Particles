@@ -100,7 +100,7 @@ k= 0
 DO i= 1, nbins
    DO j = 1, Q0RdRint(i)
       k = k + 1
-      Radlist(k) = 0.5_dbl * Rbins(i)
+      Radlist(k) = 0.5_dbl * Rbins(i)* 1.0e-6
       write(*,*) k, Radlist(k)
    END DO
 END DO
