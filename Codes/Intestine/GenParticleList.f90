@@ -114,7 +114,7 @@ write(*,*) np,sumvolume
 ALLOCATE(randno(3_lng*np))
 CALL RANDOM_NUMBER(randno)
 
-open(50,file='Particle-List-Polydisperse.dat')
+open(50,file='particle.dat')
 write(50,*) np
 DO i=1,np
   rr         = (randno(3*(i-1)+1))**(1.0/3.0)* rMax
