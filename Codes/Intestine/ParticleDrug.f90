@@ -297,38 +297,46 @@ SUBROUTINE Particle_Drug_Release                     ! Calculates drug release a
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: numFluids,i,j,k,RANK,mpierr
-REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc 
+REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc, Min_R_Acceptabel 
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 zcf3=xcf*ycf*zcf
+Min_R_Acceptabel= 1e-7/xcf										! 0.1 micron is the minimum acceptable particle size
 
 current => ParListHead%next
+
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-   IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++
-      current%pardata%rpold = current%pardata%rp
-      bulkconc = current%pardata%bulk_conc
-      temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
- 
-      IF (temp.GE.0.0_dbl) THEN
-          current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
-      ELSE
-          temp = 0.0_dbl
-          current%pardata%rp=0.5_dbl*(current%pardata%rpold+sqrt(temp))
-      END IF
 
-      deltaR=current%pardata%rpold-current%pardata%rp
-      current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
+   IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++
+      IF (current%pardata%rp .GT. Min_R_Acceptabel) THEN						!only calculate the drug release when particle radius is larger than 0.1 micron				
+         current%pardata%rpold = current%pardata%rp
+         bulkconc = current%pardata%bulk_conc
+         temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
+         IF (temp.GE.0.0_dbl) THEN
+            current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
+         ELSE
+            temp = 0.0_dbl
+            current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
+         END IF
+         deltaR=current%pardata%rpold-current%pardata%rp
+         current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
+      ELSE IF ((current%pardata%rp .LT. Min_R_Acceptabel) .AND. (current%pardata%rp .NE. 0.0)) THEN
+         current%pardata%rp= 0.0_dbl
+      END IF
    END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-   RANK= current%pardata%cur_part - 1
-   CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD, mpierr)
-   CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD, mpierr)
+   IF (current%pardata%rpold .NE. 0.0) THEN 								!if rpold is already zero, there is no need to  communicate 
+      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+      RANK= current%pardata%cur_part - 1
+      CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD, mpierr)
+      CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD, mpierr)
+   END IF
 
-    current => next
+   current => next
 ENDDO
+
 !===================================================================================================
 END SUBROUTINE Particle_Drug_Release
 !===================================================================================================
