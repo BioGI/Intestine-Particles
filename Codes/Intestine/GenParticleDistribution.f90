@@ -21,11 +21,11 @@ C_tot		= C_s * C_tot_Over_Cs   ! mole / (\mu m ^3)
 Vp_tot  	= C_tot * nu_P * V_c    ! (\mu m) ^3
 write(*,*) 'Vp_tot',Vp_tot
 
-ngrp	= 11
-dmin	= 50.0
-dmax	= 150.0
+ngrp	= 30
+dmin	= 10.0
+dmax	= 190.0
 miu	= 100.0
-sigma	= 20.0
+sigma	= 25.0
 
 allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
 
@@ -87,6 +87,7 @@ write(51,2) dmin, dmin
 write(51,2) miu, miu
 write(51,2) dmax,dmax
 write(51,2) sigma,sigma
+write(51,*) ngrp,ngrp
 
 DO i= 1, 2200
    dg= dmin

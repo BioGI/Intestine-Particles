@@ -12,9 +12,9 @@ dmin		= int(Vf_expectedData[3,0])
 dmean		= int(Vf_expectedData[4,0])
 dmax		= int(Vf_expectedData[5,0])
 sigma		= int(Vf_expectedData[6,0])
-D 	   	= Vf_expectedData[7:3000,0]
-Vf_expected	= Vf_expectedData[7:3000,1]
-
+Nbin		= int(Vf_expectedData[7,0])
+D 	   	= Vf_expectedData[8:3000,0]
+Vf_expected	= Vf_expectedData[8:3000,1]
 
 nProcs = len(glob('Plot_file.dat'))
 scalarData = []

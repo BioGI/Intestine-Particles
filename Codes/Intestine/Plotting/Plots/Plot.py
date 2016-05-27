@@ -9,7 +9,7 @@ from pylab import loadtxt
 import pickle, sys, os
 matplotlib.rcParams.update({'font.size': 10})
 
-title_font = {'fontname':'Arial', 'size':'18', 'color':'black', 'weight':'normal','verticalalignment':'bottom'} 
+title_font = {'fontname':'Arial', 'size':'14', 'color':'black', 'weight':'normal','verticalalignment':'bottom'} 
 axis_font = {'fontname':'Arial', 'size':'14'}
 
 os.chdir('../Case-0')
@@ -31,7 +31,7 @@ fig = plt.figure()
 plt.axes([0.13,0.13,0.97-0.13,1.0-0.23])
 plt.bar(Case0.Diameter-2.5, Case0.Np, 5,  label= "")
 plt.grid(b=True, which='major',  axis='y', linewidth=1)
-plt.title(r'$\frac{C_{tot}}{C_s}$=%s, $D_{min}$= %s$\mu m$,  $D_{max}$= %s$\mu m$,  $\sigma$= %s$\mu m$,  $N_P$=%s'  %( Case0.C_tot_Over_Cs, Case0.dmin, Case0.dmax, Case0.sigma, Case0.Np_tot), **title_font)
+plt.title(r'$\frac{C_{tot}}{C_s}$=%s, $D_{min}$= %s$\mu m$,  $D_{max}$= %s$\mu m$,  $N_{bin}$= %s,  $\sigma$= %s$\mu m$,  $N_P$=%s'  %( Case0.C_tot_Over_Cs, Case0.dmin, Case0.dmax, Case0.Nbin, Case0.sigma, Case0.Np_tot), **title_font)
 plt.xlim(0,200)
 plt.xlabel(r'Diameter ($\mu m$)',**axis_font)
 plt.ylabel('Number of Particles in each bin',**axis_font)
@@ -44,7 +44,7 @@ fig = plt.figure()
 plt.axes([0.13,0.13,0.97-0.13,1.0-0.23])
 plt.plot(Case0.D, Case0.Vf_expected, color='blue', label= "Expecetd") 
 plt.bar(Case0.Diameter-2.5, Case0.Vf_achieved, 5, color='red', label= "Achieved")
-plt.title(r'$\frac{C_{tot}}{C_s}$=%s, $D_{min}$= %s$\mu m$,  $D_{max}$= %s$\mu m$,  $\sigma$= %s$\mu m$,  $N_P$=%s'  %( Case0.C_tot_Over_Cs, Case0.dmin, Case0.dmax, Case0.sigma, Case0.Np_tot), **title_font)
+plt.title(r'$\frac{C_{tot}}{C_s}$=%s, $D_{min}$= %s$\mu m$,  $D_{max}$= %s$\mu m$,  $N_{bin}$= %s,  $\sigma$= %s$\mu m$,  $N_P$=%s'  %( Case0.C_tot_Over_Cs, Case0.dmin, Case0.dmax, Case0.Nbin, Case0.sigma, Case0.Np_tot), **title_font)
 plt.xlim(0,200)
 plt.xlabel(r'Diameter ($\mu m$)',**axis_font)
 plt.ylabel(r'PDF ($1/ \mu m)$ ',**axis_font)
