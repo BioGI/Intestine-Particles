@@ -25,7 +25,7 @@ INTEGER,DIMENSION(2)     :: NEP_x,   NEP_y,  NEP_z                      ! Lattic
 REAL(dbl)     		 :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
 REAL(dbl)  	   	 :: xp,yp,zp
 REAL(dbl)		 :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)       	 :: N_b         				! Modeling parameter to extend the volume of influence  
+REAL(dbl)       	 :: N_b, Min_R_Acceptable			! Modeling parameter to extend the volume of influence  
 REAL(dbl)    	         :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
 REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
@@ -39,10 +39,14 @@ TYPE(ParRecord), POINTER :: next
 
 delta_mesh = 1.0_dbl
 zcf3 = 1.0_dbl
+Min_R_Acceptable= 1e-7							! 0.1 micron is the minimum acceptable particle size
+
 current => ParListHead%next
 
 DO WHILE (ASSOCIATED(current))
-   next => current%next
+
+next => current%next
+IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
 
 !--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(N_b*delta)
    N_b = 3.0
@@ -279,8 +283,11 @@ DO WHILE (ASSOCIATED(current))
 	
    END IF       			                                    		!End of conditional for V_eff greater than 1 
       
-   open(172,file='Cb-'//sub//'.dat', position='append')
-   current => next
+ENDIF  
+
+open(172,file='Cb-'//sub//'.dat', position='append')
+current => next
+
 END DO
 !===================================================================================================
 END SUBROUTINE Compute_Cb
@@ -297,12 +304,12 @@ SUBROUTINE Particle_Drug_Release                     ! Calculates drug release a
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: numFluids,i,j,k,RANK,mpierr
-REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc, Min_R_Acceptabel 
+REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc, Min_R_Acceptable 
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 zcf3=xcf*ycf*zcf
-Min_R_Acceptabel= 1e-7											! 0.1 micron is the minimum acceptable particle size
+Min_R_Acceptable= 1e-7											! 0.1 micron is the minimum acceptable particle size
 
 current => ParListHead%next
 
@@ -310,7 +317,7 @@ DO WHILE (ASSOCIATED(current))
    next => current%next 
 
    IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++
-      IF (current%pardata%rp .GT. Min_R_Acceptabel) THEN						!only calculate the drug release when particle radius is larger than 0.1 micron				
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only calculate the drug release when particle radius is larger than 0.1 micron				
          current%pardata%rpold = current%pardata%rp
          bulkconc = current%pardata%bulk_conc
          temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
@@ -322,7 +329,7 @@ DO WHILE (ASSOCIATED(current))
          END IF
          deltaR=current%pardata%rpold-current%pardata%rp
          current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
-      ELSE IF ((current%pardata%rp .LT. Min_R_Acceptabel) .AND. (current%pardata%rp .NE. 0.0)) THEN
+      ELSE IF ((current%pardata%rp .LT. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
          current%pardata%rp= 0.0_dbl
       END IF
    END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -355,31 +362,38 @@ SUBROUTINE Compute_Sherwood
 
 IMPLICIT NONE
 INTEGER(lng)  :: mpierr, RANK
-REAL(dbl)     :: S,Sst,Sh0
+REAL(dbl)     :: S,Sst,Sh0, Min_R_Acceptable
 REAL(dbl)     :: xp, yp, zp
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
+Min_R_Acceptable= 1e-7											! 0.1 micron is the minimum acceptable particle size
+
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-   IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++
-      current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
-      S= current%pardata%S
-      Sst= S* (current%pardata%rp**2.0) / diffm
-      current%pardata%Sst= Sst
 
-      IF (Sst.LT.5.0_dbl) THEN
-         current%pardata%sh = current%pardata%sh + 0.296_dbl*(Sst**0.5_dbl)
-      ELSE
-         Sh0 = exp(0.162_dbl + 0.202_dbl*log(Sst) - 7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
-         current%pardata%sh = current%pardata%sh + Sh0-1.0_dbl
-      END IF
-   END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  
-   RANK= current%pardata%cur_part - 1
-   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-   CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
+      IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++
+         current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
+         S= current%pardata%S
+         Sst= S* (current%pardata%rp**2.0) / diffm
+         current%pardata%Sst= Sst
+
+         IF (Sst.LT.5.0_dbl) THEN
+            current%pardata%sh = current%pardata%sh + 0.296_dbl*(Sst**0.5_dbl)
+         ELSE
+            Sh0 = exp(0.162_dbl + 0.202_dbl*log(Sst) - 7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
+            current%pardata%sh = current%pardata%sh + Sh0-1.0_dbl
+         END IF
+      END IF !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   END IF
+   
+   IF (current%pardata%rp .NE. 0.0) THEN 	
+      RANK= current%pardata%cur_part - 1
+      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+      CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+   END IF 
 
    current => next
 ENDDO
@@ -404,37 +418,42 @@ INTEGER(lng)  :: it,jt,kt,ib,jb,kb
 REAL(dbl)     :: xp,yp,zp,xd,yd,zd
 INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
 REAL(dbl)     :: temp,dudx,dudy,dudz,dvdx,dvdy,dvdz,dwdx,dwdy,dwdz
-REAL(dbl)     :: S
+REAL(dbl)     :: S, Min_R_Acceptable
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
+
+Min_R_Acceptable= 1e-7										! 0.1 micron is the minimum acceptable particle size
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
-   IF (mySub .EQ.current%pardata%cur_part) THEN !+++++++++++++++++++++++++++++++++++++++++++++++++++
-      xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
-      yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
-      zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-      ix0= FLOOR(xp)
-      ix1= CEILING(xp)
-      iy0= FLOOR(yp)
-      iy1= CEILING(yp)
-      iz0= FLOOR(zp)
-      iz1= CEILING(zp)
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only calculate the drug release when particle radius is larger than 0.1 micron				
+      IF (mySub .EQ.current%pardata%cur_part) THEN
+         xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
+         yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
+         zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
 
-      ib = ix0
-      jb = iy0
-      kb = iz0
-      it = ix0 + 1_lng
-      jt = iy0
-      kt = iz0
-!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
+         ix0= FLOOR(xp)
+         ix1= CEILING(xp)
+         iy0= FLOOR(yp)
+         iy1= CEILING(yp)
+         iz0= FLOOR(zp)
+         iz1= CEILING(zp)
+         ib = ix0
+         jb = iy0
+         kb = iz0
+         it = ix0 + 1_lng
+         jt = iy0
+         kt = iz0
+!!!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
-      dwdz = w(it,jt,kt) - w(ib,jb,kb)
-      S = abs(dwdz*vcf/zcf)
-      current%pardata%S = S
-    END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+         dwdz = w(it,jt,kt) - w(ib,jb,kb)
+         S = abs(dwdz*vcf/zcf)
+         current%pardata%S = S
+       END IF 
+    END IF
+
     current => next
 ENDDO
 
