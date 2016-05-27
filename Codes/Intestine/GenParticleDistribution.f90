@@ -14,18 +14,18 @@ real,    allocatable 	:: vfrac(:),nfrac(:),np(:)
 integer, allocatable 	:: intnp(:)
 
 V_c		= 9.424778e12 		! (\mu m) ^3
-C_tot_Over_Cs	= 0.1000000000000	! dimensionless
+C_tot_Over_Cs	= 0.2000000000000	! dimensionless
 C_s		= 3.3e-19              	! mole / (\mu m ^3)
 nu_P		= 268.0e12 		! (\mu m ^3) / mole  		
 C_tot		= C_s * C_tot_Over_Cs   ! mole / (\mu m ^3)
 Vp_tot  	= C_tot * nu_P * V_c    ! (\mu m) ^3
 write(*,*) 'Vp_tot',Vp_tot
 
-ngrp	= 19
-dmin	= 10.0
-dmax	= 190.0
+ngrp	= 11
+dmin	= 50.0
+dmax	= 150.0
 miu	= 100.0
-sigma	= 30.0
+sigma	= 20.0
 
 allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
 
