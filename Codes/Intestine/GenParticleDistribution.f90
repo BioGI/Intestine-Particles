@@ -21,9 +21,9 @@ C_tot		= C_s * C_tot_Over_Cs   ! mole / (\mu m ^3)
 Vp_tot  	= C_tot * nu_P * V_c    ! (\mu m) ^3
 write(*,*) 'Vp_tot',Vp_tot
 
-ngrp	= 30
-dmin	= 10.0
-dmax	= 190.0
+ngrp	= 20
+dmin	= 5.0
+dmax	= 195.0
 miu	= 100.0
 sigma	= 25.0
 
