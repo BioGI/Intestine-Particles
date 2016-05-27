@@ -302,7 +302,7 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 zcf3=xcf*ycf*zcf
-Min_R_Acceptabel= 1e-7/xcf										! 0.1 micron is the minimum acceptable particle size
+Min_R_Acceptabel= 1e-7											! 0.1 micron is the minimum acceptable particle size
 
 current => ParListHead%next
 
