@@ -141,7 +141,7 @@ IF (myid .EQ. master) THEN
       CALL FLUSH(5)													
    END IF
  
-   IF (MOD(iter,1) .EQ. 0 .AND. (iter .NE. 0)) THEN 			! Print Current Status Periodically
+   IF (MOD(iter,2) .EQ. 0 .AND. (iter .NE. 0)) THEN 			! Print Current Status Periodically
       CALL SYSTEM_CLOCK(current,rate)					
       WRITE(5,*) iter, ((current-start)/REAL(rate))/(iter-iter0)
       CALL FLUSH(5)													
