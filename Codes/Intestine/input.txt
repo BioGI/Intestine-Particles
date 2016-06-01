@@ -28,7 +28,7 @@
 1000.0 		! density [kg/m^3]								(den)
 1.00e-6		! kinematic viscosity [m^2/s]							(nu)
 1.0		! relaxation parameter								(tau)
-50.0  		! Schmidt Number								(Sc)
+10.0  		! Schmidt Number								(Sc)
 4		! initial/maintained scalar distribution [1=BLOB,2=LINE,3=INLET,4=UNIFORM]	(sclrIC)
 0.0		! period at which to start the scalar calculation				(phiPer)
 0.0		! maximum value of scalar distribution                                	        (phiIC)
