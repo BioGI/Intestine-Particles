@@ -619,8 +619,8 @@ ELSE
    phiAverage = 0.0_dbl
 END IF
 
-!------ node volume in physical units (cm^3) so when printing the drung units are micro  mole
-zcf3 = 1000000.0_lng * zcf*zcf*zcf 
+!------ node volume in physical units (m^3)
+zcf3 =  zcf*zcf*zcf 
 
 !------ Computing the total drug released from particles      
 IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN
