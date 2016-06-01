@@ -68,10 +68,7 @@ PROGRAM LBM3D	! 3D Parallelized LBM Simulation
 	ENDIF
 
 	IF(ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN 	! If particle tracking is 'on' then do the following
-!	   CALL Calc_Global_Bulk_Scalar_Conc				! Estimate bluk	scalar concentration in each partition
-!	   CALL Collect_Distribute_Global_Bulk_Scalar_Conc		! Collect Cb_Global from different processors, average it and distribute it to all the processors.  
 	   CALL Particle_Track
-!	   CALL Particle_MPI_Transfer
 	ENDIF
 
 	CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
