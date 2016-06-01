@@ -68,15 +68,13 @@ DEALLOCATE(seed1)
 !---------------------------------------------------------------------------------------------------
 PI     		= 3.1415926535897932384626433832
 fourbythreepi 	= 88.0_dbl/21.0_dbl
-
-x_center=      50.0
-y_center=      50.0
-z_center=      40.0
-rMax   =       35.0_dbl
-teta1Max=      2*PI
-teta2Max=      2*PI
-
-nbins 		= 19 
+x_center	= 58.0
+y_center	= 58.0
+z_center	= 150.0
+rMax   		= 50.0_dbl
+teta1Max	= 2*PI
+teta2Max	= 2*PI
+nbins 		= 20 
 
 ALLOCATE(Rbins(nbins))
 ALLOCATE(v0R(nbins))
