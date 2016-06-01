@@ -48,14 +48,19 @@ SUBROUTINE OpenOutputFiles							! opens output files
 IMPLICIT NONE
 
 IF (myid .EQ. master) THEN
-  !----- Monitoring negative phi----
+   !----- Monitoring negative phi----
    OPEN(2118,FILE='Negative-phi.dat',POSITION='APPEND')
    WRITE(2118,'(A120)') 'VARIABLES = iter,  Number of Negative phi Nodes,  Total Sum of Negative phi,  Worst Negative phi,  Average of Negative phi'
    CALL FLUSH(2118)
 
-  !----- Status-----
-  OPEN(5,FILE='status.dat')										
-  CALL FLUSH(5)													
+   !----- Monitoring over saturation
+   OPEN(2119,FILE='Over_Saturation.dat',POSITION='APPEND')
+   WRITE(2119,'(A120)') 'VARIABLES = iter,  Number of OverSaturated Nodes,  Worst Oversaturation'
+   CALL FLUSH(2119)
+
+   !----- Status-----
+   OPEN(5,FILE='status.dat')										
+   CALL FLUSH(5)													
 
   !----- Surface Area-----
   OPEN(2474,FILE='SA.dat',POSITION='APPEND')
@@ -109,6 +114,7 @@ IMPLICIT NONE
 
 IF(myid .EQ. master) THEN
   CLOSE(2118) 			! Monitoring negative phi
+  CLOSE(2119)                   ! Monitorin Over Saturation
   CLOSE(5)			! Status								
   CLOSE(2474)			! Surface Area
   CLOSE(2460)			! Volume

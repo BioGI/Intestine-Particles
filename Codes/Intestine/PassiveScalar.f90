@@ -52,7 +52,7 @@ SUBROUTINE Scalar				  ! calculates the evolution of scalar in the domain
 IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k,m,im1,jm1,km1				! index variables
-REAL(dbl) :: phiBC						! scalar contribution from boundary
+REAL(dbl) :: phiBC, Largest_phi					! scalar contribution from boundary
 REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
 REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
 REAL(dbl) :: zcf3						! Cell volume
@@ -63,6 +63,7 @@ CALL ScalarDistribution						! sets/maintains initial distributions of scalar [M
 phiTemp 	    = phi
 Negative_phi_Counter= 0
 Negative_phi_Worst  = 0.0_dbl
+Largest_phi	    = 0.0_dbl
 
 !----- Stream the scalar
 DO k=1,nzSub
@@ -113,6 +114,14 @@ DO k=1,nzSub
                ENDIF
 	       phi(i,j,k) = 0.0_dbl
             END IF
+
+!---------- Monitoring over saturation
+            IF (phi(i,j,k) .GT. Cs_mol) THEN
+               Over_Sat_Counter= Over_Sat_Counter + 1
+               IF (Largest_phi .LT. phi(i,j,k) ) THEN
+                  Largets_phi= phi(i,j,k)
+               END IF
+            END IF
          END IF
       END DO
    END DO
@@ -122,8 +131,12 @@ IF (Negative_phi_Counter.LT. 1.0) THEN
    Negative_phi_Counter = 1.0
 ENDIF 
 
-!----- Monitorin the Negative phi issue
-write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
+!----- Monitoring the Negative phi issue
+write(2118,*) iter, Largets_phi, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
+
+
+!----- Monitoring the Over Saturation problem
+write(2118,*) iter, Over_Sat_Counter, Largets_phi
 
 !----- Add the amount of scalar absorbed through the outer surfaces
 phiAbsorbed = phiAbsorbedS 						
