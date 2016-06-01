@@ -136,7 +136,7 @@ write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst
 
 
 !----- Monitoring the Over Saturation problem
-write(2118,*) iter, Over_Sat_Counter, Largest_phi
+write(2119,*) iter, Over_Sat_Counter, Largest_phi
 
 !----- Add the amount of scalar absorbed through the outer surfaces
 phiAbsorbed = phiAbsorbedS 						
