@@ -64,6 +64,7 @@ phiTemp 	    = phi
 Negative_phi_Counter= 0
 Negative_phi_Worst  = 0.0_dbl
 Largest_phi	    = 0.0_dbl
+Over_Sat_Counter    = 0
 
 !----- Stream the scalar
 DO k=1,nzSub
