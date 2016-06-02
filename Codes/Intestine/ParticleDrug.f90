@@ -469,7 +469,7 @@ REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER  ,DIMENSION(2)    :: GNEP_x, GNEP_y, GNEP_z, GNEP_z_Per         ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 INTEGER  ,DIMENSION(2)    :: NEP_x,   NEP_y,  NEP_z                     ! Lattice Nodes Surronding the particle (Local: in current processor)
-REAL(dbl)		  :: tmp, Overlap_sum_l, Overlap_sum
+REAL(dbl)		  :: tmp, Overlap_sum_l, Overlap_sum, OVERLAP_TEST
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
@@ -480,7 +480,7 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
+   IF ((current%pardata%rp .GT. Min_R_Acceptable) .AND. (current%pardata%delNBbyCV .GT. 1.0e-12))  THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
 
 !--Calculate length scale for jth particle:  delta = R / Sh
 !--Calculate effective radius: R_influence_P = R + (N_d *delta)
@@ -534,8 +534,8 @@ DO WHILE (ASSOCIATED(current))
        GVIB_z_Per(2) = GVIB_z(2) - nz
    ENDIF
 
-   Overlap_sum_l = 0.0_dbl
-   Overlap= 0.0
+   Overlap_sum_l = 0
+   Overlap       = 0.0_dbl
 
 !--Finding processors with overlap with effective volume around the particle       
 100 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
@@ -653,6 +653,7 @@ DO WHILE (ASSOCIATED(current))
       NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
 
 !-----Computing particle release contribution to scalar field at each lattice node
+      OVERLAP_TEST = 0.0_dbl 
       DO i= NEP_x(1),NEP_x(2)
          DO j= NEP_y(1),NEP_y(2)
             DO k= NEP_z(1),NEP_z(2)
@@ -664,6 +665,7 @@ DO WHILE (ASSOCIATED(current))
                   END IF
                    
 	          delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
+                  OVERLAP_TEST= OVERLAP_TEST + Overlap(i,j,k)
 !                 tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
 !                 tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
 !                 tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
@@ -671,6 +673,13 @@ DO WHILE (ASSOCIATED(current))
             END DO
          END DO
       END DO
+      
+      IF ( abs(Overlap_test - 1.0) .GT. 0.5) THEN
+         write(*,*) 'A: iter,ID,Rp,Cb/Cs,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, OVERLAP_TEST
+         current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
+         current%pardata%delNBbyCV = 0.0_dbl
+         write(*,*) 'B: iter,ID,Rp,Cb/Cs,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, OVERLAP_TEST
+     END IF
    END IF
 
    IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
