@@ -674,11 +674,11 @@ DO WHILE (ASSOCIATED(current))
          END DO
       END DO
       
-      IF ( abs(Overlap_test - 1.0) .GT. 0.5) THEN
-         write(*,*) 'A: iter,ID,Rp,Cb/Cs,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, OVERLAP_TEST
+      IF ( abs(Overlap_test - 1.0) .GT. 0.5) THEN 			! Detecting the case of overlap = 0.0
+!        write(*,*) 'A: iter,ID,Rp,Cb/Cs,delNbByCv,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, current%pardata%delNBbyCV, OVERLAP_TEST
          current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
          current%pardata%delNBbyCV = 0.0_dbl
-         write(*,*) 'B: iter,ID,Rp,Cb/Cs,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, OVERLAP_TEST
+!        write(*,*) 'B: iter,ID,Rp,Cb/Cs,delNbByCv,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, current%pardata%delNBbyCV, OVERLAP_TEST
      END IF
    END IF
 
