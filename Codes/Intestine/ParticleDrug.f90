@@ -110,6 +110,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
 !------- Interpolation in z-direction
          c   = c0 * (1.0_dbl-zd) + c1 * zd
          Cb_Hybrid= c 
+         current%pardata%bulk_conc = Cb_Hybrid
       END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    END IF 
 
