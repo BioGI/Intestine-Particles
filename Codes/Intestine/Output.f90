@@ -363,7 +363,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
 
    !------ open the proper output file
    OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-   WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
+   WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff","Nbj"'
    current => ParListHead%next					 ! Using linked lists
 
    DO WHILE (ASSOCIATED(current))
@@ -379,13 +379,13 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
                         current%pardata%parid 	  ,',',	&
 			current%pardata%sh 	  ,',',	&
 			current%pardata%rp/xcf 	  ,',',	&
-			current%pardata%bulk_conc ,',', &
+			current%pardata%bulk_conc/Cs_mol  ,',', &
 			current%pardata%delNBbyCV ,',', &
 			current%pardata%Sst 	  ,',',	&
 			current%pardata%S 	  ,',',	&
 			current%pardata%Veff 	  ,',',	&
 			current%pardata%Nbj
-1001 format (I3,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001 format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
      current => next   						! point to next node in the list
   ENDDO
 
