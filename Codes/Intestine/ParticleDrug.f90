@@ -480,7 +480,7 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
 
-   IF ((current%pardata%rp .GT. Min_R_Acceptable) .AND. (current%pardata%delNBbyCV .GT. 1.0e-12))  THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                   !only calculate the drug release when particle radius is larger than 0.1 micron
 
 !--Calculate length scale for jth particle:  delta = R / Sh
 !--Calculate effective radius: R_influence_P = R + (N_d *delta)
