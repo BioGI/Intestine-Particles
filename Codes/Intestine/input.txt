@@ -35,7 +35,7 @@
 1.0             ! coeffPhi
 0.0		! coeffGrad
 0.0		! coeffConst
-66.66666666667	! Number of Periods 								(nPers)
-100 	  	! approximate number of output files						(numOuts)
+600.0000000	! Number of Periods 								(nPers)
+900 	  	! approximate number of output files						(numOuts)
 .FALSE.		! restart flag, .TRUE. or .FALSE						(restart)
 1		! flag to track particles (0 if off and 1 if on)				(ParticleTrack)
