@@ -48,7 +48,7 @@ next => current%next
 IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
 
 !--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(N_b*delta)
-   N_b = 3.0
+   N_b = 2.0
    R_P = current%pardata%rp
    Sh_P= current%pardata%sh
    delta_P= R_P/Sh_P
