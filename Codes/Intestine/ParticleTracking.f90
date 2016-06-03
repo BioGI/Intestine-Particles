@@ -186,6 +186,7 @@ IF (iter.GT.iter0+0_lng) THEN
    CALL Particle_Drug_Release	  		! Updates particle radius, calculates drug release rate delNBbyCV. 
    CALL Particle_Drug_To_Nodes   		! distributes released drug concentration to nodes in effective volume. 
    CALL Particle_History			! Keep trak of a few particles
+   CALL Particle_Transfer 
 ENDIF
 !===================================================================================================
 END SUBROUTINE Particle_Track
