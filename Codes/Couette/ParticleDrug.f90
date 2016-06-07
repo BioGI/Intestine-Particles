@@ -47,7 +47,7 @@ DO WHILE (ASSOCIATED(current))
    next => current%next
 
 !--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(N_b*delta)
-   N_b = 1.0
+   N_b = 2.0
    R_P = current%pardata%rp
    Sh_P= current%pardata%sh
    delta_P= R_P/Sh_P
@@ -109,6 +109,7 @@ DO WHILE (ASSOCIATED(current))
 !------- Interpolation in z-direction
          c   = c0 * (1.0_dbl-zd) + c1 * zd
          Cb_Hybrid= c 
+         current%pardata%bulk_conc = Cb_Hybrid
       END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    END IF 
 
@@ -477,7 +478,7 @@ DO WHILE (ASSOCIATED(current))
 !--Calculate effective radius: R_influence_P = R + (N_d *delta)
 !--Note: need to convert this into Lattice units and not use the physical length units
 !--Then compute equivalent cubic mesh length scale
-   N_d = 1.0
+   N_d = 3.0
    R_P  = current%pardata%rp
    Sh_P = current%pardata%sh
    delta_P = R_P / Sh_P
@@ -525,8 +526,8 @@ DO WHILE (ASSOCIATED(current))
        GVIB_z_Per(2) = GVIB_z(2) - nz
    ENDIF
 
-   Overlap_sum_l = 0.0_dbl
-   Overlap= 0.0
+   Overlap_sum_l = 0
+   Overlap       = 0.0_dbl
 
 !--Finding processors with overlap with effective volume around the particle       
 100 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
