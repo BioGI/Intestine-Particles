@@ -619,8 +619,8 @@ ELSE
    phiAverage = 0.0_dbl
 END IF
 
-!------ node volume in physical units (m^3)
-zcf3 =  zcf*zcf*zcf 
+!------ node volume in physical units (cm3) which is consistent with phi units (mole/cm3) 
+zcf3 =  1000000.0_dbl * zcf*zcf*zcf 
 
 !------ Computing the total drug released from particles      
 IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN
