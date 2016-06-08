@@ -274,8 +274,8 @@ DO k=2,nzSub-1
                IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
                   f(m,i,j,k) = fplus(m,im1,jm1,km1)
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN						! macro- boundary
-                  CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)						! implement the bounceback BCs 
-!                 CALL BounceBack2(m,i,j,k,im1,jm1,km1,fbb)                                             ! implement the bounceback BCs 
+!                 CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)						! implement the bounceback BCs 
+                  CALL BounceBack2(m,i,j,k,im1,jm1,km1,fbb)                                             ! implement the bounceback BCs 
                   f(m,i,j,k) = fbb
                ELSE	IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN	! villi
                ELSE
@@ -427,7 +427,7 @@ INTEGER(lng) :: i,j,k,m						! index variables
 INTEGER(lng) :: ii,jj,kk
 LOGICAL      :: nodebounflag
 INTEGER(dbl) :: num_Fluid
-REAL(dbl)    :: rho_sum, rho_ave	
+REAL(dbl)    :: rho_sum, rho_ave, Correction	
 
 !----- Balaji modified to include 0 to nzSub+1
 DO k=1,nzSub
@@ -501,20 +501,25 @@ DO k=1,nzSub
       END DO
    END DO
 END DO
-
 rho_ave= rho_sum / num_Fluid
 
-write(*,*) iter, 'Density Correction:',denL-rho_ave
+Correction = (denL-rho_ave)
+write(*,*) iter, 'Density Correction:',Correction
 
 DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            rho(i,j,k) = rho(i,j,k) + (denL - rho_ave)
+            rho(i,j,k) = rho(i,j,k) + Correction 
+            DO m=0,NumDistDirs
+               fplus(m,i,j,k) = fplus(m,i,j,k) + Correction /15 
+               f(m,i,j,k)     = f(m,i,j,k)     + Correction /15 
+            END DO
          END IF
       END DO
    END DO
 END DO
+
 !===================================================================================================
 END SUBROUTINE Macro
 !===================================================================================================
