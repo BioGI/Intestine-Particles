@@ -423,11 +423,12 @@ SUBROUTINE Macro	! calculate the macroscopic quantities
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k,m						! index variables
+INTEGER(lng) :: i,j,k,m,mpierr						! index variables
 INTEGER(lng) :: ii,jj,kk
 LOGICAL      :: nodebounflag
-INTEGER(dbl) :: num_Fluid
-REAL(dbl)    :: rho_sum, rho_ave, Correction	
+INTEGER(dbl) :: num_Fluid_l, num_Fluid
+REAL(dbl)    :: rho_sum_l,   rho_sum 
+REAL(dbl)    :: rho_ave, Correction	
 
 !----- Balaji modified to include 0 to nzSub+1
 DO k=1,nzSub
@@ -495,12 +496,16 @@ DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            num_Fluid = num_Fluid + 1
-            rho_sum = rho_sum + rho(i,j,k)
+            num_Fluid_l = num_Fluid_l + 1
+            rho_sum_l = rho_sum_l + rho(i,j,k)
          END IF
       END DO
    END DO
 END DO
+
+CALL MPI_ALLREDUCE(rho_sum_l,   rho_sum,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(num_Fluid_l, num_Fluid, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+
 rho_ave= rho_sum / num_Fluid
 
 Correction = (denL-rho_ave)
