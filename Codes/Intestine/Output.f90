@@ -627,7 +627,6 @@ zcf3 =  1000000.0_dbl * zcf*zcf*zcf
 !------ Computing the total drug released from particles      
 IF (myid .EQ. master) THEN
    IF ((ParticleTrack .EQ. ParticleOn) .AND. (iter .GE. phiStart)) THEN
-      Drug_Released_Total = 0.0_dbl
       current => ParListHead%next
       DO WHILE (ASSOCIATED(current))
          next => current%next
