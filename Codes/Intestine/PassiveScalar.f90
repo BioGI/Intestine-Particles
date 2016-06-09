@@ -51,13 +51,18 @@ SUBROUTINE Scalar				  ! calculates the evolution of scalar in the domain
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k,m,im1,jm1,km1				! index variables
-REAL(dbl) :: phiBC, Largest_phi, Over_Sat_Counter					! scalar contribution from boundary
-REAL(dbl) :: phiOutSurf,phiInSurf				! scalar contribution coming from and going into the boundary
-REAL(dbl) :: tausgs						! contribution form tau_sgs term from particle closure
-REAL(dbl) :: zcf3						! Cell volume
+INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr							! index variables
+REAL(dbl)   :: Negative_phi_Counter,        Negative_phi_Total,       Negative_phi_Worst	! Monitoring negative phi issue
+REAL(dbl)   :: Negative_phi_Counter_Global, Negative_phi_Total_Global,Negative_phi_Worst_Global ! Monitoring negative phi issue
+REAL(dbl)   :: Over_Sat_Counter,        Largest_phi						! OverSaturation issue monitoring
+REAL(dbl)   :: Over_Sat_Counter_Global, Largest_phi_Global					! OverSaturation issue monitoring
+REAL(dbl)   :: phiBC 										! scalar contribution from boundary
+REAL(dbl)   :: phiOutSurf,phiInSurf								! scalar contribution coming from and going into the boundary
+REAL(dbl)   :: tausgs										! contribution form tau_sgs term from particle closure
+REAL(dbl)   :: zcf3										! Cell volume
 
-CALL ScalarDistribution						! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
+
+CALL ScalarDistribution										! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
 !----- store the previous scalar values
 phiTemp 	    = phi
@@ -103,10 +108,8 @@ DO k=1,nzSub
                END IF
             END DO
 
-!---------- node volume in physical units (cm^3) so when printing the drung units are "mole
-            zcf3 = zcf*zcf*zcf
-
 !---------- Monitoring the negative phi
+            zcf3 = zcf*zcf*zcf* 1000000.0_dbl  											! node volume in physical units (cm^3) so drung units are "mole
             IF (phi(i,j,k) .LT. 0.0_dbl) THEN
                Negative_phi_Counter = Negative_phi_Counter +1.0
                Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) * zcf3 
@@ -123,22 +126,35 @@ DO k=1,nzSub
                   Largest_phi= phi(i,j,k)
                END IF
             END IF
+
          END IF
       END DO
    END DO
 END DO
 
-IF (Negative_phi_Counter.LT. 1.0) THEN
-   Negative_phi_Counter = 1.0
-ENDIF 
 
-!----- Monitoring the Negative phi issue
-write(2118,*) iter, Negative_phi_Counter, Negative_phi_Total, Negative_phi_Worst, Negative_phi_Total/Negative_phi_Counter
+!----- Printing out the outputs for Monitoring Negative-phi issue
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(Negative_phi_Counter, Negative_phi_Counter_Global, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Negative_phi_Total,   Negative_phi_Total_Global,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Negative_phi_Worst,   Negative_phi_Worst_Global,   1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
 
+IF (Negative_phi_Counter_Global .LT. 1.0) THEN
+   Negative_phi_Counter_Global = 1.0
+ENDIF
+
+IF (myid .EQ. master) THEN
+   write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global, Negative_phi_Worst_Global, Negative_phi_Total_Global/Negative_phi_Counter_Global
+END IF
 
 !----- Monitoring the Over Saturation problem
-write(2119,*) iter, Over_Sat_Counter, Largest_phi/Cs_mol
-CALL FLUSH(2119)
+CALL MPI_ALLREDUCE(Over_Sat_Counter, Over_Sat_Counter_Global, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Largest_phi,      Largest_phi_Global,      1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, mpierr)
+
+IF (myid .EQ. master) THEN
+   write(2119,*) iter, Over_Sat_Counter, Largest_phi/Cs_mol
+   CALL FLUSH(2119)
+END IF
 
 !----- Add the amount of scalar absorbed through the outer surfaces
 phiAbsorbed = phiAbsorbedS 						
