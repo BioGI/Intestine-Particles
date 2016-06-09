@@ -588,11 +588,13 @@ SUBROUTINE PrintDrugConservation		! prints the total amount of scalar absorbed t
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng) :: i,j,k					! index variables
+INTEGER(lng) :: i,j,k,mpierr				! index variables
 INTEGER(lng) :: numFluids				! number of fluid nodes in the domain
 REAL(dbl)    :: phiDomain, phiIC, Drug_Initial		! current amount of scalar in the domain
 REAL(dbl)    :: phiAverage				! average scalar in the domain
 REAL(dbl)    :: zcf3					! node volume in physical units
+REAL(dbl)    :: phiTotal_Global, phiAbsorbed_Global, phiDomain_Global
+
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -632,11 +634,16 @@ IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN
    ENDDO
 END IF
 
-Drug_Initial=  phiTotal *zcf3
-Drug_Absorbed = phiAbsorbed * zcf3
-Drug_Remained_in_Domain = phiDomain * zcf3
-Drug_Loss = (Drug_Released_Total + Drug_Initial) - (Drug_Absorbed + Drug_Remained_in_Domain)  
-Drug_Loss_Modified = (Drug_Released_Total+ Drug_Initial- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(phiTotal   , phiTotal_Global   ,1,MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(phiAbsorbed, phiAbsorbed_Global,1,MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(phiDomain  , phiDomain_Global  ,1,MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+
+Drug_Initial		= phiTotal_Global    * zcf3
+Drug_Absorbed 		= phiAbsorbed_Global * zcf3
+Drug_Remained_in_Domain = phiDomain_Global   * zcf3
+Drug_Loss 		= (Drug_Released_Total + Drug_Initial) - (Drug_Absorbed + Drug_Remained_in_Domain)  
+Drug_Loss_Modified 	= (Drug_Released_Total+ Drug_Initial- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
 
 IF (Drug_Released_Total .LT. 1e-20) THEN
    Drug_Released_Total =1e-20
