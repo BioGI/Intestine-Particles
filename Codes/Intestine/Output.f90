@@ -78,6 +78,12 @@ IF (myid .EQ. master) THEN
   WRITE(2460,*) 'VARIABLES = "period", "volume"'
   WRITE(2460,*) 'ZONE F=POINT'
   CALL FLUSH(2460)
+
+  !----- Drug Conservation
+  OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
+  WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
+  WRITE(2472,*) '#ZONE F=POINT'
+  CALL FLUSH(2472)
 END IF
 
 !----- Mass
@@ -85,12 +91,6 @@ OPEN(2458,FILE='mass-'//sub//'.dat')
 WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory, mass_actual, mass_err'
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
-
-!----- Drug Conservation
-OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
-WRITE(2472,*) '#ZONE F=POINT'
-CALL FLUSH(2472)
 
 !---- Test Output
 OPEN(9,FILE='testoutput-'//sub//'.dat',POSITION='append')
