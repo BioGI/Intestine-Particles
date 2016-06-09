@@ -8,7 +8,7 @@ REAL*8			:: dmin,dmax,dcen,dg,dd,dgmin,dgmax
 REAL*8			:: sigma,miu,pi
 REAL*8			:: vd,vdmin,vdmax,vtot,deltd,ntot
 REAL*8			:: testnp,testv
-REAL*8			:: vf,V_c, C_tot_Over_Cs, C_s, nu_P, C_tot, Vp_tot
+REAL*8			:: vf,V_c,V_P,C_tot_Over_Cs, C_s, nu_P, C_tot, Vp_tot,Ctot_Over_Cs_test
 INTEGER			:: nptot, ngrp, i,j
 real,    allocatable 	:: vfrac(:),nfrac(:),np(:)
 integer, allocatable 	:: intnp(:)
@@ -19,7 +19,6 @@ C_s		= 3.3e-19              	! mole / (\mu m ^3)
 nu_P		= 268.0e12 		! (\mu m ^3) / mole  		
 C_tot		= C_s * C_tot_Over_Cs   ! mole / (\mu m ^3)
 Vp_tot  	= C_tot * nu_P * V_c    ! (\mu m) ^3
-write(*,*) 'Vp_tot',Vp_tot
 
 ngrp	= 20
 dmin	= 5.0
@@ -59,6 +58,15 @@ do i= 1,ngrp
    write(49,*) dg,  (vfrac(i)/deltd), ((int(nfrac(i)+0.5)*(4.0/3.0*pi*(dg/2.0)**3))/deltd), int(nfrac(i)+0.5) 
 end do
 
+V_P= 0.0
+
+do i= 1,ngrp
+   dg       = dmin + (i-1)*deltd
+   nfrac(i) = vfrac(i) / ( (4.0*pi/3.0)* (dg/2.0)**3)
+   V_P = V_P +  (int(nfrac(i)+0.5)) * (4.0/3.0*pi*(dg/2.0)**3) 
+end do
+
+Ctot_Over_Cs_test = V_P/(V_c * nu_P * C_s)  
 
 !----- Creating the Par_Dist file with particle distribution data ----------------------------------
 open(50,file='Par_Dist.dat')
@@ -76,7 +84,11 @@ do i= 1,ngrp
 end do
 
 write(*,*) '----------------------------------------------------------------------------------------'
-write(*,*) testnp,testv
+write(*,*) 'Desired V_P    :',Vp_tot
+write(*,*) 'Real V_P       :',V_P
+write(*,*) 'Desired Ctot/Cs:', C_tot/C_s
+write(*,*) 'Real Ctot/Cs   :',Ctot_Over_Cs_test
+
 
 !-----OutPut file ----------------------------------------------------------------------------------
 open(51,file='Plot_file_Vexpected.dat')
