@@ -51,7 +51,7 @@ REAL(dbl) :: phiAbsorbed							! total amount of scalar absorbed up to current t
 REAL(dbl) :: phiAbsorbedS							! total amount of scalar absorbed up to current time - through the macroscopic surface
 REAL(dbl) :: phiAbsorbedV							! total amount of scalar absorbed up to current time - through the villi
 INTEGER   :: Negative_phi_Counter                               		! Monitoring the negative concentration
-REAL(dbl) :: Negative_phi_Total							! Total negative scalar which was fixed by setting it to zero
+REAL(dbl) :: Negative_phi_Total, Negative_phi_Total_Global			! Total negative scalar which was fixed by setting it to zero
 REAL(dbl) :: Negative_phi_Worst	 			        		! Worst Negative scalar ine ach time step
 REAL(dbl) :: phiInOut								! total amount of scalar leaving/entering the domain
 REAL(dbl) :: phiTotal								! total intial amount of scalar in the domain

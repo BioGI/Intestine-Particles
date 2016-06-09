@@ -642,8 +642,8 @@ CALL MPI_ALLREDUCE(phiDomain  , phiDomain_Global  ,1,MPI_DOUBLE_PRECISION, MPI_S
 Drug_Initial		= phiTotal_Global    * zcf3
 Drug_Absorbed 		= phiAbsorbed_Global * zcf3
 Drug_Remained_in_Domain = phiDomain_Global   * zcf3
-Drug_Loss 		= (Drug_Released_Total + Drug_Initial) - (Drug_Absorbed + Drug_Remained_in_Domain)  
-Drug_Loss_Modified 	= (Drug_Released_Total+ Drug_Initial- Negative_phi_Total) - (Drug_Absorbed + Drug_Remained_in_Domain)
+Drug_Loss 		= (Drug_Released_Total+ Drug_Initial                            ) - (Drug_Absorbed + Drug_Remained_in_Domain)  
+Drug_Loss_Modified 	= (Drug_Released_Total+ Drug_Initial- Negative_phi_Total_Global) - (Drug_Absorbed + Drug_Remained_in_Domain)
 
 IF (Drug_Released_Total .LT. 1e-20) THEN
    Drug_Released_Total =1e-20
@@ -656,8 +656,10 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
    Drug_Absorbed = 0.0_lng
 ENDIF
 
-WRITE(2472,'(I7, F9.3, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
-CALL FLUSH(2472)
+IF (myid .EQ. master) THEN
+   WRITE(2472,'(I7, F9.3, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+   CALL FLUSH(2472)
+END IF
 !===================================================================================================
 END SUBROUTINE PrintDrugConservation 
 !===================================================================================================
