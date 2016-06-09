@@ -469,7 +469,8 @@ REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER  ,DIMENSION(2)    :: GNEP_x, GNEP_y, GNEP_z, GNEP_z_Per         ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 INTEGER  ,DIMENSION(2)    :: NEP_x,   NEP_y,  NEP_z                     ! Lattice Nodes Surronding the particle (Local: in current processor)
-REAL(dbl)		  :: tmp, Overlap_sum_l, Overlap_sum, OVERLAP_TEST
+REAL(dbl)		  :: tmp, Overlap_sum_l, Overlap_sum
+REAL(dbl)   		  ::  Overlap_test,Overlap_test_Global
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
@@ -593,11 +594,6 @@ DO WHILE (ASSOCIATED(current))
 
 
 
-
-
-
-
-
 !--Computing NB_j and Veff for each particle
 !  Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
 !  Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
@@ -640,20 +636,21 @@ DO WHILE (ASSOCIATED(current))
    ENDIF
 
 !--Finding processor that have overlap with effective volume around the particle
+
+OVERLAP_TEST = 0.0_dbl 
+
 200 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
       (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
       (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
 
-      NEP_x(1) = Max(GNEP_x(1), 1) - (iMin-1)
-      NEP_y(1) = Max(GNEP_y(1), 1) - (jMin-1)
-      NEP_z(1) = Max(GNEP_z(1), 1) - (kMin-1)
-
+      NEP_x(1) = Max(GNEP_x(1), 1)    - (iMin-1)
+      NEP_y(1) = Max(GNEP_y(1), 1)    - (jMin-1)
+      NEP_z(1) = Max(GNEP_z(1), 1)    - (kMin-1)
       NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
       NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
       NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
 
 !-----Computing particle release contribution to scalar field at each lattice node
-      OVERLAP_TEST = 0.0_dbl 
       DO i= NEP_x(1),NEP_x(2)
          DO j= NEP_y(1),NEP_y(2)
             DO k= NEP_z(1),NEP_z(2)
@@ -666,6 +663,7 @@ DO WHILE (ASSOCIATED(current))
                    
 	          delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
                   OVERLAP_TEST= OVERLAP_TEST + Overlap(i,j,k)
+
 !                 tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
 !                 tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
 !                 tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
@@ -673,13 +671,7 @@ DO WHILE (ASSOCIATED(current))
             END DO
          END DO
       END DO
-      
-      IF ( abs(Overlap_test - 1.0) .GT. 0.5) THEN 			! Detecting the case of overlap = 0.0
-!        write(*,*) 'A: iter,ID,Rp,Cb/Cs,delNbByCv,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, current%pardata%delNBbyCV, OVERLAP_TEST
-         current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
-         current%pardata%delNBbyCV = 0.0_dbl
-!        write(*,*) 'B: iter,ID,Rp,Cb/Cs,delNbByCv,Overlap_test', iter, current%pardata%parid, current%pardata%rp, current%pardata%bulk_conc/Cs_mol, current%pardata%delNBbyCV, OVERLAP_TEST
-     END IF
+     
    END IF
 
    IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
@@ -687,9 +679,17 @@ DO WHILE (ASSOCIATED(current))
        GNEP_z(2) = GNEP_z_Per(2)
        GOTO 200
    ENDIF
-   END IF 						! Condition to check if R > R_min_acceptable
 
-   current => next
+   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+   CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+
+   IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
+      current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
+      current%pardata%delNBbyCV = 0.0_dbl
+   END IF
+
+ END IF 						! Condition to check if R > R_min_acceptable
+ current => next
 ENDDO
 !===================================================================================================
 END SUBROUTINE Particle_Drug_To_Nodes  		 
