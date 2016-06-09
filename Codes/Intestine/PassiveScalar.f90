@@ -146,6 +146,7 @@ ENDIF
 
 IF (myid .EQ. master) THEN
    write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global, Negative_phi_Worst_Global, Negative_phi_Total_Global/Negative_phi_Counter_Global
+   CALL FLUSH(2118)
 END IF
 
 

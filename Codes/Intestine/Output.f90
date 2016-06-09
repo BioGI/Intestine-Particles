@@ -625,13 +625,15 @@ END IF
 zcf3 =  1000000.0_dbl * zcf*zcf*zcf 
 
 !------ Computing the total drug released from particles      
-IF (ParticleTrack.EQ.ParticleOn .AND. iter .GE. phiStart) THEN
-   current => ParListHead%next
-   DO WHILE (ASSOCIATED(current))
-      next => current%next
-      Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
-      current => next
-   ENDDO
+IF (myid .EQ. master) THEN
+   IF ((ParticleTrack .EQ. ParticleOn) .AND. (iter .GE. phiStart)) THEN
+      current => ParListHead%next
+      DO WHILE (ASSOCIATED(current))
+         next => current%next
+         Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+         current => next
+      ENDDO
+   END IF
 END IF
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
