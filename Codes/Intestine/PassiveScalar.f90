@@ -52,10 +52,11 @@ SUBROUTINE Scalar				  ! calculates the evolution of scalar in the domain
 IMPLICIT NONE
 
 INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr							! index variables
-REAL(dbl)   :: Negative_phi_Counter,        Negative_phi_Total,       Negative_phi_Worst	! Monitoring negative phi issue
-REAL(dbl)   :: Negative_phi_Counter_Global, Negative_phi_Total_Global,Negative_phi_Worst_Global ! Monitoring negative phi issue
-REAL(dbl)   :: Over_Sat_Counter,        Largest_phi						! OverSaturation issue monitoring
-REAL(dbl)   :: Over_Sat_Counter_Global, Largest_phi_Global					! OverSaturation issue monitoring
+INTEGER(lng):: Over_Sat_Counter,Over_Sat_Counter_Global
+INTEGER(lng):: Negative_phi_Counter, Negative_phi_Counter_Global
+REAL(dbl)   :: Largest_phi, Largest_phi_Global							! OverSaturation issue monitoring
+REAL(dbl)   :: Negative_phi_Total,       Negative_phi_Worst					! Monitoring negative phi issue
+REAL(dbl)   :: Negative_phi_Total_Global,Negative_phi_Worst_Global 				! Monitoring negative phi issue
 REAL(dbl)   :: phiBC 										! scalar contribution from boundary
 REAL(dbl)   :: phiOutSurf,phiInSurf								! scalar contribution coming from and going into the boundary
 REAL(dbl)   :: tausgs										! contribution form tau_sgs term from particle closure
@@ -147,12 +148,13 @@ IF (myid .EQ. master) THEN
    write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global, Negative_phi_Worst_Global, Negative_phi_Total_Global/Negative_phi_Counter_Global
 END IF
 
+
 !----- Monitoring the Over Saturation problem
 CALL MPI_ALLREDUCE(Over_Sat_Counter, Over_Sat_Counter_Global, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
 CALL MPI_ALLREDUCE(Largest_phi,      Largest_phi_Global,      1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, mpierr)
 
 IF (myid .EQ. master) THEN
-   write(2119,*) iter, Over_Sat_Counter, Largest_phi/Cs_mol
+   write(2119,*) iter, Over_Sat_Counter_Global, Largest_phi_Global/Cs_mol
    CALL FLUSH(2119)
 END IF
 
