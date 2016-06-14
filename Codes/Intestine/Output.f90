@@ -30,7 +30,6 @@ numparticleSubfile = 0_lng
 
 ALLOCATE(radius(0:nz+1,0:500))		! 500 is an arbitrarily large number of output iterations...
 radcount = 0_lng			! initialize the output count
-
 !===================================================================================================
 END SUBROUTINE Output_Setup
 !===================================================================================================
@@ -58,20 +57,20 @@ IF (myid .EQ. master) THEN
    WRITE(2119,'(A120)') 'VARIABLES = iter,  Number of OverSaturated Nodes,  Worst Oversaturation'
    CALL FLUSH(2119)
 
-   !----- Status-----
+   !----- Monitoring computational costs
    OPEN(5,FILE='status.dat')										
    CALL FLUSH(5)													
 
   !----- Surface Area-----
-  OPEN(2474,FILE='SA.dat',POSITION='APPEND')
-  WRITE(2474,'(A36)') 'VARIABLES = "period", "SA"'
-  WRITE(2474,*) 'ZONE F=POINT'
-  CALL FLUSH(2474)
+  !OPEN(2474,FILE='SA.dat',POSITION='APPEND')
+  !WRITE(2474,'(A36)') 'VARIABLES = "period", "SA"'
+  !WRITE(2474,*) 'ZONE F=POINT'
+  !CALL FLUSH(2474)
 
   !----- Walll Flux-----
-  OPEN(4748,FILE='wall_flux.dat')
-  WRITE(4748,*) 'VARIABLES = "Axial Distance", "Flux"'
-  CALL FLUSH(4748)
+  !OPEN(4748,FILE='wall_flux.dat')
+  !WRITE(4748,*) 'VARIABLES = "Axial Distance", "Flux"'
+  !CALL FLUSH(4748)
 
   !---- Volume -----
   OPEN(2460,FILE='volume.dat')
@@ -93,8 +92,8 @@ WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
 !---- Test Output
-OPEN(9,FILE='testoutput-'//sub//'.dat',POSITION='append')
-CALL FLUSH(9)
+!OPEN(9,FILE='testoutput-'//sub//'.dat',POSITION='append')
+!CALL FLUSH(9)
 
 !===================================================================================================
 END SUBROUTINE OpenOutputFiles
@@ -364,26 +363,26 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
    !------ open the proper output file
    OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
    WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff","Nbj"'
-   current => ParListHead%next					 ! Using linked lists
+   current => ParListHead%next							 
 
    DO WHILE (ASSOCIATED(current))
       numParticlesSub = numParticlesSub + 1_lng
-      next => current%next 					! copy pointer of next node
-      WRITE(160,1001)   current%pardata%cur_part  ,',', &
-		 	current%pardata%xp 	  ,',',	&
-			current%pardata%yp  	  ,',',	&
-			current%pardata%zp 	  ,',',	&
-                        current%pardata%up*vcf 	  ,',',	&
-		       	current%pardata%vp*vcf 	  ,',',	&
-			current%pardata%wp*vcf 	  ,',',	&
-                        current%pardata%parid 	  ,',',	&
-			current%pardata%sh 	  ,',',	&
-			current%pardata%rp/xcf 	  ,',',	&
-			current%pardata%bulk_conc/Cs_mol  ,',', &
-			current%pardata%delNBbyCV ,',', &
-			current%pardata%Sst 	  ,',',	&
-			current%pardata%S 	  ,',',	&
-			current%pardata%Veff 	  ,',',	&
+      next => current%next 							! copy pointer of next node
+      WRITE(160,1001)   current%pardata%cur_part  	,',', 	&
+		 	current%pardata%xp 	  	,',',	&
+			current%pardata%yp  	  	,',',	&
+			current%pardata%zp 	  	,',',	&
+                        current%pardata%up*vcf 	  	,',',	&
+		       	current%pardata%vp*vcf 	  	,',',	&
+			current%pardata%wp*vcf 	  	,',',	&
+                        current%pardata%parid 	  	,',',	&
+			current%pardata%sh 	  	,',',	&
+			current%pardata%rp/xcf 	  	,',',	&
+			current%pardata%bulk_conc/Cs_mol,',', 	&
+			current%pardata%delNBbyCV 	,',', 	&
+			current%pardata%Sst 	  	,',',	&
+			current%pardata%S 	  	,',',	&
+			current%pardata%Veff 	  	,',',	&
 			current%pardata%Nbj
 1001 format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
      current => next   						! point to next node in the list
