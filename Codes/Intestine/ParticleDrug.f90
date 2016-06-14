@@ -286,7 +286,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
 ENDIF  
 
 !open(172,file='Cb-'//sub//'.dat', position='append')
-!current => next
+current => next
 
 END DO
 !===================================================================================================
