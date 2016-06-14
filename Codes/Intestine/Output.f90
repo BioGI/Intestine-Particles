@@ -115,12 +115,12 @@ IF(myid .EQ. master) THEN
   CLOSE(2118) 			! Monitoring negative phi
   CLOSE(2119)                   ! Monitorin Over Saturation
   CLOSE(5)			! Status								
-  CLOSE(2474)			! Surface Area
+! CLOSE(2474)			! Surface Area
   CLOSE(2460)			! Volume
 END IF
 CLOSE(2458)			! Mass
 CLOSE(2472)			! Scalar
-CLOSE(9) 			! Test Output
+!CLOSE(9) 			! Test Output
 !===================================================================================================
 END SUBROUTINE CloseOutputFiles
 !===================================================================================================
@@ -133,7 +133,7 @@ END SUBROUTINE CloseOutputFiles
 
 
 !===================================================================================================
-SUBROUTINE PrintStatus	! Writes the current Status to a File
+SUBROUTINE PrintStatus					! Writes Computational Costs to a File
 !===================================================================================================
 IMPLICIT NONE
 
@@ -1753,9 +1753,9 @@ IF(myid .EQ. master) THEN
   WRITE(2473,'(A100)') 'VARIABLES = "period", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage"'
   WRITE(2473,*) 'ZONE F=POINT'
 
-  OPEN(2474,FILE='SA.dat')
-  READ(2474,*)																																	! first line is variable info
-  READ(2474,*)																																	! second line is zone info
+!  OPEN(2474,FILE='SA.dat')
+!  READ(2474,*)					! first line is variable info
+!  READ(2474,*)					! second line is zone info
 
   DO nn=1,numLines
 
@@ -1787,12 +1787,12 @@ IF(myid .EQ. master) THEN
     phiAbsTotalV(i) = phi7    											! store phiAbsorbed for calculation of absorption rate (villi)
     phiAverage(i) = phi5/NumSubsTotal										! store phiAverage for calculation of USL 												 		
 
-    READ(2474,*) SAtime, SA(i)											! read in surface area from file for calculation of scalar flux/USL
+!    READ(2474,*) SAtime, SA(i)											! read in surface area from file for calculation of scalar flux/USL
 
   END DO
 
   CLOSE(2473)													! close output file (combined)
-  CLOSE(2474)													! close the surface area file
+! CLOSE(2474)													! close the surface area file
 
   ! End timer and print the amount of time it took for the combining
   CALL SYSTEM_CLOCK(combine2,rate)										! End the Timer

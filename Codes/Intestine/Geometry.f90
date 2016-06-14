@@ -275,9 +275,9 @@ END DO
 !----- Fill out the local radius array
 r(0:nzSub+1) = rDom(kMin-1:kMax+1)
 
-IF (myid .EQ. master) THEN
-   CALL SurfaceArea				!----- calculate the surface area
-END IF
+!IF (myid .EQ. master) THEN
+!   CALL SurfaceArea				!----- calculate the surface area
+!END IF
 
 !==================================================================================================
 END SUBROUTINE BoundaryPosition
@@ -332,10 +332,10 @@ SA = SA + numVilliActual*(2.0_dbl*PI*Rv*(Lv-Rv))			! add the surface area from t
 SA = SA + numVilliActual*(2.0_dbl*PI*Rv*Rv)				! add the surface area from the villous tips
 
 !----- open and write to a file
-IF (iter .GT. 0) THEN
-   WRITE(2474,'(2E25.15)') REAL(iter/(nt/nPers)), SA			! write surface area to file
-   CALL FLUSH(2474)
-END IF
+!IF (iter .GT. 0) THEN
+!   WRITE(2474,'(2E25.15)') REAL(iter/(nt/nPers)), SA			! write surface area to file
+!   CALL FLUSH(2474)
+!END IF
 
 !==================================================================================================
 END SUBROUTINE SurfaceArea
