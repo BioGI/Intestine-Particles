@@ -202,7 +202,7 @@ SUBROUTINE Particle_Transfer
 IMPLICIT NONE
 
 INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
-INTEGER(dbl)             :: RANK
+INTEGER(lng)             :: RANK
 INTEGER(lng)             :: mpierr
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
