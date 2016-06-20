@@ -597,8 +597,6 @@ REAL(dbl)    :: phiTotal_Global, phiAbsorbed_Global, phiDomain_Global
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-CALL ScalarInOut    	 				! Calculate the amount of scalar that entered/left through the inlet/outlet
-
 !----- Calculate the amount of scalar in the domain
 numFluids = 0_lng
 phiDomain = 0.0_dbl
