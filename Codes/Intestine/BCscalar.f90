@@ -158,17 +158,31 @@ REAL(dbl)    :: phiAbsorbedSleft,phiAbsorbedSright
 REAL(dbl)    :: phiINleft, phiINright, phiOUTright,phiOUTleft
 REAL(dbl)    :: feq_AO_u0
 REAL(dbl)    :: rhoAstar,phiAstar, PkAstar,feq_Astar,feq_Bstar
-REAL(dbl)    :: rhoA, PkA, feq_A
+REAL(dbl)    :: rhoA, phiA, feq_A, PkA
 REAL(dbl)    :: fPlusBstar, rhoBstar, phiBstar, PkBstar
 REAL(dbl)    :: ub,vb,wb, ubb,vbb,wbb
+REAL(dbl)    :: cosTheta, sinTheta                              ! COS(theta), SIN(theta)
 REAL(dbl)    :: q
-REAL(dbl)    :: xt,yt,zt,rt			             	! boundary coordinate
+REAL(dbl)    :: xt,yt,zt,rt,vt			             	! boundary coordinate
 
-CALL  qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
+CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
-ubb= 0.0_dbl
-vbb= 0.0_dbl
-wbb= 0.0_dbl
+cosTheta= xt/rt
+sinTheta= yt/rt
+
+IF (k.NE.km1) THEN
+   vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
+ELSE
+   vt = (vel(k)+vel(km1))*0.5_dbl
+ENDIF
+
+ub = vt* cosTheta                                               ! x-component of the velocity at i,j,k
+vb = vt* sinTheta                                               ! y-component of the velocity at i,j,k
+wb = 0.0_dbl                                                    ! no z-component in this case)
+
+ubb= u(i,j,k)- ub
+vbb= v(i,j,k)- vb
+wbb= w(i,j,k)- wb
 
 !---------------------------------------------------------------------------------------------------
 !----- Computing phiOUT ----------------------------------------------------------------------------
@@ -191,7 +205,7 @@ END IF
 
 !----- Computing values at A* & scalar streamed from A* (Chpter 3 paper)
 rhoAstar= (rho(i,j,k)- rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)	! extrapolate the density
-CALL Equilibrium_LOCAL(m,rhoAstar,ubb,vbb,wbb,feq_Astar)		! calculate the equibrium distribution function in the mth direction
+CALL Equilibrium_LOCAL(m,rhoAstar,0.0_dbl,0.0_dbl,0.0_dbl,feq_Astar)	! equibrium distribution function in mth direction, velocity relative to the boundary is zero
 phiAstar= phiWall							! getting phi at the solid surface
 PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wall in mth direction (0 if phiWall=0)
 
@@ -206,11 +220,13 @@ PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! contribution from the wa
 
 !---- Modification for moving boundary in case of using only A and A* for BC
 rhoA= rho(i,j,k)
-CALL Equilibrium_LOCAL(m,rhoA,ubb,vbb,wbb,feq_A) 
-PkA= (feq_A/rhoA - wt(m)*Delta)*phiTemp(i,j,k) 
+phiA= phiTemp(i,j,k)
+CALL Equilibrium_LOCAL(m,rhoA,ubb,vbb,wbb,feq_A) 			! Velocity relative to boundary is used
+PkA= (feq_A/rhoA - wt(m)*Delta)* phiA 
 IF(q .LT. 0.25) THEN
   q = 0.25_dbl
 END IF 
+
 phiIN   = ((PkAstar - PkA)/q) + PkAstar
 
 !--- No Modifications in book-keeping for moving boundaries
