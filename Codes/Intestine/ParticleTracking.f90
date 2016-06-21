@@ -130,6 +130,7 @@ IMPLICIT NONE
 
 INTEGER(lng)             :: mpierr
 INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz1
+INTEGER(lng)		 :: xaxis,yaxis,xpp,ypp
 REAL(dbl)       	 :: Min_R_Acceptable
 REAL(dbl)		 :: xp,yp,zp,zd
 REAL(dbl)		 :: R_Particle, R_Boundary
@@ -178,14 +179,12 @@ IF (iter.GT.iter0+0_lng) THEN
             R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
             R_Particle    = SQRT( (xp*xcf)**2 + (yp*ycf)**2)
             IF (R_Particle .GT. R_Boundary) THEN  						! Check if particle is outside analytical boundary
-               OPEN(1000,FILE="error.txt")
-               write(1000,*) 'Particle location is outside the analytical boundary' 
-               write(1000,*) 'first part of 2nd order tracking'
-               write(1000,*) 'Iteration:        ', iter
-               write(1000,*) 'Particle ID:      ', current%pardata%parid
-               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
-               write(1000,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-               CLOSE(1000)
+               write(*,*) 'Particle location is outside the analytical boundary' 
+               write(*,*) 'first part of 2nd order tracking'
+               write(*,*) 'Iteration:        ', iter
+               write(*,*) 'Particle ID:      ', current%pardata%parid
+               write(*,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+               write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
             END IF
             IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &		! Check if all nodes around particle are solid
                (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
@@ -198,6 +197,7 @@ IF (iter.GT.iter0+0_lng) THEN
                write(1000,*) 'Particle ID:      ', current%pardata%parid
                write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
                CLOSE(1000)
+               STOP
             END IF !--------------------------------------------------------------------------------------   
 
          END IF
@@ -233,16 +233,21 @@ IF (iter.GT.iter0+0_lng) THEN
                zd= 0.0_dbl
             END IF
             R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
+
+            xaxis= ANINT(0.5_dbl*(nx+1))
+            yaxis= ANINT(0.5_dbl*(ny+1))
+            xpp = ((xp-1_lng)+ (iMin-1_lng)- (xaxis-1_lng)) * xcf
+            ypp = ((yp-1_lng)+ (jMin-1_lng)- (yaxis-1_lng)) * ycf
+
+
             R_Particle    = SQRT( (xp*xcf)**2 + (yp*ycf)**2)
             IF (R_Particle .GT. R_Boundary) THEN                                                ! Check if particle is outside analytical boundary
-               OPEN(1000,FILE="error.txt")
-               write(1000,*) 'Particle location is outside the analytical boundary'
-               write(1000,*) 'first part of 2nd order tracking'
-               write(1000,*) 'Iteration:        ', iter
-               write(1000,*) 'Particle ID:      ', current%pardata%parid
-               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
-               write(1000,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-               CLOSE(1000)
+               write(*,*) 'Particle location is outside the analytical boundary'
+               write(*,*) 'first part of 2nd order tracking'
+               write(*,*) 'Iteration:        ', iter
+               write(*,*) 'Particle ID:      ', current%pardata%parid
+               write(*,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+               write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
             END IF
             IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &             ! Check if all nodes around particle are solid
                (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
@@ -255,6 +260,7 @@ IF (iter.GT.iter0+0_lng) THEN
                write(1000,*) 'Particle ID:      ', current%pardata%parid
                write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
                CLOSE(1000)
+               STOP
             END IF !-------------------------------------------------------------------------------------- 
 
          END IF
