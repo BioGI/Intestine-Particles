@@ -52,6 +52,7 @@ DO WHILE (ASSOCIATED(current))
          iy1= CEILING(yp)
          iz0= FLOOR(zp)
          iz1= CEILING(zp)
+
 !!!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
          IF (ix1 .NE. ix0) THEN 
@@ -127,8 +128,11 @@ SUBROUTINE Particle_Track   					!Second order interpolation in time
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(dbl)             :: mpierr
+INTEGER(lng)             :: mpierr
+INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz1
 REAL(dbl)       	 :: Min_R_Acceptable
+REAL(dbl)		 :: xp,yp,zp,zd
+REAL(dbl)		 :: R_Particle, R_Boundary
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -155,6 +159,47 @@ IF (iter.GT.iter0+0_lng) THEN
             current%pardata%xp=current%pardata%xpold+current%pardata%up
             current%pardata%yp=current%pardata%ypold+current%pardata%vp
             current%pardata%zp=current%pardata%zpold+current%pardata%wp
+
+            !----- Error message if Particle leaves the fluid domain---------------------------------------
+            xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+            yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+            zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+            ix0= FLOOR(xp)
+            ix1= CEILING(xp)
+            iy0= FLOOR(yp)
+            iy1= CEILING(yp)
+            iz0= FLOOR(zp)
+            iz1= CEILING(zp)
+            IF (iz1 .NE. iz0) THEN 
+               zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+            ELSE 
+               zd= 0.0_dbl
+            END IF
+            R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
+            R_Particle    = SQRT( (xp*xcf)**2 + (yp*ycf)**2)
+            IF (R_Particle .GT. R_Boundary) THEN  						! Check if particle is outside analytical boundary
+               OPEN(1000,FILE="error.txt")
+               write(1000,*) 'Particle location is outside the analytical boundary' 
+               write(1000,*) 'first part of 2nd order tracking'
+               write(1000,*) 'Iteration:        ', iter
+               write(1000,*) 'Particle ID:      ', current%pardata%parid
+               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+               write(1000,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+               CLOSE(1000)
+            END IF
+            IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &		! Check if all nodes around particle are solid
+               (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
+               (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
+               (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
+               OPEN(1000,FILE="error.txt")
+               write(1000,*) 'All nodes around particle are solid' 
+               write(1000,*) 'first part of 2nd order tracking'
+               write(1000,*) 'Iteration:        ', iter
+               write(1000,*) 'Particle ID:      ', current%pardata%parid
+               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+               CLOSE(1000)
+            END IF !--------------------------------------------------------------------------------------   
+
          END IF
       END IF
       current => next
@@ -171,6 +216,47 @@ IF (iter.GT.iter0+0_lng) THEN
             current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
             current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
             current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+
+            !----- Error message if Particle leaves the fluid domain---------------------------------------
+            xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+            yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+            zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+            ix0= FLOOR(xp)
+            ix1= CEILING(xp)
+            iy0= FLOOR(yp)
+            iy1= CEILING(yp)
+            iz0= FLOOR(zp)
+            iz1= CEILING(zp)
+            IF (iz1 .NE. iz0) THEN
+               zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+            ELSE
+               zd= 0.0_dbl
+            END IF
+            R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
+            R_Particle    = SQRT( (xp*xcf)**2 + (yp*ycf)**2)
+            IF (R_Particle .GT. R_Boundary) THEN                                                ! Check if particle is outside analytical boundary
+               OPEN(1000,FILE="error.txt")
+               write(1000,*) 'Particle location is outside the analytical boundary'
+               write(1000,*) 'first part of 2nd order tracking'
+               write(1000,*) 'Iteration:        ', iter
+               write(1000,*) 'Particle ID:      ', current%pardata%parid
+               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+               write(1000,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+               CLOSE(1000)
+            END IF
+            IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &             ! Check if all nodes around particle are solid
+               (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
+               (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
+               (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
+               OPEN(1000,FILE="error.txt")
+               write(1000,*) 'All nodes around particle are solid'
+               write(1000,*) 'first part of 2nd order tracking'
+               write(1000,*) 'Iteration:        ', iter
+               write(1000,*) 'Particle ID:      ', current%pardata%parid
+               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+               CLOSE(1000)
+            END IF !-------------------------------------------------------------------------------------- 
+
          END IF
       END IF
       current => next
