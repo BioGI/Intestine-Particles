@@ -177,7 +177,11 @@ IF (iter.GT.iter0+0_lng) THEN
                zd= 0.0_dbl
             END IF
             R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
-            R_Particle    = SQRT( (xp*xcf)**2 + (yp*ycf)**2)
+            xaxis= ANINT(0.5_dbl*(nx+1))
+            yaxis= ANINT(0.5_dbl*(ny+1))
+            xpp = ((xp-1_lng)+ (iMin-1_lng)- (xaxis-1_lng)) * xcf
+            ypp = ((yp-1_lng)+ (jMin-1_lng)- (yaxis-1_lng)) * ycf
+            R_Particle    = SQRT(xpp**2 + ypp**2)
             IF (R_Particle .GT. R_Boundary) THEN  						! Check if particle is outside analytical boundary
                write(*,*) 'Particle location is outside the analytical boundary' 
                write(*,*) 'first part of 2nd order tracking'
@@ -238,9 +242,8 @@ IF (iter.GT.iter0+0_lng) THEN
             yaxis= ANINT(0.5_dbl*(ny+1))
             xpp = ((xp-1_lng)+ (iMin-1_lng)- (xaxis-1_lng)) * xcf
             ypp = ((yp-1_lng)+ (jMin-1_lng)- (yaxis-1_lng)) * ycf
+            R_Particle    = SQRT(xpp**2 + ypp**2)
 
-
-            R_Particle    = SQRT( (xp*xcf)**2 + (yp*ycf)**2)
             IF (R_Particle .GT. R_Boundary) THEN                                                ! Check if particle is outside analytical boundary
                write(*,*) 'Particle location is outside the analytical boundary'
                write(*,*) 'first part of 2nd order tracking'
