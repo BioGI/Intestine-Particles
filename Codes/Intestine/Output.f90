@@ -83,6 +83,11 @@ IF (myid .EQ. master) THEN
   WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
   WRITE(2472,*) '#ZONE F=POINT'
   CALL FLUSH(2472)
+
+  !----- Diensity Correction to improve mass conservation
+  OPEN(2473,FILE='Density_Correction.dat')
+  WRITE(2473,*) 'VARIABLES: iter, Density Correction'
+  CALL FLUSH(2473)
 END IF
 
 !----- Mass
@@ -120,6 +125,7 @@ IF(myid .EQ. master) THEN
 END IF
 CLOSE(2458)			! Mass
 CLOSE(2472)			! Scalar
+CLOSE(2473)                     ! Density Corrections
 !CLOSE(9) 			! Test Output
 !===================================================================================================
 END SUBROUTINE CloseOutputFiles

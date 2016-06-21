@@ -509,7 +509,10 @@ CALL MPI_ALLREDUCE(num_Fluid_l, num_Fluid, 1, MPI_INTEGER,          MPI_SUM, MPI
 rho_ave= rho_sum / num_Fluid
 
 Correction = (denL-rho_ave)
-write(*,*) iter, 'Density Correction:',Correction
+
+IF (myid .EQ. master) THEN 		! Prints out the density corrections to Density_Correction.dat
+   write(2473,*) iter, Correction
+END IF
 
 DO k=1,nzSub
    DO j=1,nySub
