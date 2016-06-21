@@ -130,7 +130,8 @@ IMPLICIT NONE
 
 INTEGER(lng)             :: mpierr
 INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz1
-INTEGER(lng)		 :: xaxis,yaxis,xpp,ypp
+INTEGER(lng)		 :: xaxis,yaxis
+REAL(dbl) 		 :: xpp,ypp
 REAL(dbl)       	 :: Min_R_Acceptable
 REAL(dbl)		 :: xp,yp,zp,zd
 REAL(dbl)		 :: R_Particle, R_Boundary
