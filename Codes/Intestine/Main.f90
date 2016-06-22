@@ -63,11 +63,13 @@ DO iter = iter0-0_lng,nt
    CALL AdvanceGeometry							! advance the geometry to the next time step [MODULE: Geometry]
    CALL Collision							! collision step [MODULE: Algorithm]
    CALL MPI_Transfer							! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
+
    IF (domaintype .EQ. 0) THEN  					! only needed when planes of symmetry exist
       CALL SymmetryBC							! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
    ENDIF
    CALL Stream								! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
    CALL Macro								! calcuate the macroscopic quantities [MODULE: Algorithm]
+   CALL MPI_Transfer                                                    ! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
 
    IF ((ParticleTrack.EQ.ParticleOn) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
       CALL Particle_Track
