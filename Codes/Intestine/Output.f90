@@ -245,7 +245,7 @@ INTEGER(lng) :: i,j,k,m			! index variables
 
 !----- Write restart file (restart.XX) and corresponding starting iteration file (iter0.dat)
 
-OPEN(500,FILE='restart.'//sub)
+OPEN(500,FILE='restart.'//sub)						! Creating a file called restart.sub with all fields in it
 DO k=0,nzSub+1
    DO j=0,nySub+1
       DO i=0,nxSub+1
@@ -267,19 +267,48 @@ WRITE(500,*) phiAbsorbedV
 WRITE(500,*) phiInOut
 CLOSE(500)
 
-IF (myid .EQ. master) THEN
+IF (myid .EQ. master) THEN						! Creating a file called iter0.dat with iteration number in it
    OPEN(550,FILE='iter0.dat')
    WRITE(550,*) iter
    CLOSE(550)
 END IF
 
 IF (myid .eq. master) THEN
-   OPEN(156,FILE='particle_restart.csv')
+   OPEN(156,FILE='particle_restart.csv')				! Creating a file called particle_restart.csv with all the particle data in it
    write(156,*) np
    current => ParListHead%next							 
    DO WHILE (ASSOCIATED(current))
-      next => current%next 						
-      WRITE(156,*) current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp ,current%pardata%rp 
+      next => current%next 	
+      WRITE(156,*)   	current%pardata%parid,	        &
+		     	current%pardata%xp, 	  	&
+			current%pardata%yp,  	  	&
+			current%pardata%zp, 	  	&
+                        current%pardata%up, 	  	&
+		       	current%pardata%vp, 	  	&
+			current%pardata%wp, 	  	&
+			current%pardata%sh, 	  	&
+			current%pardata%rp, 	  	&
+                        current%pardata%xpold,          &
+                        current%pardata%ypold,          &
+                        current%pardata%zpold,          &
+                        current%pardata%upold,          &
+                        current%pardata%vpold,          &
+                        current%pardata%wpold,          &
+                        current%pardata%rpold,          &
+                        current%pardata%par_conc,       &
+                        current%pardata%gamma_cont,	&
+                        current%pardata%sh,	        &
+                        current%pardata%S,    		&
+                        current%pardata%Sst,   		&
+                        current%pardata%Veff,           &
+			current%pardata%Nbj,		&		
+			current%pardata%bulk_conc,	&
+			current%pardata%delNBbyCV, 	&
+		 	current%pardata%cur_part,	&
+		 	current%pardata%new_part  		
+
+1001 format (I5,24F18.10,2I5)
+
      current => next  
   ENDDO
   CLOSE(160)
@@ -1021,7 +1050,7 @@ ELSE
        WRITE(685,*) '"x","y","z","u","v","w","ParID","Sh","rp","bulk_conc","delNBbyCV","Sst","S","Veff","Nbj"'
 
        DO nnn=1,numLineEnd
-          WRITE(685,1001) ParticleData(nnn,1)  		,',', &
+          WRITE(685,1002) ParticleData(nnn,1)  		,',', &
 		 	  ParticleData(nnn,2)		,',', &
 			  ParticleData(nnn,3) 		,',', &
 			  ParticleData(nnn,4)		,',', &
@@ -1037,7 +1066,7 @@ ELSE
 			  ParticleData(nnn,14)		,',', &
 			  ParticleData(nnn,15)
 
-1001 format (a3, F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1002 format (a3, F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F12.5,a2,F15.5,a2,1I5,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
 	
 	END DO
 	CLOSE(685)						! close current output file (combined)
