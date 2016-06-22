@@ -235,17 +235,16 @@ END SUBROUTINE PrintPeriodicRestart
 
 
 !===================================================================================================
-SUBROUTINE PrintFinalRestart		! prints restart file periodically to guard against a crash
+SUBROUTINE PrintFinalRestart			! prints restart files at teh end of the simulation
 !===================================================================================================
 IMPLICIT NONE
 
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
-INTEGER(lng) :: i,j,k,m			! index variables
+INTEGER(lng) :: i,j,k,m			
 
-!----- Write restart file (restart.XX) and corresponding starting iteration file (iter0.dat)
-
-OPEN(500,FILE='restart.'//sub)						! Creating a file called restart.sub with all fields in it
+!----- Creating a file called restart.sub with all fields in it ------------------------------------
+OPEN(500,FILE='restart.'//sub)			
 DO k=0,nzSub+1
    DO j=0,nySub+1
       DO i=0,nxSub+1
@@ -267,14 +266,19 @@ WRITE(500,*) phiAbsorbedV
 WRITE(500,*) phiInOut
 CLOSE(500)
 
-IF (myid .EQ. master) THEN						! Creating a file called iter0.dat with iteration number in it
+
+
+!----- Creating a file called iter0.dat with iteration number in it --------------------------------
+IF (myid .EQ. master) THEN	
    OPEN(550,FILE='iter0.dat')
    WRITE(550,*) iter
    CLOSE(550)
 END IF
 
+
+!----- Creating a file called particle_restart.dat with all the particle data in it ----------------
 IF (myid .eq. master) THEN
-   OPEN(156,FILE='particle_restart.csv')				! Creating a file called particle_restart.csv with all the particle data in it
+   OPEN(156,FILE='particle_restart.dat')	
    write(156,*) np
    current => ParListHead%next							 
    DO WHILE (ASSOCIATED(current))
@@ -306,13 +310,13 @@ IF (myid .eq. master) THEN
 			current%pardata%delNBbyCV, 	&
 		 	current%pardata%cur_part,	&
 		 	current%pardata%new_part  		
-
 1001 format (I5,24F18.10,2I5)
-
      current => next  
   ENDDO
   CLOSE(160)
 END IF
+
+
 !===================================================================================================
 END SUBROUTINE PrintFinalRestart
 !===================================================================================================
