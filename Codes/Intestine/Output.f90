@@ -239,11 +239,13 @@ SUBROUTINE PrintFinalRestart		! prints restart file periodically to guard agains
 !===================================================================================================
 IMPLICIT NONE
 
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
 INTEGER(lng) :: i,j,k,m			! index variables
 
 !----- Write restart file (restart.XX) and corresponding starting iteration file (iter0.dat)
-OPEN(500,FILE='restart.'//sub)
 
+OPEN(500,FILE='restart.'//sub)
 DO k=0,nzSub+1
    DO j=0,nySub+1
       DO i=0,nxSub+1
@@ -259,18 +261,28 @@ DO k=0,nzSub+1
       END DO
    END DO
 END DO
-
 WRITE(500,*) phiAbsorbed
 WRITE(500,*) phiAbsorbedS
 WRITE(500,*) phiAbsorbedV
 WRITE(500,*) phiInOut
-
 CLOSE(500)
 
 IF (myid .EQ. master) THEN
    OPEN(550,FILE='iter0.dat')
    WRITE(550,*) iter
    CLOSE(550)
+END IF
+
+IF (myid .eq. master) THEN
+   OPEN(156,FILE='particle_restart.csv')
+   write(156,*) np
+   current => ParListHead%next							 
+   DO WHILE (ASSOCIATED(current))
+      next => current%next 						
+      WRITE(156,*) current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp ,current%pardata%rp 
+     current => next  
+  ENDDO
+  CLOSE(160)
 END IF
 !===================================================================================================
 END SUBROUTINE PrintFinalRestart

@@ -92,7 +92,7 @@ DO iter = iter0-0_lng,nt
 END DO
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End Simulation Loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!CALL PrintFinalRestart							! print a final set of restart files to continue if desired [MODULE: Output]
+CALL PrintFinalRestart							! print a final set of restart files to continue if desired [MODULE: Output]
 CALL DEAllocateArrays							! clean up the memory [MODULE: Setup]
 CALL CloseOutputFiles							! closes output files [MODULE: Output.f90]
 !CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
