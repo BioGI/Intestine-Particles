@@ -66,7 +66,7 @@ REAL(dbl)   :: zcf3										! Cell volume
 CALL ScalarDistribution										! sets/maintains initial distributions of scalar [MODULE: ICBC.f90]
 
 !----- store the previous scalar values
-phiTemp 	    = phi
+phiTemp 	    = phi + delphi_particle
 Negative_phi_Counter= 0
 Negative_phi_Worst  = 0.0_dbl
 Largest_phi	    = 0.0_dbl
@@ -77,12 +77,8 @@ DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            phi(i,j,k) = Delta*phiTemp(i,j,k)  
-	    phi(i,j,k) = phi(i,j,k)+ delphi_particle(i,j,k) 	! Effects of drug release
-!           tausgs = ((tausgs_particle_x(i+1,j,k)-tausgs_particle_x(i-1,j,k)) + &
-!	              (tausgs_particle_y(i,j+1,k)-tausgs_particle_y(i,j-1,k)) + &
-!	     	      (tausgs_particle_z(i,j,k+1)-tausgs_particle_z(i,j,k-1)))*0.5_dbl
-!	    phi(i,j,k) = phi(i,j,k)+ tausgs 			.
+            phi(i,j,k) = Delta * phiTemp(i,j,k)  
+
             DO m=0,NumDistDirs
                !-----  neighboring node --------------------------------------------------------------
                im1= i- ex(m)
