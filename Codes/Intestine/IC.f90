@@ -231,7 +231,7 @@ END SUBROUTINE IniParticles
 
 
 !--------------------------------------------------------------------------------------------------
-SUBROUTINE ScalarDistribution		! Sets/Maintains initial distributions of scalar
+SUBROUTINE IC_Drug_Distribution		! Sets/Maintains initial distributions of scalar
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
@@ -280,18 +280,6 @@ IF(iter .EQ. phiStart) THEN
   END SELECT
 
 
-  !----- Calculate the intial amount of scalar
-  phiTotal = 0.0_dbl
-  DO k=1,nzSub
-     DO j=1,nySub
-        DO i=1,nxSub
-           IF (node(i,j,k) .EQ. FLUID) THEN
-              phiTotal = phiTotal + phi(i,j,k)
-           END IF
-        END DO
-     END DO
-  END DO
-
 ELSE  								  ! MAINTAINENCE OF SCALAR
 
   SELECT CASE(sclrIC) 
@@ -338,7 +326,7 @@ ELSE  								  ! MAINTAINENCE OF SCALAR
 
 END IF	
 !------------------------------------------------
-END SUBROUTINE ScalarDistribution
+END SUBROUTINE IC_Drug_Distribution
 !------------------------------------------------
 
 
