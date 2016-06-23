@@ -35,10 +35,10 @@ IF (restart) THEN					! restart from  file
       END DO
   END DO
 
-  READ(50,*) phiAbsorbed
-  READ(50,*) phiAbsorbedS
-  READ(50,*) phiAbsorbedV
-  READ(50,*) phiInOut
+  READ(50,*) Drug_Initial
+  READ(50,*) Drug_Released_Total
+  READ(50,*) Drug_Absorbed
+  READ(50,*) Drug_Remained_in_Domain
  
   CLOSE(50)
 

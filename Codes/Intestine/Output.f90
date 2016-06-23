@@ -248,22 +248,22 @@ OPEN(500,FILE='restart.'//sub)
 DO k=0,nzSub+1
    DO j=0,nySub+1
       DO i=0,nxSub+1
-         WRITE(500,*) node(i,j,k)
-         WRITE(500,*) u(i,j,k)
-         WRITE(500,*) v(i,j,k)
-         WRITE(500,*) w(i,j,k)
-         WRITE(500,*) rho(i,j,k)
-         WRITE(500,*) phi(i,j,k)
+         WRITE(500,'(I1)') node(i,j,k)
+         WRITE(500,'(F8.6)') u(i,j,k)
+         WRITE(500,'(F8.6)') v(i,j,k)
+         WRITE(500,'(F8.6)') w(i,j,k)
+         WRITE(500,'(F8.6)') rho(i,j,k)
+         WRITE(500,'(F8.6)') phi(i,j,k)
          DO m=0,NumDistDirs
-            WRITE(500,*) f(m,i,j,k)
+            WRITE(500,'(F10.8)') f(m,i,j,k)
          END DO
       END DO
    END DO
 END DO
-WRITE(500,*) phiAbsorbed
-WRITE(500,*) phiAbsorbedS
-WRITE(500,*) phiAbsorbedV
-WRITE(500,*) phiInOut
+WRITE(500,*) Drug_Initial
+WRITE(500,*) Drug_Released_Total
+WRITE(500,*) Drug_Absorbed
+WRITE(500,*) Drug_Remained_in_Domain
 CLOSE(500)
 
 
