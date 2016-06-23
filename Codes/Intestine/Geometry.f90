@@ -42,8 +42,18 @@ dcf 	= den/denL					! density conversion factor
 vcf 	= xcf/tcf					! velocity conversion factor
 pcf 	= cs*cs*vcf*vcf					! pressure conversion factor
 
+
 !----- Determine the number of time steps to run
-nt = ANINT((nPers*Tmix)/tcf)
+IF (restart) THEN
+   OPEN(55,FILE='iter0.dat')				! open initial iteration file
+   READ(55,*) iter0					! read and set initial iteration
+   CLOSE(55)
+   iter = iter0-1_lng					! set the in
+   nt = ANINT((nPers*Tmix)/tcf) + iter
+ELSE
+   nt = ANINT((nPers*Tmix)/tcf)
+END IF
+
 
 !----- Initialize arrays
 node	= -99_lng					! node flag array
