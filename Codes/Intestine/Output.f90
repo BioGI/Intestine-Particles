@@ -290,7 +290,6 @@ IF (myid .eq. master) THEN
                         current%pardata%up, 	  	&
 		       	current%pardata%vp, 	  	&
 			current%pardata%wp, 	  	&
-			current%pardata%sh, 	  	&
 			current%pardata%rp, 	  	&
                         current%pardata%xpold,          &
                         current%pardata%ypold,          &

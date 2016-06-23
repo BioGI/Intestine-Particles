@@ -1234,7 +1234,7 @@ DEALLOCATE(SubID)
 DEALLOCATE(rDom0,rDom,r)			! intial and current radius (global), current radius (local)
 DEALLOCATE(velDom,vel)				! global and local wall velocities
 DEALLOCATE(x,y,z)						! x, y, z, physical coordinate arrays (local)
-DEALLOCATE(villiLoc)					! location of the villi
+#DEALLOCATE(villiLoc)					! location of the villi
 IF(randORord .EQ. RANDOM) THEN
   DEALLOCATE(rnd)						! array of random numbers for random villi phase angles
 END IF

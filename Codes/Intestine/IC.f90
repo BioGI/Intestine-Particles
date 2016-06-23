@@ -129,7 +129,7 @@ IF (restart) THEN								! restarting: read particle data from  particle_restart
    CurPar => ParListHead
 
    DO i = 1, np
-      READ(60,*) parid_r,xp_r,yp_r,zp_r,up_r,vp_r,wp_r,rp_r,xpold_r,ypold_r,zpold_r, &			
+      READ(59,*) parid_r,xp_r,yp_r,zp_r,up_r,vp_r,wp_r,rp_r,xpold_r,ypold_r,zpold_r, &			
 	         upold_r,vpold_r,wpold_r,rpold_r,par_conc_r,gamma_cont_r,Sh_r,S_r,   &
                  Sst_r,Veff_r,Nbj_r,bulk_conc_r,delNBbyCV_r,cur_part_r,new_part_r                                
       CALL list_init(CurPar%next)      
@@ -163,7 +163,7 @@ IF (restart) THEN								! restarting: read particle data from  particle_restart
       CurPar%next%pardata%new_part	= 	new_part_r
       CurPar => CurPar%next
    END DO
-   CLOSE(60)
+   CLOSE(59)
 ELSE										! starting from scratch. No data to be read from restart files
    OPEN(60,FILE='particle.dat')
    READ(60,*) np
