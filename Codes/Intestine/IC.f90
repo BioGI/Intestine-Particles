@@ -12,13 +12,21 @@ SUBROUTINE ICs	! sets the initial conditions
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE  
 
-INTEGER(lng) :: i,j,k,m					! index variables
-REAL(dbl) :: feq
-INTEGER(lng) :: imintemp,imaxtemp			! index variables
-REAL(dbl) :: alpha,xmin,xmax,xmid
+INTEGER(lng) :: i, j, k, m					! index variables
+REAL(dbl)    :: feq
+INTEGER(lng) :: imintemp, imaxtemp				! index variables
+REAL(dbl)    :: alpha,xmin, xmax,xmid
+CHARACTER(7) :: iter_char                        		! iteration stored as a character
 
-IF (restart) THEN					! restart from  file 
-   OPEN(50,FILE='restart.'//sub)			! open correct restart file
+IF (restart) THEN						! restart from  file 
+
+   OPEN(55,FILE='iter0.dat')                            	! open initial iteration file
+   READ(55,*) iter0                                     	! read and set initial iteration
+   CLOSE(55)
+   iter = iter0-1_lng						! set the initial iteration to the last iteration from the previous run
+   WRITE(iter_char(1:7),'(I7.7)') iter
+
+   OPEN(500,FILE='restart-'//iter_char//'-'//sub//'.dat')
    DO k=0,nzSub+1_lng
       DO j=0,nySub+1_lng
          DO i=0,nxSub+1_lng
@@ -33,32 +41,24 @@ IF (restart) THEN					! restart from  file
             END DO
         END DO
       END DO
-  END DO
+   END DO
+   READ(50,*) Drug_Initial
+   READ(50,*) Drug_Released_Total
+   READ(50,*) Drug_Absorbed_restart
+   READ(50,*) Drug_Remained_in_Domain
+   delphi_particle = 0.0_dbl                               	! Initialize the scalar contirbution from particles to 0.0. Once the particle
+   CLOSE(50)
 
-  READ(50,*) Drug_Initial
-  READ(50,*) Drug_Released_Total
-  READ(50,*) Drug_Absorbed_restart
-  READ(50,*) Drug_Remained_in_Domain
-  delphi_particle = 0.0_dbl                                                             ! Initialize the scalar contirbution from particles to 0.0. Once the particle
+   IF (randORord .EQ. RANDOM) THEN	
+      ALLOCATE(rnd(2_lng*numVilli))
+      OPEN(1778,FILE='rnd.dat')					! read in the rnd array
+      DO i=1,2_lng*numVilli	
+         READ(1778,*) rnd(i)
+      END DO
+      CLOSE(1778)
+   END IF
 
-  CLOSE(50)
-
-  OPEN(55,FILE='iter0.dat')				! open initial iteration file
-  READ(55,*) iter0					! read and set initial iteration
-  CLOSE(55)
-
-  iter = iter0-1_lng					! set the initial iteration to the last iteration from the previous run
-
-  IF(randORord .EQ. RANDOM) THEN
-    ALLOCATE(rnd(2_lng*numVilli))
-    OPEN(1778,FILE='rnd.dat')				! read in the rnd array
-    DO i=1,2_lng*numVilli
-       READ(1778,*) rnd(i)
-    END DO
-    CLOSE(1778)
-  END IF
-
-ELSE							! clean start
+ELSE								! clean start
   alpha = 0.4_dbl
   imintemp = -ANINT(alpha*(nx-1_lng))+ANINT(0.5_dbl*(nx+1))
   imaxtemp = +ANINT(alpha*(nx-1_lng))+ANINT(0.5_dbl*(nx+1))

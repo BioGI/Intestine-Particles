@@ -242,9 +242,12 @@ IMPLICIT NONE
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 INTEGER(lng) :: i,j,k,m			
+CHARACTER(7):: iter_char                        ! iteration stored as a character
 
 !----- Creating a file called restart.sub with all fields in it ------------------------------------
-OPEN(500,FILE='restart.'//sub)			
+WRITE(iter_char(1:7),'(I7.7)') iter
+
+OPEN(500,FILE='restart-'//iter_char//'-'//sub//'.dat')			
 DO k=0,nzSub+1
    DO j=0,nySub+1
       DO i=0,nxSub+1
