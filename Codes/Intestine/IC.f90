@@ -119,10 +119,16 @@ INTEGER(lng)   :: parid_r
 REAL(dbl)      :: xp_r, yp_r, zp_r, up_r, vp_r, wp_r, rp_r, xpold_r, ypold_r, zpold_r			! parameters read form particle_restart.dat
 REAL(dbl)      :: upold_r, vpold_r, wpold_r, rpold_r, par_conc_r, gamma_cont_r, Sh_r, S_r		! parameters read form particle_restart.dat
 REAL(dbl)      :: Sst_r, Veff_r, Nbj_r, bulk_conc_r, delNBbyCV_r, cur_part_r, new_part_r		! parameters read form particle_restart.dat
-
-
 REAL(dbl) :: xp,yp,zp,par_radius
+CHARACTER(7) :: iter_char                                       ! iteration stored as a character
 TYPE(ParRecord), POINTER	:: CurPar
+
+OPEN(55,FILE='iter0.dat')                                    ! open initial iteration file
+READ(55,*) iter0                                             ! read and set initial iteration
+CLOSE(55)
+
+iter = iter0-1_lng                                           ! set the initial iteration to the last iteration from the previous run
+WRITE(iter_char(1:7),'(I7.7)') iter
 
 IF (restart) THEN								! restarting: read particle data from  particle_restart.dat
    OPEN(59,FILE='particle-restart-'//iter_char//'.dat')
