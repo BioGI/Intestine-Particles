@@ -123,14 +123,14 @@ REAL(dbl) :: xp,yp,zp,par_radius
 CHARACTER(7) :: iter_char                                       ! iteration stored as a character
 TYPE(ParRecord), POINTER	:: CurPar
 
-OPEN(55,FILE='iter0.dat')                                    ! open initial iteration file
-READ(55,*) iter0                                             ! read and set initial iteration
-CLOSE(55)
-
-iter = iter0-1_lng                                           ! set the initial iteration to the last iteration from the previous run
-WRITE(iter_char(1:7),'(I7.7)') iter
-
 IF (restart) THEN								! restarting: read particle data from  particle_restart.dat
+   OPEN(55,FILE='iter0.dat')                                    ! open initial iteration file
+   READ(55,*) iter0                                             ! read and set initial iteration
+   CLOSE(55)
+
+   iter = iter0-1_lng                                           ! set the initial iteration to the last iteration from the previous run
+   WRITE(iter_char(1:7),'(I7.7)') iter
+
    OPEN(59,FILE='particle-restart-'//iter_char//'.dat')
    READ(59,*) np
    num_particles = np
