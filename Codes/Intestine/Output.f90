@@ -278,7 +278,7 @@ CLOSE(500)
 
 !----- Creating a file called particle-restart-iter.dat with all the particle data in it ----------------
 IF (myid .eq. master) THEN
-   OPEN(500,FILE='particle-restart-'//iter_char//'.dat')
+   OPEN(156,FILE='particle-restart-'//iter_char//'.dat')
    write(156,*) np
    current => ParListHead%next							 
    DO WHILE (ASSOCIATED(current))

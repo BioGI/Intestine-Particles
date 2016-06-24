@@ -19,14 +19,15 @@ REAL(dbl)    :: alpha,xmin, xmax,xmid
 CHARACTER(7) :: iter_char                        		! iteration stored as a character
 
 IF (restart) THEN						! restart from  file 
-
+  
    OPEN(55,FILE='iter0.dat')                            	! open initial iteration file
    READ(55,*) iter0                                     	! read and set initial iteration
    CLOSE(55)
+
    iter = iter0-1_lng						! set the initial iteration to the last iteration from the previous run
    WRITE(iter_char(1:7),'(I7.7)') iter
 
-   OPEN(500,FILE='restart-'//iter_char//'-'//sub//'.dat')
+   OPEN(50,FILE='restart-'//iter_char//'-'//sub//'.dat')
    DO k=0,nzSub+1_lng
       DO j=0,nySub+1_lng
          DO i=0,nxSub+1_lng
@@ -124,7 +125,7 @@ REAL(dbl) :: xp,yp,zp,par_radius
 TYPE(ParRecord), POINTER	:: CurPar
 
 IF (restart) THEN								! restarting: read particle data from  particle_restart.dat
-   OPEN(59,FILE='particle_restart.dat')								
+   OPEN(59,FILE='particle-restart-'//iter_char//'.dat')
    READ(59,*) np
    num_particles = np
    CALL list_init(ParListHead)
