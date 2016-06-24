@@ -262,7 +262,7 @@ DO k=0,nzSub+1
 END DO
 WRITE(500,*) Drug_Initial
 WRITE(500,*) Drug_Released_Total
-WRITE(500,*) phiAbsorbed
+WRITE(500,*) Drug_Absorbed
 WRITE(500,*) Drug_Remained_in_Domain
 CLOSE(500)
 
@@ -689,7 +689,7 @@ CALL MPI_ALLREDUCE(phiAbsorbed, phiAbsorbed_Global,1,MPI_DOUBLE_PRECISION, MPI_S
 CALL MPI_ALLREDUCE(phiDomain  , phiDomain_Global  ,1,MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 
 Drug_Initial		= phiTotal_Global    * zcf3
-Drug_Absorbed 		= phiAbsorbed_Global * zcf3
+Drug_Absorbed 		= phiAbsorbed_Global * zcf3 + Drug_Absorbed_restart
 Drug_Remained_in_Domain = phiDomain_Global   * zcf3
 Drug_Loss 		= (Drug_Released_Total+ Drug_Initial                            ) - (Drug_Absorbed + Drug_Remained_in_Domain)  
 Drug_Loss_Modified 	= (Drug_Released_Total+ Drug_Initial- Negative_phi_Total_Global) - (Drug_Absorbed + Drug_Remained_in_Domain)

@@ -170,7 +170,6 @@ END IF
 
 !----- Add the amount of scalar absorbed through the outer surfaces
 phiAbsorbed = phiAbsorbedS 						
-      
 !===================================================================================================
 END SUBROUTINE Scalar
 !===================================================================================================

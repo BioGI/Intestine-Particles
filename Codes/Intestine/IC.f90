@@ -37,9 +37,10 @@ IF (restart) THEN					! restart from  file
 
   READ(50,*) Drug_Initial
   READ(50,*) Drug_Released_Total
-  READ(50,*) phiAbsorbed
+  READ(50,*) Drug_Absorbed_restart
   READ(50,*) Drug_Remained_in_Domain
- 
+  delphi_particle = 0.0_dbl                                                             ! Initialize the scalar contirbution from particles to 0.0. Once the particle
+
   CLOSE(50)
 
   OPEN(55,FILE='iter0.dat')				! open initial iteration file
@@ -88,6 +89,7 @@ ELSE							! clean start
   iter0 = 1_lng
 
   !----- Initialize scalar values
+  Drug_Absorbed_restart= 0.0_dbl
   phiAbsorbed	= 0.0_dbl								! total amount of scalar absorbed
   phiAbsorbedS	= 0.0_dbl								! total amount of scalar absorbed through the macroscopic surface
   phiAbsorbedV	= 0.0_dbl								! total amount of scalar absorbed through the villi

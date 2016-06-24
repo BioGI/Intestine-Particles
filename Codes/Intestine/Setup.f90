@@ -58,6 +58,7 @@ REAL(dbl) :: phiTotal								! total intial amount of scalar in the domain
 REAL(dbl) :: Drug_Initial							! Total moles of drug at initial time
 REAL(dbl) :: Drug_Released_Total						! Total moles of drug released from all particles in the domain summed up in all time steps
 REAL(dbl) :: Drug_Absorbed							! Total moles of drug absorbed at domains boundary summed up in all time steps 
+REAL(dbl) :: Drug_Absorbed_restart
 REAL(dbl) :: Drug_Remained_in_Domain						! Total moles of drug remaind in the domain
 REAL(dbl) :: Drug_Loss								! Total moles of drug lost indicating the error in mass conservation
 REAL(dbl) :: Drug_Loss_Percent							! Percentage of the drug lost indicating the percentage of the error in mass conservation	
