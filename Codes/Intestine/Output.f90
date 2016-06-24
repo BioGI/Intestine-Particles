@@ -245,7 +245,7 @@ INTEGER(lng) :: i,j,k,m
 CHARACTER(7):: iter_char                        ! iteration stored as a character
 
 !----- Creating a file called restart.sub with all fields in it ------------------------------------
-WRITE(iter_char(1:7),'(I7.7)') iter
+WRITE(iter_char(1:7),'(I7.7)') iter-1_lng
 
 OPEN(500,FILE='restart-'//iter_char//'-'//sub//'.dat')			
 DO k=0,nzSub+1
