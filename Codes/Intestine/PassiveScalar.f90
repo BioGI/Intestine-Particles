@@ -64,7 +64,7 @@ REAL(dbl)   :: zcf3										! Cell volume
 
 CALL IC_Drug_Distribution 									! sets/maintains initial distributions of scalar [MODULE: IC.f90]
 
-IF ((iter .EQ. phiStart) .OR. (iter.EQ.iter0)) THEN  						 			! Calculate the intial amount of scalar
+IF (iter .EQ. phiStart) THEN  						 			! Calculate the intial amount of scalar
    phiTotal = 0.0_dbl
    DO k=1,nzSub
       DO j=1,nySub

@@ -262,7 +262,7 @@ DO k=0,nzSub+1
 END DO
 WRITE(500,*) Drug_Initial
 WRITE(500,*) Drug_Released_Total
-WRITE(500,*) Drug_Absorbed
+WRITE(500,*) phiAbsorbed
 WRITE(500,*) Drug_Remained_in_Domain
 CLOSE(500)
 

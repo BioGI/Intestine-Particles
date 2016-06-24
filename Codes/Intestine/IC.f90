@@ -37,7 +37,7 @@ IF (restart) THEN					! restart from  file
 
   READ(50,*) Drug_Initial
   READ(50,*) Drug_Released_Total
-  READ(50,*) Drug_Absorbed
+  READ(50,*) phiAbsorbed
   READ(50,*) Drug_Remained_in_Domain
  
   CLOSE(50)
