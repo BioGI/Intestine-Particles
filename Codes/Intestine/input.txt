@@ -38,4 +38,5 @@
 600.0000000	! Number of Periods 								(nPers)
 900 	  	! approximate number of output files						(numOuts)
 .FALSE.		! restart flag, .TRUE. or .FALSE						(restart)
+.TRUE.		! Flag for mass correction by bringing back rho t0 1 				(Mass_Correction) 
 1		! flag to track particles (0 if off and 1 if on)				(ParticleTrack)

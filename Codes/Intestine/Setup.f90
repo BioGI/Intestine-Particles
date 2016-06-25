@@ -33,6 +33,7 @@ INTEGER(lng), PARAMETER :: SOLID		= 1_lng				! solid interior (moving)
 INTEGER(lng), PARAMETER :: SOLID2		= 2_lng				! solid exterior (stationary)
 INTEGER(lng), PARAMETER :: qitermax = 15_lng 					! max number of q iterations
 LOGICAL :: restart								! Restart Flag
+LOGICAL :: Correcting_Mass							! Flag to correct the mass by bringing average density to 1.0
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
@@ -380,6 +381,7 @@ READ(10,*) coeffConst
 READ(10,*) nPers				! total number of periods to run
 READ(10,*) numOuts			! number of output files (roughly)
 READ(10,*) restart			! use restart file? (0 if no, 1 if yes)
+READ(10,*) Correcting_Mass
 READ(10,*) ParticleTrack		! A flag to indicate if particle is on or off (0 if off, 1 if on)
 CLOSE(10)
 

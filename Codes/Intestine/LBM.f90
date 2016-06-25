@@ -426,9 +426,6 @@ IMPLICIT NONE
 INTEGER(lng) :: i,j,k,m,mpierr						! index variables
 INTEGER(lng) :: ii,jj,kk
 LOGICAL      :: nodebounflag
-INTEGER(dbl) :: num_Fluid_l, num_Fluid
-REAL(dbl)    :: rho_sum_l,   rho_sum 
-REAL(dbl)    :: rho_ave, Correction	
 
 !----- Balaji modified to include 0 to nzSub+1
 DO k=1,nzSub
@@ -487,8 +484,27 @@ DO k=1,nzSub
 END DO   
 
 
+!---- making sure that the average pressure= denL
+IF (Correcting_Mass) THEN
+   CALL Mass_Correction
+END IF
+
+!===================================================================================================
+END SUBROUTINE Macro
+!===================================================================================================
+
+
+!===================================================================================================
+SUBROUTINE Mass_Correction
+!===================================================================================================
 !---- Since there is no pressure BC, the average pressure may drift from denL
 !---- This section makes sure that the average pressure= denL
+IMPLICIT NONE
+
+INTEGER(lng) :: i,j,k,m,mpierr                                          ! index variables
+INTEGER(dbl) :: num_Fluid_l, num_Fluid
+REAL(dbl)    :: rho_sum_l,   rho_sum
+REAL(dbl)    :: rho_ave, Correction
 
 num_Fluid= 0
 rho_sum  = 0.0_dbl
@@ -510,7 +526,7 @@ rho_ave= rho_sum / num_Fluid
 
 Correction = (denL-rho_ave)
 
-IF (myid .EQ. master) THEN 		! Prints out the density corrections to Density_Correction.dat
+IF (myid .EQ. master) THEN              ! Prints out the density corrections to Density_Correction.dat
    write(2473,*) iter, Correction
 END IF
 
@@ -518,10 +534,10 @@ DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            rho(i,j,k) = rho(i,j,k) + Correction 
+            rho(i,j,k) = rho(i,j,k) + Correction
             DO m=0,NumDistDirs
-               fplus(m,i,j,k) = fplus(m,i,j,k) + Correction /15 
-               f(m,i,j,k)     = f(m,i,j,k)     + Correction /15 
+               fplus(m,i,j,k) = fplus(m,i,j,k) + Correction /15
+               f(m,i,j,k)     = f(m,i,j,k)     + Correction /15
             END DO
          END IF
       END DO
@@ -529,9 +545,8 @@ DO k=1,nzSub
 END DO
 
 !===================================================================================================
-END SUBROUTINE Macro
+END SUBROUTINE Mass_Correction
 !===================================================================================================
-
 
 
 
