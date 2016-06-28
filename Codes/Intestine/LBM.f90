@@ -506,8 +506,8 @@ INTEGER(dbl) :: num_Fluid_l, num_Fluid
 REAL(dbl)    :: rho_sum_l,   rho_sum
 REAL(dbl)    :: rho_ave, Correction
 
-num_Fluid= 0
-rho_sum  = 0.0_dbl
+num_Fluid_l= 0
+rho_sum_l  = 0.0_dbl
 DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
@@ -527,8 +527,23 @@ rho_ave= rho_sum / num_Fluid
 Correction = (denL-rho_ave)
 
 IF (myid .EQ. master) THEN              ! Prints out the density corrections to Density_Correction.dat
-   write(2473,*) iter, Correction
+   write(2473,*) iter,Correction
 END IF
+
+DO k=1,nzSub
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i,j,k) .EQ. FLUID) THEN
+	    FplusSum(i,j,k)= 0.0_dbl
+	    Fsum(i,j,k)    = 0.0_dbl
+            DO m=0,NumDistDirs
+               FplusSum(i,j,k)=  FplusSum(i,j,k) + fplus(m,i,j,k) 
+               Fsum(i,j,k)    =  Fsum(i,j,k)     + f(m,i,j,k)  
+            END DO
+         END IF
+      END DO
+   END DO
+END DO
 
 DO k=1,nzSub
    DO j=1,nySub
@@ -536,8 +551,8 @@ DO k=1,nzSub
          IF (node(i,j,k) .EQ. FLUID) THEN
             rho(i,j,k) = rho(i,j,k) + Correction
             DO m=0,NumDistDirs
-               fplus(m,i,j,k) = fplus(m,i,j,k) + Correction /15
-               f(m,i,j,k)     = f(m,i,j,k)     + Correction /15
+               fplus(m,i,j,k) = fplus(m,i,j,k) + (fplus(m,i,j,k)/FplusSum(i,j,k)) * Correction 
+               f(m,i,j,k)     = f(m,i,j,k)     + (f(m,i,j,k)/FSum(i,j,k))         * Correction 
             END DO
          END IF
       END DO

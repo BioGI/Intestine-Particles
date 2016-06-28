@@ -12,6 +12,8 @@ IMPLICIT NONE
 INTEGER(lng), PARAMETER :: NumDistDirs	= 14_lng				! number of distribution function directions minus one (ex. D3Q15 -> 14)
 REAL(dbl),		ALLOCATABLE :: f(:,:,:,:)				! distribution function
 REAL(dbl), 		ALLOCATABLE :: fplus(:,:,:,:)				! post-collision distribution function
+REAL(dbl), 		ALLOCATABLE :: FplusSum(:,:,:)				! Sum of post-collision distribution function at each node
+REAL(dbl), 		ALLOCATABLE :: FSum(:,:,:)				! Sum of distribution functions at each node
 REAL(dbl), 		ALLOCATABLE :: u(:,:,:),v(:,:,:),w(:,:,:)		! x,y, and z components of the fluid velocity vector
 REAL(dbl), 		ALLOCATABLE :: dudx(:,:,:),dudy(:,:,:),dudz(:,:,:)	! x,y, and z components of the fluid velocity vector
 REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)				! density
@@ -1115,6 +1117,8 @@ IMPLICIT NONE
 ! Distribution Functions
 ALLOCATE(f(0:NumDistDirs,0:nxSub+1,0:nySub+1,0:nzSub+1),			&
          fplus(0:NumDistDirs,0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(Fsum(0:nxSub+1,0:nySub+1,0:nzSub+1), FplusSum(0:nxSub+1,0:nySub+1,0:nzSub+1))    
+
 ! Velocity, Density
 ALLOCATE(u(0:nxSub+1,0:nySub+1,0:nzSub+1),							&
          v(0:nxSub+1,0:nySub+1,0:nzSub+1),							&
@@ -1186,6 +1190,7 @@ IMPLICIT NONE
 
 ! Distribution Functions
 DEALLOCATE(f,fplus)
+DEALLOCATE(FSum,FplusSum)
 
 ! Velocity, Density
 DEALLOCATE(u,v,w,rho)
