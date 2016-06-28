@@ -253,7 +253,10 @@ IF(iter .EQ. phiStart) THEN
       DO k=0,nzSub+1
         DO j=0,nySub+1
           DO i=0,nxSub+1
-            phi(i,j,k) = phiIC*ee**(-((x(i)**2 + y(j)**2 + (z(k)-0.5_dbl*L)**2)/(2.0_dbl*sigma**2)))		! 3D Gaussian Distribution
+!            phi(i,j,k) = phiIC*ee**(-((x(i)**2 + y(j)**2 + (z(k)-0.5_dbl*L)**2)/(2.0_dbl*sigma**2)))		! 3D Gaussian Distribution
+             IF ((i.LT.32) .AND. (i.GT.24) .AND. (j.LT.32) .AND. (j.GT.24) .AND. (k.LE.30) .AND. (k.GE.0) ) THEN
+                phi(i,j,k) = Cs_mol
+             END IF
           END DO
         END DO
       END DO
