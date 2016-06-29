@@ -20,14 +20,14 @@ CHARACTER(7) :: iter_char                        		! iteration stored as a chara
 
 IF (restart) THEN						! restart from  file 
   
-   OPEN(55,FILE='iter0.dat')                            	! open initial iteration file
+   OPEN(55,FILE='Restart-iter.dat')                            	! open initial iteration file
    READ(55,*) iter0                                     	! read and set initial iteration
    CLOSE(55)
 
    iter = iter0-1_lng						! set the initial iteration to the last iteration from the previous run
    WRITE(iter_char(1:7),'(I7.7)') iter
 
-   OPEN(50,FILE='restart-'//iter_char//'-'//sub//'.dat')
+   OPEN(50,FILE='Restart-Out-'//iter_char//'-'//sub//'.dat')
    DO k=0,nzSub+1_lng
       DO j=0,nySub+1_lng
          DO i=0,nxSub+1_lng
@@ -131,7 +131,7 @@ IF (restart) THEN								! restarting: read particle data from  particle_restart
    iter = iter0-1_lng                                           ! set the initial iteration to the last iteration from the previous run
    WRITE(iter_char(1:7),'(I7.7)') iter
 
-   OPEN(59,FILE='particle-restart-'//iter_char//'.dat')
+   OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
    READ(59,*) np
    num_particles = np
    CALL list_init(ParListHead)

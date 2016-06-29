@@ -246,14 +246,14 @@ CHARACTER(7):: iter_char                        ! iteration stored as a characte
 
 !----- Creating a file called iter0.dat with iteration number in it --------------------------------
 IF (myid .EQ. master) THEN
-   OPEN(550,FILE='iter0.dat')
+   OPEN(550,FILE='Restart-iter.dat')
    WRITE(550,*) iter
    CLOSE(550)
 END IF
 
 !----- Creating a file called restart-iter-sub.dat with all macroscopic fields and distribution functions -----
 WRITE(iter_char(1:7),'(I7.7)') iter-1_lng
-OPEN(500,FILE='restart-'//iter_char//'-'//sub//'.dat')			
+OPEN(500,FILE='Restart-Out-'//iter_char//'-'//sub//'.dat')			
 DO k=0,nzSub+1
    DO j=0,nySub+1
       DO i=0,nxSub+1
@@ -278,7 +278,7 @@ CLOSE(500)
 
 !----- Creating a file called particle-restart-iter.dat with all the particle data in it ----------------
 IF (myid .eq. master) THEN
-   OPEN(156,FILE='particle-restart-'//iter_char//'.dat')
+   OPEN(156,FILE='Restart-Particles-'//iter_char//'.dat')
    write(156,*) np
    current => ParListHead%next							 
    DO WHILE (ASSOCIATED(current))
