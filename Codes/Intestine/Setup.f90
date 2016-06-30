@@ -214,6 +214,7 @@ INTEGER(lng) :: numVilliGroups							! number of groups of villi
 REAL(dbl), ALLOCATABLE		:: radius(:,:)					! radius stored during output iterations
 INTEGER(lng), ALLOCATABLE 	:: filenum(:)					! array of output file numbers
 INTEGER(lng)    :: numOuts							! number of output files
+INTEGER(lng)    :: Restart_Intervals
 INTEGER(lng)	:: fileCount							! current output file number (out of total number of output files)
 INTEGER(lng)	:: outFlag							! specifies whether to output in readable format (1), binaries (2), or both (3)
 INTEGER(lng)    :: radcount							! counts the number of output iterations for storing the radius
@@ -313,7 +314,7 @@ SUBROUTINE Global_Setup		! sets up simulation
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-CALL ReadInput					! read input from file
+CALL ReadInput				! read input from file
 !CALL SubDomainSetup			! set up the MPI subdomains
 CALL SubDomainSetupNew			! set up the MPI subdomains
 CALL AllocateArrays			! allocate global variable arrays
@@ -382,6 +383,7 @@ READ(10,*) coeffConst
 
 READ(10,*) nPers				! total number of periods to run
 READ(10,*) numOuts			! number of output files (roughly)
+READ(10,*) Restart_Intervals		! number of iterations between each restart output writing 
 READ(10,*) restart			! use restart file? (0 if no, 1 if yes)
 READ(10,*) Correcting_Mass
 READ(10,*) ParticleTrack		! A flag to indicate if particle is on or off (0 if off, 1 if on)

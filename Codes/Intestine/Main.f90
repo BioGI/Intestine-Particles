@@ -87,12 +87,15 @@ DO iter = iter0-0_lng,nt
    CALL PrintMass							! print the total mass in the system (TEST)
 !  CALL PrintVolume							! print the volume in the system (TEST)
    CALL PrintStatus 							! print current status [MODULE: Output]
+   IF (MOD(iter,Restart_Intervals) .EQ. 0) THEN
+      CALL PrintRestart
+   END IF
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)				! synchronize all processing units before next loop [Intrinsic]
-
+  
 END DO
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End Simulation Loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-CALL PrintFinalRestart							! print a final set of restart files to continue if desired [MODULE: Output]
+CALL PrintRestart							! print a final set of restart files to continue if desired [MODULE: Output]
 CALL DEAllocateArrays							! clean up the memory [MODULE: Setup]
 CALL CloseOutputFiles							! closes output files [MODULE: Output.f90]
 !CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
