@@ -555,7 +555,9 @@ IF (myid .EQ. master) THEN
       current => ParListHead%next
       DO WHILE (ASSOCIATED(current))
          next => current%next
-         Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+         IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
+            Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+         END IF
          current => next
       ENDDO
    END IF
