@@ -327,8 +327,19 @@ DO WHILE (ASSOCIATED(current))
       deltaR=current%pardata%rpold-current%pardata%rp
       current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
    ELSE IF ((current%pardata%rp .LT. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
-      current%pardata%rp= 0.0_dbl
-   END IF
+      current%pardata%xp	= 0.0_dbl
+      current%pardata%yp	= 0.0_dbl
+      current%pardata%zp	= 0.0_dbl
+      current%pardata%up        = 0.0_dbl
+      current%pardata%vp        = 0.0_dbl
+      current%pardata%wp        = 0.0_dbl
+      current%pardata%rp	= 0.0_dbl
+      current%pardata%delNBbyCV = 0.0_dbl
+      current%pardata%bulk_conc = 0.0_dbl
+      current%pardata%S		= 0.0_Dbl
+      current%pardata%Sst       = 0.0_Dbl
+      current%pardata%sh        = 0.0_Dbl
+    END IF
 
    current => next
 ENDDO

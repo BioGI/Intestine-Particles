@@ -204,8 +204,9 @@ IF (myid .eq. master) THEN
    write(156,*) np
    current => ParListHead%next							 
    DO WHILE (ASSOCIATED(current))
-      next => current%next 	
-      WRITE(156,*)   	current%pardata%parid,	        &
+      next => current%next 
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
+         WRITE(156,*)  	current%pardata%parid,	        &
 		     	current%pardata%xp, 	  	&
 			current%pardata%yp,  	  	&
 			current%pardata%zp, 	  	&
@@ -231,7 +232,8 @@ IF (myid .eq. master) THEN
 			current%pardata%delNBbyCV, 	&
 		 	current%pardata%cur_part,	&
 		 	current%pardata%new_part  		
-1001 format (I5,24F18.10,2I5)
+1001                    format (I5,24F18.10,2I5)
+        END IF
      current => next  
   ENDDO
   CLOSE(160)
@@ -308,59 +310,60 @@ END SUBROUTINE PrintFields
 
 
 !===================================================================================================
-SUBROUTINE PrintParticles	! print particle position, velocity, radius, and concentrationto output files
+SUBROUTINE PrintParticles						  ! prints all particle data
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng) 	:: numParticlesSub
-INTEGER(lng)	:: i,j,k,ii,jj,kk,n,xaxis,yaxis		! index variables (local and global)
+INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
 CHARACTER(7)	:: iter_char				! iteration stored as a character
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
-xaxis=ANINT(0.5_dbl*(nx+1))
-yaxis=ANINT(0.5_dbl*(ny+1))
+IF (myid .EQ. master) THEN
+   IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) 		&
+      .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0) 	&
+      .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
+   
+       WRITE(iter_char(1:7),'(I7.7)') iter
 
-IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) &
-   .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0) &
-   .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
-   !------ scale the iteration by 1/10 such that the numbers used in the output file aren't too large
-   WRITE(iter_char(1:7),'(I7.7)') iter
+      !------ store the current iteration in "parfilenum"
+      parfilenum(parfileCount) = iter
+      numParticlesSub  = 0_lng
 
-   !------ store the current iteration in "parfilenum"
-   parfilenum(parfileCount) = iter
-   numParticlesSub  = 0_lng
+      !------ open the proper output file
+      OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
+      WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff","Nbj"'
+      current => ParListHead%next							 
 
-   !------ open the proper output file
-   OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-   WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff","Nbj"'
-   current => ParListHead%next							 
+      DO WHILE (ASSOCIATED(current))
+         numParticlesSub = numParticlesSub + 1_lng
+         next => current%next 	
+         IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
+             WRITE(160,1001)   	current%pardata%cur_part  	,',', 	&
+		 		current%pardata%xp 	  	,',',	&
+				current%pardata%yp  	  	,',',	&
+				current%pardata%zp 	  	,',',	&
+                        	current%pardata%up*vcf 	  	,',',	&
+		     	  	current%pardata%vp*vcf 	  	,',',	&
+				current%pardata%wp*vcf 	  	,',',	&
+                      		current%pardata%parid 	  	,',',	&
+				current%pardata%sh 	  	,',',	&
+				current%pardata%rp/xcf 	  	,',',	&
+				current%pardata%bulk_conc/Cs_mol,',', 	&
+				current%pardata%delNBbyCV 	,',', 	&
+				current%pardata%Sst 	  	,',',	&
+				current%pardata%S 	  	,',',	&
+				current%pardata%Veff 	  	,',',	&
+				current%pardata%Nbj
+         END IF	
+1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+         current => next
+      ENDDO
 
-   DO WHILE (ASSOCIATED(current))
-      numParticlesSub = numParticlesSub + 1_lng
-      next => current%next 							! copy pointer of next node
-      WRITE(160,1001)   current%pardata%cur_part  	,',', 	&
-		 	current%pardata%xp 	  	,',',	&
-			current%pardata%yp  	  	,',',	&
-			current%pardata%zp 	  	,',',	&
-                        current%pardata%up*vcf 	  	,',',	&
-		       	current%pardata%vp*vcf 	  	,',',	&
-			current%pardata%wp*vcf 	  	,',',	&
-                        current%pardata%parid 	  	,',',	&
-			current%pardata%sh 	  	,',',	&
-			current%pardata%rp/xcf 	  	,',',	&
-			current%pardata%bulk_conc/Cs_mol,',', 	&
-			current%pardata%delNBbyCV 	,',', 	&
-			current%pardata%Sst 	  	,',',	&
-			current%pardata%S 	  	,',',	&
-			current%pardata%Veff 	  	,',',	&
-			current%pardata%Nbj
-1001 format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
-     current => next   						! point to next node in the list
-  ENDDO
-
-  CLOSE(160)
-  numparticleSubfile(parfileCount) = numParticlesSub	
-  parfileCount = parfileCount + 1_lng
+      CLOSE(160)
+      numparticleSubfile(parfileCount) = numParticlesSub	
+      parfileCount = parfileCount + 1_lng
+  ENDIF 
 ENDIF
 
 
