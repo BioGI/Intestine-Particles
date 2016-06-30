@@ -13,7 +13,7 @@ INTEGER			:: nptot, ngrp, i,j
 real,    allocatable 	:: vfrac(:),nfrac(:),np(:)
 integer, allocatable 	:: intnp(:)
 
-V_c		= 9.424778e12 		! (\mu m) ^3
+V_c		= 11.82e12 		! (\mu m) ^3
 C_tot_Over_Cs	= 0.2000000000000	! dimensionless
 C_s		= 3.3e-19              	! mole / (\mu m ^3)
 nu_P		= 268.0e12 		! (\mu m ^3) / mole  		
