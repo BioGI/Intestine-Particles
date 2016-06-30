@@ -63,13 +63,11 @@ IF (myid .EQ. master) THEN
    !---- Volume -----
    OPEN(2460,FILE='volume.dat')
    WRITE(2460,*) 'VARIABLES = "period", "volume"'
-   WRITE(2460,*) 'ZONE F=POINT'
    CALL FLUSH(2460)
 
    !----- Drug Conservation
    OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
    WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
-   WRITE(2472,*) '#ZONE F=POINT'
    CALL FLUSH(2472)
 
    !----- Diensity Correction to improve mass conservation
@@ -81,7 +79,6 @@ END IF
 !----- Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
 WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory, mass_actual, mass_err'
-WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
 
 !===================================================================================================
@@ -260,7 +257,7 @@ INTEGER(lng):: i,j,k,ii,jj,kk,n			! index variables (local and global)
 CHARACTER(7):: iter_char			! iteration stored as a character
 REAL(lng)   :: pressure				
 
-IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. &
+IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
    (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)  .OR. &
    (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
    !----- scale the iteration by 1/10 such that the numbers used in the output file aren't too large
@@ -686,7 +683,6 @@ SUBROUTINE MergeOutput          	  ! combines the subdomain output files into on
 !===================================================================================================
 IMPLICIT NONE
 
-CALL MergeScalar
 CALL MergeFields
 CALL MergeMass
 !===================================================================================================
@@ -926,152 +922,6 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)																				! synchronize all pro
 !===================================================================================================
 END SUBROUTINE MergeMass
 !===================================================================================================
-
-
-
-
-
-
-
-
-!===================================================================================================
-SUBROUTINE MergeScalar	! combines the subdomain output into an output file for the entire computational domain 
-!===================================================================================================
-IMPLICIT NONE
-
-REAL(dbl), ALLOCATABLE    :: ScalarData(:,:,:)			! scalar data from each subdomain, stored to be rearranged for combined output
-REAL(dbl)		:: phiAbsTotal(iter0:nt)		! storage of total aborbed scalar for calulation of absorption rate
-REAL(dbl)		:: phiAbsTotalS(iter0:nt)		! storage of total aborbed scalar for calulation of absorption rate (outer surface)
-REAL(dbl)		:: phiAbsTotalV(iter0:nt)		! storage of total aborbed scalar for calulation of absorption rate (villi)
-REAL(dbl)		:: phi1,phi2,phi3,phi4,phi5, phi6,phi7	! scalar sums
-REAL(dbl)		:: SAtime,SA(iter0:nt)			! time from surface area file, surface area
-REAL(dbl)		:: phiAverage(iter0:nt)			! period,surface area, average flux, bulk scalar concentration, diffusion resistance, USL thickness (2 values of phi*)
-INTEGER(lng)	:: i,n,nn					! loop variables
-INTEGER(lng)	:: numLines					! number of lines to read
-INTEGER(lng)	:: combine1,combine2				! clock variables
-INTEGER(lng)	:: mpierr					! MPI standard error variable
-CHARACTER(5)	:: nthSub					! current subdomain stored as a character
-
-IF(myid .EQ. master) THEN
-
-  numLines = (nt-iter0) + 1_lng
-
-  ALLOCATE(ScalarData(numLines,7,NumSubsTotal))
-
-  ! initialize ScalarData and phiAbsTotal to 0
-  ScalarData = 0.0_dbl
-  phiAbsTotal = 0.0_dbl
-
-  ! print combining status...
-  CALL SYSTEM_CLOCK(combine1,rate)							! Restart the Timer
-  OPEN(5,FILE='status.dat',POSITION='APPEND')						
-  WRITE(5,*)
-  WRITE(5,*)
-  WRITE(5,*) 'Combining scalar output files and deleting originials...'
-  WRITE(5,*)     
-  CALL FLUSH(5)
-
-  DO n = 1,NumSubsTotal
-
-    ! print combining status...
-    WRITE(5,*)
-    WRITE(5,*) 'combining scalar output file',n,'of',NumSubsTotal
-    WRITE(5,*) 'reading/deleting...'
-    CALL FLUSH(5)
-
-    WRITE(nthSub(1:5),'(I5.5)') n							! write subdomain number to 'nthSub' for output file exentsions
-
-    ! open the output file from the nth subdomain 
-    OPEN(2472,FILE='scalar-'//nthSub//'.dat')						! open file
-
-    ! read the output file
-    READ(2472,*)									! first line is variable info
-    READ(2472,*)									! second line is zone info
-    DO nn=1,numLines
-
-      READ(2472,*) i,ScalarData(nn,1,n),	&
-                     ScalarData(nn,6,n),	&
-                     ScalarData(nn,7,n),	&
-                     ScalarData(nn,2,n),	&
-                     ScalarData(nn,3,n),	&
-                     ScalarData(nn,4,n),	&
-                     ScalarData(nn,5,n)
-
-    END DO
-    CLOSE(2472,STATUS='DELETE')								! close and delete current output file (subdomain)
-
-  END DO
-
-  ! print combining status...
-  WRITE(5,*) 'writing...'
-  CALL FLUSH(5)
-
-  ! open and write to files
-  OPEN(2473,FILE='scalar.dat')
-  WRITE(2473,'(A100)') 'VARIABLES = "period", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage"'
-  WRITE(2473,*) 'ZONE F=POINT'
-
-
-  DO nn=1,numLines
-
-    ! initialize the summations
-    phi1 = 0.0_dbl
-    phi2 = 0.0_dbl 
-    phi3 = 0.0_dbl
-    phi4 = 0.0_dbl
-    phi5 = 0.0_dbl
-    phi6 = 0.0_dbl
-    phi7 = 0.0_dbl
-
-    DO n=1,NumSubsTotal
-      phi1 = phi1 + ScalarData(nn,1,n)
-      phi2 = phi2 + ScalarData(nn,2,n)
-      phi3 = phi3 + ScalarData(nn,3,n)
-      phi4 = phi4 + ScalarData(nn,4,n)
-      phi5 = phi5 + ScalarData(nn,5,n)
-      phi6 = phi6 + ScalarData(nn,6,n)
-      phi7 = phi7 + ScalarData(nn,7,n)
-    END DO
-
-    i = (iter0-1_lng) + nn
-
-    WRITE(2473,'(8E25.15)') REAL(i/(nt/nPers)), phi1, phi6, phi7, phi2, phi3, phi4, phi5/NumSubsTotal		! write to combined output file
-
-    phiAbsTotal(i) = phi1    											! store phiAbsorbed for calculation of absorption rate (total)
-    phiAbsTotalS(i) = phi6    											! store phiAbsorbed for calculation of absorption rate (outer surface)
-    phiAbsTotalV(i) = phi7    											! store phiAbsorbed for calculation of absorption rate (villi)
-    phiAverage(i) = phi5/NumSubsTotal										! store phiAverage for calculation of USL 												 		
-
-!    READ(2474,*) SAtime, SA(i)											! read in surface area from file for calculation of scalar flux/USL
-
-  END DO
-
-  CLOSE(2473)													! close output file (combined)
-! CLOSE(2474)													! close the surface area file
-
-  ! End timer and print the amount of time it took for the combining
-  CALL SYSTEM_CLOCK(combine2,rate)										! End the Timer
-  WRITE(5,*)
-  WRITE(5,*)
-  WRITE(5,*) 'Time to Combine Files (min.):', ((combine2-combine1)/REAL(rate))/60.0_dbl
-  CLOSE(5)
-
-  IF(nt .GT. phiStart) THEN
-    CALL PrintAbsRate(phiAbsTotal,phiAbsTotalS,phiAbsTotalV,phiAverage,SA)					! calculate and output the absorption rate
-  END IF
-
-  DEALLOCATE(ScalarData)
-
-END IF
-
-CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)										! synchronize all processing units before next loop [Intrinsic]
-
-!===================================================================================================
-END SUBROUTINE MergeScalar
-!===================================================================================================
-
-
-
 
 
 
