@@ -226,32 +226,32 @@ REAL(dbl)	:: tStart,tEnd,tTotal,tRecv,tSum,tAvg				! timing variables for parall
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Particle Tracking Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-INTEGER(lng) :: ParticleTrack							! a flag to denote if particle track is on (1) or off (0) 
 INTEGER(lng), PARAMETER :: ParticleOn= 1					! flag to signify Particle Tracking is on
 INTEGER(lng), PARAMETER :: ParticleOff= 0					! flag for signify if particle tracking is off
-INTEGER(lng) :: np								! number of particles
+REAL(dbl),    PARAMETER	:: R0 = 0.0026_dbl		
+REAL(dbl),    PARAMETER	:: Min_R_Acceptable= 1.0e-7 				! Minimum particle radius. Smaller particles are considered completely dissolved and no computation is done  for them.
 
-REAL(dbl), PARAMETER :: molarvol = 268.0e-6					! (cm^3/mole) drug's molar volume
-REAL(dbl), PARAMETER :: diffm = 7.5000000e-6					! (cm2/s) drug's diffusivity	
-REAL(dbl), PARAMETER :: R0 = 0.0026_dbl		
-REAL(dbl), PARAMETER :: Cs_mol = 3.30000e-1 					! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
-REAL(dbl), PARAMETER :: Min_R_Acceptable= 1.0e-7 				! Minimum particle radius. Smaller particles are considered completely dissolved and no computation is done  for them.
-REAL(dbl):: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global bulk scalar Concentration
-
+INTEGER(lng):: ParticleTrack							! a flag to denote if particle track is on (1) or off (0) 
+INTEGER(lng):: np								! number of particles
 INTEGER(dbl):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
 INTEGER(dbl):: num_particles							! Total number of particles in domain
-
 INTEGER(dbl):: CaseNo
-REAL(dbl)::    V_eff_Ratio
-REAL(dbl)::    Cb_Hybrid
+
+REAL(dbl) :: molarvol 								! (cm^3/mole) drug's molar volume
+REAL(dbl) :: diffm								! (cm2/s) drug's diffusivity	
+REAL(dbl) :: Cs_mol  								! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
+REAL(dbl) :: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global bulk scalar Concentration
+REAL(dbl) :: V_eff_Ratio
+REAL(dbl) :: Cb_Hybrid
 
 INTEGER(lng), ALLOCATABLE :: iMaxDomain(:),iMinDomain(:) 			! List of starting/enning i indices for each subdomain
 INTEGER(lng), ALLOCATABLE :: jMaxDomain(:),jMinDomain(:) 			! List of starting/enning j indices for each subdomain
 INTEGER(lng), ALLOCATABLE :: kMaxDomain(:),kMinDomain(:) 			! List of starting/enning k indices for each subdomain
-REAL(dbl), ALLOCATABLE  :: partransfersend(:,:),partransferrecv(:,:)
-INTEGER(lng),ALLOCATABLE :: parreqid(:),parwtstat(:,:)				! number of send/recv requests
-INTEGER(lng),ALLOCATABLE :: probestat(:)					! MPI status object
-INTEGER(lng),ALLOCATABLE :: numpartransfer(:)					! Particles to be transferred in each direction
+REAL(dbl)   , ALLOCATABLE :: partransfersend(:,:),partransferrecv(:,:)
+INTEGER(lng), ALLOCATABLE :: parreqid(:),parwtstat(:,:)				! number of send/recv requests
+INTEGER(lng), ALLOCATABLE :: probestat(:)					! MPI status object
+INTEGER(lng), ALLOCATABLE :: numpartransfer(:)					! Particles to be transferred in each direction
+
 INTEGER(lng) :: NumCommDirsPar = 26_lng
 INTEGER(lng) :: NumParVar = 16_lng
 
@@ -355,8 +355,12 @@ READ(10,*) wc2					! segmental weighting coefficient
 
 READ(10,*) Tmix				! period of mixed mode simulation
 
-READ(10,*) den					! density
-READ(10,*) nu					! kinematic viscosity
+READ(10,*) den					! Liquid's density
+READ(10,*) nu					! Liquid's kinematic viscosity
+READ(10,*) Cs_mol				! Drug solubility or saturation value (mole/cm^3)
+READ(10,*) diffm				! Drug's diffusivity (cm2/s)
+READ(10,*) molarvol				! Drug's molar volume (cm^3/mole)
+
 READ(10,*) tau					! relaxation parameter
 
 READ(10,*) Sc					! Schmidt number
