@@ -12,7 +12,6 @@ IMPLICIT NONE
 CONTAINS
 
 
-
 !===================================================================================================
 SUBROUTINE Output_Setup								! sets up the output
 !===================================================================================================
@@ -61,33 +60,22 @@ IF (myid .EQ. master) THEN
    OPEN(5,FILE='status.dat')										
    CALL FLUSH(5)													
 
-  !----- Surface Area-----
-  !OPEN(2474,FILE='SA.dat',POSITION='APPEND')
-  !WRITE(2474,'(A36)') 'VARIABLES = "period", "SA"'
-  !WRITE(2474,*) 'ZONE F=POINT'
-  !CALL FLUSH(2474)
+   !---- Volume -----
+   OPEN(2460,FILE='volume.dat')
+   WRITE(2460,*) 'VARIABLES = "period", "volume"'
+   WRITE(2460,*) 'ZONE F=POINT'
+   CALL FLUSH(2460)
 
-  !----- Walll Flux-----
-  !OPEN(4748,FILE='wall_flux.dat')
-  !WRITE(4748,*) 'VARIABLES = "Axial Distance", "Flux"'
-  !CALL FLUSH(4748)
+   !----- Drug Conservation
+   OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
+   WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
+   WRITE(2472,*) '#ZONE F=POINT'
+   CALL FLUSH(2472)
 
-  !---- Volume -----
-  OPEN(2460,FILE='volume.dat')
-  WRITE(2460,*) 'VARIABLES = "period", "volume"'
-  WRITE(2460,*) 'ZONE F=POINT'
-  CALL FLUSH(2460)
-
-  !----- Drug Conservation
-  OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-  WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
-  WRITE(2472,*) '#ZONE F=POINT'
-  CALL FLUSH(2472)
-
-  !----- Diensity Correction to improve mass conservation
-  OPEN(2473,FILE='Density_Correction.dat')
-  WRITE(2473,*) 'VARIABLES: iter, Density Correction'
-  CALL FLUSH(2473)
+   !----- Diensity Correction to improve mass conservation
+   OPEN(2473,FILE='Density_Correction.dat')
+   WRITE(2473,*) 'VARIABLES: iter, Density Correction'
+   CALL FLUSH(2473)
 END IF
 
 !----- Mass
@@ -95,10 +83,6 @@ OPEN(2458,FILE='mass-'//sub//'.dat')
 WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory, mass_actual, mass_err'
 WRITE(2458,*) '#ZONE F=POINT'
 CALL FLUSH(2458)
-
-!---- Test Output
-!OPEN(9,FILE='testoutput-'//sub//'.dat',POSITION='append')
-!CALL FLUSH(9)
 
 !===================================================================================================
 END SUBROUTINE OpenOutputFiles
@@ -120,13 +104,11 @@ IF(myid .EQ. master) THEN
   CLOSE(2118) 			! Monitoring negative phi
   CLOSE(2119)                   ! Monitorin Over Saturation
   CLOSE(5)			! Status								
-! CLOSE(2474)			! Surface Area
   CLOSE(2460)			! Volume
+  CLOSE(2472)			! Scalar
+  CLOSE(2473)                   ! Density Corrections
 END IF
 CLOSE(2458)			! Mass
-CLOSE(2472)			! Scalar
-CLOSE(2473)                     ! Density Corrections
-!CLOSE(9) 			! Test Output
 !===================================================================================================
 END SUBROUTINE CloseOutputFiles
 !===================================================================================================
@@ -185,7 +167,7 @@ IMPLICIT NONE
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 INTEGER(lng) :: i,j,k,m			
-CHARACTER(7):: iter_char                        ! iteration stored as a character
+CHARACTER(7):: iter_char             			           ! iteration stored as a character
 
 !----- Creating a file called iter0.dat with iteration number in it --------------------------------
 IF (myid .EQ. master) THEN
@@ -258,7 +240,6 @@ IF (myid .eq. master) THEN
   CLOSE(160)
 END IF
 
-
 !===================================================================================================
 END SUBROUTINE PrintRestart
 !===================================================================================================
@@ -304,8 +285,7 @@ IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) .OR. &
                phi(i,j,k)=0.0_lng
             END IF   
             pressure= (rho(i,j,k)-denL)*dcf*pcf
-            WRITE(60,'(I3,2I4,3F11.7,E13.4,E12.4,I2)') ii,jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf,         &
-                                                       w(i,j,k)*vcf, pressure, phi(i,j,k), node(i,j,k)
+            WRITE(60,'(I3,2I4,3F10.6,E11.3,E12.4,I2)') ii, jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure, phi(i,j,k), node(i,j,k)
          END DO
       END DO
    END DO
@@ -474,9 +454,8 @@ REAL(dbl)   :: mass_actual			! mass in the system based on local density
 REAL(dbl)   :: mass_err				! mass error due to denisty variations
 
 node_volume= xcf*ycf*zcf			! calculate the node volume
-
 mass_actual= 0.0_dbl
-volume    = 0.0_dbl
+volume     = 0.0_dbl
 
 !----- calculate the mass in the system based on the density and the number of fluid nodes
 DO k=1,nzSub
@@ -491,12 +470,9 @@ DO k=1,nzSub
 END DO
 
 mass_theory = volume *den 
-
 mass_err= 100*(mass_theory-mass_actual)/mass_theory
-
 WRITE(2458,'(I8,6E21.12)') iter, iter*tcf, mass_theory, mass_actual, mass_err 
 CALL FLUSH(2458)  
-
 !===================================================================================================
 END SUBROUTINE PrintMass
 !===================================================================================================
@@ -546,7 +522,6 @@ REAL(dbl)    :: phiDomain, phiIC, Drug_Initial		! current amount of scalar in th
 REAL(dbl)    :: phiAverage				! average scalar in the domain
 REAL(dbl)    :: zcf3					! node volume in physical units
 REAL(dbl)    :: phiTotal_Global, phiAbsorbed_Global, phiDomain_Global
-
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -707,7 +682,7 @@ END SUBROUTINE PrintParams
 
 
 !===================================================================================================
-SUBROUTINE MergeOutput	! combines the subdomain output files into one output file for the entire computational domain 
+SUBROUTINE MergeOutput          	  ! combines the subdomain output files into one output file
 !===================================================================================================
 IMPLICIT NONE
 
@@ -948,7 +923,6 @@ IF(myid .EQ. master) THEN
 END IF
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)																				! synchronize all processing units before next loop [Intrinsic]
-
 !===================================================================================================
 END SUBROUTINE MergeMass
 !===================================================================================================
@@ -1023,8 +997,6 @@ IF(myid .EQ. master) THEN
                      ScalarData(nn,4,n),	&
                      ScalarData(nn,5,n)
 
-!      WRITE(6678,*) nn, i
-
     END DO
     CLOSE(2472,STATUS='DELETE')								! close and delete current output file (subdomain)
 
@@ -1039,9 +1011,6 @@ IF(myid .EQ. master) THEN
   WRITE(2473,'(A100)') 'VARIABLES = "period", "phiA", "phiAS", "phiAV", "phiT-phiD", "phiD", "phA+phiD", "phiAverage"'
   WRITE(2473,*) 'ZONE F=POINT'
 
-!  OPEN(2474,FILE='SA.dat')
-!  READ(2474,*)					! first line is variable info
-!  READ(2474,*)					! second line is zone info
 
   DO nn=1,numLines
 
@@ -1100,171 +1069,6 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)										! synchronize all processing un
 !===================================================================================================
 END SUBROUTINE MergeScalar
 !===================================================================================================
-
-
-
-
-
-
-
-
-!===================================================================================================
-SUBROUTINE PrintAbsRate(phiAbsTotal,phiAbsTotalS,phiAbsTotalV,phiAverage,SA)	! calculate and output the absorption rate
-!===================================================================================================
-IMPLICIT NONE
-
-REAL(dbl), INTENT(IN)	:: phiAbsTotal(iter0:nt)	! total aborbed scalar
-REAL(dbl), INTENT(IN)	:: phiAbsTotalS(iter0:nt)	! total aborbed scalar (outer surface)
-REAL(dbl), INTENT(IN)	:: phiAbsTotalV(iter0:nt)	! total aborbed scalar (villi)
-REAL(dbl), INTENT(IN)	:: phiAverage(iter0:nt)		! average scalar in the domain
-REAL(dbl), INTENT(IN)	:: SA(iter0:nt)			! surface area
-REAL(dbl):: SAS, SAV					! surface area (surface), surface area (villi)
-REAL(dbl):: AbsRate, AbsRateS, AbsRateV			! absorption rate at the nth time step
-REAL(dbl):: Js,JsS,JsV					! average flux, average flux (outer surface), average flux (villi)
-REAL(dbl):: phiBulk,Rw1,Rw2,USL1,USL2			! average flux,bulk scalar concentration,diffusion resistance, USL thicknesses (2 values of phi*)
-INTEGER(lng):: n					! loop variable
-
-phiBulk = 1.0_dbl 					! Define the nominal bulk concentration
-
-SAV = numVilliActual*((2.0_dbl*PI*Rv*(Lv-Rv)) + (2.0_dbl*PI*Rv*Rv))	! surface area of the villi
-
-!----- set up output file
-OPEN(2479,FILE='phiRate.dat')
-WRITE(2479,'(A100)') 'VARIABLES = "period", "AbsRate", "AbsRateS", "AbsRateV","flux", "fluxS", "fluxV" "usl1", "usl2"'
-WRITE(2479,*) 'ZONE F=POINT'
-IF(restart) THEN
-
-  !----- iter0 (1st order forward differencing)
-  AbsRate = (phiAbsTotal(iter0+1) - phiAbsTotal(iter0))/tcf
-  AbsRateS = (phiAbsTotalS(iter0+1) - phiAbsTotalS(iter0))/tcf
-  AbsRateV = (phiAbsTotalV(iter0+1) - phiAbsTotalV(iter0))/tcf
-  Js = AbsRate/SA(iter0)
-  JsS = AbsRateS/(SA(iter0)-SAV)
-  JsV = AbsRateV/SAV
-
-  !----- Calculate the resistance to diffusion
-  IF(Js .GT. 1e-18) THEN
-    Rw1 = phiBulk/Js	
-    Rw2 = phiAverage(iter0)/Js	
-  ELSE
-    Rw1 = 0.0_dbl										! set to 0.0 while the scalar is diffusing to the surface (Js=0)
-    Rw2 = 0.0_dbl	
-  END IF
-
-  USL1 = Rw1*Dm*Dmcf										! calculate the effective UWL thickness
-  USL2 = Rw2*Dm*Dmcf
-  
-  WRITE(2479,'(9E25.15)') iter0/(nt/nPers), AbsRate, AbsRateS, AbsRateV, Js, JsS, JsV, USL1, USL2
-
-  !----- iter0+1 to nt-1 (2nd order central differencing) 
-  DO n=iter0+1,nt-1
-
-    AbsRate = (phiAbsTotal(n+1) - phiAbsTotal(n-1))/(2.0_dbl*tcf)				
-    AbsRateS = (phiAbsTotalS(n+1) - phiAbsTotalS(n-1))/(2.0_dbl*tcf)				
-    AbsRateV = (phiAbsTotalV(n+1) - phiAbsTotalV(n-1))/(2.0_dbl*tcf)				
-    Js = AbsRate/SA(n)
-    JsS = AbsRateS/(SA(n)-SAV)
-    JsV = AbsRateV/SAV
-
-    !----- Calculate the resistance to diffusion
-    IF(Js .GT. 1e-18) THEN
-      Rw1 = phiBulk/Js	
-      Rw2 = phiAverage(n)/Js	
-    ELSE
-      Rw1 = 0.0_dbl										! set to 0.0 while the scalar is diffusing to the surface (Js=0)
-      Rw2 = 0.0_dbl	
-    END IF
-
-    USL1 = Rw1*Dm*Dmcf										! calculate the effective UWL thickness
-    USL2 = Rw2*Dm*Dmcf
-  
-    WRITE(2479,'(9E25.15)') n/(nt/nPers), AbsRate, AbsRateS, AbsRateV, Js, JsS, JsV, USL1, USL2
-
-  END DO
-
-ELSE
-
-  ! phiStart (1st order forward differencing)
-  AbsRate = (phiAbsTotal(phiStart+1) - phiAbsTotal(phiStart))/tcf
-  AbsRateS = (phiAbsTotalS(phiStart+1) - phiAbsTotalS(phiStart))/tcf
-  AbsRateV = (phiAbsTotalV(phiStart+1) - phiAbsTotalV(phiStart))/tcf
-  Js = AbsRate/SA(phiStart)
-  JsS = AbsRateS/(SA(phiStart)-SAV)
-  JsV = AbsRateV/SAV
-
-  ! Calculate the resistance to diffusion
-  IF(Js .GT. 1e-18) THEN
-    Rw1 = phiBulk/Js	
-    Rw2 = phiAverage(phiStart)/Js	
-  ELSE
-    Rw1 = 0.0_dbl										! set to 0.0 while the scalar is diffusing to the surface (Js=0)
-    Rw2 = 0.0_dbl	
-  END IF
-
-  USL1 = Rw1*Dm*Dmcf										! calculate the effective UWL thickness
-  USL2 = Rw2*Dm*Dmcf
-
-  WRITE(2479,'(9E25.15)') phiStart/(nt/nPers), AbsRate, AbsRateS, AbsRateV, Js, JsS, JsV, USL1, USL2
-
-  ! phiStart+1 to nt-1 (2nd order central differencing) 
-  DO n=phiStart+1,nt-1
-
-    AbsRate = (phiAbsTotal(n+1) - phiAbsTotal(n-1))/(2.0_dbl*tcf)				
-    AbsRateS = (phiAbsTotalS(n+1) - phiAbsTotalS(n-1))/(2.0_dbl*tcf)	
-    AbsRateV = (phiAbsTotalV(n+1) - phiAbsTotalV(n-1))/(2.0_dbl*tcf)	
-    Js = AbsRate/SA(n)
-    JsS = AbsRateS/(SA(n)-SAV)
-    JsV = AbsRateV/SAV
-
-    ! Calculate the resistance to diffusion
-    IF(Js .GT. 1e-18) THEN
-      Rw1 = phiBulk/Js	
-      Rw2 = phiAverage(n)/Js	
-    ELSE
-      Rw1 = 0.0_dbl										! set to 0.0 while the scalar is diffusing to the surface (Js=0)
-      Rw2 = 0.0_dbl	
-    END IF
-
-    USL1 = Rw1*Dm*Dmcf										! calculate the effective UWL thickness
-    USL2 = Rw2*Dm*Dmcf
-  
-    WRITE(2479,'(9E25.15)') n/(nt/nPers), AbsRate, AbsRateS, AbsRateV, Js, JsS, JsV, USL1, USL2
-
-  END DO
-
-END IF
-
-!---- nt (1st order backward differencing)
-AbsRate = (phiAbsTotal(nt) - phiAbsTotal(nt-1))/tcf
-AbsRateS = (phiAbsTotalS(nt) - phiAbsTotalS(nt-1))/tcf
-AbsRateV = (phiAbsTotalV(nt) - phiAbsTotalV(nt-1))/tcf
-Js = AbsRate/SA(nt)
-JsS = AbsRateS/(SA(nt)-SAV)
-JsV = AbsRateV/SAV
-
-!---- Calculate the resistance to diffusion
-IF(Js .GT. 1e-18) THEN
-  Rw1 = phiBulk/Js	
-  Rw2 = phiAverage(nt)/Js	
-ELSE
-  Rw1 = 0.0_dbl											! set to 0.0 while the scalar is diffusing to the surface (Js=0)
-  Rw2 = 0.0_dbl	
-END IF
-
-USL1 = Rw1*Dm*Dmcf										! calculate the effective UWL thickness
-USL2 = Rw2*Dm*Dmcf
-
-WRITE(2479,'(9E25.15)') nt/(nt/nPers), AbsRate, AbsRateS, AbsRateV, Js, JsS, JsV, USL1, USL2
-
-CLOSE(2479)
-
-!===================================================================================================
-END SUBROUTINE PrintAbsRate
-!===================================================================================================
-
-
-
-
 
 
 
