@@ -199,7 +199,7 @@ CLOSE(500)
 
 
 !----- Creating a file called particle-restart-iter.dat with all the particle data in it ----------------
-IF (myid .eq. master) THEN
+IF ((myid .EQ. master) .AND. (ParticleTrack .EQ. ParticleOn) .AND. (iter .GE. phiStart)) THEN
    OPEN(156,FILE='Restart-Particles-'//iter_char//'.dat')
    write(156,*) np
    current => ParListHead%next							 
