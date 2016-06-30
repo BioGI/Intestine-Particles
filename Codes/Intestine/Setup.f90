@@ -398,15 +398,6 @@ IF(NumSubsTotal .NE. numprocs) THEN
   STOP
 END IF
 
-! Check to make sure the number of villi in the axial direction is a multiple of the number of villi groups
-IF(MOD(numVilliZ,numVilliGroups) .NE. 0) THEN
-  OPEN(1000,FILE="error.dat")
-  WRITE(1000,*) 'numVilliZ is not a multiple of numVilliGroups'
-  WRITE(1000,*) 'check input file...'
-  CLOSE(1000)
-  STOP
-END IF
-
 !------------------------------------------------
 END SUBROUTINE ReadInput
 !------------------------------------------------

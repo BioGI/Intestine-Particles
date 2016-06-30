@@ -49,37 +49,30 @@ IF (myid .EQ. master) THEN
    !----- Monitoring negative phi----
    OPEN(2118,FILE='Negative-phi.dat',POSITION='APPEND')
    WRITE(2118,'(A120)') 'VARIABLES = iter,  Number of Negative phi Nodes,  Total Sum of Negative phi,  Worst Negative phi,  Average of Negative phi'
-   CALL FLUSH(2118)
 
    !----- Monitoring over saturation
    OPEN(2119,FILE='Over_Saturation.dat',POSITION='APPEND')
    WRITE(2119,'(A120)') 'VARIABLES = iter,  Number of OverSaturated Nodes,  Worst Oversaturation'
-   CALL FLUSH(2119)
 
    !----- Monitoring computational costs
-   OPEN(5,FILE='status.dat')										
-   CALL FLUSH(5)													
+   OPEN(5,FILE='Computational_Time.dat')										
 
    !---- Volume -----
    OPEN(2460,FILE='volume.dat')
    WRITE(2460,*) 'VARIABLES = "period", "volume"'
-   CALL FLUSH(2460)
 
    !----- Drug Conservation
    OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-   WRITE(2472,'(A120)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
-   CALL FLUSH(2472)
+   WRITE(2472,'(A145)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
 
    !----- Diensity Correction to improve mass conservation
    OPEN(2473,FILE='Density_Correction.dat')
    WRITE(2473,*) 'VARIABLES: iter, Density Correction'
-   CALL FLUSH(2473)
 END IF
 
 !----- Mass
 OPEN(2458,FILE='mass-'//sub//'.dat')
 WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory, mass_actual, mass_err'
-CALL FLUSH(2458)
 
 !===================================================================================================
 END SUBROUTINE OpenOutputFiles
@@ -118,34 +111,28 @@ END SUBROUTINE CloseOutputFiles
 
 
 !===================================================================================================
-SUBROUTINE PrintStatus					! Writes Computational Costs to a File
+SUBROUTINE PrintComputationalTime				! Writes Computational Costs to a File
 !===================================================================================================
 IMPLICIT NONE
 
+REAL(dbl) :: Time(1000000)
+
 IF (myid .EQ. master) THEN
+   Time = 0.0_dbl
+   rate = 100_lng							! Set the rate of counting
+
    IF (iter .EQ. iter0-1_lng) THEN
-      rate = 100_lng							! Set the rate of counting
       CALL SYSTEM_CLOCK(start,rate)					! Keep Track of Elapsed Time 
-      WRITE(5,*) 'Running Simulation...'				! Print Current Status
-      WRITE(5,*) '[',nt,'Iterations]'
-      CALL FLUSH(5)													
-   END IF
- 
-   IF (MOD(iter,2) .EQ. 0 .AND. (iter .NE. 0)) THEN 			! Print Current Status Periodically
-      CALL SYSTEM_CLOCK(current,rate)					
-      WRITE(5,*) iter, ((current-start)/REAL(rate))/(iter-iter0)
-      CALL FLUSH(5)													
+      Time(iter)= start	
+      WRITE(5,*) iter, Time(iter)												
    END IF
 
-   IF (iter .EQ. nt) THEN
-      CALL SYSTEM_CLOCK(final,rate)					! End the Timer
-      WRITE(5,*) 'Simulation Complete.'
-      WRITE(5,*) 'Total Wall-Time (min):', ((final-start)/REAL(rate))/60.0_dbl
-      CALL FLUSH(5)													
-   END IF
+   CALL SYSTEM_CLOCK(current,rate)					
+   Time(iter)= current 
+   WRITE(5,*) iter, Time(iter)-Time(iter-1) 
 END IF
 !===================================================================================================
-END SUBROUTINE PrintStatus
+END SUBROUTINE PrintComputationalTime
 !===================================================================================================
 
 
