@@ -56,6 +56,7 @@ IF (myid .EQ. master) THEN
 
    !----- Monitoring computational costs
    OPEN(5,FILE='Computational_Time.dat')										
+   WRITE(5,'(A100)') '#VARIABLES = iter, Computational cost at each iteration, Average computational cost so far'
 
    !---- Volume -----
    OPEN(2460,FILE='volume.dat')
@@ -118,18 +119,20 @@ IMPLICIT NONE
 REAL(dbl) :: Time(1000000)
 
 IF (myid .EQ. master) THEN
-   Time = 0.0_dbl
    rate = 100_lng							! Set the rate of counting
 
    IF (iter .EQ. iter0-1_lng) THEN
       CALL SYSTEM_CLOCK(start,rate)					! Keep Track of Elapsed Time 
       Time(iter)= start	
-      WRITE(5,*) iter, Time(iter)												
+   ELSE
+      CALL SYSTEM_CLOCK(current,rate)					
+      Time(iter)= current 
+      WRITE(5,*) iter, (Time(iter)-Time(iter-1))/REAL(rate), ((Time(iter)-start)/(iter-iter0+1))/REAL(rate)
    END IF
 
-   CALL SYSTEM_CLOCK(current,rate)					
-   Time(iter)= current 
-   WRITE(5,*) iter, Time(iter)-Time(iter-1) 
+   IF ((MOD(iter,10) .EQ. 0))  THEN
+      CALL FLUSH(5)
+   END IF
 END IF
 !===================================================================================================
 END SUBROUTINE PrintComputationalTime
