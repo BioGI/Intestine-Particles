@@ -307,7 +307,7 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 IF (myid .EQ. master) THEN
-   IF ((MOD(iter,(((nt+1_lng)-iter0)/numOuts)) .EQ. 0) 		&
+   IF ((MOD(iter, Output_Intervals) .EQ. 0)           		& 
       .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0) 	&
       .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
    
