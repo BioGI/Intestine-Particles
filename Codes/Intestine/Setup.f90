@@ -354,19 +354,6 @@ READ(10,*) wc2					! segmental weighting coefficient
 
 READ(10,*) Tmix				! period of mixed mode simulation
 
-READ(10,*) numVilliZ			! number of rows of villi in the Z-direction
-READ(10,*) numVilliTheta	! number of villi in each row (theta-direction)
-READ(10,*) numVilliGroups	! number of villi in each row (theta-direction)
-
-READ(10,*) Lv					! length of the villi (micrometers)
-READ(10,*) Rv					! radius of the villi (micrometers)
-
-READ(10,*) freqRatioT		! villous frequency to macroscopic contraction frequency (azimuthal, theta direction)
-READ(10,*) freqRatioZ		! villous frequency to macroscopic contraction frequency (axial, z direction)
-
-READ(10,*) randORord			! flag to determine if the villous motion is random or ordered
-READ(10,*) villiAngle		! maximum angle of active villous travel (degrees) 
-
 READ(10,*) den					! density
 READ(10,*) nu					! kinematic viscosity
 READ(10,*) tau					! relaxation parameter
