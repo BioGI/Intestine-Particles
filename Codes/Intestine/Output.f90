@@ -164,7 +164,7 @@ IF (myid .EQ. master) THEN
 END IF
 
 !----- Creating a file called restart-iter-sub.dat with all macroscopic fields and distribution functions -----
-WRITE(iter_char(1:7),'(I7.7)') iter-1_lng
+WRITE(iter_char(1:7),'(I7.7)') iter
 OPEN(500,FILE='Restart-Out-'//iter_char//'-'//sub//'.dat')			
 DO k=0,nzSub+1
    DO j=0,nySub+1

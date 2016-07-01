@@ -45,7 +45,7 @@ pcf 	= cs*cs*vcf*vcf					! pressure conversion factor
 
 !----- Determine the number of time steps to run
 IF (restart) THEN
-   OPEN(55,FILE='iter0.dat')				! open initial iteration file
+   OPEN(55,FILE='Restart-iter.dat')				! open initial iteration file
    READ(55,*) iter0					! read and set initial iteration
    CLOSE(55)
    iter = iter0-1_lng					! set the in

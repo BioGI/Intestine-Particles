@@ -24,8 +24,8 @@ IF (restart) THEN						! restart from  file
    READ(55,*) iter0                                     	! read and set initial iteration
    CLOSE(55)
 
-   iter = iter0-1_lng						! set the initial iteration to the last iteration from the previous run
-   WRITE(iter_char(1:7),'(I7.7)') iter
+   iter = iter0-1						! set the initial iteration to the last iteration from the previous run
+   WRITE(iter_char(1:7),'(I7.7)') iter0
 
    OPEN(50,FILE='Restart-Out-'//iter_char//'-'//sub//'.dat')
    DO k=0,nzSub+1_lng
@@ -124,13 +124,13 @@ CHARACTER(7) :: iter_char                                       ! iteration stor
 TYPE(ParRecord), POINTER	:: CurPar
 
 IF (restart) THEN								! restarting: read particle data from  particle_restart.dat
-   OPEN(55,FILE='iter0.dat')                                    ! open initial iteration file
+   OPEN(55,FILE='Restart-iter.dat')                                    ! open initial iteration file
    READ(55,*) iter0                                             ! read and set initial iteration
    CLOSE(55)
 
    iter = iter0-1_lng                                           ! set the initial iteration to the last iteration from the previous run
-   WRITE(iter_char(1:7),'(I7.7)') iter
 
+   WRITE(iter_char(1:7),'(I7.7)') iter0
    OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
    READ(59,*) np
    num_particles = np
