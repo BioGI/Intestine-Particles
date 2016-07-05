@@ -233,17 +233,17 @@ h1(nz+1)= h1(1)
 
 !----- First Straight Piece
 DO i=0,seg1L
-   h2(i) = amp2*(COS(((2.0_dbl*PI)/Ts)*time)) + shift2
+   h2(i) = amp2*(COS(PI+((2.0_dbl*PI)/Ts)*time)) + shift2
 END DO
 
 !----- Second Straight Piece
 DO i=seg1R,seg2L
-   h2(i) = amp2*(COS(((2.0_dbl*PI)/Ts)*(time-(Ts/2.0_dbl)))) + shift2
+   h2(i) = amp2*(COS(PI+((2.0_dbl*PI)/Ts)*(time-(Ts/2.0_dbl)))) + shift2
 END DO
 
 !----- Third Straight Piece
 DO i=seg2R,nlambda2+1
-   h2(i) = amp2*(COS(((2.0_dbl*PI)/Ts)*time)) + shift2
+   h2(i) = amp2*(COS(PI+((2.0_dbl*PI)/Ts)*time)) + shift2
 END DO
 
 !----- First Cos Piece
