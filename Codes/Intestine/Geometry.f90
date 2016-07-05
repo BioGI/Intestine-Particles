@@ -388,17 +388,17 @@ v1(nz+1)=v1(1)
 !----- Calculate the wall velocity for the first wave
 !----- First Straight Piece
 DO i=0,seg1L
-   v2(i) = -amp2*(SIN(((2.0_dbl*PI)/Ts)*time))*((2.0_dbl*PI)/Ts)
+   v2(i) = -amp2*(SIN(PI+((2.0_dbl*PI)/Ts)*time))*((2.0_dbl*PI)/Ts)
 END DO
 
 !----- Second Straight Piece
 DO i=seg1R,seg2L
-   v2(i) = -amp2*(SIN(((2.0_dbl*PI)/Ts)*(time-(Ts/2.0_dbl))))*((2.0_dbl*PI)/Ts)
+   v2(i) = -amp2*(SIN(PI+((2.0_dbl*PI)/Ts)*(time-(Ts/2.0_dbl))))*((2.0_dbl*PI)/Ts)
 END DO
 
 !----- Third Straight Piece
 DO i=seg2R,nlambda2
-   v2(i) = -amp2*(SIN(((2.0_dbl*PI)/Ts)*time))*((2.0_dbl*PI)/Ts)
+   v2(i) = -amp2*(SIN(PI+((2.0_dbl*PI)/Ts)*time))*((2.0_dbl*PI)/Ts)
 END DO
 
 !----- First Cos Piece
