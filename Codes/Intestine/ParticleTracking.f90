@@ -32,7 +32,9 @@ SUBROUTINE Particle_Velocity 					     ! Using Trilinear interpolation
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: i,ix0,ix1,iy0,iy1,iz0,iz1
+INTEGER(lng)  :: ii,jj,kk
 REAL(dbl)     :: xp,yp,zp,c00,c01,c10,c11,c0,c1,c,xd,yd,zd
+REAL(dbl)     :: xaxis,yaxis,X_s,Y_s,R_s,CosTheta_s,SinTheta_s,Vel_s
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -53,8 +55,34 @@ DO WHILE (ASSOCIATED(current))
          iz0= FLOOR(zp)
          iz1= CEILING(zp)
 
-!!!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
+!------- Treating the solid nodes so that their velocity is not zero for interpolation purposes
+!------- Velocity magnitude is calculated based on boundary velocity at that z location
+!------- Velocity vector points to the center od the circle in that Z-location
+         DO ii= ix0, ix1
+            DO jj= iy0, iy1
+               DO kk= iz0, iz1
+                  IF (node(ii,jj,kk) .EQ. SOLID) THEN					! Solid nodes in the lattice cell encompassing the particle
+                     xaxis 	   = ANINT(0.5_dbl*(nx+1))
+                     yaxis 	   = ANINT(0.5_dbl*(ny+1))
+                     X_s   	   = xcf* ((ii-1_lng)+ (iMin-1_lng)- (xaxis-1_lng))
+                     Y_s   	   = ycf* ((jj-1_lng)+ (jMin-1_lng)- (yaxis-1_lng)) 
+                     R_s   	   = SQRT(X_s**2 + Y_s**2)
+                     CosTheta_s    = X_s/R_s
+                     SinTheta_s    = Y_s/R_s
+                     Vel_s	   = vel(kk)
+                     u_s(ii,jj,kk) = Vel_s * CosTheta_s
+                     v_s(ii,jj,kk) = Vel_s * SinTheta_s
+                     w_s(ii,jj,kk) = 0.0_dbl				
+                  ELSE 									! Fluid nodes in the lattice cell encompassing the particle
+                     u_s(ii,jj,kk) = u(ii,jj,kk) 
+                     v_s(ii,jj,kk) = v(ii,jj,kk) 
+                     w_s(ii,jj,kk) = w(ii,jj,kk)
+                  END IF
+               END DO
+            END DO
+         END DO
 
+!------- Preparing for tri-linear interpolation
          IF (ix1 .NE. ix0) THEN 
             xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
          ELSE
@@ -75,10 +103,10 @@ DO WHILE (ASSOCIATED(current))
 
 !--------u-interpolation
 !--------1st level linear interpolation in x-direction
-         c00= u(ix0,iy0,iz0)*(1.0_dbl-xd)+u(ix1,iy0,iz0)*xd	
-         c01= u(ix0,iy0,iz1)*(1.0_dbl-xd)+u(ix1,iy0,iz1)*xd	
-         c10= u(ix0,iy1,iz0)*(1.0_dbl-xd)+u(ix1,iy1,iz0)*xd	
-         c11= u(ix0,iy1,iz1)*(1.0_dbl-xd)+u(ix1,iy1,iz1)*xd	
+         c00= u_s(ix0,iy0,iz0)*(1.0_dbl-xd)+u_s(ix1,iy0,iz0)*xd	
+         c01= u_s(ix0,iy0,iz1)*(1.0_dbl-xd)+u_s(ix1,iy0,iz1)*xd	
+         c10= u_s(ix0,iy1,iz0)*(1.0_dbl-xd)+u_s(ix1,iy1,iz0)*xd	
+         c11= u_s(ix0,iy1,iz1)*(1.0_dbl-xd)+u_s(ix1,iy1,iz1)*xd	
 !--------2nd level linear interpolation in y-direction
          c0 = c00*(1.0_dbl-yd)+c10*yd
          c1 = c01*(1.0_dbl-yd)+c11*yd
@@ -88,10 +116,10 @@ DO WHILE (ASSOCIATED(current))
 
 !--------v-interpolation
 !--------1st level linear interpolation in x-direction
-         c00= v(ix0,iy0,iz0)*(1.0_dbl-xd)+v(ix1,iy0,iz0)*xd
-         c01= v(ix0,iy0,iz1)*(1.0_dbl-xd)+v(ix1,iy0,iz1)*xd
-         c10= v(ix0,iy1,iz0)*(1.0_dbl-xd)+v(ix1,iy1,iz0)*xd
-         c11= v(ix0,iy1,iz1)*(1.0_dbl-xd)+v(ix1,iy1,iz1)*xd	
+         c00= v_s(ix0,iy0,iz0)*(1.0_dbl-xd)+v_s(ix1,iy0,iz0)*xd
+         c01= v_s(ix0,iy0,iz1)*(1.0_dbl-xd)+v_s(ix1,iy0,iz1)*xd
+         c10= v_s(ix0,iy1,iz0)*(1.0_dbl-xd)+v_s(ix1,iy1,iz0)*xd
+         c11= v_s(ix0,iy1,iz1)*(1.0_dbl-xd)+v_s(ix1,iy1,iz1)*xd	
 !--------2nd level linear interpolation in y-direction
          c0 = c00*(1.0_dbl-yd)+c10*yd
          c1 = c01*(1.0_dbl-yd)+c11*yd
@@ -101,10 +129,10 @@ DO WHILE (ASSOCIATED(current))
 
 !--------w-interpolation
 !--------1st level linear interpolation in x-direction
-         c00 = w(ix0,iy0,iz0)*(1.0_dbl-xd)+w(ix1,iy0,iz0)*xd	
-         c01 = w(ix0,iy0,iz1)*(1.0_dbl-xd)+w(ix1,iy0,iz1)*xd	
-         c10 = w(ix0,iy1,iz0)*(1.0_dbl-xd)+w(ix1,iy1,iz0)*xd	
-         c11 = w(ix0,iy1,iz1)*(1.0_dbl-xd)+w(ix1,iy1,iz1)*xd	
+         c00 = w_s(ix0,iy0,iz0)*(1.0_dbl-xd)+w_s(ix1,iy0,iz0)*xd	
+         c01 = w_s(ix0,iy0,iz1)*(1.0_dbl-xd)+w_s(ix1,iy0,iz1)*xd	
+         c10 = w_s(ix0,iy1,iz0)*(1.0_dbl-xd)+w_s(ix1,iy1,iz0)*xd	
+         c11 = w_s(ix0,iy1,iz1)*(1.0_dbl-xd)+w_s(ix1,iy1,iz1)*xd	
 !--------2nd level linear interpolation in y-direction
          c0  = c00*(1.0_dbl-yd)+c10*yd
          c1  = c01*(1.0_dbl-yd)+c11*yd
