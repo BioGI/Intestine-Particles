@@ -568,8 +568,13 @@ IF (Drug_Released_Total .LT. 1e-20) THEN
    Drug_Released_Total =1e-20
 END IF
 
-Drug_Loss_Percent = (Drug_Loss / (Drug_Released_Total+Drug_Initial)) * 100.0_lng
-Drug_Loss_Modified_Percent = (Drug_Loss_Modified / (Drug_Released_Total+Drug_Initial)) * 100.0_lng  
+IF ((Drug_Released_Total+Drug_Initial).GT.1e-18) THEN
+    Drug_Loss_Percent = (Drug_Loss / (Drug_Released_Total+Drug_Initial)) * 100.0_lng
+    Drug_Loss_Modified_Percent = (Drug_Loss_Modified / (Drug_Released_Total+Drug_Initial)) * 100.0_lng  
+ELSE
+    Drug_Loss_Percent = 0.0_dbl
+    Drug_Loss_Modified_Percent = 0.0_dbl
+END IF
 
 IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
    Drug_Absorbed = 0.0_lng
