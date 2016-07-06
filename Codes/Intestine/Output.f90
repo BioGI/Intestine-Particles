@@ -261,7 +261,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
 
    !----- open the proper output file
    OPEN(60,FILE='out-'//iter_char//'-'//sub//'.dat')
-   WRITE(60,*) 'VARIABLES = "x" "y" "z" "u" "v" "w" "P" "phi" "node"'
+   WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "P" "phi/Cs" "node"
    WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
    DO k=1,nzSub
       DO j=1,nySub
@@ -274,7 +274,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                phi(i,j,k)=0.0_lng
             END IF   
             pressure= (rho(i,j,k)-denL)*dcf*pcf
-            WRITE(60,'(I3,2I4,3F10.6,E11.3,E12.4,I2)') ii, jj,kk, u(i,j,k)*vcf, v(i,j,k)*vcf, w(i,j,k)*vcf, pressure, phi(i,j,k), node(i,j,k)
+            WRITE(60,'(I3,2I4,3F6.2,E11.3,F7.4,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/Cs_mol, node(i,j,k)
          END DO
       END DO
    END DO
