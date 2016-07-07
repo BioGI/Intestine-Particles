@@ -48,7 +48,7 @@ IF (restart) THEN
    OPEN(55,FILE='Restart-iter.dat')				! open initial iteration file
    READ(55,*) iter0					! read and set initial iteration
    CLOSE(55)
-   iter = iter0-1_lng					! set the in
+   iter0 = iter0 + 1					! set the in
    nt = ANINT((nPers*Tmix)/tcf) + iter
 ELSE
    nt = ANINT((nPers*Tmix)/tcf)

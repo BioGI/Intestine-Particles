@@ -52,9 +52,10 @@ IF (ParticleTrack.EQ.ParticleOn) THEN 					! If particle tracking is 'on' then d
    CALL Particle_Setup
 ENDIF
 
-IF (restart) THEN							! calculate the villous locations/angles at iter0-1 [MODULE: Geometry]
-    CALL AdvanceGeometry
-END IF
+!IF (restart) THEN							! calculate the villous locations/angles at iter0-1 [MODULE: Geometry]
+!    iter=iter0-1
+!    CALL AdvanceGeometry
+!END IF
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processes before starting simulation [Intrinsic]
 

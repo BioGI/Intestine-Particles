@@ -24,9 +24,7 @@ IF (restart) THEN						! restart from  file
    READ(55,*) iter0                                     	! read and set initial iteration
    CLOSE(55)
 
-   iter = iter0-1						! set the initial iteration to the last iteration from the previous run
    WRITE(iter_char(1:7),'(I7.7)') iter0
-
    OPEN(50,FILE='Restart-Out-'//iter_char//'-'//sub//'.dat')
    DO k=0,nzSub+1_lng
       DO j=0,nySub+1_lng
@@ -50,14 +48,7 @@ IF (restart) THEN						! restart from  file
    delphi_particle = 0.0_dbl                               	! Initialize the scalar contirbution from particles to 0.0. Once the particle
    CLOSE(50)
 
-   IF (randORord .EQ. RANDOM) THEN	
-      ALLOCATE(rnd(2_lng*numVilli))
-      OPEN(1778,FILE='rnd.dat')					! read in the rnd array
-      DO i=1,2_lng*numVilli	
-         READ(1778,*) rnd(i)
-      END DO
-      CLOSE(1778)
-   END IF
+   iter0 = iter0 + 1						! set the initial iteration to one after last iteration from the previous run
 
 ELSE								! clean start
   alpha = 0.4_dbl
@@ -128,10 +119,10 @@ IF (restart) THEN								! restarting: read particle data from  particle_restart
    READ(55,*) iter0                                             ! read and set initial iteration
    CLOSE(55)
 
-   iter = iter0-1_lng                                           ! set the initial iteration to the last iteration from the previous run
-
    WRITE(iter_char(1:7),'(I7.7)') iter0
    OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
+   iter0= iter0 + 1
+
    READ(59,*) np
    num_particles = np
    CALL list_init(ParListHead)
