@@ -174,7 +174,7 @@ tausgs_particle_z = 0.0_dbl
 Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle size
 
 
-IF (iter.GT.iter0+0_lng) THEN 
+!IF (iter.GT.iter0+0_lng) THEN 
    current => ParListHead%next     
    DO WHILE (ASSOCIATED(current)) 
       next => current%next 	
@@ -315,7 +315,7 @@ IF (iter.GT.iter0+0_lng) THEN
    CALL Particle_Drug_To_Nodes   		! distributes released drug concentration to nodes in effective volume. 
 !  CALL Particle_History			! Keep trak of a few particles
    CALL Particle_Transfer 
-ENDIF
+!ENDIF
 !===================================================================================================
 END SUBROUTINE Particle_Track
 !===================================================================================================
