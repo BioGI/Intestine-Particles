@@ -153,7 +153,7 @@ IMPLICIT NONE
 
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
-INTEGER(lng) :: i,j,k,m			
+INTEGER(lng) :: i,j,k,m,Particle_Counter			
 CHARACTER(7):: iter_char             			           ! iteration stored as a character
 
 !----- Creating a file called iter0.dat with iteration number in it --------------------------------
@@ -191,7 +191,19 @@ CLOSE(500)
 !----- Creating a file called particle-restart-iter.dat with all the particle data in it ----------------
 IF ((myid .EQ. master) .AND. (ParticleTrack .EQ. ParticleOn) .AND. (iter .GE. phiStart)) THEN
    OPEN(156,FILE='Restart-Particles-'//iter_char//'.dat')
-   write(156,*) np
+
+   !----- Counting hte number of the particles which are not compeletel dissolved yet ------------------
+   Particle_Counter = 0
+   current => ParListHead%next
+   DO WHILE (ASSOCIATED(current))
+      next => current%next
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
+         Particle_Counter = Particle_Counter + 1
+      END IF
+      current => next
+   END DO
+
+   write(156,*) Particle_Counter 
    current => ParListHead%next							 
    DO WHILE (ASSOCIATED(current))
       next => current%next 
@@ -226,7 +238,7 @@ IF ((myid .EQ. master) .AND. (ParticleTrack .EQ. ParticleOn) .AND. (iter .GE. ph
         END IF
      current => next  
   ENDDO
-  CLOSE(160)
+  CLOSE(156)
 END IF
 
 !===================================================================================================
