@@ -485,7 +485,7 @@ END DO
 
 
 !---- making sure that the average pressure= denL
-IF (Correcting_Mass) THEN
+IF ((Correcting_Mass) .AND. (iter.GT.iter0)) THEN
    CALL Mass_Correction
 END IF
 
