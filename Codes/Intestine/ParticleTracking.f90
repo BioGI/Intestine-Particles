@@ -64,8 +64,8 @@ DO WHILE (ASSOCIATED(current))
                   IF (node(ii,jj,kk) .EQ. SOLID) THEN					! Solid nodes in the lattice cell encompassing the particle
                      xaxis 	   = ANINT(0.5_dbl*(nx+1))
                      yaxis 	   = ANINT(0.5_dbl*(ny+1))
-                     X_s   	   = xcf* ((ii-1_lng)+ (iMin-1_lng)- (xaxis-1_lng))
-                     Y_s   	   = ycf* ((jj-1_lng)+ (jMin-1_lng)- (yaxis-1_lng)) 
+                     X_s   	   = xcf* (ii+ (iMin-1_lng)- xaxis)
+                     Y_s   	   = ycf* (jj+ (jMin-1_lng)- yaxis) 
                      R_s   	   = SQRT(X_s**2 + Y_s**2)
                      CosTheta_s    = X_s/R_s
                      SinTheta_s    = Y_s/R_s
@@ -212,28 +212,23 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
             xpp = ((xp-1_lng)+ (iMin-1_lng)- (xaxis-1_lng)) * xcf
             ypp = ((yp-1_lng)+ (jMin-1_lng)- (yaxis-1_lng)) * ycf
             R_Particle    = SQRT(xpp**2 + ypp**2)
-            IF (R_Particle .GT. R_Boundary) THEN  						! Check if particle is outside analytical boundary
-               write(*,*) '---------------------------------------------------------------------------'
-               write(*,*) 'Particle location is outside the analytical boundary' 
-               write(*,*) 'first part of 2nd order tracking'
-               write(*,*) 'Iteration:        ', iter
-               write(*,*) 'Particle ID:      ', current%pardata%parid
-               write(*,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
-               write(*,*) 'zd,r(z1),r(z2)',zd,r(iz0), r(iz1)
-               write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-            END IF
+!            IF (R_Particle .GT. R_Boundary) THEN  						! Check if particle is outside analytical boundary
+!               write(*,*) '---------------------------------------------------------------------------'
+!               write(*,*) 'Particle location is outside the analytical boundary' 
+!               write(*,*) 'first part of 2nd order tracking'
+!               write(*,*) 'Iteration:        ', iter
+!               write(*,*) 'Particle ID:      ', current%pardata%parid
+!               write(*,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+!               write(*,*) 'zd,r(z1),r(z2)',zd,r(iz0), r(iz1)
+!               write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+!            END IF
             IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &		! Check if all nodes around particle are solid
                (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
                (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
                (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
-               OPEN(1000,FILE="error.txt")
-               write(1000,*) 'All nodes around particle are solid' 
-               write(1000,*) 'first part of 2nd order tracking'
-               write(1000,*) 'Iteration:        ', iter
-               write(1000,*) 'Particle ID:      ', current%pardata%parid
-               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
-               CLOSE(1000)
-               STOP
+               write(*,*) '1st part of tracking: All nodes around are solid'    
+               !write(*,*) node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1)  
+               write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
             END IF !--------------------------------------------------------------------------------------   
 
          END IF
@@ -275,28 +270,24 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
             xpp = ((xp-1_lng)+ (iMin-1_lng)- (xaxis-1_lng)) * xcf
             ypp = ((yp-1_lng)+ (jMin-1_lng)- (yaxis-1_lng)) * ycf
             R_Particle    = SQRT(xpp**2 + ypp**2)
-            IF (R_Particle .GT. R_Boundary) THEN                                                ! Check if particle is outside analytical boundary
-               write(*,*) '---------------------------------------------------------------------------'
-               write(*,*) 'Particle location is outside the analytical boundary'
-               write(*,*) 'first part of 2nd order tracking'
-               write(*,*) 'Iteration:        ', iter
-               write(*,*) 'Particle ID:      ', current%pardata%parid
-               write(*,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
-               write(*,*) 'zd,r(z1),r(z2)',zd,r(iz0), r(iz1)
-               write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-            END IF
+!            IF (R_Particle .GT. R_Boundary) THEN                                                ! Check if particle is outside analytical boundary
+!               write(*,*) '---------------------------------------------------------------------------'
+!               write(*,*) 'Particle location is outside the analytical boundary'
+!               write(*,*) 'first part of 2nd order tracking'
+!               write(*,*) 'Iteration:        ', iter
+!               write(*,*) 'Particle ID:      ', current%pardata%parid
+!               write(*,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
+!               write(*,*) 'zd,r(z1),r(z2)',zd,r(iz0), r(iz1)
+!               write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+!            END IF
+
             IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &             ! Check if all nodes around particle are solid
                (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
                (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
                (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
-               OPEN(1000,FILE="error.txt")
-               write(1000,*) 'All nodes around particle are solid'
-               write(1000,*) 'first part of 2nd order tracking'
-               write(1000,*) 'Iteration:        ', iter
-               write(1000,*) 'Particle ID:      ', current%pardata%parid
-               write(1000,*) 'Particle location:', current%pardata%xp, current%pardata%yp, current%pardata%zp
-               CLOSE(1000)
-               STOP
+               write(*,*) '2nd part of tracking: All nodes around are solid'   
+               !write(*,*) node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1)  
+               write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
             END IF !--------------------------------------------------------------------------------------
 
          END IF
