@@ -52,7 +52,8 @@ SUBROUTINE Scalar				  ! calculates the evolution of scalar in the domain
 IMPLICIT NONE
 
 INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr							! index variables
-INTEGER(lng):: Over_Sat_Counter,Over_Sat_Counter_Global
+INTEGER(lng):: Over_Sat_Counter, Over_Sat_Counter_Global
+REAL(dbl)   :: Over_sat_Total,   Over_Sat_Total_Global
 REAL(dbl)   :: Largest_phi, Largest_phi_Global							! OverSaturation issue monitoring
 REAL(dbl)   :: phiBC 										! scalar contribution from boundary
 REAL(dbl)   :: phiOutSurf,phiInSurf								! scalar contribution coming from and going into the boundary
@@ -119,7 +120,7 @@ DO k=1,nzSub
 !---------- Monitoring the negative phi
             zcf3 = zcf*zcf*zcf* 1000000.0_dbl  											! node volume in physical units (cm^3) so drung units are "mole
             IF (phi(i,j,k) .LT. 0.0_dbl) THEN
-               Negative_phi_Counter = Negative_phi_Counter + 1.0
+               Negative_phi_Counter = Negative_phi_Counter + 1
                Negative_phi_Total   = Negative_phi_Total   + phi(i,j,k)  
                IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
                   Negative_phi_Worst = phi(i,j,k)
@@ -130,6 +131,7 @@ DO k=1,nzSub
 !---------- Monitoring over saturation
             IF (phi(i,j,k) .GT. Cs_mol) THEN
                Over_Sat_Counter= Over_Sat_Counter + 1
+               Over_Sat_Total  = Over_Sat_Total   + phi(i,j,k)
                IF (Largest_phi .LT. phi(i,j,k) ) THEN
                   Largest_phi= phi(i,j,k)
                END IF
@@ -151,18 +153,20 @@ IF (Negative_phi_Counter_Global .LT. 1.0) THEN
    Negative_phi_Counter_Global = 1.0
 ENDIF
 
+
 IF (myid .EQ. master) THEN
-   write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global, Negative_phi_Worst_Global, Negative_phi_Total_Global/Negative_phi_Counter_Global
+   write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global/Cs_mol, Negative_phi_Worst_Global/Cs_mol, Negative_phi_Total_Global/(Cs_mol*Negative_phi_Counter_Global)
    CALL FLUSH(2118)
 END IF
 
 
 !----- Monitoring the Over Saturation problem
 CALL MPI_ALLREDUCE(Over_Sat_Counter, Over_Sat_Counter_Global, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Over_Sat_Total,   Over_Sat_Total_Global,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 CALL MPI_ALLREDUCE(Largest_phi,      Largest_phi_Global,      1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, mpierr)
 
 IF (myid .EQ. master) THEN
-   write(2119,*) iter, Over_Sat_Counter_Global, Largest_phi_Global/Cs_mol
+   write(2119,*) iter, Over_Sat_Counter_Global, Largest_phi_Global/Cs_mol, Over_Sat_Total_Global/(Over_Sat_Counter_Global*Cs_mol)
    CALL FLUSH(2119)
 END IF
 

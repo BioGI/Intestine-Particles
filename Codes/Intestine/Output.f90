@@ -52,7 +52,7 @@ IF (myid .EQ. master) THEN
 
    !----- Monitoring over saturation
    OPEN(2119,FILE='Over_Saturation.dat',POSITION='APPEND')
-   WRITE(2119,'(A120)') 'VARIABLES = iter,  Number of OverSaturated Nodes,  Worst Oversaturation'
+   WRITE(2119,'(A140)') 'VARIABLES = iter,  Number of oversaturated nodes, largest phi (C_max), Average of oversaturated nodes (C/Cs)'
 
    !----- Monitoring computational costs
    OPEN(5,FILE='Computational_Time.dat')										
