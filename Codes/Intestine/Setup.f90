@@ -54,9 +54,9 @@ REAL(dbl) :: coeffPhi, coeffGrad, coeffConst                                    
 REAL(dbl) :: phiAbsorbed							! total amount of scalar absorbed up to current time
 REAL(dbl) :: phiAbsorbedS							! total amount of scalar absorbed up to current time - through the macroscopic surface
 REAL(dbl) :: phiAbsorbedV							! total amount of scalar absorbed up to current time - through the villi
-INTEGER   :: Negative_phi_Counter                               		! Monitoring the negative concentration
-REAL(dbl) :: Negative_phi_Total, Negative_phi_Total_Global			! Total negative scalar which was fixed by setting it to zero
-REAL(dbl) :: Negative_phi_Worst	 			        		! Worst Negative scalar ine ach time step
+REAL(dbl)   :: Negative_phi_Total,       Negative_phi_Worst			! Monitoring negative phi issue
+REAL(dbl)   :: Negative_phi_Total_Global,Negative_phi_Worst_Global 		! Monitoring negative phi issue
+INTEGER(lng):: Negative_phi_Counter, Negative_phi_Counter_Global	        ! Monitoring negative phi issue
 REAL(dbl) :: phiInOut								! total amount of scalar leaving/entering the domain
 REAL(dbl) :: phiTotal								! total intial amount of scalar in the domain
 REAL(dbl) :: Drug_Initial							! Total moles of drug at initial time

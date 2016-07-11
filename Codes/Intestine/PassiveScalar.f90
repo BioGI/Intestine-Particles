@@ -53,10 +53,7 @@ IMPLICIT NONE
 
 INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr							! index variables
 INTEGER(lng):: Over_Sat_Counter,Over_Sat_Counter_Global
-INTEGER(lng):: Negative_phi_Counter, Negative_phi_Counter_Global
 REAL(dbl)   :: Largest_phi, Largest_phi_Global							! OverSaturation issue monitoring
-REAL(dbl)   :: Negative_phi_Total,       Negative_phi_Worst					! Monitoring negative phi issue
-REAL(dbl)   :: Negative_phi_Total_Global,Negative_phi_Worst_Global 				! Monitoring negative phi issue
 REAL(dbl)   :: phiBC 										! scalar contribution from boundary
 REAL(dbl)   :: phiOutSurf,phiInSurf								! scalar contribution coming from and going into the boundary
 REAL(dbl)   :: tausgs										! contribution form tau_sgs term from particle closure
@@ -122,8 +119,8 @@ DO k=1,nzSub
 !---------- Monitoring the negative phi
             zcf3 = zcf*zcf*zcf* 1000000.0_dbl  											! node volume in physical units (cm^3) so drung units are "mole
             IF (phi(i,j,k) .LT. 0.0_dbl) THEN
-               Negative_phi_Counter = Negative_phi_Counter +1.0
-               Negative_phi_Total   = Negative_phi_Total + phi(i,j,k) * zcf3 
+               Negative_phi_Counter = Negative_phi_Counter + 1.0
+               Negative_phi_Total   = Negative_phi_Total   + phi(i,j,k)  
                IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
                   Negative_phi_Worst = phi(i,j,k)
                ENDIF
