@@ -44,7 +44,7 @@ pcf 	= cs*cs*vcf*vcf					! pressure conversion factor
 
 
 !----- Determine the number of time steps to run
-IF (restart) THEN
+IF (Flag_Restart) THEN
    OPEN(55,FILE='Restart-iter.dat')				! open initial iteration file
    READ(55,*) iter0					! read and set initial iteration
    CLOSE(55)
@@ -161,7 +161,8 @@ seg2L	 = nlambda2 - (2_lng*segment)						! left point of sloped segement 2
 s2	 = (0.5_dbl*D)/Ts							! speed of collapse fo segmental contraction
 Re2	= (s2*(0.5_dbl*D))/nu							! Reynolds number based on mode 2
 
-IF (restart .EQV. .FALSE.) THEN
+IF (Flag_Restart) THEN
+ELSE  
    CALL AdvanceGeometry
 END IF
 !==================================================================================================

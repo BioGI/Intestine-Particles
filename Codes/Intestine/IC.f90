@@ -18,12 +18,12 @@ INTEGER(lng) :: imintemp, imaxtemp				! index variables
 REAL(dbl)    :: alpha,xmin, xmax,xmid
 REAL(dbl)    :: Drug_Initial_l, Drug_Released_Total_l
 REAL(dbl)    :: Drug_Absorbed_restart_l, Drug_Remained_in_Domain_l 
-CHARACTER(7) :: iter_char                        		! iteration stored as a character
+CHARACTER(7) :: iter_char                        ! iteration stored as a character
 
-IF (restart) THEN						! restart from  file 
-  
-   OPEN(55,FILE='Restart-iter.dat')                            	! open initial iteration file
-   READ(55,*) iter0                                     	! read and set initial iteration
+IF (Flag_Restart) THEN                           ! restart from  file 
+ 
+   OPEN(55,FILE='Restart-iter.dat')              ! open initial iteration file
+   READ(55,*) iter0                              ! read and set initial iteration
    CLOSE(55)
 
    WRITE(iter_char(1:7),'(I7.7)') iter0
@@ -120,7 +120,7 @@ REAL(dbl) :: xp,yp,zp,par_radius
 CHARACTER(7) :: iter_char                                       ! iteration stored as a character
 TYPE(ParRecord), POINTER	:: CurPar
 
-IF (restart) THEN								! restarting: read particle data from  particle_restart.dat
+IF (Flag_Restart) THEN								! restarting: read particle data from  particle_restart.dat
    OPEN(55,FILE='Restart-iter.dat')                                    ! open initial iteration file
    READ(55,*) iter0                                             ! read and set initial iteration
    CLOSE(55)

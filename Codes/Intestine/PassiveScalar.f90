@@ -127,8 +127,10 @@ DO k=1,nzSub
                Negative_phi_Total   = Negative_phi_Total   + phi(i,j,k)  
                IF (phi(i,j,k) .LT. Negative_phi_Worst) THEN
                   Negative_phi_Worst = phi(i,j,k)
-               ENDIF
-	       phi(i,j,k) = 0.0_dbl
+               END IF
+               IF ( Flag_Rectify_Neg_phi) THEN
+                  phi(i,j,k) = 0.0_dbl
+               END IF                    
             END IF
 
 !---------- Monitoring over saturation

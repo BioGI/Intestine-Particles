@@ -371,18 +371,25 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
       IF (mySub .EQ.current%pardata%cur_part) THEN
-         current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
-         S= current%pardata%S
-         Sst= S* (current%pardata%rp**2.0) / diffm
-         current%pardata%Sst= Sst
-         IF (Sst.LT.5.0_dbl) THEN
-            current%pardata%sh = current%pardata%sh + 0.296_dbl*(Sst**0.5_dbl)
-         ELSE
-            Sh0 = exp(0.162_dbl + 0.202_dbl*log(Sst) - 7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
-            current%pardata%sh = current%pardata%sh + Sh0-1.0_dbl
+         !----- If including the confinement effects ----------------------------------------------- 
+         IF (Flag_Confinement_Effects) THEN                                 
+            current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
          END IF
+
+         !----- If including the shear effects -----------------------------------------------------          
+         IF (Flag_Shear_Effects) THEN            
+            S= current%pardata%S
+            Sst= S* (current%pardata%rp**2.0) / diffm
+            current%pardata%Sst= Sst
+            IF (Sst.LT.5.0_dbl) THEN
+               current%pardata%sh = current%pardata%sh + 0.296_dbl*(Sst**0.5_dbl)
+            ELSE
+               Sh0 = exp(0.162_dbl + 0.202_dbl*log(Sst) - 7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
+               current%pardata%sh = current%pardata%sh + Sh0-1.0_dbl
+            END IF
+         END IF 
       END IF
 
       RANK= current%pardata%cur_part - 1

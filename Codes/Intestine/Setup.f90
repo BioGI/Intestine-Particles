@@ -35,8 +35,12 @@ INTEGER(lng), PARAMETER :: FLUID		= 0_lng				! fluid inbetween
 INTEGER(lng), PARAMETER :: SOLID		= 1_lng				! solid interior (moving)
 INTEGER(lng), PARAMETER :: SOLID2		= 2_lng				! solid exterior (stationary)
 INTEGER(lng), PARAMETER :: qitermax = 15_lng 					! max number of q iterations
-LOGICAL :: restart								! Restart Flag
-LOGICAL :: Correcting_Mass							! Flag to correct the mass by bringing average density to 1.0
+LOGICAL :: Flag_Correcting_Mass        ! Flag to correct the mass by bringing average density to 1.0
+LOGICAL :: Flag_ParticleTrack          ! Flag for tracking particles
+LOGICAL :: Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number
+LOGICAL :: Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number
+LOGICAL :: Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
+LOGICAL :: Flag_Restart                ! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
@@ -232,7 +236,6 @@ INTEGER(lng), PARAMETER :: ParticleOff= 0					! flag for signify if particle tra
 REAL(dbl),    PARAMETER	:: R0 = 0.0026_dbl		
 REAL(dbl),    PARAMETER	:: Min_R_Acceptable= 1.0e-7 				! Minimum particle radius. Smaller particles are considered completely dissolved and no computation is done  for them.
 
-INTEGER(lng):: ParticleTrack							! a flag to denote if particle track is on (1) or off (0) 
 INTEGER(lng):: np								! number of particles
 INTEGER(dbl):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
 INTEGER(dbl):: num_particles							! Total number of particles in domain
@@ -368,18 +371,19 @@ READ(10,*) Sc					! Schmidt number
 READ(10,*) sclrIC				! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
 READ(10,*) phiPer				! period at which to start the scalar
 READ(10,*) phiIC				! maximum scalar concentration
-
-! Coefficients for the generalized scalar boundary condition (coeffPhi * phiWall + coeffGrad * dPhiDn_wall = coeffConst). 'n' is the direction from the wall into the fluid.
+!----- Coefficients for the generalized scalar BC (coeffPhi*phiWall + coeffGrad*dPhiDn_wall = coeffConst). 'n' is normal vector from  wall into fluid.
 READ(10,*) coeffPhi
 READ(10,*) coeffGrad
 READ(10,*) coeffConst
-
-READ(10,*) nPers				! total number of periods to run
-READ(10,*) Output_Intervals			! number of iterations between writing the output files 
-READ(10,*) Restart_Intervals			! number of iterations between writing the restart files 
-READ(10,*) restart				! use restart file? (0 if no, 1 if yes) 
-READ(10,*) Correcting_Mass			! A flag to do turn off/on the Mass-Fix 
-READ(10,*) ParticleTrack			! A flag to indicate if particle is on or off (0 if off, 1 if on)
+READ(10,*) nPers                       ! total number of periods to run
+READ(10,*) Output_Intervals            ! number of iterations between writing the output files 
+READ(10,*) Restart_Intervals           ! number of iterations between writing the restart files 
+READ(10,*) Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
+READ(10,*) Flag_ParticleTrack          ! Flag for tracking particles           
+READ(10,*) Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
+READ(10,*) Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
+READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
+READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
 
 !tau=1.0_dbl
@@ -1238,7 +1242,7 @@ IF(randORord .EQ. RANDOM) THEN
 END IF
 
 !Particle arrays
-IF(ParticleTrack.EQ.ParticleOn) THEN
+IF(Flag_ParticleTrack) THEN
 	!DEALLOCATE(xp,yp,zp,up,vp,wp,ipar,jpar,kpar,rp,delNBbyCV)
 	!DEALLOCATE(par_conc,bulk_conc,sh,gamma_cont,rpold)
 	!DEALLOCATE(ParList)

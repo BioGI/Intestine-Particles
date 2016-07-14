@@ -47,12 +47,12 @@ CALL PrintParams							! print simulation info [MODULE: Output]
 CALL PrintFields							! output the velocity, density, and scalar fields [MODULE: Output]
 CALL PrintComputationalTime 						! Start simulation timer, print status [MODULE: Output]
 
-IF (ParticleTrack.EQ.ParticleOn) THEN 					! If particle tracking is 'on' then do the following
+IF (Flag_ParticleTrack) THEN 					! If particle tracking is 'on' then do the following
    CALL IniParticles
    CALL Particle_Setup
 ENDIF
 
-!IF (restart) THEN							! calculate the villous locations/angles at iter0-1 [MODULE: Geometry]
+!IF (Flag_Restart) THEN							! calculate the villous locations/angles at iter0-1 [MODULE: Geometry]
 !    iter=iter0-1
 !    CALL AdvanceGeometry
 !END IF
@@ -72,7 +72,7 @@ DO iter = iter0-0_lng,nt
    CALL Macro								! calcuate the macroscopic quantities [MODULE: Algorithm]
    CALL MPI_Transfer                                                    ! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
 
-   IF ((ParticleTrack.EQ.ParticleOn) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
+   IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
       CALL Particle_Track
    ENDIF
    IF (iter .GE. phiStart) THEN
@@ -81,7 +81,7 @@ DO iter = iter0-0_lng,nt
    
    !----- Outputs------------------------------------------------------
    CALL PrintFields							! output the velocity, density, and scalar fields [MODULE: Output]
-   IF ((ParticleTrack.EQ.ParticleOn) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
+   IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
       CALL PrintParticles						! output the particle velocity, radius, position and con. [MODULE: Output]
    ENDIF
    CALL PrintDrugConservation						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]

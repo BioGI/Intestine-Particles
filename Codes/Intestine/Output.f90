@@ -189,7 +189,7 @@ CLOSE(500)
 
 
 !----- Creating a file called particle-restart-iter.dat with all the particle data in it ----------------
-IF ((myid .EQ. master) .AND. (ParticleTrack .EQ. ParticleOn) .AND. (iter .GE. phiStart)) THEN
+IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN
    OPEN(156,FILE='Restart-Particles-'//iter_char//'.dat')
 
    !----- Counting hte number of the particles which are not compeletel dissolved yet ------------------
@@ -557,7 +557,7 @@ zcf3 =  1000000.0_dbl * zcf*zcf*zcf
 
 !------ Computing the total drug released from particles      
 IF (myid .EQ. master) THEN
-   IF ((ParticleTrack .EQ. ParticleOn) .AND. (iter .GE. phiStart)) THEN
+   IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN
       current => ParListHead%next
       DO WHILE (ASSOCIATED(current))
          next => current%next
@@ -669,7 +669,7 @@ IF (myid .EQ. 0) THEN
    WRITE(11,*)
    WRITE(11,*) 'nPers=',nPers			! total number of periods to run
    WRITE(11,*) 'numOuts=',numOuts		! number of output files (roughly)
-   WRITE(11,*) 'restart=',restart		! use restart file? (0 if no, 1 if yes)
+   WRITE(11,*) 'Flag_Restart=',Flag_Restart		! use restart file? (0 if no, 1 if yes)
    WRITE(11,*)
    WRITE(11,*) 'xcf=', xcf			! x distance conversion factor
    WRITE(11,*) 'ycf=', ycf			! y distance conversion factor
