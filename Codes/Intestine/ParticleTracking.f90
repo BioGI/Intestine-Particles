@@ -156,18 +156,18 @@ SUBROUTINE Particle_Track   					!Second order interpolation in time
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)             :: mpierr
-INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz1
-REAL(dbl)		 :: xaxis,yaxis,CosTheta_p,SinTheta_p
-REAL(dbl) 		 :: xpp,ypp
-REAL(dbl)       	 :: Min_R_Acceptable
-REAL(dbl)		 :: xp,yp,zp,zd
-REAL(dbl)		 :: R_Particle, R_Boundary
+INTEGER(lng) :: mpierr
+INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz1, Number_of_Solid_nodes
+REAL(dbl)    :: xaxis,yaxis,CosTheta_p,SinTheta_p
+REAL(dbl)    :: xpp,ypp
+REAL(dbl)    :: Min_R_Acceptable
+REAL(dbl)    :: xp,yp,zp,zd
+REAL(dbl)    :: R_Particle, R_Boundary
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 !----- set delphi_particle to 0.0 before every time step, when the particle drug release happens. 
-delphi_particle   = 0.0_dbl 	
+delphi_particle   = 0.0_dbl 
 tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
 tausgs_particle_z = 0.0_dbl           
@@ -220,7 +220,8 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
                write(*,*) '=========================================================================================='
                write(*,*) 'Iter, parID,xp,yp,zp:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp
                write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-               write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
+               Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+               write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
                write(*,*) '---------------------------------------------------------------------------'
                write(*,*) 'Treating the particle:'
                xpp = R_Boundary * CosTheta_p
@@ -230,7 +231,8 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
                current%pardata%yp = (ypp/ycf) + yaxis 
                write(*,*) 'Iter, parID,xp,yp,zp:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp
                write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-               write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
+               Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+               write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
             END IF
             IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &		! Check if all nodes around particle are solid
                (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
