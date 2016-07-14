@@ -201,14 +201,20 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
             iy1= CEILING(yp)
             iz0= FLOOR(zp)
             iz1= CEILING(zp)
-
+            
             IF (iz1 .NE. iz0) THEN 
                zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
             ELSE 
                zd= 0.0_dbl
             END IF
+            
             R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
-
+            IF (current%pardata%zp .GT. nz) THEN
+               R_boundary= r(iz0)
+            ELSE IF (current%pardata%zp .LT. 1.0) THEN
+               R_boundary= r(iz1)
+            END IF   
+            
             xaxis= 0.5_dbl*(nx+1)
             yaxis= 0.5_dbl*(ny+1)
             xpp = xcf*(current%pardata%xp- xaxis) 
