@@ -52,7 +52,7 @@ DO WHILE (ASSOCIATED(current))
          ix1= CEILING(xp)
          iy0= FLOOR(yp)
          iy1= CEILING(yp)
-         iz0= FLOOR(zp)/projects/fabe1343/Fasted/1_Pristalsis_NoShear/3rd/Intestine-Particles/Codes/Intestine
+         iz0= FLOOR(zp)
          iz1= CEILING(zp)
 
 !------- Treating the solid nodes so that their velocity is not zero for interpolation purposes
