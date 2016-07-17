@@ -182,7 +182,12 @@ DO k=0,nzSub+1
    END DO
 END DO
 WRITE(500,*) Drug_Initial
-WRITE(500,*) Drug_Released_Total
+
+IF (myid .EQ. master) THEN
+   WRITE(500,*) Drug_Released_Total
+ELSE
+   WRITE(500,*) 0
+END IF   
 WRITE(500,*) Drug_Absorbed
 WRITE(500,*) Drug_Remained_in_Domain
 CLOSE(500)
