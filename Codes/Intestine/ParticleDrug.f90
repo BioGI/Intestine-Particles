@@ -673,7 +673,7 @@ OVERLAP_TEST = 0.0_dbl
          DO j= NEP_y(1),NEP_y(2)
             DO k= NEP_z(1),NEP_z(2)
                IF (node(i,j,k) .EQ. FLUID) THEN                 
-                  IF (Overlap_sum .GT. 1e-40) THEN 			! Overlap_sum going to zero when the particle is disapearing
+                  IF (Overlap_sum .GT. 1e-18) THEN 			! Overlap_sum going to zero when the particle is disapearing
                      Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
                   ELSE
                      Overlap(i,j,k) = 0.0
