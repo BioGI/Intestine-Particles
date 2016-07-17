@@ -154,14 +154,11 @@ CALL MPI_ALLREDUCE(Negative_phi_Counter, Negative_phi_Counter_Global, 1, MPI_INT
 CALL MPI_ALLREDUCE(Negative_phi_Total,   Negative_phi_Total_Global,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 CALL MPI_ALLREDUCE(Negative_phi_Worst,   Negative_phi_Worst_Global,   1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
 
-IF (Negative_phi_Counter_Global .LT. 1.0) THEN
-   Negative_phi_Counter_Global = 1.0
-ENDIF
-
-
 IF (myid .EQ. master) THEN
-   write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global/Cs_mol, Negative_phi_Worst_Global/Cs_mol, Negative_phi_Total_Global/(Cs_mol*Negative_phi_Counter_Global)
-   CALL FLUSH(2118)
+   IF (Negative_phi_Counter_Global .GE. 1.0) THEN
+       write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global/Cs_mol, Negative_phi_Worst_Global/Cs_mol, Negative_phi_Total_Global/(Cs_mol*Negative_phi_Counter_Global)
+       CALL FLUSH(2118)
+   END IF
 END IF
 
 
@@ -171,8 +168,10 @@ CALL MPI_ALLREDUCE(Over_Sat_Total,   Over_Sat_Total_Global,   1, MPI_DOUBLE_PREC
 CALL MPI_ALLREDUCE(Largest_phi,      Largest_phi_Global,      1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, mpierr)
 
 IF (myid .EQ. master) THEN
-   write(2119,*) iter, Over_Sat_Counter_Global, Largest_phi_Global/Cs_mol, Over_Sat_Total_Global/(Over_Sat_Counter_Global*Cs_mol)
-   CALL FLUSH(2119)
+   IF (Over_Sat_Counter_Global. GE. 1) THEN 
+       write(2119,*) iter, Over_Sat_Counter_Global, Largest_phi_Global/Cs_mol, Over_Sat_Total_Global/(Over_Sat_Counter_Global*Cs_mol)
+       CALL FLUSH(2119)
+   END IF
 END IF
 
 !----- Add the amount of scalar absorbed through the outer surfaces
