@@ -44,14 +44,14 @@ IF (Flag_Restart) THEN                           ! restart from  file
       END DO
    END DO
    READ(50,*) Drug_Initial_l
-   READ(50,*) Drug_Released_Total_l
+   READ(50,*) Drug_Released_Total
    READ(50,*) Drug_Absorbed_restart
    READ(50,*) Drug_Remained_in_Domain_l
    delphi_particle = 0.0_dbl                               	! Initialize the scalar contirbution from particles to 0.0. Once the particle
    CLOSE(50)
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Drug_Initial_l, 		Drug_Initial,		1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-  ! CALL MPI_ALLREDUCE(Drug_Released_Total_l, 	Drug_Released_Total,	1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+  !CALL MPI_ALLREDUCE(Drug_Released_Total_l, 	Drug_Released_Total,	1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
    CALL MPI_ALLREDUCE(Drug_Remained_in_Domain_l,Drug_Remained_in_Domain,1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 
    iter0 = iter0 + 1						! set the initial iteration to one after last iteration from the previous run
