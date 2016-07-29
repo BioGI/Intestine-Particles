@@ -661,9 +661,10 @@ OVERLAP_TEST = 0.0_dbl
       (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
       (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
 
-      NEP_x(1) = Max(GNEP_x(1), 1)    - (iMin-1)
-      NEP_y(1) = Max(GNEP_y(1), 1)    - (jMin-1)
-      NEP_z(1) = Max(GNEP_z(1), 1)    - (kMin-1)
+      NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
+      NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
+      NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
+
       NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
       NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
       NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
@@ -673,8 +674,12 @@ OVERLAP_TEST = 0.0_dbl
          DO j= NEP_y(1),NEP_y(2)
             DO k= NEP_z(1),NEP_z(2)
                IF (node(i,j,k) .EQ. FLUID) THEN                 
-                  IF (Overlap_sum .GT. 1e-18) THEN 			! Overlap_sum going to zero when the particle is disapearing
-                     Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
+                  IF (Overlap_sum .GT. 1e-18) THEN 			              !Overlap_sum goes to zero when:1-particle is disapearing 2-when all nodes around it are saturated
+                     IF ((iter .GT. 1850) .AND. (iter .LT. 1900)) THEN  
+                        write(*,1003) iter,myid,current%pardata%parid,current%pardata%xp,current%pardata%yp,current%pardata%zp,i,j,k, Overlap(i,j,k),Overlap_sum
+1003                    format(I5,I2,I5,3F8.3,3I4,2E13.5)
+                     END IF
+                    Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
                   ELSE
                      Overlap(i,j,k) = 0.0
                   END IF
