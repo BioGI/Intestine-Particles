@@ -411,15 +411,20 @@ END SUBROUTINE Compute_Sherwood
 !===================================================================================================
 SUBROUTINE Compute_shear                
 !===================================================================================================
-! Computing components of strain rate tensor using central difference everywhere except near the
-! processor boundaries where sided difference is used. 
+! Computing components of velocity gradietns
+! and strain rate tensor using central difference 
 
 IMPLICIT NONE
+
 INTEGER(lng)  :: i,j,k
 INTEGER(lng)  :: ii,jj,kk
-INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
+INTEGER(lng)  :: ix0,iy0,iz0
+INTEGER(lng)  :: ix1,iy1,iz1
 
-REAL(dbl)     :: xaxis,yaxis,X_s,Y_s,R_s,CosTheta_s,SinTheta_s,Vel_s
+REAL(dbl)     :: xaxis,yaxis
+REAL(dbl)     :: X_s,Y_s,R_s
+REAL(dbl)     :: CosTheta_s,SinTheta_s
+REAL(dbl)     :: Vel_s
 
 REAL(dbl)     :: xp,yp,zp
 REAL(dbl)     :: xd,yd,zd
@@ -444,6 +449,7 @@ REAL(dbl)     :: dwdy00, dwdy01, dwdy10, dwdy11
 REAL(dbl)     :: dwdy0, dwdy1, dwdy
 REAL(dbl)     :: dwdz00, dwdz01, dwdz10, dwdz11
 REAL(dbl)     :: dwdz0, dwdz1, dwdz
+
 REAL(dbl)     :: E11, E12, E13, E21, E22, E23, E31, E32, E33
 REAL(dbl)     :: S
 
@@ -454,7 +460,7 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only calculate the drug release when particle radius is larger than 0.1 micron				
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only when particle radius is larger than 0.1 micron				
       IF (mySub .EQ.current%pardata%cur_part) THEN
          xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
          yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
@@ -474,17 +480,17 @@ DO WHILE (ASSOCIATED(current))
             DO jj= iy0, iy1
                DO kk= iz0, iz1
                   IF (node(ii,jj,kk) .EQ. SOLID) THEN					! Solid nodes in the lattice cell encompassing the particle
-                     xaxis 	   = ANINT(0.5_dbl*(nx+1))
-                     yaxis 	   = ANINT(0.5_dbl*(ny+1))
-                     X_s   	   = xcf* (ii+ (iMin-1_lng)- xaxis)
-                     Y_s   	   = ycf* (jj+ (jMin-1_lng)- yaxis) 
-                     R_s   	   = SQRT(X_s**2 + Y_s**2)
-                     CosTheta_s    = X_s/R_s
-                     SinTheta_s    = Y_s/R_s
-                     Vel_s	   = vel(kk)
-                     u_m(ii,jj,kk) = Vel_s * CosTheta_s
-                     v_m(ii,jj,kk) = Vel_s * SinTheta_s
-                     w_m(ii,jj,kk) = 0.0_dbl				
+                     xaxis 	      = ANINT(0.5_dbl*(nx+1))
+                     yaxis 	      = ANINT(0.5_dbl*(ny+1))
+                     X_s   	      = xcf* (ii+ (iMin-1_lng)- xaxis)
+                     Y_s   	      = ycf* (jj+ (jMin-1_lng)- yaxis) 
+                     R_s   	      = SQRT(X_s**2 + Y_s**2)
+                     CosTheta_s   = X_s/R_s
+                     SinTheta_s   = Y_s/R_s
+                     Vel_s	      = vel(kk)
+                     u_m(ii,jj,kk)= Vel_s * CosTheta_s
+                     v_m(ii,jj,kk)= Vel_s * SinTheta_s
+                     w_m(ii,jj,kk)= 0.0_dbl				
                   ELSE 				                     					! Fluid nodes in the lattice cell encompassing the particle
                      u_m(ii,jj,kk) = u(ii,jj,kk) 
                      v_m(ii,jj,kk) = v(ii,jj,kk) 
@@ -635,7 +641,13 @@ DO WHILE (ASSOCIATED(current))
          E33= dwdz
 
 !======= Computing the strain rate magnitude
-         S =sqrt( 2*(dudx**2.0_dbl+ dvdy**2.0_dbl+ dwdz*2.0_dbl) + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dwdy+dvdz)**2 )
+         S = 2.0_dbl*dudx**2.0_dbl + &
+             2.0_dbl*dvdy**2.0_dbl + &
+             2.0_dbl*dwdz**2.0_dbl + &
+              (dudy+dvdx)**2.0_dbl + &
+              (dudz+dwdx)**2.0_dbl + &
+              (dwdy+dvdz)**2.0_dbl
+         S = sqrt(S) 
          S = S * vcf / zcf 
          current%pardata%S = S
        END IF 
