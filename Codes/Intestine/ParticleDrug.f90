@@ -416,11 +416,37 @@ SUBROUTINE Compute_shear
 
 IMPLICIT NONE
 INTEGER(lng)  :: i,j,k
-INTEGER(lng)  :: it,jt,kt,ib,jb,kb
-REAL(dbl)     :: xp,yp,zp,xd,yd,zd
+INTEGER(lng)  :: ii,jj,kk
 INTEGER(lng)  :: ix0,iy0,iz0,ix1,iy1,iz1
-REAL(dbl)     :: temp,dudx,dudy,dudz,dvdx,dvdy,dvdz,dwdx,dwdy,dwdz
+
+REAL(dbl)     :: xaxis,yaxis,X_s,Y_s,R_s,CosTheta_s,SinTheta_s,Vel_s
+
+REAL(dbl)     :: xp,yp,zp
+REAL(dbl)     :: xd,yd,zd
+
+REAL(dbl)     :: dudx00, dudx01, dudx10, dudx11
+REAL(dbl)     :: dudx0, dudx1, dudx
+REAL(dbl)     :: dudy00, dudy01, dudy10, dudy11
+REAL(dbl)     :: dudy0, dudy1, dudy
+REAL(dbl)     :: dudz00, dudz01, dudz10, dudz11
+REAL(dbl)     :: dudz0, dudz1, dudz
+
+REAL(dbl)     :: dvdx00, dvdx01, dvdx10, dvdx11
+REAL(dbl)     :: dvdx0, dvdx1, dvdx
+REAL(dbl)     :: dvdy00, dvdy01, dvdy10, dvdy11
+REAL(dbl)     :: dvdy0, dvdy1, dvdy
+REAL(dbl)     :: dvdz00, dvdz01, dvdz10, dvdz11
+REAL(dbl)     :: dvdz0, dvdz1, dvdz
+
+REAL(dbl)     :: dwdx00, dwdx01, dwdx10, dwdx11
+REAL(dbl)     :: dwdx0, dwdx1, dwdx
+REAL(dbl)     :: dwdy00, dwdy01, dwdy10, dwdy11
+REAL(dbl)     :: dwdy0, dwdy1, dwdy
+REAL(dbl)     :: dwdz00, dwdz01, dwdz10, dwdz11
+REAL(dbl)     :: dwdz0, dwdz1, dwdz
+REAL(dbl)     :: E11, E12, E13, E21, E22, E23, E31, E32, E33
 REAL(dbl)     :: S
+
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -440,20 +466,180 @@ DO WHILE (ASSOCIATED(current))
          iy1= CEILING(yp)
          iz0= FLOOR(zp)
          iz1= CEILING(zp)
-         ib = ix0
-         jb = iy0
-         kb = iz0
-         it = ix0 + 1_lng
-         jt = iy0
-         kt = iz0
-!!!!!!!! MAKE SURE THE ABOVE NODES ARE FLUID NODES
 
-         dwdz = w(it,jt,kt) - w(ib,jb,kb)
-         S = abs(dwdz*vcf/zcf)
+!------- Treating the solid nodes so that their velocity is not zero for interpolation purposes
+!------- Velocity magnitude is calculated based on boundary velocity at that z location
+!------- Velocity vector points to the center od the circle in that Z-location
+         DO ii= ix0, ix1
+            DO jj= iy0, iy1
+               DO kk= iz0, iz1
+                  IF (node(ii,jj,kk) .EQ. SOLID) THEN					! Solid nodes in the lattice cell encompassing the particle
+                     xaxis 	   = ANINT(0.5_dbl*(nx+1))
+                     yaxis 	   = ANINT(0.5_dbl*(ny+1))
+                     X_s   	   = xcf* (ii+ (iMin-1_lng)- xaxis)
+                     Y_s   	   = ycf* (jj+ (jMin-1_lng)- yaxis) 
+                     R_s   	   = SQRT(X_s**2 + Y_s**2)
+                     CosTheta_s    = X_s/R_s
+                     SinTheta_s    = Y_s/R_s
+                     Vel_s	   = vel(kk)
+                     u_m(ii,jj,kk) = Vel_s * CosTheta_s
+                     v_m(ii,jj,kk) = Vel_s * SinTheta_s
+                     w_m(ii,jj,kk) = 0.0_dbl				
+                  ELSE 				                     					! Fluid nodes in the lattice cell encompassing the particle
+                     u_m(ii,jj,kk) = u(ii,jj,kk) 
+                     v_m(ii,jj,kk) = v(ii,jj,kk) 
+                     w_m(ii,jj,kk) = w(ii,jj,kk)
+                  END IF
+               END DO
+            END DO
+         END DO
+
+!------- Preparing for tri-linear interpolation
+         IF (ix1 .NE. ix0) THEN 
+            xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
+         ELSE
+            xd= 0.0_dbl
+         END IF
+
+         IF (iy1 .NE. iy0) THEN 
+            yd= (yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))	
+         ELSE
+            yd= 0.0_dbl
+         END IF
+
+         IF (iz1 .NE. iz0) THEN 
+            zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+         ELSE
+            zd= 0.0_dbl
+         END IF
+
+!------- dudx -------------------------------------
+         dudx00= u_m(ix1,iy0,iz0)- u_m(ix0,iy0,iz0)	
+         dudx01= u_m(ix1,iy0,iz1)- u_m(ix0,iy0,iz1)	
+         dudx10= u_m(ix1,iy1,iz0)- u_m(ix0,iy1,iz0)	
+         dudx11= u_m(ix1,iy1,iz1)- u_m(ix0,iy1,iz1)
+!------- y-dir interpolation ----------------------
+         dudx0 = dudx00*(1.0_dbl-yd) + dudx10* yd
+         dudx1 = dudx01*(1.0_dbl-yd) + dudx11* yd
+!------- z-dir interpolation ----------------------
+         dudx  = dudx0*(1.0_dbl-zd)+dudx1*zd
+!--------------------------------------------------
+
+!------- dvdx -------------------------------------
+         dvdx00= v_m(ix1,iy0,iz0)- v_m(ix0,iy0,iz0)	
+         dvdx01= v_m(ix1,iy0,iz1)- v_m(ix0,iy0,iz1)	
+         dvdx10= v_m(ix1,iy1,iz0)- v_m(ix0,iy1,iz0)	
+         dvdx11= v_m(ix1,iy1,iz1)- v_m(ix0,iy1,iz1)
+!------- y-dir interpolation ----------------------
+         dvdx0 = dvdx00*(1.0_dbl-yd) + dvdx10* yd
+         dvdx1 = dvdx01*(1.0_dbl-yd) + dvdx11* yd
+!------- z-dir interpolation ----------------------
+         dvdx  = dvdx0*(1.0_dbl-zd)+dvdx1*zd
+!--------------------------------------------------
+
+!------- dwdx -------------------------------------
+         dwdx00= w_m(ix1,iy0,iz0)- w_m(ix0,iy0,iz0)	
+         dwdx01= w_m(ix1,iy0,iz1)- w_m(ix0,iy0,iz1)	
+         dwdx10= w_m(ix1,iy1,iz0)- w_m(ix0,iy1,iz0)	
+         dwdx11= w_m(ix1,iy1,iz1)- w_m(ix0,iy1,iz1)
+!------- y-dir interpolation ----------------------
+         dwdx0 = dwdx00*(1.0_dbl-yd) + dwdx10* yd
+         dwdx1 = dwdx01*(1.0_dbl-yd) + dwdx11* yd
+!------- z-dir interpolation ----------------------
+         dwdx  = dwdx0*(1.0_dbl-zd)+dwdx1*zd
+!--------------------------------------------------
+
+!------- dudy -------------------------------------
+         dudy00= u_m(ix0,iy1,iz0)- u_m(ix0,iy0,iz0)	
+         dudy01= u_m(ix0,iy1,iz1)- u_m(ix0,iy0,iz1)	
+         dudy10= u_m(ix1,iy1,iz0)- u_m(ix1,iy0,iz0)	
+         dudy11= u_m(ix1,iy1,iz1)- u_m(ix1,iy0,iz1)
+!------- x-dir interpolation ----------------------
+         dudy0 = dudy00*(1.0_dbl-xd) + dudy10* xd
+         dudy1 = dudy01*(1.0_dbl-xd) + dudy11* xd
+!------- z-dir interpolation ----------------------
+         dudy  = dudy0*(1.0_dbl-zd)+dudy1*zd
+!--------------------------------------------------
+
+!------- dvdy -------------------------------------
+         dvdy00= v_m(ix0,iy1,iz0)- v_m(ix0,iy0,iz0)	
+         dvdy01= v_m(ix0,iy1,iz1)- v_m(ix0,iy0,iz1)	
+         dvdy10= v_m(ix1,iy1,iz0)- v_m(ix1,iy0,iz0)	
+         dvdy11= v_m(ix1,iy1,iz1)- v_m(ix1,iy0,iz1)
+!------- x-dir interpolation ----------------------
+         dvdy0 = dvdy00*(1.0_dbl-xd) + dvdy10* xd
+         dvdy1 = dvdy01*(1.0_dbl-xd) + dvdy11* xd
+!------- z-dir interpolation ----------------------
+         dvdy  = dvdy0*(1.0_dbl-zd)+dvdy1*zd
+!--------------------------------------------------
+
+!------- dwdy -------------------------------------
+         dwdy00= w_m(ix0,iy1,iz0)- w_m(ix0,iy0,iz0)	
+         dwdy01= w_m(ix0,iy1,iz1)- w_m(ix0,iy0,iz1)	
+         dwdy10= w_m(ix1,iy1,iz0)- w_m(ix1,iy0,iz0)	
+         dwdy11= w_m(ix1,iy1,iz1)- w_m(ix1,iy0,iz1)
+!------- x-dir interpolation ----------------------
+         dwdy0 = dwdy00*(1.0_dbl-xd) + dwdy10* xd
+         dwdy1 = dwdy01*(1.0_dbl-xd) + dwdy11* xd
+!------- z-dir interpolation ----------------------
+         dwdy  = dwdy0*(1.0_dbl-zd)+dwdy1*zd
+!--------------------------------------------------
+
+!------- dudz -------------------------------------
+         dudz00= u_m(ix0,iy0,iz1)- u_m(ix0,iy0,iz0)	
+         dudz01= u_m(ix0,iy1,iz1)- u_m(ix0,iy1,iz0)	
+         dudz10= u_m(ix1,iy0,iz1)- u_m(ix1,iy0,iz0)	
+         dudz11= u_m(ix1,iy1,iz1)- u_m(ix1,iy1,iz0)
+!------- x-dir interpolation ----------------------
+         dudz0 = dudz00*(1.0_dbl-xd) + dudz10* xd
+         dudz1 = dudz01*(1.0_dbl-xd) + dudz11* xd
+!------- y-dir interpolation ----------------------
+         dudz  = dudz0*(1.0_dbl-yd)+dudz1*yd
+!--------------------------------------------------
+
+!------- dvdz -------------------------------------
+         dvdz00= v_m(ix0,iy0,iz1)- v_m(ix0,iy0,iz0)	
+         dvdz01= v_m(ix0,iy1,iz1)- v_m(ix0,iy1,iz0)	
+         dvdz10= v_m(ix1,iy0,iz1)- v_m(ix1,iy0,iz0)	
+         dvdz11= v_m(ix1,iy1,iz1)- v_m(ix1,iy1,iz0)
+!------- x-dir interpolation ----------------------
+         dvdz0 = dvdz00*(1.0_dbl-xd) + dvdz10* xd
+         dvdz1 = dvdz01*(1.0_dbl-xd) + dvdz11* xd
+!------- y-dir interpolation ----------------------
+         dvdz  = dvdz0*(1.0_dbl-yd)+dvdz1*yd
+!--------------------------------------------------
+
+!------- dwdz -------------------------------------
+         dwdz00= w_m(ix0,iy0,iz1)- w_m(ix0,iy0,iz0)	
+         dwdz01= w_m(ix0,iy1,iz1)- w_m(ix0,iy1,iz0)	
+         dwdz10= w_m(ix1,iy0,iz1)- w_m(ix1,iy0,iz0)	
+         dwdz11= w_m(ix1,iy1,iz1)- w_m(ix1,iy1,iz0)
+!------- x-dir interpolation ----------------------
+         dwdz0 = dwdz00*(1.0_dbl-xd) + dwdz10* xd
+         dwdz1 = dwdz01*(1.0_dbl-xd) + dwdz11* xd
+!------- y-dir interpolation ----------------------
+         dwdz  = dwdz0*(1.0_dbl-yd)+dwdz1*yd
+!--------------------------------------------------
+
+!======= Computing 9 componenets of the strain rate tensor
+         E11= dudx
+         E12= 0.5_dbl*(dudy+dvdx)
+         E13= 0.5_dbl*(dudz+dwdx)
+
+         E21= 0.5_dbl*(dvdx+dudy)
+         E22= dvdy
+         E23= 0.5_dbl*(dvdz+dwdy)
+
+         E31= 0.5_dbl*(dwdx+dudz)
+         E32= 0.5_dbl*(dwdy+dvdz)
+         E33= dwdz
+
+!======= Computing the strain rate magnitude
+         S =sqrt( 2*(dudx**2.0_dbl+ dvdy**2.0_dbl+ dwdz*2.0_dbl) + (dudy+dvdx)**2 + (dudz+dwdx)**2 + (dwdy+dvdz)**2 )
+         S = S * vcf / zcf 
          current%pardata%S = S
        END IF 
     END IF
-
     current => next
 ENDDO
 

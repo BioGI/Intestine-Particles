@@ -15,7 +15,8 @@ REAL(dbl), 		ALLOCATABLE :: fplus(:,:,:,:)				! post-collision distribution func
 REAL(dbl), 		ALLOCATABLE :: FplusSum(:,:,:)				! Sum of post-collision distribution function at each node
 REAL(dbl), 		ALLOCATABLE :: FSum(:,:,:)				! Sum of distribution functions at each node
 REAL(dbl), 		ALLOCATABLE :: u(:,:,:),v(:,:,:),w(:,:,:)		! x,y, and z components of the fluid velocity vector
-REAL(dbl), 		ALLOCATABLE :: u_s(:,:,:),v_s(:,:,:),w_s(:,:,:)		! x,y, and z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
+REAL(dbl), 		ALLOCATABLE :: u_s(:,:,:),v_s(:,:,:),w_s(:,:,:)		! x,y,z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
+REAL(dbl), 		ALLOCATABLE :: u_m(:,:,:),v_m(:,:,:),w_m(:,:,:)		! x,y,z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
 REAL(dbl), 		ALLOCATABLE :: dudx(:,:,:),dudy(:,:,:),dudz(:,:,:)	! x,y, and z components of the fluid velocity vector
 REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)				! density
 INTEGER(lng), 	ALLOCATABLE :: node(:,:,:)    					! node flags (FLUID/SOLID)
@@ -1116,6 +1117,10 @@ ALLOCATE(u(0:nxSub+1,0:nySub+1,0:nzSub+1),							&
 ALLOCATE(u_s(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
          v_s(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
          w_s(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(u_m(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         v_m(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         w_m(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
 ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 
 ! Scalar
