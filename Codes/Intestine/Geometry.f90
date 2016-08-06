@@ -203,6 +203,8 @@ IMPLICIT NONE
 
 REAL(dbl) :: h1(0:nz+1)			! Mode 1 (peristalsis)
 REAL(dbl) :: h2(0:nz+1)			! Mode 2	(segmental)
+REAL(dbl) :: A_change,A_base,A2(0:nz+1) 
+REAL(dbl) :: A_1, A_2,AA,alpha,beta
 REAL(dbl) :: Ac, lambdaC, shiftC	! temporary variables for the cos slopes
 REAL(dbl) :: time			! time
 INTEGER(lng) :: i,j,ii,k		! indices
@@ -228,40 +230,18 @@ END DO
 h1(nz) 	= h1(0)
 h1(nz+1)= h1(1)
 
-
 !------------------- Mode 2 - segmental contractions ------------------------
 !----- Calculate the geometry for the first wave
+A_base  = 204.13981e-6
+A_change= 163.31300e-6
 
-!----- First Straight Piece
-DO i=0,seg1L
-   h2(i) = amp2*(COS(PI+((2.0_dbl*PI)/Ts)*time)) + shift2
-END DO
-
-!----- Second Straight Piece
-DO i=seg1R,seg2L
-   h2(i) = amp2*(COS(PI+((2.0_dbl*PI)/Ts)*(time-(Ts/2.0_dbl)))) + shift2
-END DO
-
-!----- Third Straight Piece
-DO i=seg2R,nlambda2+1
-   h2(i) = amp2*(COS(PI+((2.0_dbl*PI)/Ts)*time)) + shift2
-END DO
-
-!----- First Cos Piece
-Ac	= 0.5_dbl*(h2(seg1L)-h2(seg1R))
-lambdaC	= 2.0_dbl*(zz(seg1L)-zz(seg1R))
-shiftC	= 0.5_dbl*(h2(seg1L)+h2(seg1R))
-
-DO i=seg1L+1,seg1R-1
-   h2(i) = Ac*COS((2.0_dbl*PI/lambdaC)*(zz(i)-zz(seg1L))) + shiftC
-END DO
-
-!----- Second Cos Piece
-Ac	= 0.5_dbl*(h2(seg2L)-h2(seg2R))
-lambdaC	= 2.0_dbl*(zz(seg2L)-zz(seg2R))
-shiftC	= 0.5_dbl*(h2(seg2L)+h2(seg2R))
-DO i=seg2L+1,seg2R-1
-   h2(i) = Ac*COS((2.0_dbl*PI/lambdaC)*(zz(i)-zz(seg2L))) + shiftC
+DO i= 0, nlambda2+1 
+   A_1  = A_Base+ A_Change*(COS(PI+(2*PI*zz(i)/L)))
+   A_2  = A_Base+ A_Change*(COS(PI+(2*PI*zz(i)/L)+PI))
+   alpha= time/Ts
+   beta = (cos(alpha*PI))**2
+   AA   = beta*A_1+(1-beta)*A_2 
+   h2(i)= (AA/PI)**0.5
 END DO
 
 !---- Repeat for the rest of the waves
@@ -364,6 +344,9 @@ IMPLICIT NONE
 REAL(dbl) :: v1(0:nz+1), v2(0:nz+1)		! velocity arrays for each mode
 REAL(dbl) :: lambdaC				! wavelength of the cos segments (mode 2)
 REAL(dbl) :: time				! time
+REAL(dbl) :: A_1, A_2, AA
+REAL(dbl) :: alpha, beta, CC, DD, EE
+REAL(dbl) :: A_Base, A_Change 
 INTEGER(lng) :: i,j,ii				! indices
 
 !----- Initialize Variables
@@ -387,33 +370,17 @@ v1(nz+1)=v1(1)
 !------------------- Mode 2 - segmental contractions  -----------------------
 
 !----- Calculate the wall velocity for the first wave
-!----- First Straight Piece
-DO i=0,seg1L
-   v2(i) = -amp2*(SIN(PI+((2.0_dbl*PI)/Ts)*time))*((2.0_dbl*PI)/Ts)
-END DO
-
-!----- Second Straight Piece
-DO i=seg1R,seg2L
-   v2(i) = -amp2*(SIN(PI+((2.0_dbl*PI)/Ts)*(time-(Ts/2.0_dbl))))*((2.0_dbl*PI)/Ts)
-END DO
-
-!----- Third Straight Piece
-DO i=seg2R,nlambda2
-   v2(i) = -amp2*(SIN(PI+((2.0_dbl*PI)/Ts)*time))*((2.0_dbl*PI)/Ts)
-END DO
-
-!----- First Cos Piece
-lambdaC	= 2.0_dbl*(zz(seg1L)-zz(seg1R))
-DO i=seg1L+1,seg1R-1
-   v2(i) = (0.5_dbl*(v2(seg1L)-v2(seg1R)))*COS((2.0_dbl*PI/lambdaC)*(zz(i)-zz(seg1L))) &
-        + (0.5_dbl*(v2(seg1L)+v2(seg1R)))
-END DO
-
-!----- Second Cos Piece
-lambdaC	= 2.0_dbl*(zz(seg2L)-zz(seg2R))
-DO i=seg2L+1,seg2R-1
-   v2(i) = (0.5_dbl*(v2(seg2L)-v2(seg2R)))*COS((2.0_dbl*PI/lambdaC)*(zz(i)-zz(seg2L))) &
-        + (0.5_dbl*(v2(seg2L)+v2(seg2R)))
+A_base  = 204.13981e-6
+A_change= 163.31300e-6
+DO i= 0,nlambda2+1
+   A_1  = A_Base+ A_Change*(COS(PI+(2*PI*zz(i)/L)))
+   A_2  = A_Base+ A_Change*(COS(PI+(2*PI*zz(i)/L)+PI))
+   alpha= time/Ts
+   beta = (cos(alpha*PI))**2
+   CC   = (-2.0_dbl*PI/Ts) * sin(alpha*PI) * cos(alpha*PI)
+   DD   = (A_1-A_2)/PI
+   EE   = ((beta*A_1+ (1-beta)*A_2)/PI)**(-0.5_dbl)
+   v2(i)= CC*DD*EE
 END DO
 
 !----- Repeat for the rest of the waves
