@@ -321,11 +321,11 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
    CALL Particle_Velocity 		
 
 !--Particle tracking is done, now time for drug relaes calculations---------------------------------
-   CALL Compute_Cb  
    IF (Flag_Shear_Effects) THEN
       CALL Compute_Shear
    END IF   
    CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
+   CALL Compute_Cb  
    CALL Particle_Drug_Release        ! Updates particle radius, calculates drug release rate delNBbyCV. 
    CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
 !  CALL Particle_History             ! Keep trak of a few particles
