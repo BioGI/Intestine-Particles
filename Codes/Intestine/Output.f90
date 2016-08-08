@@ -343,31 +343,32 @@ IF (myid .EQ. master) THEN
 
       !------ open the proper output file
       OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-      WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff","Nbj"'
+      WRITE(160,*) '"ParID","x","y","z","u","v","w","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff", "Nbj", "CPU"'
       current => ParListHead%next							 
-
       DO WHILE (ASSOCIATED(current))
          numParticlesSub = numParticlesSub + 1_lng
          next => current%next 	
          IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
-             WRITE(160,1001)   	current%pardata%cur_part  	,',', 	&
-		 		current%pardata%xp 	  	,',',	&
-				current%pardata%yp  	  	,',',	&
-				current%pardata%zp 	  	,',',	&
-                        	current%pardata%up*vcf 	  	,',',	&
-		     	  	current%pardata%vp*vcf 	  	,',',	&
-				current%pardata%wp*vcf 	  	,',',	&
-                      		current%pardata%parid 	  	,',',	&
-				current%pardata%sh 	  	,',',	&
-				current%pardata%rp/xcf 	  	,',',	&
-				current%pardata%bulk_conc/Cs_mol,',', 	&
-				current%pardata%delNBbyCV 	,',', 	&
-				current%pardata%Sst 	  	,',',	&
-				current%pardata%S 	  	,',',	&
-				current%pardata%Veff 	  	,',',	&
-				current%pardata%Nbj
+            WRITE(160,1001)   	                        &
+            current%pardata%parid 	  	          ,',',	&
+     		 		current%pardata%xp 	       	          ,',',	&
+     				current%pardata%yp  	    	          ,',',	&
+		    		current%pardata%zp 	           	      ,',',	&
+            current%pardata%up*vcf*1000.0_dbl     ,',',	&          ! (mm/s)
+		     		current%pardata%vp*vcf*1000.0_dbl     ,',',	&          ! (mm/s)
+				    current%pardata%wp*vcf*1000.0_dbl     ,',',	&          ! (mm/s)
+				    current%pardata%sh 	  	              ,',',	&
+				    current%pardata%rp/xcf 	  	          ,',',	&
+				    current%pardata%bulk_conc/Cs_mol      ,',',	&
+				    current%pardata%delNBbyCV 	          ,',',	&
+				    current%pardata%Sst 	  	            ,',',	&
+				    current%pardata%S 	  	              ,',',	&
+				    current%pardata%Veff 	  	            ,',',	&
+				    current%pardata%Nbj                   ,',', &
+            current%pardata%cur_part  	          
          END IF	
-1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001     format (I6,a2,    F9.4,a2,  F9.4,a2,  F9.4,a2,    F8.4,a2,     F8.4,a2,    F8.4,a2,                 &
+                 F10.6,a2, F12.8,a2, F12.5,a2, E15.5,a2,   E15.10,a2,   E15.5,a2,   E15.5,a2,  E15.5,a2,    I5)
          current => next
       ENDDO
 
