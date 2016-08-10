@@ -283,7 +283,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
 
    !----- open the proper output file
    OPEN(60,FILE='out-'//iter_char//'-'//sub//'.dat')
-   WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "P" "phi/Cs" "node"'
+   WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "S" "P" "phi/Cs" "node"'
    WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
    DO k=1,nzSub
       DO j=1,nySub
