@@ -295,6 +295,35 @@ END SUBROUTINE Compute_Cb
 
 
 
+!===================================================================================================
+SUBROUTINE Compute_Cb_Global
+!===================================================================================================
+IMPLICIT NONE
+REAL(dbl)    :: Cb_l, Cb_g
+INTEGER(lng) :: i, j, k, Count_l, Count_g, mpierr
+
+Cb_l   = 0.0_dbl
+Count_l= 0
+
+DO k=1,nzSub
+  DO j=1,nySub
+    DO i=1,nxSub
+      IF(node(i,j,k) .EQ. FLUID) THEN
+        Cb_l   = Cb_l    + phi(i,j,k)
+        Count_l= Count_l + 1 
+      END IF
+    END DO
+  END DO
+END DO
+
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(Cb_l,    Cb_g,    1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Count_l, Count_g, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+!===================================================================================================
+END SUBROUTINE Compute_Cb_Global
+!===================================================================================================
+
+
 
 
 
