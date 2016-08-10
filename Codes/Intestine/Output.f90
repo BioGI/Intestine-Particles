@@ -265,6 +265,11 @@ IMPLICIT NONE
 INTEGER(lng):: i,j,k,ii,jj,kk,n			! index variables (local and global)
 CHARACTER(7):: iter_char			! iteration stored as a character
 REAL(lng)   :: pressure				
+REAL(dbl)   :: dudx, dudy, dudz
+REAL(dbl)   :: dvdx, dvdy, dvdz
+REAL(dbl)   :: dwdx, dwdy, dwdz
+REAL(dbl)   :: E11, E12, E13, E21, E22, E23, E31, E32, E33
+REAL(dbl)   :: S
 
 IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
    (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)  .OR. &
@@ -287,14 +292,44 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
             ii = ((iMin - 1_lng) + i)
             jj = ((jMin - 1_lng) + j)
             kk = ((kMin - 1_lng) + k)
-            !IF (phi(i,j,k) .LT. 1.0e-18) THEN
-            !   phi(i,j,k)=0.0_lng
-            !END IF   
             pressure= (rho(i,j,k)-denL)*dcf*pcf
+
+!========== Computing 9 velocity gradients
+            dudx= u(i+1,j,  k)  - u(i-1,j,  k  )
+            dudy= u(i,  j+1,k)  - u(i,  j-1,k  )
+            dudz= u(i,  j,  k+1)- u(i,  j,  k-1)
+            dvdx= v(i+1,j,  k)  - v(i-1,j,  k  )
+            dvdy= v(i,  j+1,k)  - v(i,  j-1,k  )
+            dvdz= v(i,  j,  k+1)- v(i,  j,  k-1)
+            dwdx= w(i+1,j,  k)  - w(i-1,j,  k  )
+            dwdy= w(i,  j+1,k)  - w(i,  j-1,k  )
+            dwdz= w(i,  j,  k+1)- w(i,  j,  k-1)
+
+!========== Computing 9 componenets of the strain rate tensor
+            E11= dudx
+            E12= 0.5_dbl*(dudy+dvdx)
+            E13= 0.5_dbl*(dudz+dwdx)
+            E21= 0.5_dbl*(dvdx+dudy)
+            E22= dvdy
+            E23= 0.5_dbl*(dvdz+dwdy)
+            E31= 0.5_dbl*(dwdx+dudz)
+            E32= 0.5_dbl*(dwdy+dvdz)
+            E33= dwdz
+
+!========== Computing the strain rate magnitude
+            S = 2.0_dbl*dudx**2.0_dbl + &
+                2.0_dbl*dvdy**2.0_dbl + &
+                2.0_dbl*dwdz**2.0_dbl + &
+                 (dudy+dvdx)**2.0_dbl + &
+                 (dudz+dwdx)**2.0_dbl + &
+                 (dwdy+dvdz)**2.0_dbl
+            S = sqrt(S) 
+            S = S*vcf/zcf 
+            
             IF (node(i,j,k) .EQ. FLUID) THEN
-               WRITE(60,'(I3,2I4,3F6.2,E11.3,F7.3,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/Cs_mol, node(i,j,k)
+               WRITE(60,'(I3,2I4,3F6.2,E11.3,E11.3,F7.3,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, S, pressure, phi(i,j,k)/Cs_mol, node(i,j,k)
             ELSE
-               WRITE(60,'(I3,2I4,6I2)') ii, jj,kk,0,0,0,0,0,node(i,j,k)
+               WRITE(60,'(I3,2I4,7I2)') ii,jj,kk,0,0,0,0,0,0,node(i,j,k)
             END IF
          END DO
       END DO
