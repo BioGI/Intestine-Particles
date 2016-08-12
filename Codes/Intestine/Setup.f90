@@ -35,6 +35,8 @@ INTEGER(lng), PARAMETER :: FLUID		= 0_lng				! fluid inbetween
 INTEGER(lng), PARAMETER :: SOLID		= 1_lng				! solid interior (moving)
 INTEGER(lng), PARAMETER :: SOLID2		= 2_lng				! solid exterior (stationary)
 INTEGER(lng), PARAMETER :: qitermax = 15_lng 					! max number of q iterations
+
+LOGICAL :: Flag_Couette                ! Flag to run a Couette simulation  
 LOGICAL :: Flag_Correcting_Mass        ! Flag to correct the mass by bringing average density to 1.0
 LOGICAL :: Flag_ParticleTrack          ! Flag for tracking particles
 LOGICAL :: Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number
@@ -193,7 +195,7 @@ REAL(dbl) :: lambda1, lambda2							! wavelengths
 REAL(dbl) :: kw1								! wave number (peristalsis)
 REAL(dbl) :: s1, s2	            						! mode velocities
 REAL(dbl) :: Ts, Tp								! segmental period, peristaltic period
-REAL(dbl) :: wc1, wc2								! weighting coefficients for the different modes
+REAL(dbl) :: wc0, wc1, wc2								! weighting coefficients for the different modes
 REAL(dbl) :: Re1, Re2								! weighting coefficients for the different modes
 REAL(dbl) :: shift2								! amplitude of the segmental contraction
 REAL(dbl) :: Tmix								! calculated period (mix)
@@ -221,8 +223,8 @@ INTEGER(lng), ALLOCATABLE 	:: filenum(:)					! array of output file numbers
 INTEGER(lng)    :: numOuts							! number of output files
 INTEGER(lng)    :: Output_Intervals						! number of iterations between writing the output files 
 INTEGER(lng)    :: Restart_Intervals						! number of iterations between writing the restart files 	
-INTEGER(lng)	:: fileCount							! current output file number (out of total number of output files)
-INTEGER(lng)	:: outFlag							! specifies whether to output in readable format (1), binaries (2), or both (3)
+INTEGER(lng)	  :: fileCount							! current output file number (out of total number of output files)
+INTEGER(lng)	  :: outFlag							! specifies whether to output in readable format (1), binaries (2), or both (3)
 INTEGER(lng)    :: radcount							! counts the number of output iterations for storing the radius
 
 ! System Clock Variables (for PrintStatus)
@@ -378,6 +380,7 @@ READ(10,*) coeffConst
 READ(10,*) nPers                       ! total number of periods to run
 READ(10,*) Output_Intervals            ! number of iterations between writing the output files 
 READ(10,*) Restart_Intervals           ! number of iterations between writing the restart files 
+READ(10,*) Flag_Couette                ! Flag to run the Couette simulation
 READ(10,*) Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
 READ(10,*) Flag_ParticleTrack          ! Flag for tracking particles           
 READ(10,*) Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        

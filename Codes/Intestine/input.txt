@@ -32,6 +32,7 @@
 20.0       ! Number of Periods 						                                      (nPers)
 150        ! number of iterations between writing the output files              (Output_Intervals)
 4500       ! number of iterations between writing the restart files             (Restart_Intervals)
+.FALSE.    ! flag for Couette isumulations                                      (Flag_Couette) 
 .TRUE.     ! Flag for mass correction by bringing back rho to 1.0               (Flag_Correcting_Mass) 
 .TRUE.     ! Flag for tracking particles                                        (Flag_ParticleTrack)
 .FALSE.    ! Flag for including shear effects in Sherwood number                (Flag_Shear_Effects)
