@@ -283,7 +283,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
 
    !----- open the proper output file
    OPEN(60,FILE='out-'//iter_char//'-'//sub//'.dat')
-   WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "P" "phi/Cs" "node"'
+   WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "S" "P" "phi/Cs" "node"'
    WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
    DO k=1,nzSub
       DO j=1,nySub
@@ -402,8 +402,8 @@ IF (myid .EQ. master) THEN
 				    current%pardata%Nbj                   ,',', &
             current%pardata%cur_part  	          
          END IF	
-1001     format (I6,a2,    F9.4,a2,  F9.4,a2,  F9.4,a2,    F8.4,a2,     F8.4,a2,    F8.4,a2,                 &
-                 F10.6,a2, F12.8,a2, F12.5,a2, E15.5,a2,   E15.10,a2,   E15.5,a2,   E15.5,a2,  E15.5,a2,    I5)
+1001     format (I6,a2,   F9.4,a2,  F9.4,a2,  F9.4,a2,  F8.4,a2,  F8.4,a2,  F8.4,a2,              &
+                 F7.3,a2, F12.8,a2, F12.5,a2, E15.5,a2, E15.5,a2, E15.5,a2, E15.5,a2, E15.5,a2, I5)
          current => next
       ENDDO
 
