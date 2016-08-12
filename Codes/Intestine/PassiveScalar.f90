@@ -17,14 +17,13 @@ SUBROUTINE Scalar_Setup					      ! sets up the passive scalar component
 !===================================================================================================
 IMPLICIT NONE
 
-phi    = 0.0_dbl							
-phiTemp= 0.0_dbl							
+phi    = 0.0_dbl					
+phiTemp= 0.0_dbl						
 phiInNodes = 0.0_dbl
 phiOutNodes = 0.0_dbl
-
-Dm     = nuL/Sc							! binary molecular diffusivity (scalar in fluid)
-Dmcf   = (zcf*zcf)/tcf						! conversion factor for diffusivity
-Delta  = 1.0_dbl- 6.0_dbl*Dm					! scalar diffusion parameter
+Dm   = nuL/Sc							! binary molecular diffusivity (scalar in fluid)
+Dmcf = (zcf*zcf)/tcf						! conversion factor for diffusivity
+Delta= 1.0_dbl- 6.0_dbl*Dm					! scalar diffusion parameter
 
 !---- scalar standard devation for gaussian distributions
 sigma  = 0.1_dbl*D						! 1/10 of Diameter
@@ -42,23 +41,19 @@ END SUBROUTINE Scalar_Setup
 
 
 
-
-
-
-
 !===================================================================================================
-SUBROUTINE Scalar				  ! calculates the evolution of scalar in the domain
+SUBROUTINE Scalar				! calculates the evolution of scalar in the domain
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr							! index variables
+INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr                   ! index variables
 INTEGER(lng):: Over_Sat_Counter, Over_Sat_Counter_Global
 REAL(dbl)   :: Over_sat_Total,   Over_Sat_Total_Global
 REAL(dbl)   :: Largest_phi, Largest_phi_Global							! OverSaturation issue monitoring
-REAL(dbl)   :: phiBC 										! scalar contribution from boundary
-REAL(dbl)   :: phiOutSurf,phiInSurf								! scalar contribution coming from and going into the boundary
-REAL(dbl)   :: tausgs										! contribution form tau_sgs term from particle closure
-REAL(dbl)   :: zcf3										! Cell volume
+REAL(dbl)   :: phiBC                                        ! scalar contribution from boundary
+REAL(dbl)   :: phiOutSurf,phiInSurf                         ! scalar contribution coming from and going into the boundary
+REAL(dbl)   :: tausgs                                       ! contribution form tau_sgs term from particle closure
+REAL(dbl)   :: zcf3                                         ! Cell volume
 
 CALL IC_Drug_Distribution 									! sets/maintains initial distributions of scalar [MODULE: IC.f90]
 
@@ -77,7 +72,7 @@ END IF
 
 
 !----- store the previous scalar values
-phiTemp 	    = phi + delphi_particle
+phiTemp             = phi+ delphi_particle
 
 Negative_phi_Counter= 0
 Negative_phi_Worst  = 0.0_dbl
@@ -93,6 +88,7 @@ DO k=1,nzSub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
             phi(i,j,k) = Delta * phiTemp(i,j,k)  
+
 
             DO m=0,NumDistDirs
                !-----  neighboring node --------------------------------------------------------------
@@ -175,7 +171,7 @@ IF (myid .EQ. master) THEN
 END IF
 
 !----- Add the amount of scalar absorbed through the outer surfaces
-phiAbsorbed = phiAbsorbedS 						
+phiAbsorbed = phiAbsorbedS 			
 !===================================================================================================
 END SUBROUTINE Scalar
 !===================================================================================================

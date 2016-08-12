@@ -65,9 +65,9 @@ REAL(dbl) :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt		! temporary coordinates to sea
 ip1= i + ex(m)							! i location of 1st neighbor in the m direction
 jp1= j + ey(m)							! j location of 1st neighbor in the m direction
 kp1= k + ez(m)							! k location of 1st neighbor in the m direction
-ip2= i + 2_lng*ex(m)						! i location of 2nd neighbor in the m direction
-jp2= j + 2_lng*ey(m)						! j location of 2nd neighbor in the m direction
-kp2= k + 2_lng*ez(m)						! k location of 2nd neighbor in the m direction
+ip2= i + 2_lng*ex(m)				! i location of 2nd neighbor in the m direction
+jp2= j + 2_lng*ey(m)				! j location of 2nd neighbor in the m direction
+kp2= k + 2_lng*ez(m)				! k location of 2nd neighbor in the m direction
 
 !----- 2nd order BB if two positive neighbors are in fluid (most cases)
 IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN		
@@ -211,14 +211,14 @@ SUBROUTINE qCalc(m,i,j,k,im1,jm1,km1,q)			! calculates q (boundary distance rati
 !==================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1		! current node, and neighboring node
-REAL(dbl), INTENT(OUT) :: q				! distance ratio
-REAL(dbl) :: Ax,Ay,Az					! current node
-REAL(dbl) :: Bx,By,Bz					! solid node
-REAL(dbl) :: AB,AP					! distances between current and solid nodes, and between current node and the wall
-REAL(dbl) :: dx,dy,dz					! unit vector pointing from A to B
-REAL(dbl) :: r1,r2,z1,z2,slope,intercept		! radius and z location at k and km1, slope of line connecting those two points, z-intercept of the r-equation
-REAL(dbl) :: slope2,term1,term2				! terms used in calculation
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1  ! current node, and neighboring node
+REAL(dbl), INTENT(OUT) :: q                      ! distance ratio
+REAL(dbl) :: Ax,Ay,Az                            ! current node
+REAL(dbl) :: Bx,By,Bz                            ! solid node
+REAL(dbl) :: AB,AP                               ! distances between current and solid nodes, and between current node and the wall
+REAL(dbl) :: dx,dy,dz                            ! unit vector pointing from A to B
+REAL(dbl) :: r1,r2,z1,z2,slope,intercept         ! radius and z location at k and km1, slope of line connecting those two points, z-intercept of the r-equation
+REAL(dbl) :: slope2,term1,term2                  ! terms used in calculation
 
 ! RAY
 ! point A (current node)
@@ -352,7 +352,7 @@ SUBROUTINE SymmetryBC			   				   ! implements symmetry BC
 !==================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng) 	:: i,j,k,m,ii,jj,iComm				! index variables
+INTEGER(lng) 	:: i,j,k,m,ii,jj,iComm		! index variables
 INTEGER(lng)	:: mpierr					! MPI standard error variable
 
 !----- Loop through the subdomain faces
@@ -360,14 +360,14 @@ INTEGER(lng)	:: mpierr					! MPI standard error variable
 iComm = 2
 IF (SubID(iComm) .EQ. 0) THEN					! if no neighbor in the iComm communication direction exists, implement symmetry BC
    i = YZ_RecvIndex(iComm)					! i location of phantom nodes
-   ii = YZ_SendIndex(iComm) + 1_lng				! i location of 1 row in from the boundary nodes
+   ii = YZ_SendIndex(iComm) + 1_lng			! i location of 1 row in from the boundary nodes
    DO k=0,nzSub+1_lng
       DO j=0,nySub+1_lng
          DO m=1,NumFs_Face
             f(f_Comps(OppCommDir(iComm),m),i,j,k) = f(sym(f_Comps(OppCommDir(iComm),m),iComm),ii,j,k)	! symmetry BC for 'f'
          END DO
-         rho(i,j,k) = rho(ii,j,k)    				! symmetry BC for density 
-         phi(i,j,k) = phi(ii,j,k)    				! symmetry BC for scalar
+         rho(i,j,k) = rho(ii,j,k)    		! symmetry BC for density 
+         phi(i,j,k) = phi(ii,j,k)    		! symmetry BC for scalar
       END DO
    END DO
 END IF
@@ -375,15 +375,15 @@ END IF
 !----- ZX Face
 iComm = 4
 IF (SubID(iComm) .EQ. 0) THEN					! if no neighbor in the iComm communication direction exists, implement symmetry BC
-   j = ZX_RecvIndex(iComm)					! j location of phantom nodes
-   jj = ZX_SendIndex(iComm) + 1_lng				! j location of 1 row in from the boundary nodes
+   j = ZX_RecvIndex(iComm)					  ! j location of phantom nodes
+   jj = ZX_SendIndex(iComm) + 1_lng		! j location of 1 row in from the boundary nodes
    DO k=0,nzSub+1_lng
       DO i=0,nxSub+1_lng
          DO m=1,NumFs_Face
             f(f_Comps(OppCommDir(iComm),m),i,j,k) = f(sym(f_Comps(OppCommDir(iComm),m),iComm),i,jj,k)        ! symmetry BC
          END DO
-         rho(i,j,k) = rho(i,jj,k)    				! symmetry BC for density 
-         phi(i,j,k) = phi(i,jj,k)    				! symmetry BC for scalar
+         rho(i,j,k) = rho(i,jj,k)    			! symmetry BC for density 
+         phi(i,j,k) = phi(i,jj,k)    			! symmetry BC for scalar
       END DO
    END DO
 END IF
@@ -392,20 +392,19 @@ END IF
 iComm = 8
 IF ((SubID(2) .EQ. 0) .AND. (SubID(4) .EQ. 0) .AND. (SubID(iComm) .EQ. 0)) THEN		! if no neighbor in the iComm communication direction exists, iplement symmetry BC
    i = Z_RecvIndex(iComm,1)					! i location of phantom nodes	
-   ii = Z_SendIndex(iComm,1) + 1_lng				! i location of 1 row in from the boundary nodes
+   ii = Z_SendIndex(iComm,1) + 1_lng			! i location of 1 row in from the boundary nodes
    j = Z_RecvIndex(iComm,2)					! j location of phantom nodes	
-   jj = Z_SendIndex(iComm,2) + 1_lng				! j location of 1 row in from the boundary nodes
-
+   jj = Z_SendIndex(iComm,2) + 1_lng			! j location of 1 row in from the boundary nodes
    DO k=0,nzSub+1_lng
       DO m=1,NumFs_Side
          f(f_Comps(OppCommDir(iComm),m),i,j,k) = f(sym(f_Comps(OppCommDir(iComm),m),iComm),ii,jj,k)        ! symmetry BC
       END DO
-      rho(i,j,k) = rho(ii,jj,k)  	  			! symmetry BC for density 
-      phi(i,j,k) = phi(ii,jj,k)    				! symmetry BC for scalar
-   END DO
+      rho(i,j,k) = rho(ii,jj,k)  	        ! symmetry BC for density 
+      phi(i,j,k) = phi(ii,jj,k)           ! symmetry BC for scalar
+  END DO
 END IF
 
-CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)				! synchronize all processing units
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)          ! synchronize all processing units
 
 !==================================================================================================
 END SUBROUTINE SymmetryBC
@@ -423,8 +422,8 @@ SUBROUTINE SymmetryBC_NODE				! implements symmetry boundary conditions
 !==================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng) 	:: i,j,k,m,ii,jj,iComm			! index variables
-INTEGER(lng)	:: mpierr				! MPI standard error variable
+INTEGER(lng) 	:: i,j,k,m,ii,jj,iComm          ! index variables
+INTEGER(lng)	:: mpierr                       ! MPI standard error variable
 
 !----- Loop through the subdomain faces
 !------YZ Face
@@ -434,7 +433,7 @@ IF (SubID(iComm) .EQ. 0) THEN				! if no neighbor in the iComm communication dir
    ii = YZ_SendIndex(iComm) + 1_lng			! i location of 1 row in from the boundary nodes
    DO k=0,nzSub+1_lng
       DO j=0,nySub+1_lng
-         node(i,j,k) = node(ii,j,k)    			! symmetry BC for node flag 
+         node(i,j,k) = node(ii,j,k)    		! symmetry BC for node flag 
       END DO
    END DO
 END IF
@@ -444,11 +443,11 @@ iComm = 4
 IF (SubID(iComm) .EQ. 0) THEN				! if no neighbor in the iComm communication direction exists, implement symmetry BC
    j = ZX_RecvIndex(iComm)				! j location of phantom nodes
    jj = ZX_SendIndex(iComm) + 1_lng			! j location of 1 row in from the boundary nodes
-    DO k=0,nzSub+1_lng
-       DO i=0,nxSub+1_lng
-           node(i,j,k) = node(i,jj,k)    		! symmetry BC for node flag 
-       END DO
-    END DO
+   DO k=0,nzSub+1_lng
+      DO i=0,nxSub+1_lng
+          node(i,j,k) = node(i,jj,k)    		! symmetry BC for node flag 
+      END DO
+   END DO
 END IF
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)	! synchronize all processing units

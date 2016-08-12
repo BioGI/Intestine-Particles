@@ -177,13 +177,13 @@ END SUBROUTINE LBM_Setup
 
 
 !===================================================================================================
-SUBROUTINE Equilibrium	     			!equilibrium distribution function & setting f to feq (IC)
+SUBROUTINE Equilibrium	             !equilibrium distribution function & setting f to feq (IC)
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng):: i,j,k,m				! index variables
-REAL(dbl)   :: uu,ue,ve,we,Usum			! precalculated quantities for use in feq equation
-REAL(dbl)   :: feq				! equilibrium distribution function
+INTEGER(lng):: i,j,k,m             ! index variables
+REAL(dbl)   :: uu,ue,ve,we,Usum    ! precalculated quantities for use in feq equation
+REAL(dbl)   :: feq                 ! equilibrium distribution function
 
 DO k=1,nzSub+0
    DO j=1,nySub+0
@@ -194,8 +194,8 @@ DO k=1,nzSub+0
                ue  = u(i,j,k)*ex(m)							! u . e
                ve  = v(i,j,k)*ey(m)							! v . e
                we  = w(i,j,k)*ez(m)							! w . e
-               Usum= ue + ve + we							! U . e
-               feq = (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5_dbl*Usum*Usum- 1.5_dbl*uu)	
+               Usum= ue + ve + we						    ! U . e
+               feq = (wt(m)*rho(i,j,k))*(1.0_dbl + 3.0_dbl*Usum + 4.5_dbl*Usum*Usum- 1.5_dbl*uu)
                f(m,i,j,k) = feq    
             END DO
          END IF
@@ -218,9 +218,9 @@ SUBROUTINE Collision		  ! equilibrium distribution function & collision step for
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng):: i,j,k,m		  ! index variables
-REAL(dbl)   :: UU,ue,ve,we,Usum	  ! precalculated quantities for use in the feq equation
-REAL(dbl)   :: feq		  ! equilibrium distribution function
+INTEGER(lng):: i,j,k,m		! index variables
+REAL(dbl)   :: UU,ue,ve,we,Usum	! precalculated quantities for use in the feq equation
+REAL(dbl)   :: feq		 ! equilibrium distribution function
 
 DO k=1,nzSub+0
    DO j=1,nySub+0
@@ -308,25 +308,25 @@ DO k=1,nzSub,(nzSub-1)
                im1 = i - ex(m)
                jm1 = j - ey(m)
                km1 = k - ez(m)
-              IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
-                 f(m,i,j,k) = fplus(m,im1,jm1,km1)
-              ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							! macro- boundary
-                 CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  				! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
-                 f(m,i,j,k) = fbb
-              ELSE IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
-              ELSE
-                 OPEN(1000,FILE="error.txt")
-                 WRITE(1000,'(A75)') "error in LBM.f90 at Line 312: node(im1,jm1,km1) is out of range"
-                 WRITE(1000,*) "iter", iter
-                 WRITE(1000,*) "m=",m
-                 WRITE(1000,*) "i=",i,"j=",j,"k=",k
-                 WRITE(1000,*) "x(i)=",x(i),"y(j)=",y(j),"z(k)=",z(k)
-                 WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
-                 WRITE(1000,*) "x(im1)=",x(im1),"y(jm1)=",y(jm1),"z(km1)=",z(km1)
-                 WRITE(1000,*) "node(i,j,k)=",node(i,j,k)
-                 WRITE(1000,*) "node(im1,jm1,km1)=",node(im1,jm1,km1)
-                 CLOSE(1000)
-                 STOP
+               IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
+                  f(m,i,j,k) = fplus(m,im1,jm1,km1)
+               ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							! macro- boundary
+                  CALL BounceBackL(m,i,j,k,im1,jm1,km1,fbb)			  				! implement the bounceback BCs (Ladd BB) [MODULE: ICBC]
+                  f(m,i,j,k) = fbb
+               ELSE IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN		! villi
+               ELSE
+                  OPEN(1000,FILE="error.txt")
+                  WRITE(1000,'(A75)') "error in LBM.f90 at Line 312: node(im1,jm1,km1) is out of range"
+                  WRITE(1000,*) "iter", iter
+                  WRITE(1000,*) "m=",m
+                  WRITE(1000,*) "i=",i,"j=",j,"k=",k
+                  WRITE(1000,*) "x(i)=",x(i),"y(j)=",y(j),"z(k)=",z(k)
+                  WRITE(1000,*) "im1=",im1,"jm1=",jm1,"km1=",km1
+                  WRITE(1000,*) "x(im1)=",x(im1),"y(jm1)=",y(jm1),"z(km1)=",z(km1)
+                  WRITE(1000,*) "node(i,j,k)=",node(i,j,k)
+                  WRITE(1000,*) "node(im1,jm1,km1)=",node(im1,jm1,km1)
+                  CLOSE(1000)
+                  STOP
                END IF
             END DO    
          END IF
@@ -363,7 +363,7 @@ DO j=1,nySub,(nySub-1)
                 WRITE(1000,*) "node(i,j,k)=",node(i,j,k)
                 WRITE(1000,*) "node(im1,jm1,km1)=",node(im1,jm1,km1)
                 CLOSE(1000)
-               STOP
+                STOP
               END IF
             END DO    
          END IF
@@ -432,12 +432,12 @@ DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            rho(i,j,k)	= 0.0_dbl					! density
-            u(i,j,k)	= 0.0_dbl					! x-velocity
-            v(i,j,k)	= 0.0_dbl					! y-velocity
-            w(i,j,k)	= 0.0_dbl					! z-velocity     
+            rho(i,j,k)= 0.0_dbl       ! density
+            u(i,j,k)	= 0.0_dbl				! x-velocity
+            v(i,j,k)	= 0.0_dbl				! y-velocity
+            w(i,j,k)	= 0.0_dbl				! z-velocity     
             DO m=0,NumDistDirs  
-               rho(i,j,k)	= rho(i,j,k) + f(m,i,j,k)		! density
+               rho(i,j,k)	= rho(i,j,k) + f(m,i,j,k)		      ! density
                u(i,j,k)	= u(i,j,k)   + f(m,i,j,k)*ex(m)			! x-velocity
                v(i,j,k)	= v(i,j,k)   + f(m,i,j,k)*ey(m)			! y-velocity
                w(i,j,k)	= w(i,j,k)   + f(m,i,j,k)*ez(m)			! z-velocity

@@ -35,16 +35,16 @@ seed=10972
 CALL RANDOM_SEED(put=seed)
 DEALLOCATE(seed)
 	
-CALL Global_Setup							! set up the simulation {MODULE: Setup]
-CALL MPI_Setup								! set up MPI component of the simulation [MODULE: Parallel]
-CALL LBM_Setup								! set up LBM simulation [MODULE: LBM]
-CALL Geometry_Setup							! set up the geometry of the physcial simulation [MODULE: Geometry]
-CALL Scalar_Setup							! set up the passive scalar component of the simluation [MODULE: Scalar]
-CALL Output_Setup							! set up the output [MODULE: Output]
-CALL ICs								! set initial conditions [MODULE: ICBC]
-CALL OpenOutputFiles							! opens output files for writing [MODULE: Output.f90]
-CALL PrintParams							! print simulation info [MODULE: Output]
-CALL PrintFields							! output the velocity, density, and scalar fields [MODULE: Output]
+CALL Global_Setup				    ! set up the simulation {MODULE: Setup]
+CALL MPI_Setup						  ! set up MPI component of the simulation [MODULE: Parallel]
+CALL LBM_Setup							! set up LBM simulation [MODULE: LBM]
+CALL Geometry_Setup					! set up the geometry of the physcial simulation [MODULE: Geometry]
+CALL Scalar_Setup						! set up the passive scalar component of the simluation [MODULE: Scalar]
+CALL Output_Setup						! set up the output [MODULE: Output]
+CALL ICs							      ! set initial conditions [MODULE: ICBC]
+CALL OpenOutputFiles				! opens output files for writing [MODULE: Output.f90]
+CALL PrintParams						! print simulation info [MODULE: Output]
+CALL PrintFields						! output the velocity, density, and scalar fields [MODULE: Output]
 CALL PrintComputationalTime 						! Start simulation timer, print status [MODULE: Output]
 
 IF (Flag_ParticleTrack) THEN 					! If particle tracking is 'on' then do the following
@@ -52,26 +52,22 @@ IF (Flag_ParticleTrack) THEN 					! If particle tracking is 'on' then do the fol
    CALL Particle_Setup
 ENDIF
 
-!IF (Flag_Restart) THEN							! calculate the villous locations/angles at iter0-1 [MODULE: Geometry]
-!    iter=iter0-1
-!    CALL AdvanceGeometry
-!END IF
 
-CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)					! synchronize all processes before starting simulation [Intrinsic]
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)				! synchronize all processes before starting simulation [Intrinsic]
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Simulation Loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 DO iter = iter0-0_lng,nt
-   CALL AdvanceGeometry							! advance the geometry to the next time step [MODULE: Geometry]
+   CALL AdvanceGeometry						! advance the geometry to the next time step [MODULE: Geometry]
    CALL Collision							! collision step [MODULE: Algorithm]
-   CALL MPI_Transfer							! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
+   CALL MPI_Transfer						! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
 
    IF (domaintype .EQ. 0) THEN  					! only needed when planes of symmetry exist
-      CALL SymmetryBC							! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
+      CALL SymmetryBC						! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
    ENDIF
-   CALL Stream								! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
-   CALL Macro								! calcuate the macroscopic quantities [MODULE: Algorithm]
-   CALL MPI_Transfer                                                    ! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
-
+   CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
+   CALL Macro							! calcuate the macroscopic quantities [MODULE: Algorithm]
+   CALL MPI_Transfer 
+ 
    IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
       CALL Particle_Track
    ENDIF
@@ -80,13 +76,13 @@ DO iter = iter0-0_lng,nt
    END IF
    
    !----- Outputs------------------------------------------------------
-   CALL PrintFields							! output the velocity, density, and scalar fields [MODULE: Output]
+   CALL PrintFields						! output the velocity, density, and scalar fields [MODULE: Output]
    IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
       CALL PrintParticles						! output the particle velocity, radius, position and con. [MODULE: Output]
    ENDIF
    CALL PrintDrugConservation						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
    CALL PrintMass							! print the total mass in the system (TEST)
-   CALL PrintVolume							! print the volume in the system (TEST)
+   CALL PrintVolume						! print the volume in the system (TEST)
    CALL PrintComputationalTime 						! print current status [MODULE: Output]
    IF (MOD(iter,Restart_Intervals) .EQ. 0) THEN
       CALL PrintRestart
@@ -97,8 +93,8 @@ END DO
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End Simulation Loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 CALL PrintRestart							! print a final set of restart files to continue if desired [MODULE: Output]
-CALL DEAllocateArrays							! clean up the memory [MODULE: Setup]
-CALL CloseOutputFiles							! closes output files [MODULE: Output.f90]
+CALL DEAllocateArrays						! clean up the memory [MODULE: Setup]
+CALL CloseOutputFiles						! closes output files [MODULE: Output.f90]
 !CALL MergeOutput							! combine the subdomain output into an output file for the entire computational domain [MODULE: Output]
 CALL MPI_TYPE_FREE(mpipartransfertype,mpierr)
 CALL MPI_FINALIZE(mpierr)						! end the MPI simulation [Intrinsic]

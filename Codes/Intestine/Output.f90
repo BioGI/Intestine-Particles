@@ -11,15 +11,14 @@ IMPLICIT NONE
 
 CONTAINS
 
-
 !===================================================================================================
 SUBROUTINE Output_Setup								! sets up the output
 !===================================================================================================
 IMPLICIT NONE
 
-ALLOCATE(filenum(0:nt))			! maximum number of output files (should only output ~numOuts times)
-filenum = 0_lng				! initialize to 0
-fileCount = 0_lng			! initialize to 0
+ALLOCATE(filenum(0:nt))     ! maximum number of output files (should only output ~numOuts times)
+filenum = 0_lng             ! initialize to 0
+fileCount = 0_lng           ! initialize to 0
 
 ALLOCATE(parfilenum(0:nt))		! maximum number of output files (should only output ~numOuts times)
 ALLOCATE(numparticleSubfile(0:nt))	! maximum number of output files (should only output ~numOuts times)
@@ -49,7 +48,6 @@ IF (myid .EQ. master) THEN
    !----- Monitoring negative phi----
    OPEN(2118,FILE='Negative-phi.dat',POSITION='APPEND')
    WRITE(2118,'(A120)') 'VARIABLES = iter,  Number of Negative phi Nodes,  Total Sum of Negative phi,  Worst Negative phi,  Average of Negative phi'
-
    !----- Monitoring over saturation
    OPEN(2119,FILE='Over_Saturation.dat',POSITION='APPEND')
    WRITE(2119,'(A140)') 'VARIABLES = iter,  Number of oversaturated nodes, largest phi (C_max), Average of oversaturated nodes (C/Cs)'
@@ -78,8 +76,6 @@ WRITE(2458,'(A120)') '#VARIABLES = period, time, mass_theory, mass_actual, mass_
 !===================================================================================================
 END SUBROUTINE OpenOutputFiles
 !===================================================================================================
-
-
 
 
 
