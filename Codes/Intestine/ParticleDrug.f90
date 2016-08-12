@@ -52,7 +52,8 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
    R_P = current%pardata%rp
    Sh_P= current%pardata%sh
    delta_P= R_P/Sh_P
-   R_influence_P= (R_P+N_b*delta_P)/xcf
+!  R_influence_P= (R_P + N_b*delta_P) / xcf
+   R_influence_P= (R_P + N_b * R_P  ) / xcf
 
 !--Computing equivalent cubic mesh length scale
    V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
@@ -299,26 +300,29 @@ END SUBROUTINE Compute_Cb
 SUBROUTINE Compute_Cb_Global
 !===================================================================================================
 IMPLICIT NONE
-REAL(dbl)    :: Cb_l, Cb_g
-INTEGER(lng) :: i, j, k, Count_l, Count_g, mpierr
+REAL(dbl)    :: phi_tot_l, phi_tot_g
+INTEGER(lng) :: Count_l,   Count_g, i,j,k, mpierr
 
-Cb_l   = 0.0_dbl
+phi_tot_l   = 0.0_dbl
 Count_l= 0
 
 DO k=1,nzSub
   DO j=1,nySub
     DO i=1,nxSub
       IF(node(i,j,k) .EQ. FLUID) THEN
-        Cb_l   = Cb_l    + phi(i,j,k)
-        Count_l= Count_l + 1 
+        phi_tot_l = phi_tot_l + phi(i,j,k)
+        Count_l   = Count_l   + 1 
       END IF
     END DO
   END DO
 END DO
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Cb_l,    Cb_g,    1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-CALL MPI_ALLREDUCE(Count_l, Count_g, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(phi_tot_l, phi_tot_g, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Count_l  , Count_g,   1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+
+Cb_global= phi_tot_g/ Count_g
+
 !===================================================================================================
 END SUBROUTINE Compute_Cb_Global
 !===================================================================================================
@@ -345,6 +349,7 @@ DO WHILE (ASSOCIATED(current))
 
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
       current%pardata%rpold = current%pardata%rp
+      current%pardata%bulk_conc = Cb_global
       bulkconc = current%pardata%bulk_conc
       temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
       IF (temp.GE.0.0_dbl) THEN
@@ -736,7 +741,8 @@ DO WHILE (ASSOCIATED(current))
    R_P  = current%pardata%rp
    Sh_P = current%pardata%sh
    delta_P = R_P / Sh_P
-   R_influence_P = (R_P + N_d * delta_P) / xcf
+!  R_influence_P = (R_P+ N_d* delta_P)/ xcf
+   R_influence_P = (R_P+ N_d* R_P    )/ xcf
 
 !--iomputing equivalent cubic mesh length scale
    L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
