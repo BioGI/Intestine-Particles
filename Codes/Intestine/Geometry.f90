@@ -24,8 +24,8 @@ INTEGER,ALLOCATABLE  :: iseed(:)			! seeds for random number generator
 INTEGER(lng) :: i,j,k,kk,iCon,it,iPer,nPers_INT		! index variables
 INTEGER(lng) :: nvz,nvt,n,g				! index variables
 INTEGER(lng) :: mpierr					! MPI standard error variable 
-REAL(dbl)    :: macroFreq				! macroscopic contraction frequency
 INTEGER(lng) :: xaxis,yaxis				! axes index variables
+REAL(dbl)    :: macroFreq				! macroscopic contraction frequency
 
 !----- Define the lattice <=> physical conversion factors
 IF (domaintype .EQ. 0) THEN
@@ -45,10 +45,10 @@ pcf 	= cs*cs*vcf*vcf					! pressure conversion factor
 
 !----- Determine the number of time steps to run
 IF (Flag_Restart) THEN
-   OPEN(55,FILE='Restart-iter.dat')				! open initial iteration file
-   READ(55,*) iter0					! read and set initial iteration
+   OPEN(55,FILE='Restart-iter.dat')               ! open initial iteration file
+   READ(55,*) iter0                               ! read and set initial iteration
    CLOSE(55)
-   iter0 = iter0 + 1					! set the in
+   iter0 = iter0 + 1                              
    nt = ANINT((nPers*Tmix)/tcf) + iter
 ELSE
    nt = ANINT((nPers*Tmix)/tcf)
@@ -56,11 +56,11 @@ END IF
 
 
 !----- Initialize arrays
-node	= -99_lng					! node flag array
-rDom	= 0.0_dbl					! radius at each z-location
-r	= 0.0_dbl					! temporary radius array for entire computational domain
-velDom	= 0.0_dbl					! wall velocity at each z-location (global)
-vel	= 0.0_dbl					! wall velocity at each z-location (local)
+node  = -99_lng					! node flag array
+rDom  = 0.0_dbl					! radius at each z-location
+r     = 0.0_dbl					! temporary radius array for entire computational domain
+velDom= 0.0_dbl					! wall velocity at each z-location (global)
+vel	  = 0.0_dbl					! wall velocity at each z-location (local)
 
 !----- Check to ensure xcf=ycf=zcf (LBM grid must be cubic)
 IF ((ABS(xcf-ycf) .GE. 1E-8) .OR. (ABS(xcf-zcf) .GE. 1E-8) .OR. (ABS(ycf-zcf) .GE. 1E-8)) THEN
@@ -201,16 +201,18 @@ SUBROUTINE BoundaryPosition		! Calculates the position of the wall at the curren
 !==================================================================================================
 IMPLICIT NONE
 
-REAL(dbl) :: h1(0:nz+1)			! Mode 1 (peristalsis)
-REAL(dbl) :: h2(0:nz+1)			! Mode 2	(segmental)
+REAL(dbl) :: h0(0:nz+1)			             ! Mode 0 (Couette)
+REAL(dbl) :: h1(0:nz+1)			             ! Mode 1 (peristalsis)
+REAL(dbl) :: h2(0:nz+1)			             ! Mode 2 (segmental)
 REAL(dbl) :: A_change,A_base,A2(0:nz+1) 
 REAL(dbl) :: A_1, A_2,AA,alpha,beta
-REAL(dbl) :: Ac, lambdaC, shiftC	! temporary variables for the cos slopes
-REAL(dbl) :: time			! time
-INTEGER(lng) :: i,j,ii,k		! indices
+REAL(dbl) :: Ac, lambdaC, shiftC         ! temporary variables for the cos slopes
+REAL(dbl) :: time			
+INTEGER(lng) :: i,j,ii,k		
 
 !----- Initialize Variables
-time = 0.0_dbl				! time					
+time = 0.0_dbl				
+h0   = 0.0_dbl        ! mode 0 height (Couette)
 h1   = 0.0_dbl				! mode 1 height
 h2   = 0.0_dbl				! mode 2 height
 rDom = 0.0_dbl				! summed height
@@ -218,11 +220,14 @@ rDom = 0.0_dbl				! summed height
 !----- Current Physical Time
 time = iter*tcf
 
+!------------------------- Mode 0 - Couette ---------------------------------
+DO i=0,nz+1
+   h0(i) = 0.45_dbl*D
+END DO
+
 !------------------------- Mode 1 - peristalsis -----------------------------
 DO i=0,nz-1
    h1(i) = amp1*( COS(PI + kw1*(zz(i)-s1*time)) ) + 0.5_dbl*D-amp1
-   !Yanxing's expression
-   !h1(i)= amp1*sin(2.0_dbl*PI*((real(i,dbl)-0.5_dbl)/real(nz,dbl)-0.1_dbl*iter/real(nz,dbl))+pi/2.0_dbl)+ (0.5_dbl*D - amp1)
 END DO
 
 !------ since PI cannot be stored exactly, the wavelength(s) does/do not EXACTLY span the domain...
@@ -259,16 +264,18 @@ END DO
 
 !-------------------------------- Mode Sum  ---------------------------------
 !----- Sum the modes in a weighted linear combination
+IF (Flag_Couette) THEN
+  wc0= 1.0_dbl
+ELSE 
+  wc0=0.0_dbl
+ENDIF 
+
 DO i=0,nz+1
-   rDom(i) = wc1*h1(i) + wc2*h2(i)
+   rDom(i) = wc0*h0(i) + wc1*h1(i) + wc2*h2(i)
 END DO
 
 !----- Fill out the local radius array
 r(0:nzSub+1) = rDom(kMin-1:kMax+1)
-
-!IF (myid .EQ. master) THEN
-!   CALL SurfaceArea				!----- calculate the surface area
-!END IF
 
 !==================================================================================================
 END SUBROUTINE BoundaryPosition
@@ -341,31 +348,33 @@ SUBROUTINE BoundaryVelocity			! defines the velocity of the solid boundaries (fi
 !==================================================================================================
 IMPLICIT NONE 
 
-REAL(dbl) :: v1(0:nz+1), v2(0:nz+1)		! velocity arrays for each mode
-REAL(dbl) :: lambdaC				! wavelength of the cos segments (mode 2)
-REAL(dbl) :: time				! time
+REAL(dbl) :: v0(0:nz+1), v1(0:nz+1), v2(0:nz+1)   ! velocity arrays for each mode
+REAL(dbl) :: lambdaC                              ! wavelength of the cos segments (mode 2)
+REAL(dbl) :: time
 REAL(dbl) :: A_1, A_2, AA
 REAL(dbl) :: alpha, beta, CC, DD, EE
 REAL(dbl) :: A_Base, A_Change 
-INTEGER(lng) :: i,j,ii				! indices
+INTEGER(lng) :: i,j,ii				
 
 !----- Initialize Variables
 time  = 0.0_dbl				! time
 velDom= 0.0_dbl				! summed velocity
+v0    = 0.0_dbl       ! Mode 0 Velocity (Couette)
 v1    = 0.0_dbl				! mode 1 velocity
 v2    = 0.0_dbl				! mode 2 velocity	
 			
 time  = iter*tcf			! Current Physical Time
-
-!------------------------- Mode 1 - peristalsis -----------------------------
-DO i= 0,nz-1 ! Balaji added to ensure periodicity just like in h1. 
-   v1(i) = kw1*s1*amp1*(SIN(PI + kw1*(zz(i) - (s1*time))))
-   !v1(i)= -kw1*s1*amp1*(SIN(kw1*(zz(i) - (s1*time))))
-   !Yanxing's expression
-   !v1(i)= -kw1*s1*amp1*cos(2.0_dbl*PI*((real(i,dbl)-0.5_dbl)/real(nz,dbl)-0.1_dbl*iter/real(nz,dbl))+pi/2.0_dbl)
+!------------------- Mode 0 -Couette ----------------------------------------
+DO i= 0,nz+1  
+   v0(i) = s1
 END DO
-v1(nz)=v1(0)
-v1(nz+1)=v1(1)
+
+!------------------- Mode 1 - peristalsis -----------------------------------
+DO i= 0,nz-1  
+   v1(i) = kw1*s1*amp1*(SIN(PI + kw1*(zz(i) - (s1*time))))
+END DO
+v1(nz)=   v1(0)
+v1(nz+1)= v1(1)
 
 !------------------- Mode 2 - segmental contractions  -----------------------
 
@@ -399,8 +408,14 @@ v2(nz-1:nz+1) = v2(1)
 
 !-------------------------------- Mode Sum  ---------------------------------
 !----- Sum the modes in a weighted linear combination
+IF (Flag_Couette) THEN
+  wc0= 1.0_dbl
+ELSE 
+  wc0= 0.0_dbl
+ENDIF 
+
 DO i=0,nz+1
-   velDom(i) = wc1*v1(i) + wc2*v2(i)
+   velDom(i) = wc0*v0(i) + wc1*v1(i) + wc2*v2(i)
 END DO
 
 !----------------------------------------------------------------------------
@@ -419,32 +434,42 @@ END SUBROUTINE BoundaryVelocity
 
 
 !==================================================================================================
-SUBROUTINE SetNodes					! defines the geometry via "node" array of flags
+SUBROUTINE SetNodes					    ! defines the geometry via "node" array of flags
 !==================================================================================================
 IMPLICIT NONE 
 
-INTEGER(lng)	:: i,j,k,m,iComm			! index variables
-REAL(dbl)	:: rijk					! radius of the current node
-REAL(dbl)      	:: ubx,uby,ubz				! boundary velocity
-INTEGER(lng) 	:: mpierr				! MPI standard error variable 
+INTEGER(lng) :: i,j,k,m,iComm   ! index variables
+REAL(dbl)    :: rijk            ! radius of the current node
+REAL(dbl)    :: ubx,uby,ubz     ! boundary velocity
+INTEGER(lng) :: mpierr          ! MPI standard error variable 
 
 !----- Flag the interior nodes and give values to nodes that just came in
 DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
-         rijk = SQRT(x(i)*x(i) + y(j)*y(j))
-         IF (rijk .LT. r(k)) THEN
-            IF (node(i,j,k) .EQ. SOLID) THEN		! just came into the domain
-            !----- calculate the wall velocity (boundary)
-               ubx = vel(k)*(x(i)/rijk)
-               uby = vel(k)*(y(j)/rijk)
-               ubz = 0.0_dbl
-              CALL SetProperties(i,j,k,ubx,uby,ubz)
+
+         IF (Flag_Couette) THEN !----- Couette Geometry ---------------------
+            IF (abs(x(i)).LT.r(k)) THEN
+               node(i,j,k)= FLUID 
+            ELSE
+               node(i,j,k)= SOLID  
             END IF
-            node(i,j,k)	= FLUID				! reset the SOLID node that just came in to FLUID
-         ELSE
-           node(i,j,k) = SOLID				! if rijk is GT r(k) then it's a SOLID node
+         ELSE !----------------------- Intesitne Geometry -------------------
+            rijk = SQRT(x(i)*x(i) + y(j)*y(j))
+            IF (rijk .LT. r(k)) THEN
+               IF (node(i,j,k) .EQ. SOLID) THEN		! just came into the domain
+               !----- calculate the wall velocity (boundary)
+                  ubx = vel(k)*(x(i)/rijk)
+                  uby = vel(k)*(y(j)/rijk)
+                  ubz = 0.0_dbl
+                  CALL SetProperties(i,j,k,ubx,uby,ubz)
+               END IF
+               node(i,j,k)	= FLUID				! reset the SOLID node that just came in to FLUID
+            ELSE
+              node(i,j,k) = SOLID				! if rijk is GT r(k) then it's a SOLID node
+            END IF
          END IF
+
       END DO
    END DO
 END DO
@@ -454,12 +479,11 @@ END DO
 DO iComm=1,2
    i = YZ_RecvIndex(OppCommDir(iComm))			! i index of the phantom nodes
    DO j=0,nySub+1_lng
-      rijk = SQRT(x(i)*x(i) + y(j)*y(j))
       DO k=0,nzSub+1_lng
-         IF (rijk .LT. r(k)) THEN
-            node(i,j,k) = FLUID				! set the SOLID node that just came in to FLUID
+         IF (abs(x(i)).LT.r(k)) THEN
+            node(i,j,k)= FLUID 
          ELSE
-            node(i,j,k) = SOLID				! if rijk is GT r(k) then it's a SOLID node
+            node(i,j,k)= SOLID  
          END IF
       END DO
    END DO
@@ -469,9 +493,8 @@ END DO
 DO iComm=3,4
    j = ZX_RecvIndex(OppCommDir(iComm))			! j index of the phantom nodes
    DO i=0,nxSub+1_lng
-      rijk = SQRT(x(i)*x(i) + y(j)*y(j))
       DO k=0,nzSub+1_lng
-         IF (rijk .LT. r(k)) THEN
+         IF (abs(x(i)).LT.r(k)) THEN
             node(i,j,k) = FLUID				! set the SOLID node that just came in to FLUID
          ELSE
             node(i,j,k) = SOLID				! if rijk is GT r(k) then it's a SOLID node
@@ -485,8 +508,7 @@ DO iComm=5,6
    k = XY_RecvIndex(OppCommDir(iComm))			! k index of the phantom nodes
    DO j=0,nySub+1_lng
       DO i=0,nxSub+1_lng
-         rijk = SQRT(x(i)*x(i) + y(j)*y(j))
-         IF (rijk .LT. r(k)) THEN
+         IF (abs(x(i)).LT. r(k)) THEN
             node(i,j,k) = FLUID				! set the SOLID node that just came in to FLUID
          ELSE
             node(i,j,k) = SOLID				! if rijk is GT r(k) then it's a SOLID node
@@ -496,8 +518,8 @@ DO iComm=5,6
 END DO
 
 !----- Balaji added to make domain full 3D
-IF (domaintype .EQ. 0) THEN  				! only needed when planes of symmetry exist
-   CALL SymmetryBC					! ensure symmetric node placement
+IF (domaintype .EQ. 0) THEN          ! only needed when planes of symmetry exist
+   CALL SymmetryBC                   ! ensure symmetric node placement
 ENDIF
 !==================================================================================================
 END SUBROUTINE SetNodes
@@ -516,17 +538,17 @@ SUBROUTINE SetProperties(i,j,k,ubx,uby,ubz)	! set properties for nodes that just
 !==================================================================================================
 IMPLICIT NONE 
 
-INTEGER(lng), INTENT(IN) :: i,j,k				! current node location
-REAL(dbl), INTENT(IN)    :: ubx,uby,ubz				! velocity of the boundary
-INTEGER(lng)	:: m,ii,jj,kk					! index variables
-INTEGER(lng)	:: numFLUIDs					! number of fluid nodes
-REAL(dbl)	:: rhoSum, rhoTemp				! sum of the densities of the neighboring fluid nodes, pre-set density
-REAL(dbl)	:: feq						! equilibrium distribution function
-CHARACTER(7)	:: iter_char					! iteration stored as a character
+INTEGER(lng), INTENT(IN) :: i,j,k           ! current node location
+REAL(dbl), INTENT(IN)    :: ubx,uby,ubz     ! velocity of the boundary
+INTEGER(lng)             :: m,ii,jj,kk      ! index variables
+INTEGER(lng)             :: numFLUIDs       ! number of fluid nodes
+REAL(dbl)                :: rhoSum, rhoTemp ! sum of the densities of the neighboring fluid nodes, pre-set density
+REAL(dbl)                :: feq             ! equilibrium distribution function
+CHARACTER(7)             :: iter_char       ! iteration stored as a character
 
 !----- initialize the sum of surrounding densities
-rhoSum = 0.0_dbl
-numFLUIDs = 0_lng
+rhoSum   = 0.0_dbl
+numFLUIDs= 0_lng
 
 !----- calculate the average density of the current node's neighbors
 DO m= 1,NumDistDirs
