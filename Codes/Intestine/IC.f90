@@ -68,17 +68,15 @@ ELSE								! clean start
   DO k=0,nzSub+1_lng
     DO j=0,nySub+1_lng
       DO i=0,nxSub+1_lng
-        u(i,j,k)   = 0.0_dbl							! x-velocity
-        v(i,j,k)   = 0.0_dbl							! y-velocity
-        w(i,j,k)   = 0.0_dbl							! z-velocity
-        rho(i,j,k) = denL							! density
-	! Balaji added
-	! distribution functions (set to equilibrium)
-	DO m=0,NumDistDirs
-	  CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)	! distribution functions
-	  f(m,i,j,k) = feq
-	END DO
-
+         u(i,j,k)  = 0.0_dbl                                       ! x-velocity
+         v(i,j,k)  = 0.0_dbl                                       ! y-velocity
+         w(i,j,k)  = 0.0_dbl                                       ! z-velocity
+         rho(i,j,k)= denL                                          ! density
+         !------ distribution functions (set to equilibrium)
+         DO m=0,NumDistDirs
+            CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)	
+            f(m,i,j,k) = feq
+         END DO
       END DO
     END DO
   END DO
@@ -88,11 +86,11 @@ ELSE								! clean start
 
   !----- Initialize scalar values
   Drug_Absorbed_restart= 0.0_dbl
-  phiAbsorbed	= 0.0_dbl								! total amount of scalar absorbed
-  phiAbsorbedS	= 0.0_dbl								! total amount of scalar absorbed through the macroscopic surface
-  phiAbsorbedV	= 0.0_dbl								! total amount of scalar absorbed through the villi
-  phiInOut	= 0.0_dbl								! total amount of scalar leaving the inlet/outlet
-  delphi_particle = 0.0_dbl								! Initialize the scalar contirbution from particles to 0.0. Once the particle
+  phiAbsorbed    = 0.0_dbl								! total amount of scalar absorbed
+  phiAbsorbedS   = 0.0_dbl								! total amount of scalar absorbed through the macroscopic surface
+  phiAbsorbedV   = 0.0_dbl								! total amount of scalar absorbed through the villi
+  phiInOut       = 0.0_dbl								! total amount of scalar leaving the inlet/outlet
+  delphi_particle= 0.0_dbl								! Initialize the scalar contirbution from particles to 0.0. Once the particle
 END IF
 
 !------------------------------------------------
