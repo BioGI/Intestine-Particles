@@ -18,20 +18,32 @@ SUBROUTINE BounceBackL(m,i,j,k,im1,jm1,km1,fbb)
 
 IMPLICIT NONE
 
-INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1			! index variables
-REAL(dbl), INTENT(OUT)   :: fbb					! bounced back distribution function
-REAL(dbl) :: cosTheta, sinTheta					! COS(theta), SIN(theta)
-REAL(dbl) :: ub, vb, wb						! wall velocity (x-, y-, z- components)
-REAL(dbl) :: rijk						! radius of current node
+INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1   ! index variables
+REAL(dbl), INTENT(OUT)   :: fbb                   ! bounced back distribution function
 
-rijk = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))			! radius at current location
+REAL(dbl) :: cosTheta, sinTheta                   ! COS(theta), SIN(theta)
+REAL(dbl) :: ub, vb, wb                           ! wall velocity (x-, y-, z- components)
+REAL(dbl) :: rijk                                 ! radius of current node
+REAL(dbl) :: xaxis                                ! domain center in x-dir
 
-cosTheta = x(im1)/rijk						! COS(theta)
-sinTheta = y(jm1)/rijk						! SIN(theta)
+IF (Flag_Couette) THEN !----- Couette Geometry ----------------------------------------------------
+   ub = 0.0_dbl 
+   vb = 0.0_dbl
+   xaxis= ANINT(0.5_dbl*(nx+1))
+   IF ((iMin-1+im1) .GT. xaxis) THEN 
+      wb = vel(km1)
+   ELSE 
+      wb= -vel(km1)
+   END IF  
+ELSE !---------------------- Intestine Geometry ---------------------------------------------------
+   rijk    = SQRT(x(im1)*x(im1) + y(jm1)*y(jm1))	! radius at current location
+   cosTheta= x(im1)/rijk
+   sinTheta= y(jm1)/rijk   
+   ub      = vel(km1)*cosTheta                    ! x-component of the velocity at i,j,k
+   vb      = vel(km1)*sinTheta                    ! y-component of the velocity at i,j,k
+   wb      = 0.0_dbl                              ! no z-component in this case			
+END IF !-------------------- End of veloicty calculation ------------------------------------------
 
-ub = vel(km1)*cosTheta						! x-component of the velocity at i,j,k
-vb = vel(km1)*sinTheta						! y-component of the velocity at i,j,k
-wb = 0.0_dbl							! no z-component in this case			
 
 fbb = fplus(bb(m),i,j,k) + 6.0_dbl*wt(m)*rho(i,j,k)*(ub*ex(m) + vb*ey(m) + wb*ez(m))
 
@@ -133,66 +145,74 @@ INTEGER(lng) :: it                                              ! loop index var
 REAL(dbl)    :: rijk                                            ! radius of current node
 REAL(dbl)    :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt             ! temporary coordinates to search for exact boundary coordinate 
 
-!----- Initial fluid node guess
-x1= x(i)
-y1= y(j)
-z1= z(k)
+
+IF (Flag_Couette) THEN !----- Couette Geometry ---------------------------------------------
+   q= (abs(x(i))-r(k))/ (1.0*xcf)
+
+ELSE !-----------------------Intestine Geometry --------------------------------------------
+
+   !----- Initial fluid node guess
+   x1= x(i)
+   y1= y(j)
+   z1= z(k)
                 
-!----- Initial solid node guess
-x2= x(im1)
-y2= y(jm1)
-z2= z(km1)
+   !----- Initial solid node guess
+   x2= x(im1)
+   y2= y(jm1)
+   z2= z(km1)
                  
-IF (k.NE.km1) THEN
-    DO it=1,15
-       !----- guess of boundary location 
-       xt= (x1+x2)/2.0_dbl
-       yt= (y1+y2)/2.0_dbl
-       zt= (z1+z2)/2.0_dbl
-       rt= SQRT(xt*xt + yt*yt)
-       ht= ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
-       IF (rt .GT. ht) then
-          x2= xt
-          y2= yt
-          z2= zt
-       ELSE
-          x1= xt
-          y1= yt
-          z1= zt
-       END IF
-    END DO
-    x1= x(i)
-    y1= y(j)
-    z1= z(k)
-    x2= x(im1)
-    y2= y(jm1)
-    z2= z(km1)
-    q= sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
- ELSE
-    DO it=1,15
-       !----- guess of boundary location 
-       xt= (x1+x2)/2.0_dbl
-       yt= (y1+y2)/2.0_dbl
-       zt= (z1+z2)/2.0_dbl
-       rt = SQRT(xt*xt + yt*yt)
-       ht = (r(km1)+r(k))/2.0_dbl
-       IF (rt.GT.ht) then
-          x2= xt
-          y2= yt
-          z2= zt
-       ELSE
-          x1= xt
-          y1= yt
-          z1= zt
-       END IF
-    END DO
-    x1= x(i)
-    y1= y(j)
-    z1= z(k)
-    x2= x(im1)
-    y2= y(jm1)
-    z2= z(km1)
-    q= sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+   IF (k.NE.km1) THEN
+       DO it=1,15
+          !----- guess of boundary location 
+          xt= (x1+x2)/2.0_dbl
+          yt= (y1+y2)/2.0_dbl
+          zt= (z1+z2)/2.0_dbl
+          rt= SQRT(xt*xt + yt*yt)
+          ht= ((zt-z(k))*r(km1)+(z(km1)-zt)*r(k))/(z(km1)-z(k))
+          IF (rt .GT. ht) then
+             x2= xt
+             y2= yt
+             z2= zt
+          ELSE
+            x1= xt
+            y1= yt
+            z1= zt
+          END IF
+       END DO
+       x1= x(i)
+       y1= y(j)
+       z1= z(k)
+       x2= x(im1)
+       y2= y(jm1)
+       z2= z(km1)
+       q= sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+    ELSE
+       DO it=1,15
+          !----- guess of boundary location 
+          xt= (x1+x2)/2.0_dbl
+          yt= (y1+y2)/2.0_dbl
+          zt= (z1+z2)/2.0_dbl
+          rt = SQRT(xt*xt + yt*yt)
+          ht = (r(km1)+r(k))/2.0_dbl
+          IF (rt.GT.ht) then
+             x2= xt
+             y2= yt
+             z2= zt
+          ELSE
+             x1= xt
+             y1= yt
+            z1= zt
+          END IF
+       END DO
+       x1= x(i)
+       y1= y(j)
+       z1= z(k)
+       x2= x(im1)
+       y2= y(jm1)
+       z2= z(km1)
+       q= sqrt((xt-x1)**2+(yt-y1)**2+(zt-z1)**2)/sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
+   END IF
+
 END IF
 
 !==================================================================================================
@@ -220,56 +240,59 @@ REAL(dbl) :: dx,dy,dz                            ! unit vector pointing from A t
 REAL(dbl) :: r1,r2,z1,z2,slope,intercept         ! radius and z location at k and km1, slope of line connecting those two points, z-intercept of the r-equation
 REAL(dbl) :: slope2,term1,term2                  ! terms used in calculation
 
-! RAY
-! point A (current node)
-Ax = x(i)
-Ay = y(j)
-Az = z(k)
 
-! point B (solid node)
-Bx = x(im1)
-By = y(jm1)
-Bz = z(km1)
+IF (Flag_Couette) THEN !----- Couette Geometry ---------------------------------------------
+   q= (abs(x(i))-r(k))/ (1.0*xcf)
 
-! distance from A to B
-AB = SQRT((Bx - Ax)*(Bx - Ax) + (By - Ay)*(By - Ay) + (Bz - Az)*(Bz - Az))
+ELSE !-----------------------Intestine Geometry --------------------------------------------
+   !----- RAY
+   !----- point A (current node)
+   Ax = x(i)
+   Ay = y(j)
+   Az = z(k)
 
-! unit vector (d) from point A to point B
-dx = (x(im1)-x(i))/AB						! i direction
-dy = (y(jm1)-y(j))/AB						! j direction
-dz = (z(km1)-z(k))/AB						! k direction
+   !----- point B (solid node)
+   Bx = x(im1)
+   By = y(jm1)
+   Bz = z(km1)
 
-! SURFACE
-r1 = r(k)							! radius at k (distance from CL)
-r2 = r(km1)							! radius at km1 (distance from CL)
-z1 = z(k)							! z-coordinate at k
-z2 = z(km1)							! z-coordinate at km1
+   !----- distance from A to B
+   AB = SQRT((Bx - Ax)*(Bx - Ax) + (By - Ay)*(By - Ay) + (Bz - Az)*(Bz - Az))
 
-IF(k .NE. km1) THEN
-  slope = (r2-r1)/(z2-z1)					! approximate the surface as a conincal shell (linear between k values)
-ELSE
-  slope = 0.0_dbl
-END IF
+   !----- unit vector (d) from point A to point B
+   dx = (x(im1)-x(i))/AB						! i direction
+   dy = (y(jm1)-y(j))/AB						! j direction
+   dz = (z(km1)-z(k))/AB						! k direction
 
-intercept = r1 - slope*z1					! z-intercept of the linearly approximated r-equation
+   !----- SURFACE
+   r1 = r(k)							! radius at k (distance from CL)
+   r2 = r(km1)							! radius at km1 (distance from CL)
+   z1 = z(k)							! z-coordinate at k
+   z2 = z(km1)							! z-coordinate at km1
 
-!----- terms used in calculation
-slope2 = slope*slope						! slope^2
-term1 = Ax*dx + Ay*dy - Az*dz*slope2 - intercept*dz*slope	! reoccuring term
-term2 = dx*dx + dy*dy - dz*dz*slope*slope			! reoccuring term
+   IF(k .NE. km1) THEN
+     slope = (r2-r1)/(z2-z1)					! approximate the surface as a conincal shell (linear between k values)
+   ELSE
+     slope = 0.0_dbl
+   END IF
 
-!------ calculate the distance from the current node (point A) to the wall (point P)
-AP = (1.0_dbl/(2.0_dbl*term2)) * &
-     (-2.0_dbl*term1					&
-   + SQRT(4.0_dbl*(term1*term1 - (Ax*Ax + Ay*Ay - intercept*intercept - 2.0_dbl*Az*intercept*slope - Az*Az*slope2)*term2)))
+   intercept = r1 - slope*z1					! z-intercept of the linearly approximated r-equation
 
-q = AP/AB							! distance ratio
-q = max(q,0.001_dbl)
+   !----- terms used in calculation
+   slope2 = slope*slope						! slope^2
+   term1 = Ax*dx + Ay*dy - Az*dz*slope2 - intercept*dz*slope	! reoccuring term
+   term2 = dx*dx + dy*dy - dz*dz*slope*slope			! reoccuring term
 
-!----- balaji added
-!q=0.5
+   !------ calculate the distance from the current node (point A) to the wall (point P)
+   AP = (1.0_dbl/(2.0_dbl*term2)) * &
+        (-2.0_dbl*term1					&
+      + SQRT(4.0_dbl*(term1*term1 - (Ax*Ax + Ay*Ay - intercept*intercept - 2.0_dbl*Az*intercept*slope - Az*Az*slope2)*term2)))
+   q = AP/AB							! distance ratio
+   q = max(q,0.001_dbl)
+END IF 
 
-! make sure 0<q<1
+
+!------ make sure that 0<q<1
 IF((q .LT. -0.00000001_dbl) .OR. (q .GT. 1.00000001_dbl)) THEN 
   OPEN(1000,FILE="error.txt")
   WRITE(1000,*) "q=",q
@@ -292,6 +315,7 @@ END IF
 !==================================================================================================
 END SUBROUTINE qCalc
 !==================================================================================================
+
 
 
 
