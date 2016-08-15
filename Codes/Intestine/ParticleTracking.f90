@@ -58,30 +58,36 @@ DO WHILE (ASSOCIATED(current))
 !------- Treating the solid nodes so that their velocity is not zero for interpolation purposes
 !------- Velocity magnitude is calculated based on boundary velocity at that z location
 !------- Velocity vector points to the center od the circle in that Z-location
-         DO ii= ix0, ix1
-            DO jj= iy0, iy1
-               DO kk= iz0, iz1
-                  IF (node(ii,jj,kk) .EQ. SOLID) THEN					! Solid nodes in the lattice cell encompassing the particle
-                     xaxis 	   = ANINT(0.5_dbl*(nx+1))
-                     yaxis 	   = ANINT(0.5_dbl*(ny+1))
-                     X_s   	   = xcf* (ii+ (iMin-1_lng)- xaxis)
-                     Y_s   	   = ycf* (jj+ (jMin-1_lng)- yaxis) 
-                     R_s   	   = SQRT(X_s**2 + Y_s**2)
-                     CosTheta_s    = X_s/R_s
-                     SinTheta_s    = Y_s/R_s
-                     Vel_s	   = vel(kk)
-                     u_s(ii,jj,kk) = Vel_s * CosTheta_s
-                     v_s(ii,jj,kk) = Vel_s * SinTheta_s
-                     w_s(ii,jj,kk) = 0.0_dbl				
-                  ELSE 									! Fluid nodes in the lattice cell encompassing the particle
-                     u_s(ii,jj,kk) = u(ii,jj,kk) 
-                     v_s(ii,jj,kk) = v(ii,jj,kk) 
-                     w_s(ii,jj,kk) = w(ii,jj,kk)
-                  END IF
+         IF (Flag_Couette) THEN !---- Couette simulation -------------------------------------------
+            u_s= u 
+            v_s= v 
+            w_s= w
+         ELSE !---------------------- Intestine Simulation -----------------------------------------
+            DO ii= ix0, ix1
+               DO jj= iy0, iy1
+                  DO kk= iz0, iz1
+                     IF (node(ii,jj,kk) .EQ. SOLID) THEN			! Solid nodes in the lattice cell encompassing the particle
+                        xaxis 	   = ANINT(0.5_dbl*(nx+1))
+                        yaxis 	   = ANINT(0.5_dbl*(ny+1))
+                        X_s   	   = xcf* (ii+ (iMin-1_lng)- xaxis)
+                        Y_s   	   = ycf* (jj+ (jMin-1_lng)- yaxis) 
+                        R_s   	   = SQRT(X_s**2 + Y_s**2)
+                        CosTheta_s    = X_s/R_s
+                        SinTheta_s    = Y_s/R_s
+                        Vel_s	   = vel(kk)
+                        u_s(ii,jj,kk) = Vel_s * CosTheta_s
+                        v_s(ii,jj,kk) = Vel_s * SinTheta_s
+                        w_s(ii,jj,kk) = 0.0_dbl				
+                     ELSE 									! Fluid nodes in the lattice cell encompassing the particle
+                        u_s(ii,jj,kk) = u(ii,jj,kk) 
+                        v_s(ii,jj,kk) = v(ii,jj,kk) 
+                        w_s(ii,jj,kk) = w(ii,jj,kk)
+                     END IF
+                  END DO
                END DO
             END DO
-         END DO
 
+         END IF   
 !------- Preparing for tri-linear interpolation
          IF (ix1 .NE. ix0) THEN 
             xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))	
@@ -160,7 +166,6 @@ INTEGER(lng) :: mpierr
 INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz1, Number_of_Solid_nodes
 REAL(dbl)    :: xaxis,yaxis,CosTheta_p,SinTheta_p
 REAL(dbl)    :: xpp,ypp
-REAL(dbl)    :: Min_R_Acceptable
 REAL(dbl)    :: xp,yp,zp,zd
 REAL(dbl)    :: R_Particle, R_Boundary
 TYPE(ParRecord), POINTER :: current
@@ -171,25 +176,27 @@ delphi_particle   = 0.0_dbl
 tausgs_particle_x = 0.0_dbl
 tausgs_particle_y = 0.0_dbl
 tausgs_particle_z = 0.0_dbl           
-Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle size
 
 
-!IF (iter.GT.iter0+0_lng) THEN 
-   current => ParListHead%next     
-   DO WHILE (ASSOCIATED(current)) 
-      next => current%next 	
-      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-         IF (mySub .EQ.current%pardata%cur_part) THEN 
-            current%pardata%xpold = current%pardata%xp
-            current%pardata%ypold = current%pardata%yp
-            current%pardata%zpold = current%pardata%zp
-            current%pardata%upold = current%pardata%up
-            current%pardata%vpold = current%pardata%vp
-            current%pardata%wpold = current%pardata%wp
-            current%pardata%xp=current%pardata%xpold+current%pardata%up
-            current%pardata%yp=current%pardata%ypold+current%pardata%vp
-            current%pardata%zp=current%pardata%zpold+current%pardata%wp
-            IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1))THEN
+current => ParListHead%next     
+DO WHILE (ASSOCIATED(current)) 
+   next => current%next 	
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
+      IF (mySub .EQ.current%pardata%cur_part) THEN 
+         current%pardata%xpold = current%pardata%xp
+         current%pardata%ypold = current%pardata%yp
+         current%pardata%zpold = current%pardata%zp
+         current%pardata%upold = current%pardata%up
+         current%pardata%vpold = current%pardata%vp
+         current%pardata%wpold = current%pardata%wp
+         current%pardata%xp=current%pardata%xpold+current%pardata%up
+         current%pardata%yp=current%pardata%ypold+current%pardata%vp
+         current%pardata%zp=current%pardata%zpold+current%pardata%wp
+
+         IF (Flag_Couette) THEN !----- Couette simulation, no need to make sure particles do not leave the fluid domain
+
+         ELSE !----------------------- Intestine simulation: make sure particles do not leave the fluid domain    
+            IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1))THEN              
                !----- If Particle leaves the fluid domain---------------------------------------
                xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
                yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
@@ -243,23 +250,28 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
                   write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
                END IF !--------------------------------------------------------------------------------------   
             END IF
-         END IF
-      END IF
-      current => next
-   END DO
+         END IF                  ! If this simulation is Couette 
 
-   CALL Particle_Transfer
-   CALL Particle_Velocity
+      END IF                     ! If particle resides in this processor
+   END IF                        ! If particle radius is over Min_R_Acceptable
+   current => next
+END DO
 
-   current => ParListHead%next
-   DO WHILE (ASSOCIATED(current))
-      next => current%next 						
-      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-         IF (mySub .EQ.current%pardata%cur_part) THEN 
-            current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
-            current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
-            current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
-            
+CALL Particle_Transfer
+CALL Particle_Velocity
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 						
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
+      IF (mySub .EQ.current%pardata%cur_part) THEN 
+         current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
+         current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
+         current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
+
+         IF (Flag_Couette) THEN !----- Couette simulation, no need to make sure particles do not leave the fluid domain
+
+         ELSE !----------------------- Intestine simulation: make sure particles do not leave the fluid domain    
             IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1) ) THEN 
                !----- If Particle leaves the fluid domain---------------------------------------
                xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
@@ -312,25 +324,25 @@ Min_R_Acceptable  = 1.0e-7						! 0.1 micron is the minimum acceptable particle 
                   write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
                END IF !--------------------------------------------------------------------------------------
             ENDIF 
-         END IF
-      END IF
-      current => next
-   ENDDO
+         END IF         ! If the simulation is Couette
+      END IF            ! If particle resides inthis processor
+   END IF               ! If particle's radius is larger than Min_R_Acceptable
+   current => next
+ENDDO
 
-   CALL Particle_Transfer
-   CALL Particle_Velocity 		
+CALL Particle_Transfer
+CALL Particle_Velocity 		
 
-!--Particle tracking is done, now time for drug relaes calculations---------------------------------
-   CALL Compute_Cb  
-   IF (Flag_Shear_Effects) THEN
-      CALL Compute_Shear
-   END IF   
-   CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
-   CALL Particle_Drug_Release        ! Updates particle radius, calculates drug release rate delNBbyCV. 
-   CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
-!  CALL Particle_History             ! Keep trak of a few particles
-   CALL Particle_Transfer 
-!ENDIF
+!-----Particle tracking is done, now time for drug relaes calculations---------------------------------
+CALL Compute_Cb  
+IF (Flag_Shear_Effects) THEN
+   CALL Compute_Shear
+END IF   
+CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
+CALL Particle_Drug_Release        ! Updates particle radius, calculates drug release rate delNBbyCV. 
+CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
+!CALL Particle_History             ! Keep trak of a few particles
+CALL Particle_Transfer 
 !===================================================================================================
 END SUBROUTINE Particle_Track
 !===================================================================================================
