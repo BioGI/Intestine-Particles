@@ -16,20 +16,20 @@ SUBROUTINE Compute_Cb				  ! Computes the mesh-independent bulk concentration
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)  		 :: i,j,k, mpierr
-INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
-INTEGER(dbl)		 :: NumFluids_Veff_l, NumFluids_Veff
+INTEGER(lng)             :: i,j,k, mpierr
+INTEGER(lng)             :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
+INTEGER(dbl)             :: NumFluids_Veff_l, NumFluids_Veff
 INTEGER,DIMENSION(2)   	 :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER,DIMENSION(2)     :: GNEP_x, GNEP_y, GNEP_z                      ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 INTEGER,DIMENSION(2)     :: NEP_x,   NEP_y,  NEP_z                      ! Lattice Nodes Surronding the particle (Local: in current processor)
-REAL(dbl)     		 :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
-REAL(dbl)  	   	 :: xp,yp,zp
-REAL(dbl)		 :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)       	 :: N_b
-REAL(dbl)    	         :: R_P, Sh_P, delta_P
+REAL(dbl)                :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
+REAL(dbl)                :: xp,yp,zp
+REAL(dbl)                :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
+REAL(dbl)                :: N_b
+REAL(dbl)                :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
 REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
-REAL(dbl)		 :: Cb_Total_Veff_l, Cb_Total_Veff
+REAL(dbl)                :: Cb_Total_Veff_l, Cb_Total_Veff
 REAL(dbl),DIMENSION(2)   :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 		! Volume of Influence's Borders
 REAL(dbl),DIMENSION(2)   :: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
 REAL(dbl)                :: Delta_L
@@ -51,9 +51,8 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
    N_b = 2.0
    R_P = current%pardata%rp
    Sh_P= current%pardata%sh
-   delta_P= R_P/Sh_P
-!  R_influence_P= (R_P + N_b*delta_P) / xcf
-   R_influence_P= (R_P + N_b * R_P  ) / xcf
+   delta_P= R_P/1.0_dbl      !R_P/Sh_P
+   R_influence_P= (R_P + N_b*delta_P) / xcf
 
 !--Computing equivalent cubic mesh length scale
    V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
@@ -749,9 +748,8 @@ DO WHILE (ASSOCIATED(current))
    N_d = 3.0
    R_P  = current%pardata%rp
    Sh_P = current%pardata%sh
-   delta_P = R_P / Sh_P
-!  R_influence_P = (R_P+ N_d* delta_P)/ xcf
-   R_influence_P = (R_P+ N_d* R_P    )/ xcf
+   delta_P = R_P / 1.0_dbl      !R_P/ Sh_P
+   R_influence_P = (R_P+ N_d* delta_P)/ xcf
 
 !--iomputing equivalent cubic mesh length scale
    L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
