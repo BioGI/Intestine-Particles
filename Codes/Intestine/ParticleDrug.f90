@@ -51,8 +51,8 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
    N_b = 2.0
    R_P = current%pardata%rp
    Sh_P= current%pardata%sh
-   delta_P= R_P/1.0_dbl      !R_P/Sh_P
-   R_influence_P= (R_P + N_b*delta_P) / xcf
+   delta_P=R_P                           !R_P/Sh_P
+   R_influence_P=(R_P+N_b*delta_P)/xcf
 
 !--Computing equivalent cubic mesh length scale
    V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
@@ -412,9 +412,10 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-
+   current%pardata%sh= 1.0_dbl  
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
       IF (mySub .EQ.current%pardata%cur_part) THEN
+
          !----- If including the confinement effects ----------------------------------------------- 
          IF (Flag_Confinement_Effects) THEN                                 
             current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
@@ -432,6 +433,7 @@ DO WHILE (ASSOCIATED(current))
                current%pardata%sh = current%pardata%sh + Sh0-1.0_dbl
             END IF
          END IF 
+
       END IF
 
       RANK= current%pardata%cur_part - 1
@@ -745,11 +747,11 @@ DO WHILE (ASSOCIATED(current))
 !--Calculate effective radius: R_influence_P = R + (N_d *delta)
 !--Note: need to convert this into Lattice units and not use the physical length units
 !--Then compute equivalent cubic mesh length scale
-   N_d = 3.0
-   R_P  = current%pardata%rp
-   Sh_P = current%pardata%sh
-   delta_P = R_P / 1.0_dbl      !R_P/ Sh_P
-   R_influence_P = (R_P+ N_d* delta_P)/ xcf
+   N_d= 3.0
+   R_P= current%pardata%rp
+   Sh_P= current%pardata%sh
+   delta_P= R_P                           !R_P/ Sh_P
+   R_influence_P= (R_P+ N_d*delta_P)/xcf
 
 !--iomputing equivalent cubic mesh length scale
    L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
