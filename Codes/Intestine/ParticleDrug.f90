@@ -51,6 +51,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
    N_b = 2.0
    R_P = current%pardata%rp
    Sh_P= current%pardata%sh
+   Sh_P= 1.0000_dbl
    delta_P= R_P/Sh_P
    R_influence_P= (R_P+N_b*delta_P)/xcf
 
@@ -714,6 +715,7 @@ DO WHILE (ASSOCIATED(current))
    N_d = 3.0
    R_P  = current%pardata%rp
    Sh_P = current%pardata%sh
+   Sh_P= 1.0000_dbl
    delta_P = R_P / Sh_P
    R_influence_P = (R_P + N_d * delta_P) / xcf
 
