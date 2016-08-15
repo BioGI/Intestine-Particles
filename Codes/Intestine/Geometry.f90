@@ -262,17 +262,16 @@ END DO
 !and then work from either end, and meet in the middle to ensure a symetric domain...
 !h2(nz-1:nz+1) = h2(1)
 
-!-------------------------------- Mode Sum  ---------------------------------
 !----- Sum the modes in a weighted linear combination
-IF (Flag_Couette) THEN
-  wc0= 1.0_dbl
-ELSE 
-  wc0=0.0_dbl
+IF (Flag_Couette) THEN                        ! Couette Simulation
+   DO i=0,nz+1
+      rDom= h0(i)  
+   END DO   
+ELSE                                          ! Intestine Simulation
+  DO i=0,nz+1
+     rDom(i)= wc1*h1(i) + wc2*h2(i)
+   END DO
 ENDIF 
-
-DO i=0,nz+1
-   rDom(i) = wc0*h0(i) + wc1*h1(i) + wc2*h2(i)
-END DO
 
 !----- Fill out the local radius array
 r(0:nzSub+1) = rDom(kMin-1:kMax+1)
@@ -408,15 +407,16 @@ v2(nz-1:nz+1) = v2(1)
 
 !-------------------------------- Mode Sum  ---------------------------------
 !----- Sum the modes in a weighted linear combination
-IF (Flag_Couette) THEN
-  wc0= 1.0_dbl
+IF (Flag_Couette) THEN    
+   DO i=0,nz+1
+      velDom(i)= v0(i)  
+   END DO
 ELSE 
-  wc0= 0.0_dbl
+   DO i=0,nz+1
+     velDom(i)= wc1*v1(i) + wc2*v2(i)
+   END DO
 ENDIF 
 
-DO i=0,nz+1
-   velDom(i) = wc0*v0(i) + wc1*v1(i) + wc2*v2(i)
-END DO
 
 !----------------------------------------------------------------------------
 !----- Fill out the local velocity array
