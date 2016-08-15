@@ -81,7 +81,7 @@ DO iter = iter0-0_lng,nt
       CALL PrintParticles						! output the particle velocity, radius, position and con. [MODULE: Output]
    ENDIF
    CALL PrintDrugConservation						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
-   CALL PrintMass							! print the total mass in the system (TEST)
+   !CALL PrintMass							! print the total mass in the system (TEST)
    CALL PrintVolume						! print the volume in the system (TEST)
    CALL PrintComputationalTime 						! print current status [MODULE: Output]
    IF (MOD(iter,Restart_Intervals) .EQ. 0) THEN
