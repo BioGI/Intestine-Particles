@@ -48,18 +48,27 @@ REAL(dbl)    :: xt,yt,zt,rt,vt						! Location of the boundary between i,j,k nod
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
-cosTheta= xt/rt
-sinTheta= yt/rt
-
-IF (k.NE.km1) THEN
-   vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
+IF (Flag_Couette) THEN
+   ub= 0.0_dbl
+   vb= 0.0_dbl
+   xaxis= ANINT(0.5_dbl*(nx+1))
+   IF ((iMin-1+im1) .GT. xaxis) THEN 
+      wb = vel(k)
+   ELSE 
+      wb= -vel(k)
+   END IF
 ELSE
-   vt = (vel(k)+vel(km1))*0.5_dbl
-ENDIF
-
-ub = vt* cosTheta						! x-component of the velocity at i,j,k
-vb = vt* sinTheta						! y-component of the velocity at i,j,k
-wb = 0.0_dbl							! no z-component in this case)
+   cosTheta= xt/rt
+   sinTheta= yt/rt
+   IF (k.NE.km1) THEN
+      vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
+   ELSE
+      vt = (vel(k)+vel(km1))*0.5_dbl
+   ENDIF
+   ub = vt* cosTheta						! x-component of the velocity at i,j,k
+   vb = vt* sinTheta						! y-component of the velocity at i,j,k
+   wb = 0.0_dbl							! no z-component in this case)
+END IF
 
 !---------------------------------------------------------------------------------------------------
 !----- Computing phi at the wall in case of Dirichlet BC -------------------------------------------
@@ -167,18 +176,27 @@ REAL(dbl)    :: xt,yt,zt,rt,vt			             	! boundary coordinate
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
-cosTheta= xt/rt
-sinTheta= yt/rt
-
-IF (k.NE.km1) THEN
-   vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
+IF (Flag_Couette) THEN
+   ub= 0.0_dbl
+   vb= 0.0_dbl
+   xaxis= ANINT(0.5_dbl*(nx+1))
+   IF ((iMin-1+im1) .GT. xaxis) THEN 
+      wb = vel(k)
+   ELSE 
+      wb= -vel(k)
+   END IF
 ELSE
-   vt = (vel(k)+vel(km1))*0.5_dbl
-ENDIF
-
-ub = vt* cosTheta                                               ! x-component of the velocity at i,j,k
-vb = vt* sinTheta                                               ! y-component of the velocity at i,j,k
-wb = 0.0_dbl                                                    ! no z-component in this case)
+   cosTheta= xt/rt
+   sinTheta= yt/rt
+   IF (k.NE.km1) THEN
+      vt = ((zt-z(k))*vel(km1)+(z(km1)-zt)*vel(k))/(z(km1)-z(k))
+   ELSE
+      vt = (vel(k)+vel(km1))*0.5_dbl
+   ENDIF
+   ub = vt* cosTheta						! x-component of the velocity at i,j,k
+   vb = vt* sinTheta						! y-component of the velocity at i,j,k
+   wb = 0.0_dbl							! no z-component in this case)
+END IF
 
 ubb= u(i,j,k)- ub
 vbb= v(i,j,k)- vb
