@@ -15,6 +15,7 @@ IMPLICIT NONE
 INTEGER(lng) :: i, j, k, m, mpierr					! index variables
 REAL(dbl)    :: feq
 INTEGER(lng) :: imintemp, imaxtemp				! index variables
+REAL(dbl)    :: x_center
 REAL(dbl)    :: alpha,xmin, xmax,xmid
 REAL(dbl)    :: Drug_Initial_l, Drug_Released_Total_l
 REAL(dbl)    :: Drug_Absorbed_restart_l, Drug_Remained_in_Domain_l 
@@ -66,19 +67,24 @@ ELSE								! clean start
 
   !----- Initial conditions on velocity, density, and scalar
   DO k=0,nzSub+1_lng
-    DO j=0,nySub+1_lng
-      DO i=0,nxSub+1_lng
-         u(i,j,k)  = 0.0_dbl                                       ! x-velocity
-         v(i,j,k)  = 0.0_dbl                                       ! y-velocity
-         w(i,j,k)  = 0.0_dbl                                       ! z-velocity
-         rho(i,j,k)= denL                                          ! density
-         !------ distribution functions (set to equilibrium)
-         DO m=0,NumDistDirs
-            CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)	
-            f(m,i,j,k) = feq
-         END DO
-      END DO
-    END DO
+     DO j=0,nySub+1_lng
+        DO i=0,nxSub+1_lng
+           u(i,j,k)= 0.0_dbl 
+           v(i,j,k)= 0.0_dbl
+           IF (Flag_Couette) THEN
+              x_center= ANINT(0.5_dbl*(nx+1))* xcf
+              w(i,j,k)= (((xx(i+iMin-1)- x_center)) / (0.45_dbl*D)) * (s1/vcf)
+           ELSE
+              w(i,j,k)  = 0.0_dbl                                       ! z-velocity
+           END IF   
+           rho(i,j,k)= denL                                          ! density
+           !------ distribution functions (set to equilibrium)
+           DO m=0,NumDistDirs
+              CALL Equilibrium_LOCAL(m,rho(i,j,k),u(i,j,k),v(i,j,k),w(i,j,k),feq)	
+              f(m,i,j,k) = feq
+           END DO
+        END DO
+     END DO
   END DO
 
   !----- Starting iteration
