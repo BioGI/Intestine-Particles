@@ -36,6 +36,7 @@
 .TRUE.     ! Flag for tracking particles                                        (Flag_ParticleTrack)
 .FALSE.    ! Flag for including shear effects in Sherwood number                (Flag_Shear_Effects)
 .FALSE.    ! Flag for including confinement effectgs in Sherwood number         (Flag_Confinement_Effects)
+.FALSE.    ! Falg for global Cb (if not true, local Cb is used)                 (Flag_Golbal_Bulk_Concentration)
 .FALSE.    ! Flag for rectifying negative phi (make it zero) or leave it as is  (Flag_Rectify_Neg_phi) 
 .FALSE.    ! Falg for using restart files instead of starting from zero         (Flag_Restart)
 

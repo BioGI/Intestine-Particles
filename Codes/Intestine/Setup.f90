@@ -35,13 +35,14 @@ INTEGER(lng)	:: domaintype							! a flag to denote domain type - 0 for 1/4th cy
 INTEGER(lng), PARAMETER :: FLUID		= 0_lng				! fluid inbetween
 INTEGER(lng), PARAMETER :: SOLID		= 1_lng				! solid interior (moving)
 INTEGER(lng), PARAMETER :: SOLID2		= 2_lng				! solid exterior (stationary)
-INTEGER(lng), PARAMETER :: qitermax = 15_lng 					! max number of q iterations
-LOGICAL :: Flag_Correcting_Mass        ! Flag to correct the mass by bringing average density to 1.0
-LOGICAL :: Flag_ParticleTrack          ! Flag for tracking particles
-LOGICAL :: Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number
-LOGICAL :: Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number
-LOGICAL :: Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
-LOGICAL :: Flag_Restart                ! Restart Flag
+INTEGER(lng), PARAMETER :: qitermax = 15_lng      ! max number of q iterations
+LOGICAL :: Flag_Correcting_Mass                   ! Flag to correct the mass by bringing average density to 1.0
+LOGICAL :: Flag_ParticleTrack                     ! Flag for tracking particles
+LOGICAL :: Flag_Shear_Effects                     ! Flag for including shear effects in Sherwood number
+LOGICAL :: Flag_Confinement_Effects               ! Flag for including confinement effectgs in Sherwood number
+LOGICAL :: Flag_Golbal_Bulk_Concentration         ! Falg for global Cb (if not true, local Cb is used) 
+LOGICAL :: Flag_Rectify_Neg_phi                   ! Flag for rectifying negative phi (make it zero) or leave it as is
+LOGICAL :: Flag_Restart                           ! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
@@ -376,15 +377,16 @@ READ(10,*) phiIC				! maximum scalar concentration
 READ(10,*) coeffPhi
 READ(10,*) coeffGrad
 READ(10,*) coeffConst
-READ(10,*) nPers                       ! total number of periods to run
-READ(10,*) Output_Intervals            ! number of iterations between writing the output files 
-READ(10,*) Restart_Intervals           ! number of iterations between writing the restart files 
-READ(10,*) Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
-READ(10,*) Flag_ParticleTrack          ! Flag for tracking particles           
-READ(10,*) Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
-READ(10,*) Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
-READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
-READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
+READ(10,*) nPers                           ! total number of periods to run
+READ(10,*) Output_Intervals                ! number of iterations between writing the output files 
+READ(10,*) Restart_Intervals               ! number of iterations between writing the restart files 
+READ(10,*) Flag_Correcting_Mass            ! Flag for mass correction by bringing back rho to 1.0        
+READ(10,*) Flag_ParticleTrack              ! Flag for tracking particles           
+READ(10,*) Flag_Shear_Effects              ! Flag for including shear effects in Sherwood number        
+READ(10,*) Flag_Confinement_Effects        ! Flag for including confinement effectgs in Sherwood number 
+READ(10,*) Flag_Golbal_Bulk_Concentration  ! Falg for global Cb (if not true, local Cb is used)   
+READ(10,*) Flag_Rectify_Neg_phi            ! Flag for rectifying negative phi (make it zero) or leave it as is
+READ(10,*) Flag_Restart                    ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
 
 !tau=1.0_dbl

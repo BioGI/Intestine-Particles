@@ -300,8 +300,11 @@ END SUBROUTINE Compute_Cb
 SUBROUTINE Compute_Cb_Global
 !===================================================================================================
 IMPLICIT NONE
+
 REAL(dbl)    :: phi_tot_l, phi_tot_g
 INTEGER(lng) :: Count_l,   Count_g, i,j,k, mpierr
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
 
 phi_tot_l   = 0.0_dbl
 Count_l= 0
@@ -322,6 +325,13 @@ CALL MPI_ALLREDUCE(phi_tot_l, phi_tot_g, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_C
 CALL MPI_ALLREDUCE(Count_l  , Count_g,   1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
 
 Cb_global= phi_tot_g/ Count_g
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next
+   current%pardata%bulk_conc = Cb_global
+   current => next
+END DO
 
 !===================================================================================================
 END SUBROUTINE Compute_Cb_Global
@@ -349,7 +359,6 @@ DO WHILE (ASSOCIATED(current))
 
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
       current%pardata%rpold = current%pardata%rp
-      current%pardata%bulk_conc = Cb_global
       bulkconc = current%pardata%bulk_conc
       temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
       IF (temp.GE.0.0_dbl) THEN
