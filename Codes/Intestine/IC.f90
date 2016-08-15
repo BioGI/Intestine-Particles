@@ -72,8 +72,7 @@ ELSE								! clean start
            u(i,j,k)= 0.0_dbl 
            v(i,j,k)= 0.0_dbl
            IF (Flag_Couette) THEN
-              x_center= ANINT(0.5_dbl*(nx+1))* xcf
-              w(i,j,k)= (((xx(i+iMin-1)- x_center)) / (0.45_dbl*D)) * (s1/vcf)
+              w(i,j,k)= (xx(i+iMin-1) / (0.45_dbl*D)) * (s1/vcf)
            ELSE
               w(i,j,k)  = 0.0_dbl                                       ! z-velocity
            END IF   
