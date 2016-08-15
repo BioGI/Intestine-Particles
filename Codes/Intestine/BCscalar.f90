@@ -21,7 +21,7 @@ IMPLICIT NONE
 
 INTEGER(lng), INTENT(IN) :: m,i,j,k,im1,jm1,km1				! index variables
 REAL(dbl),    INTENT(OUT):: phiBC     					! scalar contribution from the boundary condition
-INTEGER(lng) :: mm,ip1,jp1,kp1,iB,jB,kB    				! First neighboring node location
+INTEGER(lng) :: mm,ip1,jp1,kp1,iB,jB,kB,xaxis   				! First neighboring node location
 REAL(dbl)    :: rhoAstar, phiAstar, feq_Astar,  PkAstar,PkA 		! density at boundary and contribution of scalar from boundary
 REAL(dbl)    :: rhoBstar, phiBstar, fPlusBstar, PkBstar 		! Values interpolated to Bstar location
 REAL(dbl)    :: cosTheta, sinTheta					! COS(theta), SIN(theta)
@@ -162,6 +162,7 @@ INTEGER(lng), INTENT(IN) :: i,j,k,m,im1,jm1,km1			! index variables
 REAL(dbl),    INTENT(IN) :: phiBC   		  		! scalar contribution from the boundary condition
 
 INTEGER(lng) :: ip1,jp1,kp1
+INTEGER(lng) :: xaxis
 REAL(dbl)    :: phiOUT, phiIN					! scalar values exchanged with the wall
 REAL(dbl)    :: phiAbsorbedSleft,phiAbsorbedSright
 REAL(dbl)    :: phiINleft, phiINright, phiOUTright,phiOUTleft
