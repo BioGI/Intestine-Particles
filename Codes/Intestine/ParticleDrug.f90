@@ -478,9 +478,9 @@ DO WHILE (ASSOCIATED(current))
 !------- Velocity magnitude is calculated based on boundary velocity at that z location
 !------- Velocity vector points to the center od the circle in that Z-location
          IF (Flag_Couette) THEN !---- Couette simulation -------------------------------------------
-            u_s= u 
-            v_s= v 
-            w_s= w
+            u_m= u 
+            v_m= v 
+            w_m= w
          ELSE !---------------------- Intestine Simulation -----------------------------------------
             DO ii= ix0, ix1
                DO jj= iy0, iy1
@@ -494,13 +494,13 @@ DO WHILE (ASSOCIATED(current))
                         CosTheta_s    = X_s/R_s
                         SinTheta_s    = Y_s/R_s
                         Vel_s	   = vel(kk)
-                        u_s(ii,jj,kk) = Vel_s * CosTheta_s
-                        v_s(ii,jj,kk) = Vel_s * SinTheta_s
-                        w_s(ii,jj,kk) = 0.0_dbl				
+                        u_m(ii,jj,kk) = Vel_s * CosTheta_s
+                        v_m(ii,jj,kk) = Vel_s * SinTheta_s
+                        w_m(ii,jj,kk) = 0.0_dbl				
                      ELSE 									! Fluid nodes in the lattice cell encompassing the particle
-                        u_s(ii,jj,kk) = u(ii,jj,kk) 
-                        v_s(ii,jj,kk) = v(ii,jj,kk) 
-                        w_s(ii,jj,kk) = w(ii,jj,kk)
+                        u_m(ii,jj,kk) = u(ii,jj,kk) 
+                        v_m(ii,jj,kk) = v(ii,jj,kk) 
+                        w_m(ii,jj,kk) = w(ii,jj,kk)
                      END IF
                   END DO
                END DO
