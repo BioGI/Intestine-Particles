@@ -1120,6 +1120,9 @@ ALLOCATE(u(0:nxSub+1,0:nySub+1,0:nzSub+1),							&
 ALLOCATE(u_s(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
          v_s(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
          w_s(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(u_m(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         v_m(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         w_m(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 
 ! Scalar
