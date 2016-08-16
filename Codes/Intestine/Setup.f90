@@ -9,19 +9,20 @@ IMPLICIT NONE
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LBM Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-INTEGER(lng), PARAMETER :: NumDistDirs	= 14_lng				! number of distribution function directions minus one (ex. D3Q15 -> 14)
-REAL(dbl),		ALLOCATABLE :: f(:,:,:,:)				! distribution function
-REAL(dbl), 		ALLOCATABLE :: fplus(:,:,:,:)				! post-collision distribution function
-REAL(dbl), 		ALLOCATABLE :: FplusSum(:,:,:)				! Sum of post-collision distribution function at each node
-REAL(dbl), 		ALLOCATABLE :: FSum(:,:,:)				! Sum of distribution functions at each node
-REAL(dbl), 		ALLOCATABLE :: u(:,:,:),v(:,:,:),w(:,:,:)		! x,y, and z components of the fluid velocity vector
-REAL(dbl), 		ALLOCATABLE :: u_s(:,:,:),v_s(:,:,:),w_s(:,:,:)		! x,y, and z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
-REAL(dbl), 		ALLOCATABLE :: dudx(:,:,:),dudy(:,:,:),dudz(:,:,:)	! x,y, and z components of the fluid velocity vector
-REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)				! density
-INTEGER(lng), 	ALLOCATABLE :: node(:,:,:)    					! node flags (FLUID/SOLID)
-REAL(dbl), 		ALLOCATABLE :: ex(:),ey(:),ez(:)			! LBM discretized velocity vectors
-INTEGER(lng), 	ALLOCATABLE :: bb(:), sym(:,:)					! bounceback and symmetry directions
-REAL(dbl), 		ALLOCATABLE :: wt(:)    				! weighting coefficients for the equilibrium distribution functions
+INTEGER(lng), PARAMETER :: NumDistDirs	= 14_lng                 ! number of distribution function directions minus one (ex. D3Q15 -> 14)
+REAL(dbl),		ALLOCATABLE :: f(:,:,:,:)                          ! distribution function
+REAL(dbl), 		ALLOCATABLE :: fplus(:,:,:,:)                      ! post-collision distribution function
+REAL(dbl), 		ALLOCATABLE :: FplusSum(:,:,:)                     ! Sum of post-collision distribution function at each node
+REAL(dbl), 		ALLOCATABLE :: FSum(:,:,:)                         ! Sum of distribution functions at each node
+REAL(dbl), 		ALLOCATABLE :: u(:,:,:),v(:,:,:),w(:,:,:)          ! x,y, and z components of the fluid velocity vector
+REAL(dbl), 		ALLOCATABLE :: u_s(:,:,:),v_s(:,:,:),w_s(:,:,:)	 	 ! x,y, and z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
+REAL(dbl), 		ALLOCATABLE :: u_m(:,:,:),v_m(:,:,:),w_m(:,:,:)    ! x,y, and z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
+REAL(dbl), 		ALLOCATABLE :: dudx(:,:,:),dudy(:,:,:),dudz(:,:,:) ! x,y, and z components of the fluid velocity vector
+REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)                          ! density
+INTEGER(lng), 	ALLOCATABLE :: node(:,:,:)                       ! node flags (FLUID/SOLID)
+REAL(dbl), 		ALLOCATABLE :: ex(:),ey(:),ez(:)                   ! LBM discretized velocity vectors
+INTEGER(lng), 	ALLOCATABLE :: bb(:), sym(:,:)                   ! bounceback and symmetry directions
+REAL(dbl), 		ALLOCATABLE :: wt(:)                               ! weighting coefficients for the equilibrium distribution functions
 REAL(dbl)		:: den, denL						! density (physical, lattice units)
 REAL(dbl)		:: nu, nuL						! kinematic viscosity (physical, lattice units)
 REAL(dbl) 		:: cs							! speed of sound on the lattice
