@@ -1,3 +1,4 @@
+
 IMPLICIT NONE
 
 INTEGER, PARAMETER 	:: dbl = SELECTED_REAL_KIND(13,307)			! floating point precision (double)
@@ -11,7 +12,7 @@ REAL(dbl), ALLOCATABLE  :: v0R(:),Q0R(:),Q0RdR(:),v0RdR(:),Rbins(:),Radlist(:)
 REAl(dbl) :: R0,Rstar,sigR,sigmax,vptotal
 REAL(dbl) :: xmax,xmin,ymax,ymin,zmax,zmin,deltaR,sumvolume	
 REAL(dbl) :: x_center, y_center, z_center
-REAL(dbl) :: Dx, Dy, Dz
+REAL(dbl) :: D, L, Dx, Dy, Dz
 REAL(dbl) :: rMax, teta1Max, teta2Max, rr, teta1, teta2
 REAL(dbl) :: x_particle, y_particle, z_particle
 REAL(lng) :: PI, dR, Radius
@@ -28,9 +29,11 @@ DEALLOCATE(seed1)
 !---------------------------------------------------------------------------------------------------
 !----- Polydisperse Collection From Yanxing --------------------------------------------------------
 !---------------------------------------------------------------------------------------------------
-Dx       = 40.0_dbl   
-Dy       = 40.0_dbl
-Dz       = 49.0_dbl
+D        = 52.0
+L        = 51.0      
+Dx       = 40.0  
+Dy       = 40.0
+Dz       = 49.0
 
 x_center = 51.0_dbl
 y_center = 51.0_dbl
@@ -82,9 +85,9 @@ write(50,*) np
 DO i=1,np
    Falg_Couette = .TRUE.
    IF (Falg_Couette) THEN
-      x_particle = randno(3*(i-1)+1)* Dx 
-      y_particle = randno(3*(i-1)+2)* Dy 
-      z_particle = randno(3*(i-1)+3)* Dz 
+      x_particle = ((D-Dx)/2.0_dbl) + randno(3*(i-1)+1)* Dx 
+      y_particle = ((D-Dy)/2.0_dbl) + randno(3*(i-1)+2)* Dy 
+      z_particle = ((L-Dz)/2.0_dbl) + randno(3*(i-1)+3)* Dz 
       write(50,*) i, x_particle, y_particle, z_particle, Radlist(i) 
    ELSE
      rr         = (randno(3*(i-1)+1))**(1.0/3.0)* rMax
