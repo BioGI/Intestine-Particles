@@ -11,9 +11,11 @@ REAL(dbl), ALLOCATABLE  :: v0R(:),Q0R(:),Q0RdR(:),v0RdR(:),Rbins(:),Radlist(:)
 REAl(dbl) :: R0,Rstar,sigR,sigmax,vptotal
 REAL(dbl) :: xmax,xmin,ymax,ymin,zmax,zmin,deltaR,sumvolume	
 REAL(dbl) :: x_center, y_center, z_center
+REAL(dbl) :: Dx, Dy, Dz
 REAL(dbl) :: rMax, teta1Max, teta2Max, rr, teta1, teta2
 REAL(dbl) :: x_particle, y_particle, z_particle
 REAL(lng) :: PI, dR, Radius
+LOGICAL   :: Falg_Couette
 
 CALL DATE_AND_TIME(VALUES=seed_date1)
 CALL RANDOM_SEED(size=seed_size1)
@@ -26,14 +28,20 @@ DEALLOCATE(seed1)
 !---------------------------------------------------------------------------------------------------
 !----- Polydisperse Collection From Yanxing --------------------------------------------------------
 !---------------------------------------------------------------------------------------------------
-PI     		= 3.1415926535897932384626433832
-x_center	= 57.0
-y_center	= 57.0
-z_center	= 150.0
-rMax   		= 53.0_dbl
-teta1Max	= 2*PI
-teta2Max	= 2*PI
-nbins 		= 20 
+x_center = 51.0_dbl
+y_center = 51.0_dbl
+z_center = 50.0_dbl
+
+Dx       = 40.0_dbl
+Dy       = 40.0_dbl
+Dz       = 49.0_dbl
+
+PI     	 = 3.1415926535897932384626433832
+rMax   	 = 53.0_dbl
+teta1Max = 2*PI
+teta2Max = 2*PI
+
+nbins 	 = 20 
 
 ALLOCATE(Rbins(nbins))
 ALLOCATE(v0R(nbins))
@@ -73,13 +81,21 @@ CALL RANDOM_NUMBER(randno)
 open(50,file='particle.dat')
 write(50,*) np
 DO i=1,np
-  rr         = (randno(3*(i-1)+1))**(1.0/3.0)* rMax
-  teta1      =  randno(3*(i-1)+2)           * teta1Max
-  teta2      =  randno(3*(i-1)+3)           * teta2Max
-  x_particle = x_center + rr* sin(teta1)* cos(teta2)
-  y_particle = y_center + rr* sin(teta1)* sin(teta2)
-  z_particle = z_center + rr* cos(teta1)
-  write(50,*) i, x_particle, y_particle, z_particle, Radlist(i) 
+   Falg_Couette = .TRUE.
+   IF (Falg_Couette) THEN
+      x_particle = x_center + randno(3*(i-1)+1)* Dx 
+      y_particle = y_center + randno(3*(i-1)+2)* Dy 
+      z_particle = z_center + randno(3*(i-1)+3)* Dz 
+      write(50,*) i, x_particle, y_particle, z_particle, Radlist(i) 
+   ELSE
+     rr         = (randno(3*(i-1)+1))**(1.0/3.0)* rMax
+     teta1      =  randno(3*(i-1)+2)           * teta1Max
+     teta2      =  randno(3*(i-1)+3)           * teta2Max
+     x_particle = x_center + rr* sin(teta1)* cos(teta2)
+     y_particle = y_center + rr* sin(teta1)* sin(teta2)
+     z_particle = z_center + rr* cos(teta1)
+     write(50,*) i, x_particle, y_particle, z_particle, Radlist(i) 
+   END IF
 END DO
 close(50)
 
