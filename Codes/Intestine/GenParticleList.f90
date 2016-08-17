@@ -28,14 +28,13 @@ DEALLOCATE(seed1)
 !---------------------------------------------------------------------------------------------------
 !----- Polydisperse Collection From Yanxing --------------------------------------------------------
 !---------------------------------------------------------------------------------------------------
-x_center = 51.0_dbl
-y_center = 51.0_dbl
-z_center = 50.0_dbl
-
-Dx       = 40.0_dbl
+Dx       = 40.0_dbl   
 Dy       = 40.0_dbl
 Dz       = 49.0_dbl
 
+x_center = 51.0_dbl
+y_center = 51.0_dbl
+z_center = 50.0_dbl
 PI     	 = 3.1415926535897932384626433832
 rMax   	 = 53.0_dbl
 teta1Max = 2*PI
@@ -83,9 +82,9 @@ write(50,*) np
 DO i=1,np
    Falg_Couette = .TRUE.
    IF (Falg_Couette) THEN
-      x_particle = x_center + randno(3*(i-1)+1)* Dx 
-      y_particle = y_center + randno(3*(i-1)+2)* Dy 
-      z_particle = z_center + randno(3*(i-1)+3)* Dz 
+      x_particle = randno(3*(i-1)+1)* Dx 
+      y_particle = randno(3*(i-1)+2)* Dy 
+      z_particle = randno(3*(i-1)+3)* Dz 
       write(50,*) i, x_particle, y_particle, z_particle, Radlist(i) 
    ELSE
      rr         = (randno(3*(i-1)+1))**(1.0/3.0)* rMax
