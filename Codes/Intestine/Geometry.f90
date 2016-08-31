@@ -38,9 +38,9 @@ ELSE
    ycf	= D / (ny-1_lng)			    ! length conversion factor: y-direction
 ENDIF
 
-IF (Couette_Flag) THEN
-   xcf	= W / (nx-1_lng)			    ! length conversion factor: x-direction
-   ycf	= D / (ny-1_lng)			    ! length conversion factor: y-direction
+IF (Flag_Couette) THEN
+   xcf	= Width / (nx-1_lng)          ! length conversion factor: x-direction
+   ycf	= D     / (ny-1_lng)			    ! length conversion factor: y-direction
 END IF
 
 tcf 	= nuL*((xcf*xcf)/nu)				! time conversion factor

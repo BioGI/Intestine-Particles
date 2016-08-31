@@ -5,7 +5,7 @@
 1          ! number of x-subdomains                                             (NumSubsX)
 1          ! number of y-subdomains                                             (NumSubsY)
 1          ! number of z-subdomains                                             (NumSubsZ)
-0.001      ! Width (only for Couette simulations) [m]                           (W)
+0.001      ! Width (only for Couette simulations) [m]                           (Width)
 0.01       ! Diameter [m]                                                       (D)
 0.04       ! Length [m]                                                         (L)
 0.5        ! Peristaltic occlusion ratio-distance of occlusion/mean half-width  (epsOVERa1)

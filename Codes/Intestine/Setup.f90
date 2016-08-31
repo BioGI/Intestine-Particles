@@ -186,7 +186,7 @@ INTEGER(lng), PARAMETER :: RANDOM=1						! random flag for randORord
 INTEGER(lng), PARAMETER :: ORDERED=2						! ordered flag for randORord
 
 REAL(dbl), PARAMETER :: PI = 3.1415926535897932384626433832			! Pi
-REAL(dbl) :: D, L								! diameter, length of the intestinal segment
+REAL(dbl) :: Width, D, L								! diameter, length of the intestinal segment
 REAL(dbl) :: a1, a2								! half height of the passages
 REAL(dbl) :: eps1, eps2								! occlusional distances
 REAL(dbl) :: amp1, amp2								! amplitude of the waves
