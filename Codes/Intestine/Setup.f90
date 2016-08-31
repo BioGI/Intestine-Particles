@@ -346,7 +346,7 @@ READ(10,*) nz					! number of nodes in the z-direction
 READ(10,*) NumSubsX		! number of subdomains in the X direction
 READ(10,*) NumSubsY		! number of subdomains in the Y direction
 READ(10,*) NumSubsZ		! number of subdomains in the Z direction
-READ(10,*) W          ! Width (only in case of Couette simulation)
+READ(10,*) Width      ! Width (only in case of Couette simulation)
 READ(10,*) D					! diameter
 READ(10,*) L					! length
 
