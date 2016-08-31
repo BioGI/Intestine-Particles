@@ -28,15 +28,21 @@ INTEGER(lng) :: xaxis,yaxis				! axes index variables
 REAL(dbl)    :: macroFreq				! macroscopic contraction frequency
 
 !----- Define the lattice <=> physical conversion factors
+zcf   	= L/nz						         ! length conversion factor: z-direction
+
 IF (domaintype .EQ. 0) THEN
-   xcf	= (0.5_lng*D)/(nx-1_lng)			! length conversion factor: x-direction
-   ycf	= (0.5_lng*D)/(ny-1_lng)			! length conversion factor: y-direction
+   xcf	= (0.5_lng*D)/(nx-1_lng)	! length conversion factor: x-direction
+   ycf	= (0.5_lng*D)/(ny-1_lng)	! length conversion factor: y-direction
 ELSE
-   xcf	= (1.0_lng*D)/(nx-1_lng)			! length conversion factor: x-direction
-   ycf	= (1.0_lng*D)/(ny-1_lng)			! length conversion factor: y-direction
+   xcf	= D / (nx-1_lng)			    ! length conversion factor: x-direction
+   ycf	= D / (ny-1_lng)			    ! length conversion factor: y-direction
 ENDIF
 
-zcf 	= L/nz						! length conversion factor: z-direction
+IF (Couette_Flag) THEN
+   xcf	= W / (nx-1_lng)			    ! length conversion factor: x-direction
+   ycf	= D / (ny-1_lng)			    ! length conversion factor: y-direction
+END IF
+
 tcf 	= nuL*((xcf*xcf)/nu)				! time conversion factor
 dcf 	= den/denL					! density conversion factor
 vcf 	= xcf/tcf					! velocity conversion factor

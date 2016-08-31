@@ -338,17 +338,17 @@ IMPLICIT NONE
 
 ! Read input from input file
 OPEN(10,FILE='input.txt')
-READ(10,*) domaintype	 				! a flag to denote domain type - 0 for 1/4th cylinder and 1 for full cylinder
+READ(10,*) domaintype ! a flag to denote domain type - 0 for 1/4th cylinder and 1 for full cylinder
 READ(10,*) nx	 				! number of nodes in the x-direction
 READ(10,*) ny					! number of nodes in the y-direction
 READ(10,*) nz					! number of nodes in the z-direction
 
-READ(10,*) NumSubsX			! number of subdomains in the X direction
-READ(10,*) NumSubsY			! number of subdomains in the Y direction
-READ(10,*) NumSubsZ			! number of subdomains in the Z direction
-
-READ(10,*) L					! length
+READ(10,*) NumSubsX		! number of subdomains in the X direction
+READ(10,*) NumSubsY		! number of subdomains in the Y direction
+READ(10,*) NumSubsZ		! number of subdomains in the Z direction
+READ(10,*) W          ! Width (only in case of Couette simulation)
 READ(10,*) D					! diameter
+READ(10,*) L					! length
 
 READ(10,*) epsOVERa1			! peristaltic occlusion ratio (distance of occlusion/mean half-width)
 READ(10,*) s1					! peristaltic wave speed

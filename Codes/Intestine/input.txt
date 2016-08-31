@@ -1,12 +1,13 @@
-1          ! domain type 0-for 1 quadrant of a cylinder and 1 for a full cylinder
-101        ! number of nodes in  x-direction                                    (nx)
+1          ! domain type 0 for 1 quadrant of a cylinder and 1 for a full cylinder
+11         ! number of nodes in  x-direction                                    (nx)
 101        ! number of nodes in  y-direction                                    (ny)
-100        ! number of nodes in  z-direction                                    (nz)
+400        ! number of nodes in  z-direction                                    (nz)
 1          ! number of x-subdomains                                             (NumSubsX)
 1          ! number of y-subdomains                                             (NumSubsY)
 1          ! number of z-subdomains                                             (NumSubsZ)
-0.02       ! Length [m]                                                         (L)
-0.02       ! Diameter [m]                                                       (D)
+0.001      ! Width (only for Couette simulations) [m]                           (W)
+0.01       ! Diameter [m]                                                       (D)
+0.04       ! Length [m]                                                         (L)
 0.5        ! Peristaltic occlusion ratio-distance of occlusion/mean half-width  (epsOVERa1)
 0.002      ! Peristaltic wave speed [m/s]                                       (s1) 
 1          ! Peristaltic number of waves                                        (numw1)
