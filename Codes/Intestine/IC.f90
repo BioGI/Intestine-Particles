@@ -72,7 +72,7 @@ ELSE								! clean start
            u(i,j,k)= 0.0_dbl 
            v(i,j,k)= 0.0_dbl
            IF (Flag_Couette) THEN
-              w(i,j,k)= (xx(i+iMin-1) / (0.45_dbl*D)) * (s1/vcf)
+              w(i,j,k)= (xx(i+iMin-1) / (0.40_dbl*D)) * (s1/vcf)
            ELSE
               w(i,j,k)  = 0.0_dbl                                       ! z-velocity
            END IF   
