@@ -98,9 +98,13 @@ DO k=1,nzSub
                IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
                   phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
-                  CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
-                  phi(i,j,k) = phi(i,j,k) + phiBC     
-                  CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 								! measure the absorption rate
+                  IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) .AND. (Flag_Couette) ) THEN !Coette with no absorption
+                     phi(i,j,k) = phi(i,j,k) + (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)
+                  ELSE 
+                     CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
+                     phi(i,j,k) = phi(i,j,k) + phiBC     
+                     CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 								! measure the absorption rate
+                  END IF
                ELSE IF((node(im1,jm1,km1) .LE. -1) .AND. (node(im1,jm1,km1) .GE. -numVilli)) THEN				! villi
           
                ELSE

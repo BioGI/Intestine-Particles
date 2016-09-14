@@ -254,7 +254,7 @@ IF(iter .EQ. phiStart) THEN
         DO j=0,nySub+1
           DO i=0,nxSub+1
 !            phi(i,j,k) = phiIC*ee**(-((x(i)**2 + y(j)**2 + (z(k)-0.5_dbl*L)**2)/(2.0_dbl*sigma**2)))		! 3D Gaussian Distribution
-             IF ((i.GT.6) .AND. (i.LT.12) .AND. (j.GT.10) .AND. (j.LT.22) .AND. (k.GT.10) .AND. (k.LT.20) ) THEN
+             IF ((i.GT.6) .AND. (i.LT.10) .AND. (j.GT.11) .AND. (j.LT.21) .AND. (k.GT.10) .AND. (k.LT.20) ) THEN
                 phi(i,j,k) = Cs_mol
              END IF
           END DO
