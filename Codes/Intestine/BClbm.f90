@@ -147,7 +147,7 @@ REAL(dbl)    :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt             ! temporary coor
 
 
 IF (Flag_Couette) THEN !----- Couette Geometry ---------------------------------------------
-   q= (abs(x(i))-r(k))/ (1.0*xcf)
+   q= (abs(x(im1))-r(k))/ (1.0*xcf)
 
 ELSE !-----------------------Intestine Geometry --------------------------------------------
 
