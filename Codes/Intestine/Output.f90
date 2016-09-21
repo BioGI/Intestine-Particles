@@ -599,7 +599,7 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
 ENDIF
 
 IF (myid .EQ. master) THEN
-   WRITE(2472,'(I7, F9.3, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+   WRITE(2472,'(I7, F15.6, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
    CALL FLUSH(2472)
 END IF
 !===================================================================================================
