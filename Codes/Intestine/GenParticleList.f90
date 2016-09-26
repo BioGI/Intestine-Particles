@@ -106,12 +106,12 @@ IF (.NOT. Flag_Measured_Particle_Dist) THEN
 
 
 ELSEIF (Flag_Measured_Particle_Dist) THEN
-   Dx      = 3.0  
-   Dy      = 13.0
+   Dx      = 3.95 
+   Dy      = 13.9
    Dz      = 301.0
    x_center= 7.0
    y_center= 15.0
-   z_center= 302.0
+   z_center= 303.0
 
    open(52,file='Par_Rad_Measured.dat')
    read(52,*) np
@@ -130,7 +130,7 @@ ELSEIF (Flag_Measured_Particle_Dist) THEN
       x_particle = (x_center-Dx) + randno(3*(i-1)+1)* 2.0_dbl* Dx 
       y_particle = (y_center-Dy) + randno(3*(i-1)+2)* 2.0_dbl* Dy 
       z_particle = (z_center-Dz) + randno(3*(i-1)+3)* 2.0_dbl* Dz 
-      write(50,"(I5,3F8.2,E12.4)") i, x_particle, y_particle, z_particle, Radlist(i)/2000000.000000_dbl 
+      write(50,"(I5,3F14.6,E12.4)") i, x_particle, y_particle, z_particle, Radlist(i)/2000000.000000_dbl 
    END DO
    close(50)
 END IF
