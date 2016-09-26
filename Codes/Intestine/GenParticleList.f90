@@ -106,8 +106,8 @@ IF (.NOT. Flag_Measured_Particle_Dist) THEN
 
 
 ELSEIF (Flag_Measured_Particle_Dist) THEN
-   Dx      = 3.95 
-   Dy      = 13.9
+   Dx      = 3.0 
+   Dy      = 13.0
    Dz      = 301.0
    x_center= 7.0
    y_center= 15.0
