@@ -350,17 +350,17 @@ IF (myid .EQ. master) THEN
 		 		current%pardata%xp 	  	,',',	&
 				current%pardata%yp  	  	,',',	&
 				current%pardata%zp 	  	,',',	&
-                        	current%pardata%up*vcf 	  	,',',	&
-		     	  	current%pardata%vp*vcf 	  	,',',	&
+       	current%pardata%up*vcf 	  	,',',	&
+   	  	current%pardata%vp*vcf 	  	,',',	&
 				current%pardata%wp*vcf 	  	,',',	&
-                      		current%pardata%parid 	  	,',',	&
-				current%pardata%sh 	  	,',',	&
-				current%pardata%rp/xcf 	  	,',',	&
+     		current%pardata%parid 	  	,',',	&
+				current%pardata%sh 	       	,',',	&
+				current%pardata%rp*1000000	,',',	&
 				current%pardata%bulk_conc/Cs_mol,',', 	&
 				current%pardata%delNBbyCV 	,',', 	&
-				current%pardata%Sst 	  	,',',	&
-				current%pardata%S 	  	,',',	&
-				current%pardata%Veff 	  	,',',	&
+				current%pardata%Sst 	    	,',',	&
+				current%pardata%S 	      	,',',	&
+				current%pardata%Veff 	    	,',',	&
 				current%pardata%Nbj
          END IF	
 1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
