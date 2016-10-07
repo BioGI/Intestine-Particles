@@ -322,9 +322,12 @@ SUBROUTINE PrintParticles						  ! prints all particle data
 IMPLICIT NONE
 INTEGER(lng) 	:: numParticlesSub
 INTEGER(lng)	:: i,j,k,ii,jj,kk,n		! index variables (local and global)
+REAL(dbl)     :: zcf3
 CHARACTER(7)	:: iter_char				! iteration stored as a character
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
+
+zcf3=zcf*zcf*zcf
 
 IF (myid .EQ. master) THEN
    IF ((MOD(iter, Output_Intervals) .EQ. 0)           		& 
@@ -339,7 +342,7 @@ IF (myid .EQ. master) THEN
 
       !------ open the proper output file
       OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-      WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff","Nbj"'
+      WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNB","Sst","S","Veff","Nbj"'
       current => ParListHead%next							 
 
       DO WHILE (ASSOCIATED(current))
@@ -357,7 +360,7 @@ IF (myid .EQ. master) THEN
 				current%pardata%sh 	       	,',',	&
 				current%pardata%rp*1000000	,',',	&
 				current%pardata%bulk_conc/Cs_mol,',', 	&
-				current%pardata%delNBbyCV 	,',', 	&
+				current%pardata%delNBbyCV*zcf3 	,',', 	&
 				current%pardata%Sst 	    	,',',	&
 				current%pardata%S 	      	,',',	&
 				current%pardata%Veff 	    	,',',	&
