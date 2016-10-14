@@ -20,7 +20,7 @@
 1000.0     ! density [kg/m^3]                                                   (den)
 1.00e-6    ! kinematic viscosity [m^2/s]                                        (nu)
 0.3300     ! Drug solubility or saturation value (micro-mole/cm^3)              (Cs_mol)	
-7.50e-6    ! Drug's diffusivity (cm2/s)                                         (diffm)
+7.50e-10   ! Drug's diffusivity (m2/s)                                          (diffm)
 268.0e-6   ! Drug's molar volume (cm^3/ micro-mole)                             (molarvol)
 1.0        ! relaxation parameter                                               (tau)
 20.0       ! Schmidt Number                                                     (Sc)
