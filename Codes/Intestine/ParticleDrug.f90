@@ -25,7 +25,7 @@ INTEGER,DIMENSION(2)     :: NEP_x,   NEP_y,  NEP_z                      ! Lattic
 REAL(dbl)     		 :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
 REAL(dbl)  	   	 :: xp,yp,zp
 REAL(dbl)		 :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)       	 :: N_b
+REAL(dbl)       	 :: n_b
 REAL(dbl)    	         :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
 REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
@@ -47,13 +47,13 @@ DO WHILE (ASSOCIATED(current))
 next => current%next
 IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
 
-!--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(N_b*delta)
-   N_b = 2.0
+!--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(n_b*delta)
+   n_b = 3.0
    R_P = current%pardata%rp
    Sh_P= current%pardata%sh
    Sh_P= 1.0000_dbl
    delta_P= R_P/Sh_P
-   R_influence_P= (R_P+N_b*delta_P)/xcf
+   R_influence_P= (R_P+n_b*delta_P)/xcf
 
 !--Computing equivalent cubic mesh length scale
    V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
@@ -684,7 +684,7 @@ IMPLICIT NONE
 INTEGER(lng)  		  :: i,j,k,mpierr
 REAL(dbl)     		  :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)                 :: N_d         				! Modeling parameter to extend the volume of influence around 
+REAL(dbl)                 :: n_d         				! Modeling parameter to extend the volume of influence around 
 REAL(dbl)                 :: R_P, Sh_P, delta_P
 REAL(dbl)                 :: R_influence_P, L_influence_P
 REAL(dbl),DIMENSION(2)    :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 	! Global Volume of Influence's Borders (in whole domain)
@@ -709,15 +709,15 @@ DO WHILE (ASSOCIATED(current))
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                   !only calculate the drug release when particle radius is larger than 0.1 micron
 
 !--Calculate length scale for jth particle:  delta = R / Sh
-!--Calculate effective radius: R_influence_P = R + (N_d *delta)
+!--Calculate effective radius: R_influence_P = R + (n_d *delta)
 !--Note: need to convert this into Lattice units and not use the physical length units
 !--Then compute equivalent cubic mesh length scale
-   N_d = 3.0
+   n_d = 3.0
    R_P  = current%pardata%rp
    Sh_P = current%pardata%sh
    Sh_P= 1.0000_dbl
    delta_P = R_P / Sh_P
-   R_influence_P = (R_P + N_d * delta_P) / xcf
+   R_influence_P = (R_P + n_d * delta_P) / xcf
 
 !--iomputing equivalent cubic mesh length scale
    L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
