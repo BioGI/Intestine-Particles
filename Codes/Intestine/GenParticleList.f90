@@ -96,7 +96,7 @@ DO i=1,np
      x_particle = x_center + rr* sin(teta1)* cos(teta2)
      y_particle = y_center + rr* sin(teta1)* sin(teta2)
      z_particle = z_center + rr* cos(teta1)
-     write(50,*) i, x_particle, y_particle, z_particle, Radlist(i) 
+     write(50,"(I6,3F16.8,E14.6)") i, x_particle, y_particle, z_particle, Radlist(i) 
    END IF
 END DO
 close(50)
