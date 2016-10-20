@@ -42,8 +42,8 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
-      IF (mySub .EQ.current%pardata%cur_part) THEN
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
          xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
          yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
          zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
@@ -181,8 +181,9 @@ tausgs_particle_z = 0.0_dbl
 current => ParListHead%next     
 DO WHILE (ASSOCIATED(current)) 
    next => current%next 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-      IF (mySub .EQ.current%pardata%cur_part) THEN 
+
+   IF (mySub .EQ.current%pardata%cur_part) THEN 
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          current%pardata%xpold = current%pardata%xp
          current%pardata%ypold = current%pardata%yp
          current%pardata%zpold = current%pardata%zp
@@ -250,8 +251,8 @@ DO WHILE (ASSOCIATED(current))
              END IF               ! If Number_of_Solid_nodes > 0 
           END IF                  ! If 1<zp<nz        
         END IF                    ! If this simulation is Couette 
-     END IF                       ! If particle resides in this processor
-   END IF                         ! If particle radius is over Min_R_Acceptable
+      END IF                      ! If particle radius is over Min_R_Acceptable
+   END IF                         ! If particle resides in this processor
    current => next
 END DO
 
@@ -261,8 +262,8 @@ CALL Particle_Velocity
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-      IF (mySub .EQ.current%pardata%cur_part) THEN 
+   IF (mySub .EQ.current%pardata%cur_part) THEN 
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
          current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
          current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
@@ -323,8 +324,8 @@ DO WHILE (ASSOCIATED(current))
                END IF   ! If Number_of_Solid_nodes > 0
             ENDIF       ! If 1<zp<nz
          END IF         ! If the simulation is Couette
-      END IF            ! If particle resides inthis processor
-   END IF               ! If particle's radius is larger than Min_R_Acceptable
+      END IF            ! If particle's radius is larger than Min_R_Acceptable
+   END IF               ! If particle resides inthis processor
    current => next
 ENDDO
 
@@ -350,11 +351,106 @@ END SUBROUTINE Particle_Track
 
 
 !===================================================================================================
-SUBROUTINE Particle_Transfer
+SUBROUTINE Particle_Transfer_OLD
 !===================================================================================================
 IMPLICIT NONE
 
 INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
+INTEGER(lng)             :: RANK
+INTEGER(lng)             :: mpierr
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 	
+
+   IF (mySub .EQ.current%pardata%cur_part) THEN 
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
+         !----- Wrappign around in z-direction for periodic BC in z
+         IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
+            current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
+         ENDIF
+         IF (current%pardata%zp.LT.0.0_dbl) THEN
+            current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
+         ENDIF
+
+         !----- Wrappign around in y-direction for periodic BC in y
+         IF (current%pardata%yp.GE.REAL(ny,dbl)) THEN
+            current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
+         ENDIF
+         IF (current%pardata%yp.LT.1.0_dbl) THEN
+            current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
+         ENDIF
+
+         !----- Estimate to which partition the updated position belongs to.
+         DO ipartition = 1_lng,NumSubsTotal
+            IF((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+               (current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+               (current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+               (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+               (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+               (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+               current%pardata%new_part = ipartition
+            END IF
+         END DO
+      END IF
+   END IF
+
+   current => next
+ENDDO
+
+!---- Parallel communication between all processors
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 
+
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
+        RANK= current%pardata%cur_part - 1
+        current%pardata%cur_part = current%pardata%new_part 
+        CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%up,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%vp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%wp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%xpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%ypold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%zpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%upold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%vpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%wpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%rpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%par_conc,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%bulk_conc, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%gamma_cont,1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%Nbj,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%S,         1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+	      CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+        CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+   END IF
+   current => next  
+ENDDO
+!===================================================================================================
+END SUBROUTINE Particle_Transfer_OLD
+!===================================================================================================
+
+
+
+
+
+!===================================================================================================
+SUBROUTINE Particle_Transfer
+!===================================================================================================
+IMPLICIT NONE
+
+REAL(dbl)                :: Particle_Data(24)
+INTEGER(lng)   		       :: i,ipartition,ii,jj,kk
 INTEGER(lng)             :: RANK
 INTEGER(lng)             :: mpierr
 TYPE(ParRecord), POINTER :: current
@@ -405,39 +501,71 @@ DO WHILE (ASSOCIATED(current))
    next => current%next 
 
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-	RANK= current%pardata%cur_part - 1
-        current%pardata%cur_part = current%pardata%new_part 
-	CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-	CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%up,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%xpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%ypold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%upold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%par_conc,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%bulk_conc, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%gamma_cont,1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Nbj,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%S,         1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+      current%pardata%cur_part = current%pardata%new_part 
+	      
+      Particle_Data(1)=current%pardata%xp
+      Particle_Data(2)=current%pardata%yp
+      Particle_Data(3)=current%pardata%zp
+      Particle_Data(4)=current%pardata%up
+      Particle_Data(5)=current%pardata%vp
+      Particle_Data(6)=current%pardata%wp
+      Particle_Data(7)=current%pardata%rp
+      Particle_Data(8)=current%pardata%sh
+      Particle_Data(9)=current%pardata%xpold
+      Particle_Data(10)=current%pardata%ypold
+      Particle_Data(11)=current%pardata%zpold
+      Particle_Data(12)=current%pardata%upold
+      Particle_Data(13)=current%pardata%vpold
+      Particle_Data(14)=current%pardata%wpold
+      Particle_Data(15)=current%pardata%rpold
+      Particle_Data(16)=current%pardata%delNBbyCV
+      Particle_Data(17)=current%pardata%par_conc
+      Particle_Data(18)=current%pardata%bulk_conc
+      Particle_Data(19)=current%pardata%gamma_cont
+      Particle_Data(20)=current%pardata%Nbj
+      Particle_Data(21)=current%pardata%S
+      Particle_Data(22)=current%pardata%Sst
+	    Particle_Data(23)=current%pardata%cur_part
+      Particle_Data(24)=current%pardata%new_part
+  
+    	RANK= current%pardata%cur_part - 1
+      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+      CALL MPI_BCast(Particle_Data,24, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+
+      current%pardata%xp= Particle_Data(1)
+      current%pardata%yp= Particle_Data(2)
+      current%pardata%zp= Particle_Data(3)
+      current%pardata%up= Particle_Data(4)
+      current%pardata%vp= Particle_Data(5)
+      current%pardata%wp= Particle_Data(6)
+      current%pardata%rp= Particle_Data(7)
+      current%pardata%sh= Particle_Data(8)
+      current%pardata%xpold= Particle_Data(9)
+      current%pardata%ypold= Particle_Data(10)
+      current%pardata%zpold= Particle_Data(11)
+      current%pardata%upold= Particle_Data(12)
+      current%pardata%vpold= Particle_Data(13)
+      current%pardata%wpold= Particle_Data(14)
+      current%pardata%rpold= Particle_Data(15)
+      current%pardata%delNBbyCV= Particle_Data(16)
+      current%pardata%par_conc= Particle_Data(17)
+      current%pardata%bulk_conc= Particle_Data(18)
+      current%pardata%gamma_cont= Particle_Data(19)
+      current%pardata%Nbj= Particle_Data(20)
+      current%pardata%S= Particle_Data(21)
+      current%pardata%Sst= Particle_Data(22)
+	    current%pardata%cur_part= Particle_Data(23)
+      current%pardata%new_part= Particle_Data(24)
+
+
+
    END IF
    current => next  
 ENDDO
 !===================================================================================================
 END SUBROUTINE Particle_Transfer
 !===================================================================================================
+
 
 
 

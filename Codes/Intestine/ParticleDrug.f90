@@ -39,6 +39,7 @@ TYPE(ParRecord), POINTER :: next
 
 delta_mesh = 1.0_dbl
 zcf3 = 1.0_dbl
+n_b = 3.0
 
 current => ParListHead%next
 
@@ -48,11 +49,10 @@ next => current%next
 IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
 
 !--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(n_b*delta)
-   n_b = 3.0
    R_P = current%pardata%rp
-   Sh_P= current%pardata%sh
-   Sh_P= 1.0000_dbl
-   delta_P= R_P/Sh_P
+!  Sh_P= current%pardata%sh
+!  delta_P= R_P/Sh_P
+   delta_P= R_P 
    R_influence_P= (R_P+n_b*delta_P)/xcf
 
 !--Computing equivalent cubic mesh length scale
@@ -174,11 +174,11 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
                       y_DP= GVIB_y(1) + (j * Delta_L)
                       z_DP= GVIB_z(1) + (k * Delta_L)
                       IF ((x_DP .GE. (REAL(iMin,dbl)-1.0_dbl)) .AND. &               
-		          (x_DP .LT.  REAL(iMax,dbl)         ) .AND. &
+                          (x_DP .LT.  REAL(iMax,dbl)         ) .AND. &
                           (y_DP .GE. (REAL(jMin,dbl)-1.0_dbl)) .AND. & 
-			  (y_DP .LT.  REAL(jMax,dbl)         ) .AND. &
+                          (y_DP .LT.  REAL(jMax,dbl)         ) .AND. &
                           (z_DP .GE. (REAL(kMin,dbl)-1.0_dbl)) .AND. & 
-			  (z_DP .LT.  REAL(kMax,dbl)         ) ) THEN
+                          (z_DP .LT.  REAL(kMax,dbl)         )) THEN
 
 !-------------------------Finding Local lattice nodes surrounding this point (This point is discretized and is not a lattice node))
                           ix0 = FLOOR(x_DP)   - (REAL(iMin,dbl)-1.0_dbl)
@@ -188,7 +188,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
                           iz0 = FLOOR(z_DP)   - (REAL(kMin,dbl)-1.0_dbl)
                           iz1 = CEILING(z_DP) - (REAL(kMin,dbl)-1.0_dbl)
                               
-            		  x_DP = x_DP - REAL(iMin-1_lng,dbl)
+                          x_DP = x_DP - REAL(iMin-1_lng,dbl)
                           y_DP = y_DP - REAL(jMin-1_lng,dbl)
                           z_DP = z_DP - REAL(kMin-1_lng,dbl)
  
@@ -262,8 +262,8 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
                 END DO
              END DO
 
-         END IF  									! Conditional for cases 2 and 3
-     END IF 										! Conditional for the processor which has overlap with effective volume 
+         END IF                   ! Conditional for cases 2 and 3
+     END IF 								      ! Conditional for the processor which has overlap with effective volume 
 
 
 
@@ -310,8 +310,8 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 zcf3=xcf*ycf*zcf
-current => ParListHead%next
 
+current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
 
@@ -327,20 +327,21 @@ DO WHILE (ASSOCIATED(current))
       END IF
       deltaR=current%pardata%rpold-current%pardata%rp
       current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
+
    ELSE IF ((current%pardata%rp .LT. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
-      current%pardata%xp	= 0.0_dbl
-      current%pardata%yp	= 0.0_dbl
-      current%pardata%zp	= 0.0_dbl
+      current%pardata%xp        = 0.0_dbl
+      current%pardata%yp        = 0.0_dbl
+      current%pardata%zp        = 0.0_dbl
       current%pardata%up        = 0.0_dbl
       current%pardata%vp        = 0.0_dbl
       current%pardata%wp        = 0.0_dbl
-      current%pardata%rp	= 0.0_dbl
+      current%pardata%rp        = 0.0_dbl
       current%pardata%delNBbyCV = 0.0_dbl
       current%pardata%bulk_conc = 0.0_dbl
-      current%pardata%S		= 0.0_Dbl
+      current%pardata%S		      = 0.0_Dbl
       current%pardata%Sst       = 0.0_Dbl
       current%pardata%sh        = 0.0_Dbl
-    END IF
+   END IF
 
    current => next
 ENDDO
@@ -371,7 +372,6 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-
    current%pardata%sh= 1.0_dbl 
 
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
