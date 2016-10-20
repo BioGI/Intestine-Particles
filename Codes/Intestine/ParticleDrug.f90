@@ -322,8 +322,7 @@ DO WHILE (ASSOCIATED(current))
       IF (temp.GE.0.0_dbl) THEN
          current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
       ELSE
-         temp = 0.0_dbl
-         current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
+         current%pardata%rp= 0.5_dbl*(current%pardata%rpold)
       END IF
       deltaR=current%pardata%rpold-current%pardata%rp
       current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
@@ -701,6 +700,9 @@ TYPE(ParRecord), POINTER  :: next
 
 delta_mesh = 1.0_dbl
 zcf3 = xcf*ycf*zcf
+n_d = 3.0
+
+
 current => ParListHead%next
 
 DO WHILE (ASSOCIATED(current))
@@ -712,11 +714,10 @@ DO WHILE (ASSOCIATED(current))
 !--Calculate effective radius: R_influence_P = R + (n_d *delta)
 !--Note: need to convert this into Lattice units and not use the physical length units
 !--Then compute equivalent cubic mesh length scale
-   n_d = 3.0
    R_P  = current%pardata%rp
-   Sh_P = current%pardata%sh
-   Sh_P= 1.0000_dbl
-   delta_P = R_P / Sh_P
+!  Sh_P = current%pardata%sh
+!  delta_P = R_P / Sh_P
+   delta_P = R_P
    R_influence_P = (R_P + n_d * delta_P) / xcf
 
 !--iomputing equivalent cubic mesh length scale
