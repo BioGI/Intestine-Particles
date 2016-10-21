@@ -502,7 +502,7 @@ DO WHILE (ASSOCIATED(current))
    next => current%next 
 
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-      current%pardata%cur_part = current%pardata%new_part 
+    	RANK= current%pardata%cur_part - 1
 	      
       Particle_Data(1)=current%pardata%xp
       Particle_Data(2)=current%pardata%yp
@@ -526,12 +526,10 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data(20)=current%pardata%Nbj
       Particle_Data(21)=current%pardata%S
       Particle_Data(22)=current%pardata%Sst
-	    Particle_Data(23)=current%pardata%cur_part
-      Particle_Data(24)=current%pardata%new_part
+      Particle_Data(23)=current%pardata%new_part
   
-    	RANK= current%pardata%cur_part - 1
       CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-      CALL MPI_BCast(Particle_Data,24, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+      CALL MPI_BCast(Particle_Data,23, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
 
       current%pardata%xp= Particle_Data(1)
       current%pardata%yp= Particle_Data(2)
@@ -556,7 +554,7 @@ DO WHILE (ASSOCIATED(current))
       current%pardata%S= Particle_Data(21)
       current%pardata%Sst= Particle_Data(22)
 	    current%pardata%cur_part= Particle_Data(23)
-      current%pardata%new_part= Particle_Data(24)
+      current%pardata%new_part= Particle_Data(23)
 
 
 
