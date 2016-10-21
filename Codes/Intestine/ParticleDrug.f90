@@ -314,34 +314,34 @@ zcf3=xcf*ycf*zcf
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
+         current%pardata%rpold = current%pardata%rp
+         bulkconc = current%pardata%bulk_conc
+         temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
+         IF (temp.GE.0.0_dbl) THEN
+            current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
+         ELSE
+            current%pardata%rp= 0.5_dbl*(current%pardata%rpold)
+         END IF
+         deltaR=current%pardata%rpold-current%pardata%rp
+         current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
-      current%pardata%rpold = current%pardata%rp
-      bulkconc = current%pardata%bulk_conc
-      temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-      IF (temp.GE.0.0_dbl) THEN
-         current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
-      ELSE
-         current%pardata%rp= 0.5_dbl*(current%pardata%rpold)
+      ELSE IF ((current%pardata%rp .LT. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
+         current%pardata%xp        = 0.0_dbl
+         current%pardata%yp        = 0.0_dbl
+         current%pardata%zp        = 0.0_dbl
+         current%pardata%up        = 0.0_dbl
+         current%pardata%vp        = 0.0_dbl
+         current%pardata%wp        = 0.0_dbl
+         current%pardata%rp        = 0.0_dbl
+         current%pardata%delNBbyCV = 0.0_dbl
+         current%pardata%bulk_conc = 0.0_dbl
+         current%pardata%S		      = 0.0_Dbl
+         current%pardata%Sst       = 0.0_Dbl
+         current%pardata%sh        = 0.0_Dbl
       END IF
-      deltaR=current%pardata%rpold-current%pardata%rp
-      current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
-
-   ELSE IF ((current%pardata%rp .LT. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
-      current%pardata%xp        = 0.0_dbl
-      current%pardata%yp        = 0.0_dbl
-      current%pardata%zp        = 0.0_dbl
-      current%pardata%up        = 0.0_dbl
-      current%pardata%vp        = 0.0_dbl
-      current%pardata%wp        = 0.0_dbl
-      current%pardata%rp        = 0.0_dbl
-      current%pardata%delNBbyCV = 0.0_dbl
-      current%pardata%bulk_conc = 0.0_dbl
-      current%pardata%S		      = 0.0_Dbl
-      current%pardata%Sst       = 0.0_Dbl
-      current%pardata%sh        = 0.0_Dbl
-   END IF
-
+   END IF 
    current => next
 ENDDO
 
@@ -394,9 +394,9 @@ DO WHILE (ASSOCIATED(current))
          END IF 
       END IF
 
-      RANK= current%pardata%cur_part - 1
-      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-      CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+      !RANK= current%pardata%cur_part - 1
+      !CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+      !CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
    END IF 
 
    current => next
