@@ -315,7 +315,7 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
    IF (mySub .EQ.current%pardata%cur_part) THEN
-      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                    !only calculate the drug release when particle radius is larger than 0.1 micron
          current%pardata%rpold = current%pardata%rp
          bulkconc = current%pardata%bulk_conc
          temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
@@ -327,7 +327,7 @@ DO WHILE (ASSOCIATED(current))
          deltaR=current%pardata%rpold-current%pardata%rp
          current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
 
-      ELSE IF ((current%pardata%rp .LT. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
+      ELSE IF ((current%pardata%rp .LE. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
          current%pardata%xp        = 0.0_dbl
          current%pardata%yp        = 0.0_dbl
          current%pardata%zp        = 0.0_dbl
@@ -337,7 +337,7 @@ DO WHILE (ASSOCIATED(current))
          current%pardata%rp        = 0.0_dbl
          current%pardata%delNBbyCV = 0.0_dbl
          current%pardata%bulk_conc = 0.0_dbl
-         current%pardata%S		      = 0.0_Dbl
+         current%pardata%S		     = 0.0_Dbl
          current%pardata%Sst       = 0.0_Dbl
          current%pardata%sh        = 0.0_Dbl
       END IF
@@ -373,8 +373,8 @@ DO WHILE (ASSOCIATED(current))
    next => current%next 
    current%pardata%sh= 1.0_dbl 
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
-      IF (mySub .EQ.current%pardata%cur_part) THEN
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
          !----- If including the confinement effects ----------------------------------------------- 
          IF (Flag_Confinement_Effects) THEN                                 
             current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
@@ -393,11 +393,11 @@ DO WHILE (ASSOCIATED(current))
             END IF
          END IF 
       END IF
-
+   END IF
       !RANK= current%pardata%cur_part - 1
       !CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
       !CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-   END IF 
+  !END IF 
 
    current => next
 ENDDO
@@ -460,8 +460,8 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only when particle radius is larger than 0.1 micron				
-      IF (mySub .EQ.current%pardata%cur_part) THEN
+   IF (mySub .EQ. current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only when particle radius is larger than 0.1 micron				
          xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
          yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
          zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
@@ -688,7 +688,6 @@ REAL(dbl)                 :: R_P, Sh_P, delta_P
 REAL(dbl)                 :: R_influence_P, L_influence_P
 REAL(dbl),DIMENSION(2)    :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 	! Global Volume of Influence's Borders (in whole domain)
 REAL(dbl),DIMENSION(2)    :: LVIB_x, LVIB_y, LVIB_z                     ! Local  Volume of Influence's Borders (in current procesor) 
-
 REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER  ,DIMENSION(2)    :: GNEP_x, GNEP_y, GNEP_z, GNEP_z_Per         ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
@@ -702,9 +701,7 @@ delta_mesh = 1.0_dbl
 zcf3 = xcf*ycf*zcf
 n_d = 3.0
 
-
 current => ParListHead%next
-
 DO WHILE (ASSOCIATED(current))
    next => current%next 
 

@@ -450,7 +450,7 @@ SUBROUTINE Particle_Transfer
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl)                :: Particle_Data(24)
+REAL(dbl)                :: Particle_Data(23)
 INTEGER(lng)   		       :: i,ipartition,ii,jj,kk
 INTEGER(lng)             :: RANK
 INTEGER(lng)             :: mpierr
@@ -461,8 +461,8 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 	
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-      IF (mySub .EQ.current%pardata%cur_part) THEN 
+   IF (mySub .EQ.current%pardata%cur_part) THEN 
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          !----- Wrappign around in z-direction for periodic BC in z
          IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
             current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
@@ -501,7 +501,7 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
+   IF (current%pardata%rp .GT. 1.0e-16) THEN
     	RANK= current%pardata%cur_part - 1
 	      
       Particle_Data(1)=current%pardata%xp
