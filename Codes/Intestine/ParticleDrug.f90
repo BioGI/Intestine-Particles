@@ -907,64 +907,6 @@ END SUBROUTINE Particle_Drug_To_Nodes
 
 
 
-!===================================================================================================
-SUBROUTINE Find_Root(parid,conc,cs,gammaj,Rj,Nbj,Veff)
-!===================================================================================================
-IMPLICIT NONE
-INTEGER(lng)   :: iter,nmax
-REAL(dbl),intent(in) :: conc,cs,gammaj,Rj
-INTEGER(lng),intent(in) :: parid
-REAL(dbl),intent(out) :: Nbj,Veff
-REAL(dbl)      :: xnew,xold,f,fprime,error,Reff,parcb,parcs
-REAL(dbl) :: Aj,Bj,a,b,c,AjBj
-REAL(dbl),parameter :: eps = 1.0e-12_dbl, tol = 1.0e-8_dbl, largenum = 1.0e8_dbl
-
-parcb = conc
-parcs = cs
-nmax = 100_lng
-iter = 0_lng
-xnew = 0.0_dbl
-xold = 0.5_dbl
-
-!---The conc values are quite small. So we will make them larger so that the
-!--- coeffs in the eq for Rj/Reff are not small.
-parcb = parcb*largenum
-parcs = parcs*largenum
-
-Aj = (parcb-gammaj*parcs)/(1.0_dbl-gammaj)
-Bj = (parcs - parcb)/max((parcb-gammaj*cs),eps)
-AjBj = (parcs-parcb)/(1.0_dbl-gammaj)
-
-a = Aj + 1.5_dbl*AjBj!*Aj*Bj
-b = -1.5_dbl*AjBj!Aj*Bj
-c = parcb - Aj
-error = abs(xold-xnew)
-
-DO WHILE ((error.gt.tol).AND.(iter.LE.nmax))
-   f = a*(xold**3.0_dbl)+b*xold+c
-   fprime = 3.0_dbl*a*(xold**2.0_dbl)+b
-   if (fprime.GE.0.0_dbl) then
-      xnew = xold - (f/max(fprime,1.0_dbl*eps))
-   else
-      !xnew = xold - (f/min(fprime,-1.0_dbl*eps))
-       xnew = xold - (f/fprime)
-   endif
-   error = abs(xnew-xold)
-   iter = iter+1_lng
-   xold = xnew
-END DO
-
-xnew= max(min(xnew,1.0_dbl),0.01) 			! Limit xnew (radius ratio) to values that are meaningful and not too small or large. 
-Reff= Rj/xnew
-Veff= (88.0_dbl/21.0_dbl)*(Reff**3.0_dbl)
-Nbj = conc*Veff
-!===================================================================================================
-END SUBROUTINE Find_Root
-!===================================================================================================
-
-
-
-
 !================================================
 END MODULE ParticleDrug 
 !================================================
