@@ -352,100 +352,6 @@ END SUBROUTINE Particle_Track
 
 
 !===================================================================================================
-SUBROUTINE Particle_Transfer_OLD
-!===================================================================================================
-IMPLICIT NONE
-
-INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
-INTEGER(lng)             :: RANK
-INTEGER(lng)             :: mpierr
-TYPE(ParRecord), POINTER :: current
-TYPE(ParRecord), POINTER :: next
-
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-   next => current%next 	
-
-   IF (mySub .EQ.current%pardata%cur_part) THEN 
-      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-         !----- Wrappign around in z-direction for periodic BC in z
-         IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
-            current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
-         ENDIF
-         IF (current%pardata%zp.LT.0.0_dbl) THEN
-            current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
-         ENDIF
-
-         !----- Wrappign around in y-direction for periodic BC in y
-         IF (current%pardata%yp.GE.REAL(ny,dbl)) THEN
-            current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
-         ENDIF
-         IF (current%pardata%yp.LT.1.0_dbl) THEN
-            current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
-         ENDIF
-
-         !----- Estimate to which partition the updated position belongs to.
-         DO ipartition = 1_lng,NumSubsTotal
-            IF((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-               (current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-               (current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-               (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-               (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-               (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
-               current%pardata%new_part = ipartition
-            END IF
-         END DO
-      END IF
-   END IF
-
-   current => next
-ENDDO
-
-!---- Parallel communication between all processors
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-   next => current%next 
-
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-        RANK= current%pardata%cur_part - 1
-        current%pardata%cur_part = current%pardata%new_part 
-        CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%up,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%xpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%ypold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%upold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%par_conc,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%bulk_conc, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%gamma_cont,1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Nbj,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%S,         1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-	      CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-   END IF
-   current => next  
-ENDDO
-!===================================================================================================
-END SUBROUTINE Particle_Transfer_OLD
-!===================================================================================================
-
-
-
-
-
-!===================================================================================================
 SUBROUTINE Particle_Transfer
 !===================================================================================================
 IMPLICIT NONE
@@ -462,7 +368,7 @@ DO WHILE (ASSOCIATED(current))
    next => current%next 	
 
    IF (mySub .EQ.current%pardata%cur_part) THEN 
-      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
+!      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          !----- Wrappign around in z-direction for periodic BC in z
          IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
             current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
@@ -490,7 +396,7 @@ DO WHILE (ASSOCIATED(current))
                current%pardata%new_part = ipartition
             END IF
          END DO
-      END IF
+!      END IF
    END IF
 
    current => next
@@ -500,8 +406,7 @@ ENDDO
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-
-   IF (current%pardata%rp .GT. 1.0e-16) THEN
+ !  IF (current%pardata%rp .GT. 1.0e-16) THEN
     	RANK= current%pardata%cur_part - 1
 	      
       Particle_Data(1)=current%pardata%xp
@@ -555,10 +460,7 @@ DO WHILE (ASSOCIATED(current))
       current%pardata%Sst= Particle_Data(22)
 	    current%pardata%cur_part= Particle_Data(23)
       current%pardata%new_part= Particle_Data(23)
-
-
-
-   END IF
+!   END IF
    current => next  
 ENDDO
 !===================================================================================================
