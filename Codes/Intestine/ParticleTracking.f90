@@ -42,8 +42,8 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
-      IF (mySub .EQ.current%pardata%cur_part) THEN
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
          xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
          yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
          zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
@@ -180,9 +180,10 @@ tausgs_particle_z = 0.0_dbl
 
 current => ParListHead%next     
 DO WHILE (ASSOCIATED(current)) 
-   next => current%next 	
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-      IF (mySub .EQ.current%pardata%cur_part) THEN 
+   next => current%next 
+
+   IF (mySub .EQ.current%pardata%cur_part) THEN 
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          current%pardata%xpold = current%pardata%xp
          current%pardata%ypold = current%pardata%yp
          current%pardata%zpold = current%pardata%zp
@@ -194,66 +195,64 @@ DO WHILE (ASSOCIATED(current))
          current%pardata%zp=current%pardata%zpold+current%pardata%wp
 
          IF (Flag_Couette) THEN !----- Couette simulation, no need to make sure particles do not leave the fluid domain
-
          ELSE !----------------------- Intestine simulation: make sure particles do not leave the fluid domain    
-            IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1))THEN              
-               !----- If Particle leaves the fluid domain---------------------------------------
-               xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
-               yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
-               zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
-
-               ix0= FLOOR(xp)
-               ix1= CEILING(xp)
-               iy0= FLOOR(yp)
-               iy1= CEILING(yp)
-               iz0= FLOOR(zp)
-               iz1= CEILING(zp)
-            
-               IF (iz1 .NE. iz0) THEN 
+          IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1))THEN              
+             xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+             yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+             zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+             ix0= FLOOR(xp)
+             ix1= CEILING(xp)
+             iy0= FLOOR(yp)
+             iy1= CEILING(yp)
+             iz0= FLOOR(zp)
+             iz1= CEILING(zp)
+             Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
+             IF (Number_of_Solid_nodes .GT. 0) THEN         !there is a solid node around the particle
+                IF (iz1 .NE. iz0) THEN 
                   zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-               ELSE 
+                ELSE 
                   zd= 0.0_dbl
-               END IF
+                END IF
+                R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd      !radius of solid boundary at z location of the particle 
+                xaxis= 0.5_dbl*(nx+1)
+                yaxis= 0.5_dbl*(ny+1)
+                xpp = xcf*(current%pardata%xp- xaxis) 
+                ypp = ycf*(current%pardata%yp- yaxis) 
+                R_Particle    = SQRT(xpp**2 + ypp**2)              !radius at location of the particle
+                CosTheta_p    = xpp/R_Particle
+                SinTheta_p    = ypp/R_Particle
             
-               R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
-               xaxis= 0.5_dbl*(nx+1)
-               yaxis= 0.5_dbl*(ny+1)
-               xpp = xcf*(current%pardata%xp- xaxis) 
-               ypp = ycf*(current%pardata%yp- yaxis) 
-               R_Particle    = SQRT(xpp**2 + ypp**2)
-               CosTheta_p    = xpp/R_Particle
-               SinTheta_p    = ypp/R_Particle
-               IF (R_Particle .GT. R_Boundary) THEN  						! Check if particle is outside analytical boundary
-                  write(*,*) '=========================================================================================='
-                  write(*,*) 'Iter, parID,xp,yp,zp:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp
-                  write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                  Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
-                  write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
-                  write(*,*) '---------------------------------------------------------------------------'
-                  write(*,*) 'Treating the particle:'
-                  xpp = R_Boundary * CosTheta_p
-                  ypp = R_Boundary * SinTheta_p
-                  R_Particle = SQRT(xpp**2 + ypp**2)
-                  current%pardata%xp = (xpp/xcf) + xaxis
-                  current%pardata%yp = (ypp/ycf) + yaxis 
-                  write(*,*) 'Iter, parID,xp,yp,zp:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp
-                  write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                  Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
-                  write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
-               END IF
-               IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &		! Check if all nodes around particle are solid
-                  (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
-                  (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
-                  (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
-                  write(*,*) '=========================================================================================='
-                  write(*,*) '1st part of tracking: All nodes around are solid'    
-                  write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
-               END IF !--------------------------------------------------------------------------------------   
-            END IF
-         END IF                  ! If this simulation is Couette 
-
-      END IF                     ! If particle resides in this processor
-   END IF                        ! If particle radius is over Min_R_Acceptable
+                IF ((R_Boundary.GT.1e-6).AND.(R_Particle .GT. R_Boundary)) THEN ! particle is outside analytical boundary
+                   write(*,*) '=========================================================================================='
+                   write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,r(iz0),r(iz1)
+                   write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                   Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+                   write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
+                   write(*,*) '---------------------------------------------------------------------------'
+                   write(*,*) 'Treating the particle:'
+                   xpp = R_Boundary * CosTheta_p
+                   ypp = R_Boundary * SinTheta_p
+                   R_Particle = SQRT(xpp**2 + ypp**2)
+                   current%pardata%xp = (xpp/xcf) + xaxis
+                   current%pardata%yp = (ypp/ycf) + yaxis 
+                   write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp, zd,r(iz0),r(iz1)
+                   write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                   Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+                   write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
+                END IF
+                IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID).AND. & ! Check if all nodes around particle are solid
+                   (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
+                   (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
+                   (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
+                   write(*,*) '=========================================================================================='
+                   write(*,*) '1st part of tracking: All nodes around are solid'    
+                   write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
+                END IF !--------------------------------------------------------------------------------------   
+             END IF               ! If Number_of_Solid_nodes > 0 
+          END IF                  ! If 1<zp<nz        
+        END IF                    ! If this simulation is Couette 
+      END IF                      ! If particle radius is over Min_R_Acceptable
+   END IF                         ! If particle resides in this processor
    current => next
 END DO
 
@@ -262,71 +261,71 @@ CALL Particle_Velocity
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
-   next => current%next 						
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-      IF (mySub .EQ.current%pardata%cur_part) THEN 
+   next => current%next
+   IF (mySub .EQ.current%pardata%cur_part) THEN 
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
          current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
          current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
-
          IF (Flag_Couette) THEN !----- Couette simulation, no need to make sure particles do not leave the fluid domain
-
          ELSE !----------------------- Intestine simulation: make sure particles do not leave the fluid domain    
             IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1) ) THEN 
                !----- If Particle leaves the fluid domain---------------------------------------
                xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
                yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
                zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
-
                ix0= FLOOR(xp)
                ix1= CEILING(xp)
                iy0= FLOOR(yp)
                iy1= CEILING(yp)
                iz0= FLOOR(zp)
                iz1= CEILING(zp)
-
-               IF (iz1 .NE. iz0) THEN
-                  zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-               ELSE 
-                  zd= 0.0_dbl
-               END IF
-               R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
-            
-               xaxis= 0.5_dbl*(nx+1)
-               yaxis= 0.5_dbl*(ny+1)
-               xpp = xcf*(current%pardata%xp- xaxis)
-               ypp = ycf*(current%pardata%yp- yaxis)
-               R_Particle    = SQRT(xpp**2 + ypp**2)
-               CosTheta_p    = xpp/R_Particle
-               SinTheta_p    = ypp/R_Particle
-               IF (R_Particle .GT. R_Boundary) THEN                                                ! Check if particle is outside analytical boundary
-                  write(*,*) '=========================================================================================='
-                  write(*,*) 'Iter, parID,xp,yp,zp:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp
-                  write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                  write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
-                  write(*,*) '---------------------------------------------------------------------------'
-                  write(*,*) 'Treating the particle:'
-                  xpp = R_Boundary * CosTheta_p
-                  ypp = R_Boundary * SinTheta_p
-                  R_Particle = SQRT(xpp**2 + ypp**2)
-                  current%pardata%xp = (xpp/xcf) + xaxis
-                  current%pardata%yp = (ypp/ycf) + yaxis
-                  write(*,*) 'Iter, parID,xp,yp,zp:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp
-                  write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                  write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
-               END IF
-               IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &             ! Check if all nodes around particle are solid
-                  (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
-                  (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
-                  (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
-                  write(*,*) '=========================================================================================='
-                  write(*,*) '2nd part of tracking: All nodes around are solid'
-                  write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
-               END IF !--------------------------------------------------------------------------------------
-            ENDIF 
+               Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
+               IF (Number_of_Solid_nodes .GT. 0) THEN !a solid node is around the particle
+                  IF (iz1 .NE. iz0) THEN
+                     zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                  ELSE 
+                     zd= 0.0_dbl
+                  END IF
+                  R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
+                  xaxis= 0.5_dbl*(nx+1)
+                  yaxis= 0.5_dbl*(ny+1)
+                  xpp = xcf*(current%pardata%xp- xaxis)
+                  ypp = ycf*(current%pardata%yp- yaxis)
+                  R_Particle    = SQRT(xpp**2 + ypp**2)
+                  CosTheta_p    = xpp/R_Particle
+                  SinTheta_p    = ypp/R_Particle
+                  IF ((R_Boundary .GT. 1e-6).AND.(R_Particle .GT. R_Boundary)) THEN  !particle is outside analytical boundary
+                    write(*,*) '=========================================================================================='
+                    write(*,*) 'B:Iter, parID,xp,yp,zp,zd,iz0,iz1,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,iz0,iz1,r(iz0),r(iz1)
+                    write(*,*) 'B: CPU,iMin,iMax,jMin,jMax,kMin,kMax',myid,iMin,iMax,jMin,jMax,kMin,kMax
+                    write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                    write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
+                    write(*,*) '---------------------------------------------------------------------------'
+                    write(*,*) 'Treating the particle:'
+                    xpp = R_Boundary * CosTheta_p
+                    ypp = R_Boundary * SinTheta_p
+                    R_Particle = SQRT(xpp**2 + ypp**2)
+                    current%pardata%xp = (xpp/xcf) + xaxis
+                    current%pardata%yp = (ypp/ycf) + yaxis
+                    write(*,*) 'B:Iter, parID,xp,yp,zp,zd,iz0,iz1,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,iz0,iz1,r(iz0),r(iz1)
+                    write(*,*) 'B: CPU,iMin,iMax,jMin,jMax,kMin,kMax',myid,iMin,iMax,jMin,jMax,kMin,kMax
+                    write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                    write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
+                  END IF
+                  IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &             ! Check if all nodes around particle are solid
+                     (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
+                     (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
+                     (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
+                     write(*,*) '=========================================================================================='
+                     write(*,*) '2nd part of tracking: All nodes around are solid'
+                     write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
+                  END IF 
+               END IF   ! If Number_of_Solid_nodes > 0
+            ENDIF       ! If 1<zp<nz
          END IF         ! If the simulation is Couette
-      END IF            ! If particle resides inthis processor
-   END IF               ! If particle's radius is larger than Min_R_Acceptable
+      END IF            ! If particle's radius is larger than Min_R_Acceptable
+   END IF               ! If particle resides inthis processor
    current => next
 ENDDO
 
@@ -340,9 +339,10 @@ IF (Flag_Shear_Effects) THEN
 END IF   
 CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
 CALL Particle_Drug_Release        ! Updates particle radius, calculates drug release rate delNBbyCV. 
-CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
-!CALL Particle_History             ! Keep trak of a few particles
 CALL Particle_Transfer 
+CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
+!CALL Particle_Transfer 
+!CALL Particle_History             ! Keep trak of a few particles
 !===================================================================================================
 END SUBROUTINE Particle_Track
 !===================================================================================================
@@ -356,7 +356,8 @@ SUBROUTINE Particle_Transfer
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)   		 :: i,ipartition,ii,jj,kk
+REAL(dbl)                :: Particle_Data(23)
+INTEGER(lng)   		       :: i,ipartition,ii,jj,kk
 INTEGER(lng)             :: RANK
 INTEGER(lng)             :: mpierr
 TYPE(ParRecord), POINTER :: current
@@ -366,8 +367,8 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 	
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-      IF (mySub .EQ.current%pardata%cur_part) THEN 
+   IF (mySub .EQ.current%pardata%cur_part) THEN 
+!      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          !----- Wrappign around in z-direction for periodic BC in z
          IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
             current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
@@ -395,7 +396,7 @@ DO WHILE (ASSOCIATED(current))
                current%pardata%new_part = ipartition
             END IF
          END DO
-      END IF
+!      END IF
    END IF
 
    current => next
@@ -405,41 +406,67 @@ ENDDO
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
+ !  IF (current%pardata%rp .GT. 1.0e-16) THEN
+    	RANK= current%pardata%cur_part - 1
+	      
+      Particle_Data(1)=current%pardata%xp
+      Particle_Data(2)=current%pardata%yp
+      Particle_Data(3)=current%pardata%zp
+      Particle_Data(4)=current%pardata%up
+      Particle_Data(5)=current%pardata%vp
+      Particle_Data(6)=current%pardata%wp
+      Particle_Data(7)=current%pardata%rp
+      Particle_Data(8)=current%pardata%sh
+      Particle_Data(9)=current%pardata%xpold
+      Particle_Data(10)=current%pardata%ypold
+      Particle_Data(11)=current%pardata%zpold
+      Particle_Data(12)=current%pardata%upold
+      Particle_Data(13)=current%pardata%vpold
+      Particle_Data(14)=current%pardata%wpold
+      Particle_Data(15)=current%pardata%rpold
+      Particle_Data(16)=current%pardata%delNBbyCV
+      Particle_Data(17)=current%pardata%par_conc
+      Particle_Data(18)=current%pardata%bulk_conc
+      Particle_Data(19)=current%pardata%gamma_cont
+      Particle_Data(20)=current%pardata%Nbj
+      Particle_Data(21)=current%pardata%S
+      Particle_Data(22)=current%pardata%Sst
+      Particle_Data(23)=current%pardata%new_part
+  
+      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+      CALL MPI_BCast(Particle_Data,23, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-	RANK= current%pardata%cur_part - 1
-        current%pardata%cur_part = current%pardata%new_part 
-	CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-	CALL MPI_BCast(current%pardata%xp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%yp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%up,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rp,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%sh,        1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%xpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%ypold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%zpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%upold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%vpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%wpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%rpold,     1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%delNBbyCV, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%par_conc,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%bulk_conc, 1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%gamma_cont,1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Nbj,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%S,         1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%Sst,       1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-	CALL MPI_BCast(current%pardata%cur_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-        CALL MPI_BCast(current%pardata%new_part,  1, MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-   END IF
+      current%pardata%xp= Particle_Data(1)
+      current%pardata%yp= Particle_Data(2)
+      current%pardata%zp= Particle_Data(3)
+      current%pardata%up= Particle_Data(4)
+      current%pardata%vp= Particle_Data(5)
+      current%pardata%wp= Particle_Data(6)
+      current%pardata%rp= Particle_Data(7)
+      current%pardata%sh= Particle_Data(8)
+      current%pardata%xpold= Particle_Data(9)
+      current%pardata%ypold= Particle_Data(10)
+      current%pardata%zpold= Particle_Data(11)
+      current%pardata%upold= Particle_Data(12)
+      current%pardata%vpold= Particle_Data(13)
+      current%pardata%wpold= Particle_Data(14)
+      current%pardata%rpold= Particle_Data(15)
+      current%pardata%delNBbyCV= Particle_Data(16)
+      current%pardata%par_conc= Particle_Data(17)
+      current%pardata%bulk_conc= Particle_Data(18)
+      current%pardata%gamma_cont= Particle_Data(19)
+      current%pardata%Nbj= Particle_Data(20)
+      current%pardata%S= Particle_Data(21)
+      current%pardata%Sst= Particle_Data(22)
+	    current%pardata%cur_part= Particle_Data(23)
+      current%pardata%new_part= Particle_Data(23)
+!   END IF
    current => next  
 ENDDO
 !===================================================================================================
 END SUBROUTINE Particle_Transfer
 !===================================================================================================
+
 
 
 

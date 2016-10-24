@@ -25,7 +25,7 @@ INTEGER,DIMENSION(2)     :: NEP_x,   NEP_y,  NEP_z                      ! Lattic
 REAL(dbl)     		 :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
 REAL(dbl)  	   	 :: xp,yp,zp
 REAL(dbl)		 :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)       	 :: N_b
+REAL(dbl)       	 :: n_b
 REAL(dbl)    	         :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
 REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
@@ -39,6 +39,7 @@ TYPE(ParRecord), POINTER :: next
 
 delta_mesh = 1.0_dbl
 zcf3 = 1.0_dbl
+n_b = 3.0
 
 current => ParListHead%next
 
@@ -47,13 +48,12 @@ DO WHILE (ASSOCIATED(current))
 next => current%next
 IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
 
-!--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(N_b*delta)
-   N_b = 2.0
+!--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(n_b*delta)
    R_P = current%pardata%rp
-   Sh_P= current%pardata%sh
-   Sh_P= 1.0000_dbl
-   delta_P= R_P/Sh_P
-   R_influence_P= (R_P+N_b*delta_P)/xcf
+!  Sh_P= current%pardata%sh
+!  delta_P= R_P/Sh_P
+   delta_P= R_P 
+   R_influence_P= (R_P+n_b*delta_P)/xcf
 
 !--Computing equivalent cubic mesh length scale
    V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
@@ -174,11 +174,11 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
                       y_DP= GVIB_y(1) + (j * Delta_L)
                       z_DP= GVIB_z(1) + (k * Delta_L)
                       IF ((x_DP .GE. (REAL(iMin,dbl)-1.0_dbl)) .AND. &               
-		          (x_DP .LT.  REAL(iMax,dbl)         ) .AND. &
+                          (x_DP .LT.  REAL(iMax,dbl)         ) .AND. &
                           (y_DP .GE. (REAL(jMin,dbl)-1.0_dbl)) .AND. & 
-			  (y_DP .LT.  REAL(jMax,dbl)         ) .AND. &
+                          (y_DP .LT.  REAL(jMax,dbl)         ) .AND. &
                           (z_DP .GE. (REAL(kMin,dbl)-1.0_dbl)) .AND. & 
-			  (z_DP .LT.  REAL(kMax,dbl)         ) ) THEN
+                          (z_DP .LT.  REAL(kMax,dbl)         )) THEN
 
 !-------------------------Finding Local lattice nodes surrounding this point (This point is discretized and is not a lattice node))
                           ix0 = FLOOR(x_DP)   - (REAL(iMin,dbl)-1.0_dbl)
@@ -188,7 +188,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
                           iz0 = FLOOR(z_DP)   - (REAL(kMin,dbl)-1.0_dbl)
                           iz1 = CEILING(z_DP) - (REAL(kMin,dbl)-1.0_dbl)
                               
-            		  x_DP = x_DP - REAL(iMin-1_lng,dbl)
+                          x_DP = x_DP - REAL(iMin-1_lng,dbl)
                           y_DP = y_DP - REAL(jMin-1_lng,dbl)
                           z_DP = z_DP - REAL(kMin-1_lng,dbl)
  
@@ -262,8 +262,8 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
                 END DO
              END DO
 
-         END IF  									! Conditional for cases 2 and 3
-     END IF 										! Conditional for the processor which has overlap with effective volume 
+         END IF                   ! Conditional for cases 2 and 3
+     END IF 								      ! Conditional for the processor which has overlap with effective volume 
 
 
 
@@ -279,7 +279,11 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
      CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
      CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
-     Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+     IF( NumFluids_Veff .GE. 1) THEN 
+        Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+     ELSE 
+        Cb_Hybrid= 0.0_dbl
+     END IF   
      current%pardata%bulk_conc = Cb_Hybrid
 	
    END IF       			                                    		!End of conditional for V_eff greater than 1 
@@ -310,38 +314,38 @@ TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
 zcf3=xcf*ycf*zcf
-current => ParListHead%next
 
+current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                    !only calculate the drug release when particle radius is larger than 0.1 micron
+         current%pardata%rpold = current%pardata%rp
+         bulkconc = current%pardata%bulk_conc
+         temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
+         IF (temp.GE.0.0_dbl) THEN
+            current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
+         ELSE
+            current%pardata%rp= 0.5_dbl*(current%pardata%rpold)
+         END IF
+         deltaR=current%pardata%rpold-current%pardata%rp
+         current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           !only calculate the drug release when particle radius is larger than 0.1 micron
-      current%pardata%rpold = current%pardata%rp
-      bulkconc = current%pardata%bulk_conc
-      temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
-      IF (temp.GE.0.0_dbl) THEN
-         current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
-      ELSE
-         temp = 0.0_dbl
-         current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
+      ELSE IF ((current%pardata%rp .LE. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
+         current%pardata%xp        = 0.0_dbl
+         current%pardata%yp        = 0.0_dbl
+         current%pardata%zp        = 0.0_dbl
+         current%pardata%up        = 0.0_dbl
+         current%pardata%vp        = 0.0_dbl
+         current%pardata%wp        = 0.0_dbl
+         current%pardata%rp        = 0.0_dbl
+         current%pardata%delNBbyCV = 0.0_dbl
+         current%pardata%bulk_conc = 0.0_dbl
+         current%pardata%S		     = 0.0_Dbl
+         current%pardata%Sst       = 0.0_Dbl
+         current%pardata%sh        = 0.0_Dbl
       END IF
-      deltaR=current%pardata%rpold-current%pardata%rp
-      current%pardata%delNBbyCV = (4.0_dbl/3.0_dbl) * PI*(current%pardata%rpold**3.0_dbl - current%pardata%rp**3.0_dbl) /(molarvol*zcf3)
-   ELSE IF ((current%pardata%rp .LT. Min_R_Acceptable) .AND. (current%pardata%rp .NE. 0.0)) THEN
-      current%pardata%xp	= 0.0_dbl
-      current%pardata%yp	= 0.0_dbl
-      current%pardata%zp	= 0.0_dbl
-      current%pardata%up        = 0.0_dbl
-      current%pardata%vp        = 0.0_dbl
-      current%pardata%wp        = 0.0_dbl
-      current%pardata%rp	= 0.0_dbl
-      current%pardata%delNBbyCV = 0.0_dbl
-      current%pardata%bulk_conc = 0.0_dbl
-      current%pardata%S		= 0.0_Dbl
-      current%pardata%Sst       = 0.0_Dbl
-      current%pardata%sh        = 0.0_Dbl
-    END IF
-
+   END IF 
    current => next
 ENDDO
 
@@ -371,11 +375,10 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-
    current%pardata%sh= 1.0_dbl 
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
-      IF (mySub .EQ.current%pardata%cur_part) THEN
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
          !----- If including the confinement effects ----------------------------------------------- 
          IF (Flag_Confinement_Effects) THEN                                 
             current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
@@ -394,11 +397,11 @@ DO WHILE (ASSOCIATED(current))
             END IF
          END IF 
       END IF
-
-      RANK= current%pardata%cur_part - 1
-      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-      CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-   END IF 
+   END IF
+      !RANK= current%pardata%cur_part - 1
+      !CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+      !CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
+  !END IF 
 
    current => next
 ENDDO
@@ -461,8 +464,8 @@ current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
 
-   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only when particle radius is larger than 0.1 micron				
-      IF (mySub .EQ.current%pardata%cur_part) THEN
+   IF (mySub .EQ. current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN						!only when particle radius is larger than 0.1 micron				
          xp = current%pardata%xp - REAL(iMin-1_lng,dbl)
          yp = current%pardata%yp - REAL(jMin-1_lng,dbl)
          zp = current%pardata%zp - REAL(kMin-1_lng,dbl)
@@ -684,12 +687,11 @@ IMPLICIT NONE
 INTEGER(lng)  		  :: i,j,k,mpierr
 REAL(dbl)     		  :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)                 :: N_d         				! Modeling parameter to extend the volume of influence around 
+REAL(dbl)                 :: n_d         				! Modeling parameter to extend the volume of influence around 
 REAL(dbl)                 :: R_P, Sh_P, delta_P
 REAL(dbl)                 :: R_influence_P, L_influence_P
 REAL(dbl),DIMENSION(2)    :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 	! Global Volume of Influence's Borders (in whole domain)
 REAL(dbl),DIMENSION(2)    :: LVIB_x, LVIB_y, LVIB_z                     ! Local  Volume of Influence's Borders (in current procesor) 
-
 REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
 INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER  ,DIMENSION(2)    :: GNEP_x, GNEP_y, GNEP_z, GNEP_z_Per         ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
@@ -701,23 +703,23 @@ TYPE(ParRecord), POINTER  :: next
 
 delta_mesh = 1.0_dbl
 zcf3 = xcf*ycf*zcf
-current => ParListHead%next
+n_d = 3.0
 
+current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
 
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                   !only calculate the drug release when particle radius is larger than 0.1 micron
 
 !--Calculate length scale for jth particle:  delta = R / Sh
-!--Calculate effective radius: R_influence_P = R + (N_d *delta)
+!--Calculate effective radius: R_influence_P = R + (n_d *delta)
 !--Note: need to convert this into Lattice units and not use the physical length units
 !--Then compute equivalent cubic mesh length scale
-   N_d = 3.0
    R_P  = current%pardata%rp
-   Sh_P = current%pardata%sh
-   Sh_P= 1.0000_dbl
-   delta_P = R_P / Sh_P
-   R_influence_P = (R_P + N_d * delta_P) / xcf
+!  Sh_P = current%pardata%sh
+!  delta_P = R_P / Sh_P
+   delta_P = R_P
+   R_influence_P = (R_P + n_d * delta_P) / xcf
 
 !--iomputing equivalent cubic mesh length scale
    L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
@@ -793,13 +795,13 @@ DO WHILE (ASSOCIATED(current))
                NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
                NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
                NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
-	       NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+	             NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
                IF (node(i,j,k) .EQ. FLUID) THEN
                   Overlap(i,j,k)= MAX ( MIN(LVIB_x(2),NVB_x(2)) - MAX(LVIB_x(1),NVB_x(1)), 0.0_dbl) * & 
                                   MAX ( MIN(LVIB_y(2),NVB_y(2)) - MAX(LVIB_y(1),NVB_y(1)), 0.0_dbl) * &
                                   MAX ( MIN(LVIB_z(2),NVB_z(2)) - MAX(LVIB_z(1),NVB_z(1)), 0.0_dbl)
-		  Overlap(i,j,k) = Overlap(i,j,k) * (max((Cs_mol-phi(i,j,k) ),0.0_dbl) / Cs_mol)
-		  Overlap_sum_l= Overlap_sum_l + Overlap(i,j,k)
+!            		  Overlap(i,j,k) = Overlap(i,j,k) * (max((Cs_mol-phi(i,j,k) ),0.0_dbl) / Cs_mol)
+            		  Overlap_sum_l= Overlap_sum_l + Overlap(i,j,k)
                END IF
             END DO
          END DO
@@ -818,26 +820,13 @@ DO WHILE (ASSOCIATED(current))
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 
-
-
-!--Computing NB_j and Veff for each particle
-!  Nbj = 0.0_dbl                                                           ! initialize Nbj - the number of moles of drug in the effective volume surrounding the particle
-!  Veff = 0.0_dbl                                                          ! initialize Veff - the eff. volume of each particle
-!--Solving an equation for Rj/Reff in order to estimate Veff and Nbj (see notes form July 2015)
-!  CALL Find_Root(current%pardata%parid, current%pardata%bulk_conc, current%pardata%par_conc &
-!                ,current%pardata%gamma_cont,current%pardata%rp,Nbj,Veff)
-!  current%pardata%Veff = Veff                                             ! store Veff in particle record
-!  current%pardata%Nbj = Nbj                                               ! store Nbj in particle record
-!  Nbj = Nbj/zcf3  
-
-
 !--Global Volume of Influence Border (VIB) for this particle
-   GVIB_x(1)= xp - 0.5_dbl* L_influence_P
-   GVIB_x(2)= xp + 0.5_dbl* L_influence_P
-   GVIB_y(1)= yp - 0.5_dbl* L_influence_P
-   GVIB_y(2)= yp + 0.5_dbl* L_influence_P
-   GVIB_z(1)= zp - 0.5_dbl* L_influence_P
-   GVIB_z(2)= zp + 0.5_dbl* L_influence_P
+!   GVIB_x(1)= xp - 0.5_dbl* L_influence_P
+!   GVIB_x(2)= xp + 0.5_dbl* L_influence_P
+!   GVIB_y(1)= yp - 0.5_dbl* L_influence_P
+!   GVIB_y(2)= yp + 0.5_dbl* L_influence_P
+!   GVIB_z(1)= zp - 0.5_dbl* L_influence_P
+!   GVIB_z(2)= zp + 0.5_dbl* L_influence_P
 
 !--Global Nodes Effected by Particle
    GNEP_x(1)= FLOOR(GVIB_x(1))
@@ -863,7 +852,7 @@ DO WHILE (ASSOCIATED(current))
 
 !--Finding processor that have overlap with effective volume around the particle
 
-OVERLAP_TEST = 0.0_dbl 
+!OVERLAP_TEST = 0.0_dbl 
 
 200 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
       (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
@@ -883,21 +872,13 @@ OVERLAP_TEST = 0.0_dbl
             DO k= NEP_z(1),NEP_z(2)
                IF (node(i,j,k) .EQ. FLUID) THEN                 
                   IF (Overlap_sum .GT. 1e-18) THEN 			              !Overlap_sum goes to zero when:1-particle is disapearing 2-when all nodes around it are saturated
-                     IF ((iter .GT. 1850) .AND. (iter .LT. 1900)) THEN  
-                        write(*,1003) iter,myid,current%pardata%parid,current%pardata%xp,current%pardata%yp,current%pardata%zp,i,j,k, Overlap(i,j,k),Overlap_sum
-1003                    format(I5,I2,I5,3F8.3,3I4,2E13.5)
-                     END IF
                     Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
                   ELSE
                      Overlap(i,j,k) = 0.0
                   END IF
                    
-	          delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
-                  OVERLAP_TEST= OVERLAP_TEST + Overlap(i,j,k)
-
-!                 tausgs_particle_x(i,j,k)= tausgs_particle_x(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-!                 tausgs_particle_y(i,j,k)= tausgs_particle_y(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
-!                 tausgs_particle_z(i,j,k)= tausgs_particle_z(i,j,k)- current%pardata%up*Nbj   * (Overlap(i,j,k)/Overlap_sum)
+       	          delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
+!                 OVERLAP_TEST= OVERLAP_TEST + Overlap(i,j,k)
                END IF 
             END DO
          END DO
@@ -911,13 +892,13 @@ OVERLAP_TEST = 0.0_dbl
        GOTO 200
    ENDIF
 
-   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-   CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-
-   IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
-      current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
-      current%pardata%delNBbyCV = 0.0_dbl
-   END IF
+!   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+!   CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+!
+!   IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
+!      current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
+!      current%pardata%delNBbyCV = 0.0_dbl
+!   END IF
 
  END IF 						! Condition to check if R > R_min_acceptable
  current => next
@@ -926,64 +907,6 @@ ENDDO
 END SUBROUTINE Particle_Drug_To_Nodes  		 
 !===================================================================================================
 
-
-
-
-
-!===================================================================================================
-SUBROUTINE Find_Root(parid,conc,cs,gammaj,Rj,Nbj,Veff)
-!===================================================================================================
-IMPLICIT NONE
-INTEGER(lng)   :: iter,nmax
-REAL(dbl),intent(in) :: conc,cs,gammaj,Rj
-INTEGER(lng),intent(in) :: parid
-REAL(dbl),intent(out) :: Nbj,Veff
-REAL(dbl)      :: xnew,xold,f,fprime,error,Reff,parcb,parcs
-REAL(dbl) :: Aj,Bj,a,b,c,AjBj
-REAL(dbl),parameter :: eps = 1.0e-12_dbl, tol = 1.0e-8_dbl, largenum = 1.0e8_dbl
-
-parcb = conc
-parcs = cs
-nmax = 100_lng
-iter = 0_lng
-xnew = 0.0_dbl
-xold = 0.5_dbl
-
-!---The conc values are quite small. So we will make them larger so that the
-!--- coeffs in the eq for Rj/Reff are not small.
-parcb = parcb*largenum
-parcs = parcs*largenum
-
-Aj = (parcb-gammaj*parcs)/(1.0_dbl-gammaj)
-Bj = (parcs - parcb)/max((parcb-gammaj*cs),eps)
-AjBj = (parcs-parcb)/(1.0_dbl-gammaj)
-
-a = Aj + 1.5_dbl*AjBj!*Aj*Bj
-b = -1.5_dbl*AjBj!Aj*Bj
-c = parcb - Aj
-error = abs(xold-xnew)
-
-DO WHILE ((error.gt.tol).AND.(iter.LE.nmax))
-   f = a*(xold**3.0_dbl)+b*xold+c
-   fprime = 3.0_dbl*a*(xold**2.0_dbl)+b
-   if (fprime.GE.0.0_dbl) then
-      xnew = xold - (f/max(fprime,1.0_dbl*eps))
-   else
-      !xnew = xold - (f/min(fprime,-1.0_dbl*eps))
-       xnew = xold - (f/fprime)
-   endif
-   error = abs(xnew-xold)
-   iter = iter+1_lng
-   xold = xnew
-END DO
-
-xnew= max(min(xnew,1.0_dbl),0.01) 			! Limit xnew (radius ratio) to values that are meaningful and not too small or large. 
-Reff= Rj/xnew
-Veff= (88.0_dbl/21.0_dbl)*(Reff**3.0_dbl)
-Nbj = conc*Veff
-!===================================================================================================
-END SUBROUTINE Find_Root
-!===================================================================================================
 
 
 
