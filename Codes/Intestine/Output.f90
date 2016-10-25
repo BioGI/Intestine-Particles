@@ -112,7 +112,7 @@ SUBROUTINE PrintComputationalTime				! Writes Computational Costs to a File
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl) :: Time(1000000)
+REAL(dbl) :: Time(10000000)
 
 IF (myid .EQ. master) THEN
    rate = 100_lng							! Set the rate of counting
