@@ -279,7 +279,11 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
      CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
      CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
-     Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+     IF( NumFluids_Veff .GE. 1) THEN 
+        Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
+     ELSE 
+        Cb_Hybrid= 0.0_dbl
+     END IF   
      current%pardata%bulk_conc = Cb_Hybrid
 	
    END IF       			                                    		!End of conditional for V_eff greater than 1 
