@@ -213,7 +213,7 @@ DO WHILE (ASSOCIATED(current))
                 ELSE 
                   zd= 0.0_dbl
                 END IF
-                R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd      !radius of solid boundary at z location of the particle 
+                R_Boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd      !radius of solid boundary at z location of the particle 
                 xaxis= 0.5_dbl*(nx+1)
                 yaxis= 0.5_dbl*(ny+1)
                 xpp = xcf*(current%pardata%xp- xaxis) 
@@ -222,7 +222,7 @@ DO WHILE (ASSOCIATED(current))
                 CosTheta_p    = xpp/R_Particle
                 SinTheta_p    = ypp/R_Particle
             
-                IF ((R_Boundary.GT.1e-6).AND.(R_Particle .GT. R_Boundary)) THEN ! particle is outside analytical boundary
+                IF ((R_Boundary.GT.1e-6).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN ! particle is outside analytical boundary
                    write(*,*) '=========================================================================================='
                    write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,r(iz0),r(iz1)
                    write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
@@ -230,8 +230,8 @@ DO WHILE (ASSOCIATED(current))
                    write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
                    write(*,*) '---------------------------------------------------------------------------'
                    write(*,*) 'Treating the particle:'
-                   xpp = R_Boundary * CosTheta_p
-                   ypp = R_Boundary * SinTheta_p
+                   xpp = (R_Boundary-xcf) * CosTheta_p
+                   ypp = (R_Boundary-xcf) * SinTheta_p
                    R_Particle = SQRT(xpp**2 + ypp**2)
                    current%pardata%xp = (xpp/xcf) + xaxis
                    current%pardata%yp = (ypp/ycf) + yaxis 
@@ -287,7 +287,7 @@ DO WHILE (ASSOCIATED(current))
                   ELSE 
                      zd= 0.0_dbl
                   END IF
-                  R_boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
+                  R_Boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
                   xaxis= 0.5_dbl*(nx+1)
                   yaxis= 0.5_dbl*(ny+1)
                   xpp = xcf*(current%pardata%xp- xaxis)
@@ -295,7 +295,7 @@ DO WHILE (ASSOCIATED(current))
                   R_Particle    = SQRT(xpp**2 + ypp**2)
                   CosTheta_p    = xpp/R_Particle
                   SinTheta_p    = ypp/R_Particle
-                  IF ((R_Boundary .GT. 1e-6).AND.(R_Particle .GT. R_Boundary)) THEN  !particle is outside analytical boundary
+                  IF ((R_Boundary .GT. 1e-6).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN  !particle is outside analytical boundary
                     write(*,*) '=========================================================================================='
                     write(*,*) 'B:Iter, parID,xp,yp,zp,zd,iz0,iz1,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,iz0,iz1,r(iz0),r(iz1)
                     write(*,*) 'B: CPU,iMin,iMax,jMin,jMax,kMin,kMax',myid,iMin,iMax,jMin,jMax,kMin,kMax
@@ -303,8 +303,8 @@ DO WHILE (ASSOCIATED(current))
                     write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
                     write(*,*) '---------------------------------------------------------------------------'
                     write(*,*) 'Treating the particle:'
-                    xpp = R_Boundary * CosTheta_p
-                    ypp = R_Boundary * SinTheta_p
+                    xpp = (R_Boundary-xcf) * CosTheta_p
+                    ypp = (R_Boundary-xcf) * SinTheta_p
                     R_Particle = SQRT(xpp**2 + ypp**2)
                     current%pardata%xp = (xpp/xcf) + xaxis
                     current%pardata%yp = (ypp/ycf) + yaxis
