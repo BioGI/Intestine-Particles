@@ -355,7 +355,7 @@ IF (myid .EQ. master) THEN
 				current%pardata%wp*vcf 	  	,',',	&
                       		current%pardata%parid 	  	,',',	&
 				current%pardata%sh 	  	,',',	&
-				current%pardata%rp/xcf 	  	,',',	&
+				current%pardata%rp 	  	,',',	&
 				current%pardata%bulk_conc/Cs_mol,',', 	&
 				current%pardata%delNBbyCV 	,',', 	&
 				current%pardata%Sst 	  	,',',	&
@@ -363,7 +363,7 @@ IF (myid .EQ. master) THEN
 				current%pardata%Veff 	  	,',',	&
 				current%pardata%Nbj
          END IF	
-1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,E10.3,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
          current => next
       ENDDO
 
