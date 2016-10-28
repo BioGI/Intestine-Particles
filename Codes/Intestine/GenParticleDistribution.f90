@@ -3,7 +3,7 @@
 !This subroutine creates the particle distribution list 
 !===================================================================================================
 IMPLICIT NONE
-
+REAL*8      :: Dose, nu_m, M_d
 REAL*8			:: dmin,dmax,dcen,dg,dd,dgmin,dgmax
 REAL*8			:: sigma,miu,pi
 REAL*8			:: vd,vdmin,vdmax,vtot,deltd,ntot
@@ -13,38 +13,34 @@ INTEGER			:: nptot, ngrp, i,j
 real,    allocatable 	:: vfrac(:),nfrac(:),np(:)
 integer, allocatable 	:: intnp(:)
 
-V_c		= 11.82e12 		! (\mu m) ^3
-C_tot_Over_Cs	= 0.2000000000000	! dimensionless
-C_s		= 3.3e-19              	! mole / (\mu m ^3)
-nu_P		= 268.0e12 		! (\mu m ^3) / mole  		
-C_tot		= C_s * C_tot_Over_Cs   ! mole / (\mu m ^3)
-Vp_tot  	= C_tot * nu_P * V_c    ! (\mu m) ^3
+Dose  = 200                ! \mu g
+nu_m  = 268.0e6  	         ! (\mu m)^3 / (\mu mol)  		
+M_d   = 206.285            ! (\mu g)   / (\mu mol)
+Vp_tot= (Dose/M_d) * nu_m  ! (\mu m) ^3
 
 ngrp	= 20
 dmin	= 5.0
 dmax	= 195.0
-miu	= 100.0
+miu   = 100.0
 sigma	= 25.0
 
 allocate(vfrac(ngrp),nfrac(ngrp),np(ngrp))
 
-pi	= 4.0 * atan(1.0)
-deltd 	= (dmax-dmin)/(ngrp-1) 		
-vtot	= 0.0
-ntot	= 0.0
+pi      = 4.0 * atan(1.0)
+deltd   = (dmax-dmin)/(ngrp-1) 		
+vtot    = 0.0
+ntot    = 0.0
 vfrac(:)= 0.0
 nfrac(:)= 0.0
 
 DO i= 1,ngrp
    dg= dmin + (i-1)*deltd
-        	
    !----- Integrating inside each bin (descritized to 100 sections)
    DO j= 1, 100
       dd = (dg-(deltd/2.0)) + ((j-1)+0.5)*(deltd/100)
       vf = (1.0/sqrt(2.*pi*sigma**2)) * exp(-(dd-miu)**2/(2.*sigma**2))
       vfrac(i) = vfrac(i) + (deltd/100) * vf
    END DO
-
    vtot= vtot + vfrac(i)
 END DO
 
@@ -66,8 +62,6 @@ do i= 1,ngrp
    V_P = V_P +  (int(nfrac(i)+0.5)) * (4.0/3.0*pi*(dg/2.0)**3) 
 end do
 
-Ctot_Over_Cs_test = V_P/(V_c * nu_P * C_s)  
-
 !----- Creating the Par_Dist file with particle distribution data ----------------------------------
 open(50,file='Par_Dist.dat')
 do i= 1,ngrp
@@ -84,15 +78,13 @@ do i= 1,ngrp
 end do
 
 write(*,*) '----------------------------------------------------------------------------------------'
-write(*,*) 'Desired V_P    :',Vp_tot
-write(*,*) 'Real V_P       :',V_P
-write(*,*) 'Desired Ctot/Cs:', C_tot/C_s
-write(*,*) 'Real Ctot/Cs   :',Ctot_Over_Cs_test
-
+write(*,*) 'Desired V_P:  ', Vp_tot
+write(*,*) 'Real V_P:     ', V_P
+Write(*,*) 'Desired Dose: ', Vp_tot*M_d/nu_m!Dose
+Write(*,*) 'Real Dose:    ', V_P*M_d/nu_m
 
 !-----OutPut file ----------------------------------------------------------------------------------
 open(51,file='Plot_file_Vexpected.dat')
-write(51,2) C_tot_Over_Cs, C_tot_Over_Cs
 write(51,2) Vp_tot, Vp_tot
 write(51,2) TestNp,TestNp 
 write(51,2) dmin, dmin
