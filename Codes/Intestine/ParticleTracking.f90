@@ -222,7 +222,7 @@ DO WHILE (ASSOCIATED(current))
                 CosTheta_p    = xpp/R_Particle
                 SinTheta_p    = ypp/R_Particle
             
-                IF ((R_Boundary.GT.1e-6).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN ! particle is outside analytical boundary
+                IF ((R_Boundary.GT.xcf).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN ! particle is outside analytical boundary
                    write(*,*) '=========================================================================================='
                    write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,r(iz0),r(iz1)
                    write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
@@ -230,8 +230,8 @@ DO WHILE (ASSOCIATED(current))
                    write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
                    write(*,*) '---------------------------------------------------------------------------'
                    write(*,*) 'Treating the particle:'
-                   xpp = (R_Boundary-xcf) * CosTheta_p
-                   ypp = (R_Boundary-xcf) * SinTheta_p
+                   xpp = (R_Boundary-1.20_dbl*xcf) * CosTheta_p
+                   ypp = (R_Boundary-1.20_dbl*xcf) * SinTheta_p
                    R_Particle = SQRT(xpp**2 + ypp**2)
                    current%pardata%xp = (xpp/xcf) + xaxis
                    current%pardata%yp = (ypp/ycf) + yaxis 
@@ -240,14 +240,6 @@ DO WHILE (ASSOCIATED(current))
                    Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
                    write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
                 END IF
-                IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID).AND. & ! Check if all nodes around particle are solid
-                   (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
-                   (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
-                   (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
-                   write(*,*) '=========================================================================================='
-                   write(*,*) '1st part of tracking: All nodes around are solid'    
-                   write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
-                END IF !--------------------------------------------------------------------------------------   
              END IF               ! If Number_of_Solid_nodes > 0 
           END IF                  ! If 1<zp<nz        
         END IF                    ! If this simulation is Couette 
@@ -295,7 +287,7 @@ DO WHILE (ASSOCIATED(current))
                   R_Particle    = SQRT(xpp**2 + ypp**2)
                   CosTheta_p    = xpp/R_Particle
                   SinTheta_p    = ypp/R_Particle
-                  IF ((R_Boundary .GT. 1e-6).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN  !particle is outside analytical boundary
+                  IF ((R_Boundary .GT. xcf).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN  !particle is outside analytical boundary
                     write(*,*) '=========================================================================================='
                     write(*,*) 'B:Iter, parID,xp,yp,zp,zd,iz0,iz1,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,iz0,iz1,r(iz0),r(iz1)
                     write(*,*) 'B: CPU,iMin,iMax,jMin,jMax,kMin,kMax',myid,iMin,iMax,jMin,jMax,kMin,kMax
@@ -303,8 +295,8 @@ DO WHILE (ASSOCIATED(current))
                     write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
                     write(*,*) '---------------------------------------------------------------------------'
                     write(*,*) 'Treating the particle:'
-                    xpp = (R_Boundary-xcf) * CosTheta_p
-                    ypp = (R_Boundary-xcf) * SinTheta_p
+                    xpp = (R_Boundary-1.20_dbl*xcf) * CosTheta_p
+                    ypp = (R_Boundary-1.20_dbl*xcf) * SinTheta_p
                     R_Particle = SQRT(xpp**2 + ypp**2)
                     current%pardata%xp = (xpp/xcf) + xaxis
                     current%pardata%yp = (ypp/ycf) + yaxis
@@ -313,14 +305,6 @@ DO WHILE (ASSOCIATED(current))
                     write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
                     write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
                   END IF
-                  IF ((node(ix0,iy0,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz0) .EQ. SOLID) .AND. &             ! Check if all nodes around particle are solid
-                     (node(ix0,iy1,iz0) .EQ. SOLID) .AND. (node(ix0,iy0,iz1) .EQ. SOLID) .AND. &
-                     (node(ix1,iy1,iz0) .EQ. SOLID) .AND. (node(ix1,iy0,iz1) .EQ. SOLID) .AND. &
-                     (node(ix0,iy1,iz1) .EQ. SOLID) .AND. (node(ix1,iy1,iz1) .EQ. SOLID)) THEN
-                     write(*,*) '=========================================================================================='
-                     write(*,*) '2nd part of tracking: All nodes around are solid'
-                     write(*,*) 'Iter,ParID,x,y,z:', iter,current%pardata%parid,current%pardata%xp, current%pardata%yp, current%pardata%zp
-                  END IF 
                END IF   ! If Number_of_Solid_nodes > 0
             ENDIF       ! If 1<zp<nz
          END IF         ! If the simulation is Couette
