@@ -12,7 +12,7 @@ CONTAINS
 
 
 !===================================================================================================
-SUBROUTINE Compute_Cb				  ! Computes the mesh-independent bulk concentration
+SUBROUTINE Compute_C_bulk				  ! Computes the mesh-independent bulk concentration
 !===================================================================================================
 IMPLICIT NONE
 
@@ -296,7 +296,7 @@ current => next
 
 END DO
 !===================================================================================================
-END SUBROUTINE Compute_Cb
+END SUBROUTINE Compute_C_bulk
 !===================================================================================================
 
 
@@ -674,7 +674,7 @@ END SUBROUTINE Compute_shear
 
 
 !===================================================================================================
-SUBROUTINE Compute_C_Surface
+SUBROUTINE Compute_C_surface
 !===================================================================================================
 IMPLICIT NONE
 
