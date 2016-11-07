@@ -279,11 +279,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
      CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
      CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
      CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
-     IF( NumFluids_Veff .GE. 1) THEN 
-        Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
-     ELSE 
-        Cb_Hybrid= 0.0_dbl
-     END IF   
+     Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
      current%pardata%bulk_conc = Cb_Hybrid
 	
    END IF       			                                    		!End of conditional for V_eff greater than 1 
@@ -669,6 +665,64 @@ ENDDO
 END SUBROUTINE Compute_shear
 !===================================================================================================
 
+
+
+
+!===================================================================================================
+SUBROUTINE Compute_C_Surface
+!===================================================================================================
+IMPLICIT NONE
+
+REAL(dbl)                :: c0,c1,c2,c3,c4,c5,c6
+REAL(dbl)                :: C_ratio
+REAL(dbl)                :: R_P,Sh_P,delta_P
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN 
+
+         IF (Flag_Buffer) THEN !--- Buffer Capacity =10.5 mM ------------------------------------------------
+            R_P  = current%pardata%rp
+            Sh_P = current%pardata%sh
+            delta_P = R_P / Sh_P
+            IF (delta_P .LE. 50.0e-6) THEN
+               c6= -0.000000002910474984
+               c5=  0.000000504714268975
+               c4= -0.000035024962744930
+               c3=  0.001258840857793950
+               c2= -0.026259477974747900
+               c1=  0.435387995939737000
+               c0=  2.398778083334100000
+            ELSE IF ((delta_P .GT. 50.0e-6) .AND. (delta_P.LE. 1000.0e-6)) THEN
+              c6= -0.000000000000000126
+              c5=  0.000000000000461219
+              c4= -0.000000000686316847
+              c3=  0.000000540218636146
+              c2= -0.000251691712619862
+              c1=  0.083217749423939100
+              c0=  5.755370460706180000
+            ELSE                           !No correlations for larger diffusion layer thicknesses (YET)
+               write(*,*) 'ERROR: delta_P > 1000micron in Compute_Surface_Solubility'
+               STOP
+            END IF  
+            C_ratio= (c6*delta_P**6) + (c5*delta_P**5) + (c4*delta_P**4) + (c3*delta_P**3) + (c2*delta_P**2) + (c1*delta_P) +(c0)
+
+         ELSE !--- Buffer Capacity= 0.0 mM -----------------------------------------------------------------
+            C_ratio =2.30196707
+         END IF
+         current%pardata%par_conc = C_ratio * C_intrinsic
+      END IF  
+
+   END IF  
+END DO   
+
+!===================================================================================================
+END SUBROUTINE Compute_C_surface
+!===================================================================================================
 
 
 

@@ -212,7 +212,7 @@ ELSE										! starting from scratch. No data to be read from restart files
       CurPar%next%pardata%vpold = CurPar%next%pardata%vp
       CurPar%next%pardata%wpold = CurPar%next%pardata%wp
       CurPar%next%pardata%rpold = CurPar%next%pardata%rp
-      CurPar%next%pardata%par_conc = Cs_mol!3.14854e-6
+      CurPar%next%pardata%par_conc = C_intrinsic 
       CurPar%next%pardata%gamma_cont = 0.0000_dbl
       CurPar%next%pardata%sh = 1.0000_dbl/(1.0_dbl-CurPar%next%pardata%gamma_cont)
       CurPar%next%pardata%S = 0.0_dbl
@@ -255,7 +255,7 @@ IF(iter .EQ. phiStart) THEN
           DO i=0,nxSub+1
 !            phi(i,j,k) = phiIC*ee**(-((x(i)**2 + y(j)**2 + (z(k)-0.5_dbl*L)**2)/(2.0_dbl*sigma**2)))		! 3D Gaussian Distribution
              IF ((i.LT.32) .AND. (i.GT.24) .AND. (j.LT.32) .AND. (j.GT.24) .AND. (k.LE.30) .AND. (k.GE.0) ) THEN
-                phi(i,j,k) = Cs_mol
+                phi(i,j,k) = C_intrinsic
              END IF
           END DO
         END DO

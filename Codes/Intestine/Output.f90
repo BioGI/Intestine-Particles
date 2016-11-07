@@ -48,9 +48,10 @@ IF (myid .EQ. master) THEN
    !----- Monitoring negative phi----
    OPEN(2118,FILE='Negative-phi.dat',POSITION='APPEND')
    WRITE(2118,'(A120)') 'VARIABLES = iter,  Number of Negative phi Nodes,  Total Sum of Negative phi,  Worst Negative phi,  Average of Negative phi'
-   !----- Monitoring over saturation
-   OPEN(2119,FILE='Over_Saturation.dat',POSITION='APPEND')
-   WRITE(2119,'(A140)') 'VARIABLES = iter,  Number of oversaturated nodes, largest phi (C_max), Average of oversaturated nodes (C/Cs)'
+
+!  !----- Monitoring over saturation
+!  OPEN(2119,FILE='Over_Saturation.dat',POSITION='APPEND')
+!  WRITE(2119,'(A140)') 'VARIABLES = iter,  Number of oversaturated nodes, largest phi (C_max), Average of oversaturated nodes (C/Cs)'
 
    !----- Monitoring computational costs
    OPEN(5,FILE='Computational_Time.dat')										
@@ -89,7 +90,7 @@ IMPLICIT NONE
 
 IF(myid .EQ. master) THEN
   CLOSE(2118) 			! Monitoring negative phi
-  CLOSE(2119)                   ! Monitorin Over Saturation
+! CLOSE(2119)                   ! Monitorin Over Saturation
   CLOSE(5)			! Status								
   CLOSE(2460)			! Volume
   CLOSE(2472)			! Scalar
@@ -288,7 +289,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
             !END IF   
             pressure= (rho(i,j,k)-denL)*dcf*pcf
             IF (node(i,j,k) .EQ. FLUID) THEN
-               WRITE(60,'(I3,2I4,3F6.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/Cs_mol, node(i,j,k)
+               WRITE(60,'(I3,2I4,3F6.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/C_intrinsic, node(i,j,k)
             ELSE
                WRITE(60,'(I3,2I4,6I2)') ii, jj,kk,0,0,0,0,0,node(i,j,k)
             END IF
@@ -346,24 +347,24 @@ IF (myid .EQ. master) THEN
          numParticlesSub = numParticlesSub + 1_lng
          next => current%next 	
          IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
-             WRITE(160,1001)   	current%pardata%cur_part  	,',', 	&
-		 		current%pardata%xp 	  	,',',	&
-				current%pardata%yp  	  	,',',	&
-				current%pardata%zp 	  	,',',	&
-                        	current%pardata%up*vcf 	  	,',',	&
-		     	  	current%pardata%vp*vcf 	  	,',',	&
-				current%pardata%wp*vcf 	  	,',',	&
-                      		current%pardata%parid 	  	,',',	&
-				current%pardata%sh 	  	,',',	&
-				current%pardata%rp 	  	,',',	&
-				current%pardata%bulk_conc/Cs_mol,',', 	&
+             WRITE(160,1001) current%pardata%cur_part    ,',', 	&
+                             current%pardata%xp          ,',',	&
+                             current%pardata%yp          ,',',	&
+                             current%pardata%zp          ,',',	&
+                             current%pardata%up*vcf 	   ,',',	&
+                             current%pardata%vp*vcf 	   ,',',	&
+                             current%pardata%wp*vcf 	   ,',',	&
+                             current%pardata%parid 	  	 ,',',	&
+                             current%pardata%sh 	  	   ,',',	&
+                             current%pardata%rp          ,',',	&
+                             current%pardata%bulk_conc/C_intrinsic,',', 	&
 				current%pardata%delNBbyCV 	,',', 	&
 				current%pardata%Sst 	  	,',',	&
 				current%pardata%S 	  	,',',	&
 				current%pardata%Veff 	  	,',',	&
 				current%pardata%Nbj
          END IF	
-1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,E10.3,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
+1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
          current => next
       ENDDO
 

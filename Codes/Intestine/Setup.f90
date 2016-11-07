@@ -37,6 +37,7 @@ INTEGER(lng), PARAMETER :: SOLID		= 1_lng				! solid interior (moving)
 INTEGER(lng), PARAMETER :: SOLID2		= 2_lng				! solid exterior (stationary)
 INTEGER(lng), PARAMETER :: qitermax = 15_lng 					! max number of q iterations
 
+LOGICAL :: Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM ! 
 LOGICAL :: Flag_Couette                ! Flag to run a Couette simulation  
 LOGICAL :: Flag_Correcting_Mass        ! Flag to correct the mass by bringing average density to 1.0
 LOGICAL :: Flag_ParticleTrack          ! Flag for tracking particles
@@ -245,8 +246,8 @@ INTEGER(dbl):: num_particles							! Total number of particles in domain
 INTEGER(dbl):: CaseNo
 
 REAL(dbl) :: molarvol 								! (cm^3/mole) drug's molar volume
-REAL(dbl) :: diffm								! (cm2/s) drug's diffusivity	
-REAL(dbl) :: Cs_mol  								! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
+REAL(dbl) :: diffm			   					  ! (cm2/s) drug's diffusivity	
+REAL(dbl) :: C_intrinsic 							! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
 REAL(dbl) :: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global bulk scalar Concentration
 REAL(dbl) :: V_eff_Ratio
 REAL(dbl) :: Cb_Hybrid
@@ -347,30 +348,24 @@ READ(10,*) NumSubsX		! number of subdomains in the X direction
 READ(10,*) NumSubsY		! number of subdomains in the Y direction
 READ(10,*) NumSubsZ		! number of subdomains in the Z direction
 READ(10,*) Width      ! Width (only in case of Couette simulation)
-READ(10,*) D					! diameter
-READ(10,*) L					! length
-
-READ(10,*) epsOVERa1			! peristaltic occlusion ratio (distance of occlusion/mean half-width)
-READ(10,*) s1					! peristaltic wave speed
+READ(10,*) D					 ! diameter
+READ(10,*) L					  ! length
+READ(10,*) epsOVERa1		! peristaltic occlusion ratio (distance of occlusion/mean half-width)
+READ(10,*) s1					  ! peristaltic wave speed
 READ(10,*) numw1				! number of peristaltic waves
 READ(10,*) wc1					! peristaltic weighting coefficient
-
-READ(10,*) epsOVERa2			! segmental occlusion ratio (distance of occlusion/mean half-width)
-READ(10,*) Ts					! segmental contraction period
+READ(10,*) epsOVERa2		! segmental occlusion ratio (distance of occlusion/mean half-width)
+READ(10,*) Ts					  ! segmental contraction period
 READ(10,*) numw2				! number of segmental waves
 READ(10,*) wc2					! segmental weighting coefficient
-
-READ(10,*) Tmix				! period of mixed mode simulation
-
+READ(10,*) Tmix				  ! period of mixed mode simulation
 READ(10,*) den					! Liquid's density
-READ(10,*) nu					! Liquid's kinematic viscosity
-READ(10,*) Cs_mol				! Drug solubility or saturation value (mole/cm^3)
+READ(10,*) nu					  ! Liquid's kinematic viscosity
+READ(10,*) C_intrinsic	! Drug solubility or saturation value (mole/cm^3)
 READ(10,*) diffm				! Drug's diffusivity (cm2/s)
-READ(10,*) molarvol				! Drug's molar volume (cm^3/mole)
-
+READ(10,*) molarvol			! Drug's molar volume (cm^3/mole)
 READ(10,*) tau					! relaxation parameter
-
-READ(10,*) Sc					! Schmidt number
+READ(10,*) Sc					  ! Schmidt number
 READ(10,*) sclrIC				! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
 READ(10,*) phiPer				! period at which to start the scalar
 READ(10,*) phiIC				! maximum scalar concentration
@@ -381,6 +376,7 @@ READ(10,*) coeffConst
 READ(10,*) nPers                       ! total number of periods to run
 READ(10,*) Output_Intervals            ! number of iterations between writing the output files 
 READ(10,*) Restart_Intervals           ! number of iterations between writing the restart files 
+READ(10,*) Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM 
 READ(10,*) Flag_Couette                ! Flag to run the Couette simulation
 READ(10,*) Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
 READ(10,*) Flag_ParticleTrack          ! Flag for tracking particles           
