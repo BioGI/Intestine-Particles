@@ -317,7 +317,8 @@ CALL Particle_Transfer
 CALL Particle_Velocity 		
 
 !-----Particle tracking is done, now time for drug relaes calculations---------------------------------
-CALL Compute_Cb  
+CALL Compute_C_surface
+CALL Compute_C_bulk  
 IF (Flag_Shear_Effects) THEN
    CALL Compute_Shear
 END IF   
