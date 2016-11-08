@@ -317,12 +317,12 @@ CALL Particle_Transfer
 CALL Particle_Velocity 		
 
 !-----Particle tracking is done, now time for drug relaes calculations---------------------------------
-CALL Compute_C_surface
 CALL Compute_C_bulk  
 IF (Flag_Shear_Effects) THEN
    CALL Compute_Shear
 END IF   
 CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
+CALL Compute_C_surface
 CALL Particle_Drug_Release        ! Updates particle radius, calculates drug release rate delNBbyCV. 
 CALL Particle_Transfer 
 CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
