@@ -721,8 +721,9 @@ DO WHILE (ASSOCIATED(current))
          END IF
          current%pardata%par_conc = C_ratio * C_intrinsic
       END IF  
-
    END IF  
+   current => next
+
 END DO   
 
 !===================================================================================================
