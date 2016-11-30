@@ -691,10 +691,10 @@ DO WHILE (ASSOCIATED(current))
       IF (current%pardata%rp .GT. Min_R_Acceptable) THEN 
 
          IF (Flag_Buffer) THEN !--- Buffer Capacity =10.5 mM ------------------------------------------------
-            R_P  = current%pardata%rp
+            R_P  = 1000000.0* current%pardata%rp   !units in  micron
             Sh_P = current%pardata%sh
-            delta_P = R_P / Sh_P
-            IF (delta_P .LE. 50.0e-6) THEN
+            delta_P = (R_P / Sh_P)                 !units in microns
+            IF (delta_P .LE. 50.0) THEN
                c6= -0.000000002910474984
                c5=  0.000000504714268975
                c4= -0.000035024962744930
@@ -702,7 +702,7 @@ DO WHILE (ASSOCIATED(current))
                c2= -0.026259477974747900
                c1=  0.435387995939737000
                c0=  2.398778083334100000
-            ELSE IF ((delta_P .GT. 50.0e-6) .AND. (delta_P.LE. 1000.0e-6)) THEN
+            ELSE IF ((delta_P .GT. 50.0) .AND. (delta_P.LE. 1000.0)) THEN
               c6= -0.000000000000000126
               c5=  0.000000000000461219
               c4= -0.000000000686316847
@@ -711,7 +711,7 @@ DO WHILE (ASSOCIATED(current))
               c1=  0.083217749423939100
               c0=  5.755370460706180000
             ELSE                           !No correlations for larger diffusion layer thicknesses (YET)
-               write(*,*) 'ERROR: delta_P > 1000micron in Compute_Surface_Solubility'
+               write(*,*) 'ERROR: delta_P > 1000 micron in Compute_Surface_Solubility'
                STOP
             END IF  
             C_ratio= (c6*delta_P**6) + (c5*delta_P**5) + (c4*delta_P**4) + (c3*delta_P**3) + (c2*delta_P**2) + (c1*delta_P) +(c0)
@@ -720,6 +720,7 @@ DO WHILE (ASSOCIATED(current))
             C_ratio =2.30196707
          END IF
          current%pardata%par_conc = C_ratio * C_intrinsic
+         write(*,*) 'iter,ID,delta,Cs',iter,current%pardata%parid,delta_P,current%pardata%par_conc 
       END IF  
    END IF  
    current => next
