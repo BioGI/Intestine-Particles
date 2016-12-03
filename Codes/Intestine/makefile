@@ -34,6 +34,7 @@ FCFLAGS += -I/opt/local/include
 
 PARFILES = GenParticleList.o
 PARDIST  = GenParticleDistribution.o 
+PARDIST1  = GenParticleDistributionContinuous.o 
 PROGRAMS = Intestine.exe
 
 #OBJS = SetPrecision.o Setup.o LBM.o PassiveScalar.o \
@@ -53,6 +54,7 @@ all:
 	@$(MAKE) Intestine.exe
 	@$(MAKE) GenParticleList.exe
 	@$(MAKE) GenParticleDistribution.exe 
+	@$(MAKE) GenParticleDistributionContinuous.exe 
 
 GenParticleList.exe: $(PARFILES)
 	      $(FC) -o GenParticleList.exe $(FCFLAGS) $(PARFILES)
@@ -60,6 +62,8 @@ GenParticleList.exe: $(PARFILES)
 GenParticleDistribution.exe: $(PARDIST)
 	      $(FC) -o GenParticleDistribution.exe $(FCFLAGS) $(PARDIST)
 
+GenParticleDistributionContinuous.exe: $(PARDIST1)
+	      $(FC) -o GenParticleDistributionContinuous.exe $(FCFLAGS) $(PARDIST1)
 Intestine.exe: $(OBJS)
 	     $(FC) -o Intestine.exe $(FCFLAGS) $(OBJS) $(MODULES)
 
