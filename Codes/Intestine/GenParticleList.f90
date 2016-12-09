@@ -7,15 +7,15 @@ INTEGER   :: seed_size1,seed_date1(8),nbins,nbinmiddle,i,np,j,npindex,k
 
 INTEGER,   ALLOCATABLE  :: seed1(:), Q0RdRint(:)
 REAL(dbl), ALLOCATABLE	:: randnomono(:),randno(:)
-REAL(dbl), ALLOCATABLE  :: v0R(:),Q0R(:),Q0RdR(:),v0RdR(:),Rbins(:),Radlist(:)
+REAL(dbl), ALLOCATABLE  :: Rlist(:)
 
-REAl(dbl) :: R0,Rstar,sigR,sigmax,vptotal
-REAL(dbl) :: xmax,xmin,ymax,ymin,zmax,zmin,deltaR,sumvolume	
+REAl(dbl) :: R0,Rstar
+REAL(dbl) :: xmax,xmin,ymax,ymin,zmax,zmin	
 REAL(dbl) :: x_center, y_center, z_center
 REAL(dbl) :: D, L, Dx, Dy, Dz
 REAL(dbl) :: rMax, teta1Max, teta2Max, rr, teta1, teta2
 REAL(dbl) :: x_particle, y_particle, z_particle
-REAL(lng) :: PI, dR, Radius
+REAL(lng) :: PI 
 LOGICAL   :: Falg_Couette
 
 CALL DATE_AND_TIME(VALUES=seed_date1)
@@ -29,11 +29,15 @@ DEALLOCATE(seed1)
 !---------------------------------------------------------------------------------------------------
 !----- Polydisperse Collection From Yanxing --------------------------------------------------------
 !---------------------------------------------------------------------------------------------------
+
+!-----  For Couette Cases
 D        = 52.0
 L        = 51.0      
 Dx       = 40.0  
 Dy       = 40.0
 Dz       = 49.0
+
+!-----  For IntestineCases
 
 x_center = 51.0_dbl
 y_center = 51.0_dbl
@@ -43,52 +47,27 @@ rMax   	 = 53.0_dbl
 teta1Max = 2*PI
 teta2Max = 2*PI
 
-nbins 	 = 20 
-
-ALLOCATE(Rbins(nbins))
-ALLOCATE(v0R(nbins))
-ALLOCATE(v0RdR(nbins))
-ALLOCATE(Q0RdR(nbins))
-ALLOCATE(Q0RdRint(nbins))
-
-open(51,file='Par_Dist.dat')
-DO i= 1,nbins 
-  read(51,*) Rbins(i), v0R(i), v0RdR(i), Q0RdR(i), Q0RdRint(i)
-  write(*,*) i,  Rbins(i), Q0RdRint(i)
+open(50,file='Particle_Sizes.dat')
+read(50,*) np
+ALLOCATE(Rlist(np))
+DO i= 1, np 
+   read(50,*) Rlist(i)
+   WRITE(*,*) i,Rlist(i)
 END DO
-close(51)
-
-np= sum(Q0RdRint)
-
-ALLOCATE(Radlist(np))
-
-k= 0
-DO i= 1, nbins
-   DO j = 1, Q0RdRint(i)
-      k = k + 1
-      Radlist(k) = 0.5_dbl * Rbins(i)* 1.0e-6
-      write(*,*) k, Radlist(k)
-   END DO
-END DO
-
-sumvolume = 0.0_dbl
-DO i= 1,np
-   sumvolume = sumvolume + (4.0_dbl/3.0_dbl)* PI * (Radlist(i)**3.0)
-END DO 
-write(*,*) np,sumvolume
+close(50)
 
 ALLOCATE(randno(3_lng*np))
 CALL RANDOM_NUMBER(randno)
 
-open(50,file='particle.dat')
-write(50,*) np
+open(51,file='particle.dat')
+write(51,*) np
 DO i=1,np
    Falg_Couette = .TRUE.
    IF (Falg_Couette) THEN
       x_particle = ((D-Dx)/2.0_dbl) + randno(3*(i-1)+1)* Dx 
       y_particle = ((D-Dy)/2.0_dbl) + randno(3*(i-1)+2)* Dy 
       z_particle = ((L-Dz)/2.0_dbl) + randno(3*(i-1)+3)* Dz 
-      write(50,*) i, x_particle, y_particle, z_particle, Radlist(i) 
+      write(51,*) i, x_particle, y_particle, z_particle, Rlist(i) 
    ELSE
      rr         = (randno(3*(i-1)+1))**(1.0/3.0)* rMax
      teta1      =  randno(3*(i-1)+2)           * teta1Max
@@ -96,10 +75,10 @@ DO i=1,np
      x_particle = x_center + rr* sin(teta1)* cos(teta2)
      y_particle = y_center + rr* sin(teta1)* sin(teta2)
      z_particle = z_center + rr* cos(teta1)
-     write(50,"(I6,3F16.8,E14.6)") i, x_particle, y_particle, z_particle, Radlist(i) 
+     write(51,"(I6,3F16.8,E14.6)") i, x_particle, y_particle, z_particle, Rlist(i) 
    END IF
 END DO
-close(50)
+close(51)
 
 stop
 END

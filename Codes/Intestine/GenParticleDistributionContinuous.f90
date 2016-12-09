@@ -4,7 +4,7 @@
 IMPLICIT NONE
 INTEGER			:: Counter,i,j
 REAL*8      :: Dose, nu_m, M_d, dmin,dmax,sigma,miu,pi
-REAL*8      :: d_end,d_up,d1,d2,eps,V_integ,V_par_i,Vf,Vp_tot,Vp_tot_Achieved
+REAL*8      :: d_end,d_up,d1,d2,eps,V_integ,V_par_i,Vf,Vp_tot,Vp_tot_Achieved, Rlist(10000000)
 
 Write(*,*) 'Please enter the dosage (\mu g):'
 read(*,*) Dose
@@ -27,13 +27,6 @@ d1              = dmax
 Counter         = 0
 eps=1e-6
 
-open(50,file='Particle_Sizes.dat')
-
-Write(50,*) 'Total dosage                 ', Dose
-write(50,*) 'Total Particle volume desired', Vp_tot 
-write(50,*) 'Minimum cut-off diameter     ', dmin 
-write(50,*) 'Average particle diameter    ', miu
-Write(50,*) 'Maximum cut-off diameter     ', dmax
 
 DO WHILE (d1.GE.dmin) 
    Counter = Counter + 1
@@ -47,12 +40,25 @@ DO WHILE (d1.GE.dmin)
       V_par_i = (4.0/3.0)* PI* ((d1+d2)/4.0)**3.0
       d2 = d1
    END DO
+   Rlist(Counter)= (d1+d2)/2.0
    Vf = (V_par_i/Vp_tot)/(d_up-d1) 
    Vp_tot_Achieved= Vp_tot_Achieved + V_Par_i
-   write(50,*) Counter, (d1+d_up)/2.0, V_integ, V_par_i, Vf 
+   write(50,*) Counter, Rlist(Counter),  V_integ, V_par_i, Vf 
    d_up= d1
 END DO
 
+open(50,file='Particle_Sizes.dat')
+write(50,*) Counter 
+Do i=1,Counter
+   write(50,*) Rlist(i)
+END DO
+Close(50)
+
+Write(*,*) 'Total dosage                 ', Dose
+write(*,*) 'Total Particle volume desired', Vp_tot 
+write(*,*) 'Minimum cut-off diameter     ', dmin 
+write(*,*) 'Average particle diameter    ', miu
+Write(*,*) 'Maximum cut-off diameter     ', dmax
 write(*,*) 'Number of particle generated:', Counter
 write(*,*) 'Total particle volume desired and achieved', Vp_tot, Vp_tot_Achieved
 write(*,*) 'Achieved Dosage', (1.0- ((Vp_tot-Vp_tot_Achieved)/Vp_tot)) * Dose
