@@ -47,11 +47,14 @@ rMax   	 = 53.0_dbl
 teta1Max = 2*PI
 teta2Max = 2*PI
 
+Falg_Couette = .FALSE.
+
 open(50,file='Particle_Sizes.dat')
 read(50,*) np
 ALLOCATE(Rlist(np))
 DO i= 1, np 
-   read(50,*) Rlist(i)
+   read(50,*) Rlist(i)        
+   Rlist(i)= Rlist(i)/1.0e6         ! Changing units from micron to meter
    WRITE(*,*) i,Rlist(i)
 END DO
 close(50)
@@ -62,7 +65,6 @@ CALL RANDOM_NUMBER(randno)
 open(51,file='particle.dat')
 write(51,*) np
 DO i=1,np
-   Falg_Couette = .TRUE.
    IF (Falg_Couette) THEN
       x_particle = ((D-Dx)/2.0_dbl) + randno(3*(i-1)+1)* Dx 
       y_particle = ((D-Dy)/2.0_dbl) + randno(3*(i-1)+2)* Dy 
