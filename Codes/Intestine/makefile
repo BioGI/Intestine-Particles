@@ -32,9 +32,8 @@ FCFLAGS += -I/opt/local/include
 #MODULES = setup.o algorithm.o output.o
 #SRCOBJS = 3d.o
 
-PARFILES = GenParticleList.o
-PARDIST  = GenParticleDistribution.o 
-PARDIST1  = GenParticleDistributionContinuous.o 
+PARFILES = GenParList.o
+PARDIST  = GenParDist.o 
 PROGRAMS = Intestine.exe
 
 #OBJS = SetPrecision.o Setup.o LBM.o PassiveScalar.o \
@@ -52,18 +51,15 @@ OBJS= $(SRCOBJS)
 all: 	
 	@$(MAKE) $(MODULES)
 	@$(MAKE) Intestine.exe
-	@$(MAKE) GenParticleList.exe
-	@$(MAKE) GenParticleDistribution.exe 
-	@$(MAKE) GenParticleDistributionContinuous.exe 
+	@$(MAKE) GenParList.exe
+	@$(MAKE) GenParDist.exe 
 
-GenParticleList.exe: $(PARFILES)
-	      $(FC) -o GenParticleList.exe $(FCFLAGS) $(PARFILES)
+GenParList.exe: $(PARFILES)
+	      $(FC) -o GenParList.exe $(FCFLAGS) $(PARFILES)
 
-GenParticleDistribution.exe: $(PARDIST)
-	      $(FC) -o GenParticleDistribution.exe $(FCFLAGS) $(PARDIST)
+GenParDist.exe: $(PARDIST)
+	      $(FC) -o GenParDist.exe $(FCFLAGS) $(PARDIST)
 
-GenParticleDistributionContinuous.exe: $(PARDIST1)
-	      $(FC) -o GenParticleDistributionContinuous.exe $(FCFLAGS) $(PARDIST1)
 Intestine.exe: $(OBJS)
 	     $(FC) -o Intestine.exe $(FCFLAGS) $(OBJS) $(MODULES)
 
