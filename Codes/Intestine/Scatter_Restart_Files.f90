@@ -76,7 +76,7 @@ quotient_X	= CEILING(REAL(nx)/NumSubsX)                ! divide the number of no
 quotient_Y	= CEILING(REAL(ny)/NumSubsY)                ! divide the number of nodes by the number of subdomains (round up)
 quotient_Z	= CEILING(REAL(nz)/NumSubsZ)                ! divide the number of nodes by the number of subdomains (round up)
 
-DO CPU = 1, N_CPU
+DO CPU = 0, N_CPU-1
    iMin = MOD(CPU,NumSubsX)*quotient_X + 1               ! starting local i index 
    iMax = iMin + (quotient_X - 1)                      ! ending local i index
    jMin = MOD((CPU/NumSubsX),NumSubsY)*quotient_Y + 1    ! starting local j index
@@ -96,9 +96,9 @@ DO CPU = 1, N_CPU
    END IF
    WRITE(sub(1:5),'(I5.5)') CPU	
    OPEN (13,FILE='Restart-Out-'//iter_char//'-'//sub//'.dat')
-   DO k=kMin,kMax
-      DO j=jMin,jMax
-         DO i=iMin,iMax
+   DO k=kMin-1,kMax+1
+      DO j=jMin-1,jMax+1
+         DO i=iMin-1,iMax+1
             WRITE(13,'(I1)') node(i,j,k)
             WRITE(13,'(F8.6)') u(i,j,k)
             WRITE(13,'(F8.6)') v(i,j,k)
