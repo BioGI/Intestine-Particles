@@ -94,7 +94,7 @@ DO CPU = 0, N_CPU-1
    IF (kMax .GT. nz) THEN
       kMax = nz																! if kMax is greater than nz, correct it
    END IF
-   WRITE(sub(1:5),'(I5.5)') CPU	
+   WRITE(sub(1:5),'(I5.5)') CPU+1	
    OPEN (13,FILE='Restart-Out-'//iter_char//'-'//sub//'.dat')
    DO k=kMin-1,kMax+1
       DO j=jMin-1,jMax+1
@@ -112,7 +112,7 @@ DO CPU = 0, N_CPU-1
       END DO
    END DO
    WRITE(13,*) Drug_Initial
-   IF (CPU .EQ. 1) THEN
+   IF (CPU .EQ. 0) THEN
       WRITE(13,*) Drug_Released
    ELSE
       WRITE(13,*) 0
