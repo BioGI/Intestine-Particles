@@ -34,6 +34,7 @@ FCFLAGS += -I/opt/local/include
 
 PARFILES = GenParList.o
 PARDIST  = GenParDist.o 
+RESTART  = Scatter_Restart_Files.o
 PROGRAMS = Intestine.exe
 
 #OBJS = SetPrecision.o Setup.o LBM.o PassiveScalar.o \
@@ -53,12 +54,16 @@ all:
 	@$(MAKE) Intestine.exe
 	@$(MAKE) GenParList.exe
 	@$(MAKE) GenParDist.exe 
+	@$(MAKE) Scatter_Restart_Files.exe 
 
 GenParList.exe: $(PARFILES)
 	      $(FC) -o GenParList.exe $(FCFLAGS) $(PARFILES)
 
 GenParDist.exe: $(PARDIST)
 	      $(FC) -o GenParDist.exe $(FCFLAGS) $(PARDIST)
+
+Scatter_Restart_Files.exe: $(RESTART)
+	      $(FC) -o Scatter_Restart_Files.exe $(FCFLAGS) $(RESTART)
 
 Intestine.exe: $(OBJS)
 	     $(FC) -o Intestine.exe $(FCFLAGS) $(OBJS) $(MODULES)
