@@ -390,11 +390,12 @@ DO WHILE (ASSOCIATED(current))
             S= current%pardata%S
             Sst= S* (current%pardata%rp**2.0) / diffm
             current%pardata%Sst= Sst
-            IF (Sst.LT.5.0_dbl) THEN
-               current%pardata%sh = current%pardata%sh + 0.296_dbl*(Sst**0.5_dbl)
-            ELSE
-               Sh0 = exp(0.162_dbl + 0.202_dbl*log(Sst) - 7.5e-6_dbl*(log(Sst)**5.4_dbl)) 
-               current%pardata%sh = current%pardata%sh + Sh0-1.0_dbl
+            IF (Sst .LE. 5.0_dbl) THEN
+               current%pardata%sh = 1.0_dbl + 0.281_dbl*(Sst**0.5_dbl)
+            ELSE IF ((Sst .GT. 5.0_dbl).AND.(Sst .LE. 80.0)) THEN
+               current%pardata%sh = 0.181_dbl*(Sst**0.2_dbl)
+            ELSE IF (Sst.GT.80.0) THEN
+               current%pardata%sh = 4.5_dbl - (7.389/(Sst**(1.0_dbl/3.0_dbl)) )
             END IF
          END IF 
       END IF
