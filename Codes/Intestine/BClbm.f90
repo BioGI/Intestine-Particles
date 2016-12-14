@@ -41,7 +41,7 @@ ELSE !---------------------- Intestine Geometry --------------------------------
    sinTheta= y(jm1)/rijk   
    ub      = vel(km1)*cosTheta                    ! x-component of the velocity at i,j,k
    vb      = vel(km1)*sinTheta                    ! y-component of the velocity at i,j,k
-   wb      = 0.0_dbl                              ! no z-component in this case			
+   wb      = -s_movingF                               ! no z-component in this case			
 END IF !-------------------- End of veloicty calculation ------------------------------------------
 
 
@@ -94,7 +94,7 @@ IF ((node(ip1,jp1,kp1) .EQ. FLUID) .AND. (node(ip2,jp2,kp2) .EQ. FLUID)) THEN
    ENDIF
    ub = vt* cosTheta						! x-component of the velocity at i,j,k
    vb = vt* sinTheta						! y-component of the velocity at i,j,k
-   wb = 0.0_dbl							! no z-component in this case)
+   wb = -s_movingF 							! no z-component in this case)
 
    !------ bounced back distribution function with added momentum
    IF ((q .LT. 0.5_dbl) .AND. (q .GT. -0.00000001_dbl)) THEN	! use rho = 1.0

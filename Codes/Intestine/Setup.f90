@@ -196,6 +196,7 @@ REAL(dbl) :: aOVERlam1,	aOVERlam2						! half height to wavelength ratios
 REAL(dbl) :: lambda1, lambda2							! wavelengths
 REAL(dbl) :: kw1								! wave number (peristalsis)
 REAL(dbl) :: s1, s2	            						! mode velocities
+REAL(dbl) :: s_movingF            ! Moving Frame of Reference speed 
 REAL(dbl) :: Ts, Tp								! segmental period, peristaltic period
 REAL(dbl) :: wc0, wc1, wc2								! weighting coefficients for the different modes
 REAL(dbl) :: Re1, Re2								! weighting coefficients for the different modes
@@ -352,6 +353,7 @@ READ(10,*) D					 ! diameter
 READ(10,*) L					  ! length
 READ(10,*) epsOVERa1		! peristaltic occlusion ratio (distance of occlusion/mean half-width)
 READ(10,*) s1					  ! peristaltic wave speed
+READ(10,*) s_movingF    ! Moving Frame of Reference speed
 READ(10,*) numw1				! number of peristaltic waves
 READ(10,*) wc1					! peristaltic weighting coefficient
 READ(10,*) epsOVERa2		! segmental occlusion ratio (distance of occlusion/mean half-width)
