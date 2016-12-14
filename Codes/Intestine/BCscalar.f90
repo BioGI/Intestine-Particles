@@ -67,7 +67,7 @@ ELSE
    ENDIF
    ub = vt* cosTheta						! x-component of the velocity at i,j,k
    vb = vt* sinTheta						! y-component of the velocity at i,j,k
-   wb = -s_movingF 							! no z-component in this case)
+   wb = -s_movingF/vcf 							! no z-component in this case)
 END IF
 
 !---------------------------------------------------------------------------------------------------
@@ -196,7 +196,7 @@ ELSE
    ENDIF
    ub = vt* cosTheta						! x-component of the velocity at i,j,k
    vb = vt* sinTheta						! y-component of the velocity at i,j,k
-   wb = -s_movingF							! no z-component in this case)
+   wb = -s_movingF/vcf  				! no z-component in this case)
 END IF
 
 ubb= u(i,j,k)- ub

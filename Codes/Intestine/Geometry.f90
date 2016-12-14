@@ -376,7 +376,7 @@ END DO
 
 !------------------- Mode 1 - peristalsis -----------------------------------
 DO i= 0,nz-1  
-   v1(i) = kw1*s1*amp1*(SIN(PI + kw1*(zz(i) - (s1*time))))
+   v1(i) = kw1*s1*amp1*(SIN(PI + kw1*(zz(i)+s_MovingF*time-s1*time)))
 END DO
 v1(nz)=   v1(0)
 v1(nz+1)= v1(1)
