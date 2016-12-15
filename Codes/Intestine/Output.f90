@@ -113,7 +113,7 @@ SUBROUTINE PrintComputationalTime				! Writes Computational Costs to a File
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl) :: Time(1000000)
+REAL(dbl) :: Time(10000000)
 
 IF (myid .EQ. master) THEN
    rate = 100_lng							! Set the rate of counting
@@ -211,13 +211,13 @@ IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. phiStart)) TH
       next => current%next 
       IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
          WRITE(156,*)  	current%pardata%parid,	        &
-		     	current%pardata%xp, 	  	&
-			current%pardata%yp,  	  	&
-			current%pardata%zp, 	  	&
+                        current%pardata%xp, 	  	&
+                        current%pardata%yp,  	  	&
+                        current%pardata%zp, 	  	&
                         current%pardata%up, 	  	&
-		       	current%pardata%vp, 	  	&
-			current%pardata%wp, 	  	&
-			current%pardata%rp, 	  	&
+                        current%pardata%vp, 	  	&
+                        current%pardata%wp, 	  	&
+                        current%pardata%rp, 	  	&
                         current%pardata%xpold,          &
                         current%pardata%ypold,          &
                         current%pardata%zpold,          &
@@ -231,11 +231,11 @@ IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. phiStart)) TH
                         current%pardata%S,    		&
                         current%pardata%Sst,   		&
                         current%pardata%Veff,           &
-			current%pardata%Nbj,		&		
-			current%pardata%bulk_conc,	&
-			current%pardata%delNBbyCV, 	&
-		 	current%pardata%cur_part,	&
-		 	current%pardata%new_part  		
+                        current%pardata%Nbj,		&		
+                        current%pardata%bulk_conc,	&
+                        current%pardata%delNBbyCV, 	&
+                        current%pardata%cur_part,	&
+                        current%pardata%new_part  		
 1001                    format (I5,24F18.10,2I5)
         END IF
      current => next  
@@ -600,7 +600,7 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
 ENDIF
 
 IF (myid .EQ. master) THEN
-   WRITE(2472,'(I7, F9.3, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+   WRITE(2472,'(I8, F9.4, 6E21.13)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
    CALL FLUSH(2472)
 END IF
 !===================================================================================================
