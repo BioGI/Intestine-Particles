@@ -191,7 +191,7 @@ CLOSE(500)
 
 
 !----- Creating a file called particle-restart-iter.dat with all the particle data in it ----------------
-IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN
+IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN
    OPEN(156,FILE='Restart-Particles-'//iter_char//'.dat')
 
    !----- Counting hte number of the particles which are not compeletel dissolved yet ------------------
@@ -265,7 +265,7 @@ REAL(lng)   :: pressure
 
 IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
    (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0)  .OR. &
-   (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
+   (iter .EQ. iter_Start_phi) .OR. (iter .EQ. nt)) THEN
    !----- scale the iteration by 1/10 such that the numbers used in the output file aren't too large
    WRITE(iter_char(1:7),'(I7.7)') iter
 
@@ -275,29 +275,47 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
 
    !----- open the proper output file
    OPEN(60,FILE='out-'//iter_char//'-'//sub//'.dat')
-   WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "P" "phi/Cs" "node"'
-   WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
-   DO k=1,nzSub
-      DO j=1,nySub
-         DO i=1,nxSub
-            !----- convert local i,j,k, to global ii,jj,kk
-            ii = ((iMin - 1_lng) + i)
-            jj = ((jMin - 1_lng) + j)
-            kk = ((kMin - 1_lng) + k)
-            !IF (phi(i,j,k) .LT. 1.0e-18) THEN
-            !   phi(i,j,k)=0.0_lng
-            !END IF   
-            pressure= (rho(i,j,k)-denL)*dcf*pcf
-            IF (node(i,j,k) .EQ. FLUID) THEN
-               WRITE(60,'(I3,2I4,3F6.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/C_intrinsic, node(i,j,k)
-            ELSE
-               WRITE(60,'(I3,2I4,6I2)') ii, jj,kk,0,0,0,0,0,node(i,j,k)
-            END IF
+
+   IF (iter .LT. iter_Freeze_LBM) THEN
+      WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "P" "phi/Cs" "node"'
+      WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
+      DO k=1,nzSub
+         DO j=1,nySub
+            DO i=1,nxSub
+               !----- convert local i,j,k, to global ii,jj,kk
+               ii = ((iMin - 1_lng) + i)
+               jj = ((jMin - 1_lng) + j)
+               kk = ((kMin - 1_lng) + k)
+               pressure= (rho(i,j,k)-denL)*dcf*pcf
+               IF (node(i,j,k) .EQ. FLUID) THEN
+                  WRITE(60,'(I3,2I4,3F6.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/C_intrinsic, node(i,j,k)
+               ELSE
+                  WRITE(60,'(I3,2I4,6I2)') ii, jj,kk,0,0,0,0,0,node(i,j,k)
+               END IF
+            END DO
          END DO
       END DO
-   END DO
-
-   CLOSE(60)
+      CLOSE(60)
+   ELSE IF (iter .GE. iter_Freeze_LBM) THEN
+      WRITE(60,*) 'VARIABLES = "x" "y" "z" "phi/C_interinsic" "node"'
+      WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
+      DO k=1,nzSub
+         DO j=1,nySub
+            DO i=1,nxSub
+               !----- convert local i,j,k, to global ii,jj,kk
+               ii = ((iMin - 1_lng) + i)
+               jj = ((jMin - 1_lng) + j)
+               kk = ((kMin - 1_lng) + k)
+               IF (node(i,j,k) .EQ. FLUID) THEN
+                  WRITE(60,'(I3,2I4,F9.5,I2)') ii,jj,kk, phi(i,j,k)/C_intrinsic, node(i,j,k)
+               ELSE
+                  WRITE(60,'(I3,2I4,2I2)')     ii,jj,kk,0,node(i,j,k)
+               END IF
+            END DO
+         END DO
+      END DO
+      CLOSE(60)
+   END IF 
  
    IF (myid .EQ. master) THEN 			 ! Store radius at this iteration     
       DO k=0,nz+1
@@ -330,7 +348,7 @@ TYPE(ParRecord), POINTER :: next
 IF (myid .EQ. master) THEN
    IF ((MOD(iter, Output_Intervals) .EQ. 0)           		& 
       .OR. (iter .EQ. iter0-1_lng) .OR. (iter .EQ. iter0) 	&
-      .OR. (iter .EQ. phiStart) .OR. (iter .EQ. nt)) THEN
+      .OR. (iter .EQ. iter_Start_phi) .OR. (iter .EQ. nt)) THEN
    
        WRITE(iter_char(1:7),'(I7.7)') iter
 
@@ -559,7 +577,7 @@ zcf3 =  1000000.0_dbl * zcf*zcf*zcf
 
 !------ Computing the total drug released from particles      
 IF (myid .EQ. master) THEN
-   IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN
+   IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN
       current => ParListHead%next
       DO WHILE (ASSOCIATED(current))
          next => current%next
@@ -666,8 +684,7 @@ IF (myid .EQ. 0) THEN
    WRITE(11,*) 'Sc=',Sc				! Schmidt number
    WRITE(11,*) 'sclrIC=',sclrIC			! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
    WRITE(11,*) 'phiIC=',phiIC			! maximum scalar concentration
-   WRITE(11,*) 'phiPer=',phiPer			! period at which to start the scalar
-   WRITE(11,*) 'phiStart=',phiStart		! iteration at which to start the scalar
+   WRITE(11,*) 'iter_Start_phi=',iter_Start_phi		! iteration at which to start the particle tracking & scalar calculations
    WRITE(11,*)
    WRITE(11,*) 'nPers=',nPers			! total number of periods to run
    WRITE(11,*) 'numOuts=',numOuts		! number of output files (roughly)

@@ -27,13 +27,6 @@ Delta= 1.0_dbl- 6.0_dbl*Dm					! scalar diffusion parameter
 
 !---- scalar standard devation for gaussian distributions
 sigma  = 0.1_dbl*D						! 1/10 of Diameter
-
-!---- determine scalar starting iteration
-phiStart= NINT((phiPer*Tmix)/tcf)
-IF (phiPer.EQ.0.0) THEN
-   phiStart= NINT((phiPer*Tmix)/tcf)+1 				! Balaji: to add 1 as for phiPer=0, phiSTart=0. But iter never has a value 0.
-ENDIF
-
 !===================================================================================================
 END SUBROUTINE Scalar_Setup
 !===================================================================================================
@@ -57,7 +50,7 @@ REAL(dbl)   :: zcf3                                         ! Cell volume
 
 CALL IC_Drug_Distribution 									! sets/maintains initial distributions of scalar [MODULE: IC.f90]
 
-IF (iter .EQ. phiStart) THEN  						 			! Calculate the intial amount of scalar
+IF (iter .EQ. iter_Start_phi) THEN  						 			! Calculate the intial amount of scalar
    phiTotal = 0.0_dbl
    DO k=1,nzSub
       DO j=1,nySub

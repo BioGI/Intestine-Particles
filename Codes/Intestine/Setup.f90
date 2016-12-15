@@ -76,10 +76,10 @@ REAL(dbl) :: Drug_Loss								! Total moles of drug lost indicating the error in
 REAL(dbl) :: Drug_Loss_Percent							! Percentage of the drug lost indicating the percentage of the error in mass conservation	
 REAL(dbl) :: Drug_Loss_Modified							! Total moles of drug lost and the negative-phi substituted by zero (gained)
 REAL(dbl) :: Drug_Loss_Modified_Percent                                         ! Percentage of the error in drug-loss modified 
-REAL(dbl) :: sigma								! standard deviation for scalar distributions
-REAL(dbl) :: phiPer								! period at which to start the scalar
-INTEGER(lng) :: phiStart							! iteration to start scalar calculation scalar
-INTEGER(lng) :: sclrIC								! initial condition to use (BLOB, LINE, or INLET)
+REAL(dbl) :: sigma							 ! standard deviation for scalar distributions
+INTEGER(lng) :: iter_Start_phi   ! iteration to start particleTracking and scalar calculation 
+INTEGER(lng) :: iter_Freeze_LBM  ! iteration at wich steady state (for P & V) has reached so all LBM related functions can be turned OFF  
+INTEGER(lng) :: sclrIC					 ! initial condition to use (BLOB, LINE, or INLET)
 REAL(dbl), PARAMETER :: ee = 2.71828182846					! e^1
 INTEGER(lng), PARAMETER :: BLOB=1						! scalar initial condition: circular gaussian distribution of scalar at the center of the domain
 INTEGER(lng), PARAMETER :: LINE=2						! scalar initial condition: gaussian distribution of scalar in the x,y-directions along the centerline
@@ -364,13 +364,14 @@ READ(10,*) Tmix				  ! period of mixed mode simulation
 READ(10,*) den					! Liquid's density
 READ(10,*) nu					  ! Liquid's kinematic viscosity
 READ(10,*) C_intrinsic	! Drug solubility or saturation value (mole/cm^3)
-READ(10,*) diffm				! Drug's diffusivity (cm2/s)
-READ(10,*) molarvol			! Drug's molar volume (cm^3/mole)
-READ(10,*) tau					! relaxation parameter
-READ(10,*) Sc					  ! Schmidt number
-READ(10,*) sclrIC				! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
-READ(10,*) phiPer				! period at which to start the scalar
-READ(10,*) phiIC				! maximum scalar concentration
+READ(10,*) diffm           ! Drug's diffusivity (cm2/s)
+READ(10,*) molarvol        ! Drug's molar volume (cm^3/mole)
+READ(10,*) tau             ! relaxation parameter
+READ(10,*) Sc              ! Schmidt number
+READ(10,*) sclrIC          ! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
+READ(10,*) iter_Start_phi  ! iteration at which to start particle tracking & scalar calculation  
+READ(10,*) iter_Freeze_LBM ! iteration at wich steady state (for P & V) has reached so all LBM related functions can be turned OFF  
+READ(10,*) phiIC           ! maximum scalar concentration
 !----- Coefficients for the generalized scalar BC (coeffPhi*phiWall + coeffGrad*dPhiDn_wall = coeffConst). 'n' is normal vector from  wall into fluid.
 READ(10,*) coeffPhi
 READ(10,*) coeffGrad

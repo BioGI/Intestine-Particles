@@ -57,27 +57,27 @@ CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)				! synchronize all processes before st
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Simulation Loop ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 DO iter = iter0-0_lng,nt
-   CALL AdvanceGeometry						! advance the geometry to the next time step [MODULE: Geometry]
-   CALL Collision							! collision step [MODULE: Algorithm]
-   CALL MPI_Transfer						! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
-
-   IF (domaintype .EQ. 0) THEN  					! only needed when planes of symmetry exist
-      CALL SymmetryBC						! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
-   ENDIF
-   CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
-   CALL Macro							! calcuate the macroscopic quantities [MODULE: Algorithm]
-   CALL MPI_Transfer 
- 
-   IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
+   IF (iter .LT. iter_Freeze_LBM) THEN
+      CALL AdvanceGeometry						! advance the geometry to the next time step [MODULE: Geometry]
+      CALL Collision							! collision step [MODULE: Algorithm]
+      CALL MPI_Transfer						! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
+      IF (domaintype .EQ. 0) THEN  					! only needed when planes of symmetry exist
+         CALL SymmetryBC						! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
+      ENDIF
+      CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
+      CALL Macro							! calcuate the macroscopic quantities [MODULE: Algorithm]
+      CALL MPI_Transfer 
+   END IF
+   IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN 	! If particle tracking is 'on' then do the following
       CALL Particle_Track
    ENDIF
-   IF (iter .GE. phiStart) THEN
+   IF (iter .GE. iter_Start_phi) THEN
       CALL Scalar							! calcuate the evolution of scalar in the domain [MODULE: Algorithm]
    END IF
    
    !----- Outputs------------------------------------------------------
-   CALL PrintFields						! output the velocity, density, and scalar fields [MODULE: Output]
-   IF ((Flag_ParticleTrack) .AND. (iter .GE. phiStart)) THEN 	! If particle tracking is 'on' then do the following
+   CALL PrintFields					 	! output the velocity, pressure and scalar fields 
+   IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN 	! If particle tracking is 'on' then do the following
       CALL PrintParticles						! output the particle velocity, radius, position and con. [MODULE: Output]
    ENDIF
    CALL PrintDrugConservation						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
