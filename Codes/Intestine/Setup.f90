@@ -248,7 +248,8 @@ INTEGER(dbl):: CaseNo
 
 REAL(dbl) :: molarvol 								! (cm^3/mole) drug's molar volume
 REAL(dbl) :: diffm			   					  ! (cm2/s) drug's diffusivity	
-REAL(dbl) :: C_intrinsic 							! (mole/cm^3) or (micro M) or (micro g/ml)  drug properties
+REAL(dbl) :: S_intrinsic 							! (mu mole/cm^3) drug solubility: intrinsic 
+REAL(dbl) :: S_bulk     							! (mu mole/cm^3) drug solubility: at bulk pH of 6.5
 REAL(dbl) :: Cb_global								! (mole/cm^3) or (micro M) or (micro g/ml)  Global bulk scalar Concentration
 REAL(dbl) :: V_eff_Ratio
 REAL(dbl) :: Cb_Hybrid
@@ -363,7 +364,8 @@ READ(10,*) wc2					! segmental weighting coefficient
 READ(10,*) Tmix				  ! period of mixed mode simulation
 READ(10,*) den					! Liquid's density
 READ(10,*) nu					  ! Liquid's kinematic viscosity
-READ(10,*) C_intrinsic	! Drug solubility or saturation value (mole/cm^3)
+READ(10,*) S_intrinsic	   ! Drug solubility: intrinsic (mu mole/cm^3)
+READ(10,*) S_bulk     	   ! Drug solubility: at bulk pH of 6.5  (mu mole/cm^3)
 READ(10,*) diffm           ! Drug's diffusivity (cm2/s)
 READ(10,*) molarvol        ! Drug's molar volume (cm^3/mole)
 READ(10,*) tau             ! relaxation parameter

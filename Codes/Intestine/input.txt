@@ -10,7 +10,7 @@
 0.06       ! [L} (m)                     Domain's length
 0.5        ! [epsOVERa1]                 Peristaltic occlusion ratio-distance of occlusion/mean half-width  
 0.002      ! [s1] (m/s)                  Peristaltic wave speed 
-0.002      ! [s_movingF] (m/s)           Moving Frame of Reference speed   
+0.002      ! [s_movingF] (m/s)           Moving Frame of Reference speed  (set to 0.0 for stationary frame of reference) 
 1          ! [numw1]                     Peristaltic number of waves
 1.0        ! [wc1]                       Peristaltic weighting coefficient
 0.5        ! [epsOVERa2]                 Segmental occlusion ratio- distance of occlusion/mean half-width
@@ -20,7 +20,8 @@
 30.0       ! [Tmix]                      Period of mixed mode simulation
 1000.0     ! [den] (kg/m3)               Fluid's density
 1.00e-6    ! [nu] (m2/s)                 kinematic viscosity 
-0.3300     ! [C_intrinsic] (mu mol/cm3)  Drug solubility or saturation value 
+0.3300     ! [S_intrinsic] (mu mol/cm3)  Drug solubility: intrinsic 
+41.8745    ! [S_bulk] (mu mol/cm3)       Drug solubility: at bulk pH 0f 6.5  
 7.50e-10   ! [diffm] (m2/s)              Drug's diffusivity
 268.0e-6   ! [molarvol] (cm^3/micromol)  Drug's molar volume
 1.0        ! [tau]                       Relaxation parameter

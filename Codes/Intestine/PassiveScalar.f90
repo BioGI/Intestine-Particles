@@ -145,7 +145,7 @@ CALL MPI_ALLREDUCE(Negative_phi_Worst,   Negative_phi_Worst_Global,   1, MPI_DOU
 
 IF (myid .EQ. master) THEN
    IF (Negative_phi_Counter_Global .GE. 1) THEN
-       write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global/C_intrinsic, Negative_phi_Worst_Global/C_intrinsic, Negative_phi_Total_Global/(C_intrinsic*Negative_phi_Counter_Global)
+       write(2118,*) iter, Negative_phi_Counter_Global, Negative_phi_Total_Global/S_intrinsic, Negative_phi_Worst_Global/S_intrinsic, Negative_phi_Total_Global/(S_intrinsic*Negative_phi_Counter_Global)
        CALL FLUSH(2118)
    END IF
 END IF

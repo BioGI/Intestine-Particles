@@ -680,7 +680,7 @@ SUBROUTINE Compute_C_surface
 IMPLICIT NONE
 
 REAL(dbl)                :: c0,c1,c2,c3,c4,c5,c6
-REAL(dbl)                :: C_ratio
+REAL(dbl)                :: S_ratio
 REAL(dbl)                :: R_P,Sh_P,delta_P
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
@@ -715,12 +715,12 @@ DO WHILE (ASSOCIATED(current))
                write(*,*) 'ERROR: delta_P > 1000 micron in Compute_Surface_Solubility'
                STOP
             END IF  
-            C_ratio= (c6*delta_P**6) + (c5*delta_P**5) + (c4*delta_P**4) + (c3*delta_P**3) + (c2*delta_P**2) + (c1*delta_P) +(c0)
+            S_ratio= (c6*delta_P**6) + (c5*delta_P**5) + (c4*delta_P**4) + (c3*delta_P**3) + (c2*delta_P**2) + (c1*delta_P) +(c0)
 
          ELSE !--- Buffer Capacity= 0.0 mM -----------------------------------------------------------------
-            C_ratio =2.30196707
+            S_ratio =2.30196707
          END IF
-         current%pardata%par_conc = C_ratio * C_intrinsic
+         current%pardata%par_conc = S_ratio * S_intrinsic
          write(*,*) 'iter,ID,delta,Cs',iter,current%pardata%parid,delta_P,current%pardata%par_conc 
       END IF  
    END IF  
@@ -862,7 +862,7 @@ DO WHILE (ASSOCIATED(current))
                   Overlap(i,j,k)= MAX ( MIN(LVIB_x(2),NVB_x(2)) - MAX(LVIB_x(1),NVB_x(1)), 0.0_dbl) * & 
                                   MAX ( MIN(LVIB_y(2),NVB_y(2)) - MAX(LVIB_y(1),NVB_y(1)), 0.0_dbl) * &
                                   MAX ( MIN(LVIB_z(2),NVB_z(2)) - MAX(LVIB_z(1),NVB_z(1)), 0.0_dbl)
-!            		  Overlap(i,j,k) = Overlap(i,j,k) * (max((Cs_mol-phi(i,j,k) ),0.0_dbl) / Cs_mol)
+            		  Overlap(i,j,k) = Overlap(i,j,k) * (max((S_bulk-phi(i,j,k) ),0.0_dbl) / S_bulk)
             		  Overlap_sum_l= Overlap_sum_l + Overlap(i,j,k)
                END IF
             END DO
@@ -914,7 +914,7 @@ DO WHILE (ASSOCIATED(current))
 
 !--Finding processor that have overlap with effective volume around the particle
 
-!OVERLAP_TEST = 0.0_dbl 
+OVERLAP_TEST = 0.0_dbl 
 
 200 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
       (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
@@ -940,7 +940,7 @@ DO WHILE (ASSOCIATED(current))
                   END IF
                    
        	          delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
-!                 OVERLAP_TEST= OVERLAP_TEST + Overlap(i,j,k)
+                  OVERLAP_TEST= OVERLAP_TEST + Overlap(i,j,k)
                END IF 
             END DO
          END DO
@@ -954,13 +954,13 @@ DO WHILE (ASSOCIATED(current))
        GOTO 200
    ENDIF
 
-!   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-!   CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-!
-!   IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
-!      current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
-!      current%pardata%delNBbyCV = 0.0_dbl
-!   END IF
+   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+   CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+
+   IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
+      current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
+      current%pardata%delNBbyCV = 0.0_dbl
+   END IF
 
  END IF 						! Condition to check if R > R_min_acceptable
  current => next

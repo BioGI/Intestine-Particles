@@ -288,7 +288,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                kk = ((kMin - 1_lng) + k)
                pressure= (rho(i,j,k)-denL)*dcf*pcf
                IF (node(i,j,k) .EQ. FLUID) THEN
-                  WRITE(60,'(I3,2I4,3F6.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/C_intrinsic, node(i,j,k)
+                  WRITE(60,'(I3,2I4,3F6.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/S_intrinsic, node(i,j,k)
                ELSE
                   WRITE(60,'(I3,2I4,6I2)') ii, jj,kk,0,0,0,0,0,node(i,j,k)
                END IF
@@ -297,7 +297,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
       END DO
       CLOSE(60)
    ELSE IF (iter .GE. iter_Freeze_LBM) THEN
-      WRITE(60,*) 'VARIABLES = "x" "y" "z" "phi/C_interinsic" "node"'
+      WRITE(60,*) 'VARIABLES = "x" "y" "z" "phi/S_interinsic" "node"'
       WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
       DO k=1,nzSub
          DO j=1,nySub
@@ -307,7 +307,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                jj = ((jMin - 1_lng) + j)
                kk = ((kMin - 1_lng) + k)
                IF (node(i,j,k) .EQ. FLUID) THEN
-                  WRITE(60,'(I3,2I4,F9.5,I2)') ii,jj,kk, phi(i,j,k)/C_intrinsic, node(i,j,k)
+                  WRITE(60,'(I3,2I4,F9.5,I2)') ii,jj,kk, phi(i,j,k)/S_intrinsic, node(i,j,k)
                ELSE
                   WRITE(60,'(I3,2I4,2I2)')     ii,jj,kk,0,node(i,j,k)
                END IF
@@ -375,7 +375,7 @@ IF (myid .EQ. master) THEN
                              current%pardata%parid 	  	 ,',',	&
                              current%pardata%sh 	  	   ,',',	&
                              current%pardata%rp          ,',',	&
-                             current%pardata%bulk_conc/C_intrinsic,',', 	&
+                             current%pardata%bulk_conc/S_intrinsic,',', 	&
 				current%pardata%delNBbyCV 	,',', 	&
 				current%pardata%Sst 	  	,',',	&
 				current%pardata%S 	  	,',',	&
