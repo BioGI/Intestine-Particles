@@ -28,6 +28,7 @@ Counter         = 0
 eps=1e-6
 
 
+open(49,file='Particle_Dist_info.dat')
 DO WHILE (d1.GE.dmin) 
    Counter = Counter + 1
    V_integ = 0.0
@@ -43,9 +44,10 @@ DO WHILE (d1.GE.dmin)
    Rlist(Counter)= (d1+d2)/2.0
    Vf = (V_par_i/Vp_tot)/(d_up-d1) 
    Vp_tot_Achieved= Vp_tot_Achieved + V_Par_i
-   write(50,*) Counter, Rlist(Counter),  V_integ, V_par_i, Vf 
+   write(49,*) Counter, Rlist(Counter),  V_integ, V_par_i, Vf
    d_up= d1
 END DO
+Close(49)
 
 open(50,file='Particle_Sizes.dat')
 write(50,*) Counter 
