@@ -40,6 +40,7 @@ INTEGER(lng), PARAMETER :: qitermax = 15_lng 					! max number of q iterations
 LOGICAL :: Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM ! 
 LOGICAL :: Flag_Couette                ! Flag to run a Couette simulation  
 LOGICAL :: Flag_Correcting_Mass        ! Flag to correct the mass by bringing average density to 1.0
+LOGICAL :: Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False --> 1st order LBM BC   
 LOGICAL :: Flag_ParticleTrack          ! Flag for tracking particles
 LOGICAL :: Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number
 LOGICAL :: Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number
@@ -384,6 +385,7 @@ READ(10,*) Restart_Intervals           ! number of iterations between writing th
 READ(10,*) Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM 
 READ(10,*) Flag_Couette                ! Flag to run the Couette simulation
 READ(10,*) Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
+READ(10,*) Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False --> 1st order LBM BC 
 READ(10,*) Flag_ParticleTrack          ! Flag for tracking particles           
 READ(10,*) Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
 READ(10,*) Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 

@@ -39,6 +39,7 @@
 .FALSE.    ! [Flag_Buffer]               Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM  
 .FALSE.    ! [Flag_Couette]              Flag for Couette isumulations   
 .FALSE.    ! [Flag_Correcting_Mass]      Flag for mass correction by bringing back rho to 1.0    
+.TRUE.     ! [Flag_BounceBack_2nd_Order] Flag for 2nd order LBM BC. If False --> 1st order LBM BC  
 .FALSE.    ! [Flag_ParticleTrack]        Flag for tracking particles       
 .FALSE.    ! [Flag_Shear_Effects]        Flag for including shear effects in Sherwood number  
 .FALSE.    ! [Flag_Confinement_Effects]  Flag for including confinement effectgs in Sherwood number       
