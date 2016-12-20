@@ -167,14 +167,25 @@ DO k=0,nzSub+1
    DO j=0,nySub+1
       DO i=0,nxSub+1
          WRITE(500,'(I1)') node(i,j,k)
-         WRITE(500,'(F8.6)') u(i,j,k)
-         WRITE(500,'(F8.6)') v(i,j,k)
-         WRITE(500,'(F8.6)') w(i,j,k)
-         WRITE(500,'(F8.6)') rho(i,j,k)
-         WRITE(500,'(F8.6)') phi(i,j,k)
-         DO m=0,NumDistDirs
-            WRITE(500,'(F10.8)') f(m,i,j,k)
-         END DO
+         IF (node(i,j,k) .EQ. FLUID) THEN
+            WRITE(500,'(F8.6)') u(i,j,k)
+            WRITE(500,'(F8.6)') v(i,j,k)
+            WRITE(500,'(F8.6)') w(i,j,k)
+            WRITE(500,'(F8.6)') rho(i,j,k)
+            WRITE(500,'(F8.6)') phi(i,j,k)
+            DO m=0,NumDistDirs
+               WRITE(500,'(F10.8)') f(m,i,j,k)
+            END DO
+         ELSE 
+            WRITE(500,'(I1)') 0
+            WRITE(500,'(I1)') 0
+            WRITE(500,'(I1)') 0
+            WRITE(500,'(I1)') 0
+            WRITE(500,'(I1)') 0
+            DO m=0,NumDistDirs
+               WRITE(500,'(I1)') 0
+            END DO
+         ENDIF
       END DO
    END DO
 END DO
