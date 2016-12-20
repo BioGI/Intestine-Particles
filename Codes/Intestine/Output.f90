@@ -26,7 +26,7 @@ parfilenum = 0_lng			! initialize to 0
 parfileCount = 0_lng			! initialize to 0
 numparticleSubfile = 0_lng
 
-ALLOCATE(radius(0:nz+1,0:500))		! 500 is an arbitrarily large number of output iterations...
+ALLOCATE(radius(0:nz+1,0:10000000))		! 10000000 is  an arbitrarily large number of output iterations...
 radcount = 0_lng			! initialize the output count
 !===================================================================================================
 END SUBROUTINE Output_Setup
