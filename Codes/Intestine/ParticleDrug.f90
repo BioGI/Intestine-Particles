@@ -862,7 +862,7 @@ DO WHILE (ASSOCIATED(current))
                   Overlap(i,j,k)= MAX ( MIN(LVIB_x(2),NVB_x(2)) - MAX(LVIB_x(1),NVB_x(1)), 0.0_dbl) * & 
                                   MAX ( MIN(LVIB_y(2),NVB_y(2)) - MAX(LVIB_y(1),NVB_y(1)), 0.0_dbl) * &
                                   MAX ( MIN(LVIB_z(2),NVB_z(2)) - MAX(LVIB_z(1),NVB_z(1)), 0.0_dbl)
-            		  Overlap(i,j,k) = Overlap(i,j,k) * (max((S_bulk-phi(i,j,k) ),0.0_dbl) / S_bulk)
+            		  Overlap(i,j,k) = Overlap(i,j,k) * (max((current%pardata%par_conc-phi(i,j,k) ),0.0_dbl) / current%pardata%par_conc)
             		  Overlap_sum_l= Overlap_sum_l + Overlap(i,j,k)
                END IF
             END DO
