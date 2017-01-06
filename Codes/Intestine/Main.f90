@@ -66,8 +66,8 @@ DO iter = iter0-0_lng,nt
       ENDIF
       CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
       CALL Macro							! calcuate the macroscopic quantities [MODULE: Algorithm]
-      CALL MPI_Transfer 
    END IF
+   CALL MPI_Transfer 
    IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN 	! If particle tracking is 'on' then do the following
       CALL Particle_Track
    ENDIF
