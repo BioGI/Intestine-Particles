@@ -44,6 +44,7 @@ IF (Flag_Restart) THEN                           ! restart from  file
         END DO
       END DO
    END DO
+   fplus=f
    READ(50,*) Drug_Initial_l
    READ(50,*) Drug_Released_Total
    READ(50,*) Drug_Absorbed_restart

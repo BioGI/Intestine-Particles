@@ -721,7 +721,7 @@ DO WHILE (ASSOCIATED(current))
             S_ratio =2.30196707
          END IF
          current%pardata%par_conc = S_ratio * S_intrinsic
-         write(*,*) 'iter,ID,delta,Cs',iter,current%pardata%parid,delta_P,current%pardata%par_conc 
+         !write(*,*) 'iter,ID,delta,Cs',iter,current%pardata%parid,delta_P,current%pardata%par_conc 
       END IF  
    END IF  
    current => next
