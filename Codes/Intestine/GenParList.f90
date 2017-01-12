@@ -95,7 +95,7 @@ DO i=1,num_Par
 
      write(*,*) i,x_particle,y_particle,z_particle,z_left,z_right,R_left,R_right,R_Boundary,R_particle,D_Par_Max
 
-     IF (R_particle .LT. (R_Boundary-5.0*D_Par_Max) ) THEN   
+     IF (R_particle .LT. (R_Boundary-2.0*D_Par_Max) ) THEN   
         write(51,"(I6,3F16.8,E14.6)") i, x_particle, y_particle, z_particle, Rlist(i) 
      ELSE
         GOTO 100
