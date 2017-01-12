@@ -57,7 +57,7 @@ all:
 	@$(MAKE) Scatter_Restart_Files.exe 
 
 GenParList.exe: $(PARFILES)
-	      $(FC) -o GenParList.exe $(FCFLAGS) $(PARFILES)
+	      $(FC) -o GenParList.exe $(FCFLAGS) $(PARFILES) $(MODULES)
 
 GenParDist.exe: $(PARDIST)
 	      $(FC) -o GenParDist.exe $(FCFLAGS) $(PARDIST)

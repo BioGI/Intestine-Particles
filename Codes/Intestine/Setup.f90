@@ -326,11 +326,11 @@ SUBROUTINE Global_Setup		! sets up simulation
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
 
-CALL ReadInput				! read input from file
-!CALL SubDomainSetup			! set up the MPI subdomains
-CALL SubDomainSetupNew			! set up the MPI subdomains
-CALL AllocateArrays			! allocate global variable arrays
-
+CALL ReadInput         ! read input from file
+CALL Check_Num_Procs   ! make sure number of processors & number of subdomains are equal
+!CALL SubDomainSetup	 ! set up the MPI subdomains
+CALL SubDomainSetupNew ! set up the MPI subdomains
+CALL AllocateArrays		 ! allocate global variable arrays
 !------------------------------------------------
 END SUBROUTINE Global_Setup
 !------------------------------------------------
@@ -393,9 +393,15 @@ READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make 
 READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
 
-!tau=1.0_dbl
+!------------------------------------------------
+END SUBROUTINE ReadInput
+!------------------------------------------------
 
-! Check to make sure the number of processors (numprocs) and the number of subdomains are equal
+!--------------------------------------------------------------------------------------------------
+SUBROUTINE Check_Num_Procs !make sure number of processors & number of subdomains are equal
+!--------------------------------------------------------------------------------------------------
+IMPLICIT NONE
+
 NumSubsTotal = NumSubsX*NumSubsY*NumSubsZ
 IF(NumSubsTotal .NE. numprocs) THEN
   OPEN(1000,FILE="error.dat")
@@ -409,10 +415,11 @@ IF(NumSubsTotal .NE. numprocs) THEN
   CLOSE(1000)
   STOP
 END IF
+!------------------------------------------------
+END SUBROUTINE Check_Num_Procs  
+!------------------------------------------------
 
-!------------------------------------------------
-END SUBROUTINE ReadInput
-!------------------------------------------------
+
 !--------------------------------------------------------------------------------------------------
 SUBROUTINE SubDomainSetupNew	! generates the information (ID number, starting/ending indices) of each neighboring subdomain (using the subroutine SetSubIDBC in this module)
 !--------------------------------------------------------------------------------------------------
