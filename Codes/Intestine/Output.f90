@@ -299,9 +299,9 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                kk = ((kMin - 1_lng) + k)
                pressure= (rho(i,j,k)-denL)*dcf*pcf
                IF (node(i,j,k) .EQ. FLUID) THEN
-                  WRITE(60,'(I3,2I4,3F6.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/S_intrinsic, node(i,j,k)
+                  WRITE(60,'(I3,2I4,3F7.2,E11.3,F9.5,I2)') ii, jj,kk,  1000.0_dbl*u(i,j,k)*vcf,  1000.0_dbl*v(i,j,k)*vcf,  1000.0_dbl*w(i,j,k)*vcf, pressure, phi(i,j,k)/S_intrinsic, node(i,j,k)
                ELSE
-                  WRITE(60,'(I3,2I4,6I2)') ii, jj,kk,0,0,0,0,0,node(i,j,k)
+                  WRITE(60,'(I3,2I4,6I2)') ii,jj,kk,0,0,0,0,0,node(i,j,k)
                END IF
             END DO
          END DO
