@@ -12,7 +12,7 @@ REAL(dbl), ALLOCATABLE	:: randno(:), Rlist(:)
 REAL(dbl) :: D_Couette, L_Couette, Dx_Couette, Dy_Couette, Dz_Couette
 REAL(dbl) :: x_particle, y_particle, z_particle
 REAL(dbl) :: R_Particle, R_Par_Max, D_Par_Max, R_Boundary
-REAL(dbl) :: R_left, R_right, dz
+REAL(dbl) :: R_left, R_right, dz, Volume
 INTEGER   :: n,num_Par, i, j, k, z_left, z_right, clock 
 LOGICAL   :: Falg_Couette
 
@@ -26,6 +26,14 @@ nzSub= nz
 CALL AllocateArrays                   ! allocate global variable arrays  
 CALL Geometry_Setup
 CALL BoundaryPosition
+
+Volume=0.0
+DO i=1,nz
+   Volume= Volume+ xcf*PI*(r(i)**2.0)
+END DO
+write(*,*) "Total computational domain volume (cm3) is:",Volume*1e6
+STOP
+
 
 CALL RANDOM_SEED(size=n)
 ALLOCATE(seed(n))
