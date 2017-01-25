@@ -32,8 +32,6 @@ DO i=1,nz
    Volume= Volume+ xcf*PI*(r(i)**2.0)
 END DO
 write(*,*) "Total computational domain volume (cm3) is:",Volume*1e6
-STOP
-
 
 CALL RANDOM_SEED(size=n)
 ALLOCATE(seed(n))
@@ -62,7 +60,7 @@ read(50,*) num_Par
 ALLOCATE(Rlist(num_Par))
 DO i= 1, num_Par 
    read(50,*) Rlist(i)        
-   Rlist(i)= Rlist(i)/1.0e6         ! Changing units from micron to meter
+   Rlist(i)= 0.5_dbl * Rlist(i)/1.000e6         ! Changing units from micron to meter
    IF (Rlist(i).GT.R_Par_Max) THEN
       R_Par_Max= Rlist(i)
    ENDIF
