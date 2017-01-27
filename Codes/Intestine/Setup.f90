@@ -41,6 +41,7 @@ LOGICAL :: Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, 
 LOGICAL :: Flag_Couette                ! Flag to run a Couette simulation  
 LOGICAL :: Flag_Correcting_Mass        ! Flag to correct the mass by bringing average density to 1.0
 LOGICAL :: Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False --> 1st order LBM BC   
+LOGICAL :: Flag_Particle_Init_Sphere   ! Flag to initiate particles in  a sphere (TRUE) or in the whole domain (False) 
 LOGICAL :: Flag_ParticleTrack          ! Flag for tracking particles
 LOGICAL :: Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number
 LOGICAL :: Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number
@@ -387,6 +388,7 @@ READ(10,*) Flag_Couette                ! Flag to run the Couette simulation
 READ(10,*) Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
 READ(10,*) Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False --> 1st order LBM BC 
 READ(10,*) Flag_ParticleTrack          ! Flag for tracking particles           
+READ(10,*) Flag_Particle_Init_Sphere   ! Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
 READ(10,*) Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
 READ(10,*) Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
 READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is

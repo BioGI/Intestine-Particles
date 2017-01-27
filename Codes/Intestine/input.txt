@@ -41,6 +41,7 @@
 .FALSE.    ! [Flag_Correcting_Mass]      Flag for mass correction by bringing back rho to 1.0    
 .TRUE.     ! [Flag_BounceBack_2nd_Order] Flag for 2nd order LBM BC. If False --> 1st order LBM BC  
 .TRUE.     ! [Flag_ParticleTrack]        Flag for tracking particles       
+.FALSE.    ! [Flag_Particle_Init_Sphere] Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
 .TRUE.     ! [Flag_Shear_Effects]        Flag for including shear effects in Sherwood number  
 .FALSE.    ! [Flag_Confinement_Effects]  Flag for including confinement effectgs in Sherwood number       
 .FALSE.    ! [Flag_Rectify_Neg_phi]      Flag for rectifying negative phi (make it zero) or leave it as is  (Flag_Rectify_Neg_phi) 
