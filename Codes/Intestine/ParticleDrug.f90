@@ -39,7 +39,7 @@ TYPE(ParRecord), POINTER :: next
 
 delta_mesh = 1.0_dbl
 zcf3 = 1.0_dbl
-n_b = 3.0
+n_b = 2.0
 
 current => ParListHead%next
 
