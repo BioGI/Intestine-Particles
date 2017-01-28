@@ -84,7 +84,7 @@ IF (Flag_Particle_Init_Sphere)THEN
         x_center = (nx-1.0)/2.0
         y_center = (ny-1.0)/2.0 
         z_center = (nz-1.0)/2.0 
-        rMax   	 = 0.45 *x_center
+        rMax   	 = 0.90 *x_center
         teta1Max = 2*PI
         teta2Max = 2*PI
         rr         = (randno(3*(i-1)+1))**(1.0/3.0)* rMax
