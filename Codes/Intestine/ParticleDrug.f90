@@ -69,7 +69,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
 !--Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
 !--No communication is necessary between processors
 !----------------------------------------------------------------------------------------------------------------------
-   IF (V_eff_Ratio .LE. 3.3) THEN 					
+   IF (V_eff_Ratio .LE. 3.375) THEN 					
       CaseNo= 1
       IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 !------- Finding local particle location (at current processor)
@@ -122,7 +122,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
 !-----------------------------------------------------------------------------------------------------------------------
 !--Veff is larger than 1 which means parallel communication might be necessary 
 !-----------------------------------------------------------------------------------------------------------------------
-   IF (V_eff_Ratio .GT. 3.3) THEN
+   IF (V_eff_Ratio .GT. 3.375) THEN
 
 !-----Finding particle global location (in the whole domain not this particular processor)
       xp= current%pardata%xp 
@@ -160,7 +160,7 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
 !------- Veff is slightly larger than lattice cell volume --> Volume of influence is discretized to provide 27 points
 !------- Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence
 !-------------------------------------------------------------------------------------------------------------------------
-         IF ((V_eff_Ratio .GT. 3.3) .AND. (V_eff_Ratio .LT. 8.0)) THEN		
+         IF ((V_eff_Ratio .GT. 3.375) .AND. (V_eff_Ratio .LT. 8.0)) THEN		
              CaseNo= 2
 
 !------------Discretizing the volume of influence to  make sure at least 27 points are available
