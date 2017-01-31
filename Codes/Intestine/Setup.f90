@@ -88,6 +88,18 @@ INTEGER(lng), PARAMETER :: LINE=2						! scalar initial condition: gaussian dist
 INTEGER(lng), PARAMETER :: INLET=3						! scalar initial condition: gaussian distribution of scalar in the z-direction along the inlet
 INTEGER(lng), PARAMETER :: UNIFORM=4						! scalar initial condition: uniform scalar in the entire domain (phi=phiIC)
 REAL(dbl) :: phiInNodes,phiOutNodes						! total amount of scalar leaving/entering the domain
+REAL(dbl),    ALLOCATABLE :: GVIB_x(:), GVIB_y(:), GVIB_z(:), GVIB_z_Per(:) 	! Global Volume of Influence's Borders (in whole domain)
+REAL(dbl),    ALLOCATABLE :: LVIB_x(:), LVIB_y(:), LVIB_z(:)               ! Local  Volume of Influence's Borders (in current procesor) 
+REAL(dbl),    ALLOCATABLE :: NVB_x(:),  NVB_y(:),  NVB_z(:)            			! Node Volume's Borders
+INTEGER(lng), ALLOCATABLE :: LN_x(:),   LN_y(:),   LN_z(:)				            ! Lattice Nodes Surronding the particle
+INTEGER(lng), ALLOCATABLE :: GNEP_x(:), GNEP_y(:), GNEP_z(:), GNEP_z_Per(:)   ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
+INTEGER(lng), ALLOCATABLE :: NEP_x(:),  NEP_y(:),  NEP_z(:)               ! Lattice Nodes Surronding the particle (Local: in current processor)
+!ALLOCATE(GVIB_x(0:1), GVIB_y(0:1), GVIB_z(0:1), GVIB_z_Per(0:1))
+!ALLOCATE(LVIB_x(0:1), LVIB_y(0:1), LVIB_z(0:1))                  ! Local  Volume of Influence's Borders (in current procesor) 
+!ALLOCATE(NVB_x(0:1),  NVB_y(0:1),  NVB_z(0:1))            	       ! Node Volume's Borders
+!ALLOCATE(LN_x(0:1),   LN_y(0:1),   LN_z(0:1))				               ! Lattice Nodes Surronding the particle
+!ALLOCATE(GNEP_x(0:1), GNEP_y(0:1), GNEP_z(0:1), GNEP_z_Per(0:1)) ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
+!ALLOCATE(NEP_x(0:1),  NEP_y(0:1),  NEP_z(0:1))                    ! Lattice Nodes Surronding the particle (Local: in current processor)
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parallel (MPI) Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1119,6 +1131,12 @@ end subroutine list_free
 SUBROUTINE AllocateArrays	! allocates array space
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
+ALLOCATE(GVIB_x(0:1), GVIB_y(0:1), GVIB_z(0:1), GVIB_z_Per(0:1))
+ALLOCATE(LVIB_x(0:1), LVIB_y(0:1), LVIB_z(0:1))                  ! Local  Volume of Influence's Borders (in current procesor) 
+ALLOCATE(NVB_x(0:1),  NVB_y(0:1),  NVB_z(0:1))            	       ! Node Volume's Borders
+ALLOCATE(LN_x(0:1),   LN_y(0:1),   LN_z(0:1))				               ! Lattice Nodes Surronding the particle
+ALLOCATE(GNEP_x(0:1), GNEP_y(0:1), GNEP_z(0:1), GNEP_z_Per(0:1)) ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
+ALLOCATE(NEP_x(0:1),  NEP_y(0:1),  NEP_z(0:1))                    ! Lattice Nodes Surronding the particle (Local: in current processor)
 
 ! Distribution Functions
 ALLOCATE(f(0:NumDistDirs,0:nxSub+1,0:nySub+1,0:nzSub+1),			&
