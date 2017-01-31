@@ -14,7 +14,7 @@ REAL(dbl) :: x_center, y_center, z_center
 REAL(dbl) :: rMax, teta1Max, teta2Max, rr, teta1, teta2
 REAL(dbl) :: x_particle, y_particle, z_particle
 REAL(dbl) :: R_Particle, R_Par_Max, D_Par_Max, R_Boundary
-REAL(dbl) :: R_left, R_right, dz, Volume
+REAL(dbl) :: R_left, R_right, dz, Volume, Area
 INTEGER   :: n,num_Par, i, j, k, z_left, z_right, clock 
 CALL ReadInput
 nuL  = (2.0_dbl*tau -1.0_dbl)/6.0_dbl	! lattice kinematic viscosity
@@ -30,8 +30,10 @@ CALL BoundaryPosition
 Volume=0.0
 DO i=1,nz
    Volume= Volume+ xcf*PI*(r(i)**2.0)
+   Area  = Area  + xcf*PI* r(i) *2.0
 END DO
 write(*,*) "Total computational domain volume (cm3) is:",Volume*1e6
+write(*,*) "Total computational domain area   (cm2) is:",Area*1e4
 
 CALL RANDOM_SEED(size=n)
 ALLOCATE(seed(n))
