@@ -326,8 +326,9 @@ CALL Compute_C_surface
 CALL Particle_Drug_Release        ! Updates particle radius, calculates drug release rate delNBbyCV. 
 CALL PrintComputationalTime(3)
 CALL Particle_Transfer 
-CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
 CALL PrintComputationalTime(4)
+CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
+CALL PrintComputationalTime(5)
 !CALL Particle_Transfer 
 !CALL Particle_History             ! Keep trak of a few particles
 !===================================================================================================
