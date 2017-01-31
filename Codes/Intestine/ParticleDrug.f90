@@ -771,6 +771,9 @@ n_d = 4.0
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
+   IF (myid .EQ. master) THEN  
+      CALL PrintComputationalTime(3) 
+   END IF   
 
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                   !only calculate the drug release when particle radius is larger than 0.1 micron
 
@@ -811,6 +814,9 @@ DO WHILE (ASSOCIATED(current))
 !--Taking care of the Z-dir Periodic BC
    GNEP_z_Per(1) = GNEP_z(1)
    GNEP_z_Per(2) = GNEP_z(2)
+   IF (myid .EQ. master) THEN  
+      CALL PrintComputationalTime(4) 
+   END IF   
 
    IF (GNEP_z(1) .LT. 1) THEN
        GNEP_z_Per(1) = GNEP_z(1) + nz
@@ -825,6 +831,9 @@ DO WHILE (ASSOCIATED(current))
        GVIB_z_Per(1) = GVIB_z(1) - nz
        GVIB_z_Per(2) = GVIB_z(2) - nz
    ENDIF
+   IF (myid .EQ. master) THEN  
+      CALL PrintComputationalTime(5) 
+   END IF   
 
    Overlap_sum_l = 0
    Overlap       = 0.0_dbl
@@ -883,7 +892,7 @@ DO WHILE (ASSOCIATED(current))
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
    IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(3) 
+      CALL PrintComputationalTime(6) 
    END IF   
 !--Global Volume of Influence Border (VIB) for this particle
 !   GVIB_x(1)= xp - 0.5_dbl* L_influence_P
@@ -906,7 +915,7 @@ DO WHILE (ASSOCIATED(current))
    GNEP_z_Per(2) = GNEP_z(2)
 
    IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(4) 
+      CALL PrintComputationalTime(7) 
    END IF   
 
    IF (GNEP_z(1) .LT. 1) THEN
@@ -919,7 +928,7 @@ DO WHILE (ASSOCIATED(current))
        GNEP_z_Per(2) = GNEP_z(2) - nz
    ENDIF
    IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(5) 
+      CALL PrintComputationalTime(8) 
    END IF   
 !--Finding processor that have overlap with effective volume around the particle
 
@@ -966,7 +975,7 @@ OVERLAP_TEST = 0.0_dbl
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
    IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(6) 
+      CALL PrintComputationalTime(9) 
    END IF   
    IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
       current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
