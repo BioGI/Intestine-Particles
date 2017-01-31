@@ -5,6 +5,7 @@ USE SetPrecision
 USE Setup
 USE IC
 USE MPI
+USE Output
 
 IMPLICIT NONE
 
