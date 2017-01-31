@@ -109,11 +109,11 @@ END SUBROUTINE CloseOutputFiles
 
 
 !===================================================================================================
-SUBROUTINE PrintComputationalTime				! Writes Computational Costs to a File
+SUBROUTINE PrintComputationalTime(N_Clock)				! Writes Computational Costs to a File
 !===================================================================================================
 IMPLICIT NONE
-
-REAL(dbl) :: Time(10000000)
+INTEGER(lng) :: N_Clock
+REAL(dbl)    :: Time(10000000)
 
 IF (myid .EQ. master) THEN
    rate = 100_lng							! Set the rate of counting
@@ -124,10 +124,10 @@ IF (myid .EQ. master) THEN
    ELSE
       CALL SYSTEM_CLOCK(current,rate)					
       Time(iter)= current 
-      WRITE(5,*) iter, (Time(iter)-Time(iter-1))/REAL(rate), ((Time(iter)-start)/(iter-iter0+1))/REAL(rate)
+      WRITE(5,*) iter, N_Clock, (Time(iter)-Time(iter-1))/REAL(rate)
    END IF
 
-   IF ((MOD(iter,10) .EQ. 0))  THEN
+   IF ((MOD(iter,5) .EQ. 0))  THEN
       CALL FLUSH(5)
    END IF
 END IF

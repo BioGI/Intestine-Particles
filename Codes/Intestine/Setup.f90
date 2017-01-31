@@ -231,7 +231,7 @@ INTEGER(lng)    :: Restart_Intervals						! number of iterations between writing
 INTEGER(lng)	  :: fileCount							! current output file number (out of total number of output files)
 INTEGER(lng)	  :: outFlag							! specifies whether to output in readable format (1), binaries (2), or both (3)
 INTEGER(lng)    :: radcount							! counts the number of output iterations for storing the radius
-
+INTEGER(lng)    :: N_Clock 
 ! System Clock Variables (for PrintStatus)
 INTEGER(lng)	:: start, current, final, rate					! timing varibles for SYSTEM_CLOCK()
 REAL(dbl)	:: tStart,tEnd,tTotal,tRecv,tSum,tAvg				! timing variables for parallel scalability [MPI_WTIME()]
