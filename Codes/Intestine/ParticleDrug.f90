@@ -905,6 +905,10 @@ DO WHILE (ASSOCIATED(current))
    GNEP_z_Per(1) = GNEP_z(1)
    GNEP_z_Per(2) = GNEP_z(2)
 
+   IF (myid .EQ. master) THEN  
+      CALL PrintComputationalTime(4) 
+   END IF   
+
    IF (GNEP_z(1) .LT. 1) THEN
        GNEP_z_Per(1) = GNEP_z(1) + nz
        GNEP_z_Per(2) = GNEP_z(2) + nz
@@ -914,7 +918,9 @@ DO WHILE (ASSOCIATED(current))
        GNEP_z_Per(1) = GNEP_z(1) - nz
        GNEP_z_Per(2) = GNEP_z(2) - nz
    ENDIF
-
+   IF (myid .EQ. master) THEN  
+      CALL PrintComputationalTime(5) 
+   END IF   
 !--Finding processor that have overlap with effective volume around the particle
 
 OVERLAP_TEST = 0.0_dbl 
@@ -960,7 +966,7 @@ OVERLAP_TEST = 0.0_dbl
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
    IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(4) 
+      CALL PrintComputationalTime(6) 
    END IF   
    IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
       current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
