@@ -881,7 +881,7 @@ DO WHILE (ASSOCIATED(current))
 
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-
+   CALL PrintComputationalTime(3) 
 !--Global Volume of Influence Border (VIB) for this particle
 !   GVIB_x(1)= xp - 0.5_dbl* L_influence_P
 !   GVIB_x(2)= xp + 0.5_dbl* L_influence_P
@@ -956,7 +956,7 @@ OVERLAP_TEST = 0.0_dbl
 
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-
+   CALL PrintComputationalTime(4) 
    IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
       current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
       current%pardata%delNBbyCV = 0.0_dbl
