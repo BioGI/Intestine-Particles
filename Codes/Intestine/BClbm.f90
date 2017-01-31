@@ -162,7 +162,7 @@ ELSE !-----------------------Intestine Geometry --------------------------------
    z2= z(km1)
                  
    IF (k.NE.km1) THEN
-       DO it=1,15
+       DO it=1,5
           !----- guess of boundary location 
           xt= (x1+x2)/2.0_dbl
           yt= (y1+y2)/2.0_dbl
