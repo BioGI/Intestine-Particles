@@ -45,7 +45,7 @@ CALL ICs							      ! set initial conditions [MODULE: ICBC]
 CALL OpenOutputFiles				! opens output files for writing [MODULE: Output.f90]
 CALL PrintParams						! print simulation info [MODULE: Output]
 CALL PrintFields						! output the velocity, density, and scalar fields [MODULE: Output]
-CALL PrintComputationalTime(1) 						! Start simulation timer, print status [MODULE: Output]
+CALL PrintComputationalTime(0) 						! Start simulation timer, print status [MODULE: Output]
 
 IF (Flag_ParticleTrack) THEN 					! If particle tracking is 'on' then do the following
    CALL IniParticles
@@ -75,13 +75,15 @@ DO iter = iter0-0_lng,nt
       ENDIF
    ENDIF
    CALL MPI_Transfer 
+   CALL PrintComputationalTime(1) 						! Start simulation timer, print status [MODULE: Output]
    IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN 	! If particle tracking is 'on' then do the following
       CALL Particle_Track
    ENDIF
+   CALL PrintComputationalTime(2) 						! Start simulation timer, print status [MODULE: Output]
    IF (iter .GE. iter_Start_phi) THEN
       CALL Scalar							! calcuate the evolution of scalar in the domain [MODULE: Algorithm]
    END IF
-   
+   CALL PrintComputationalTime(3) 						! Start simulation timer, print status [MODULE: Output]
    !----- Outputs------------------------------------------------------
    CALL PrintFields					 	! output the velocity, pressure and scalar fields 
    IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN 	! If particle tracking is 'on' then do the following
@@ -90,7 +92,7 @@ DO iter = iter0-0_lng,nt
    CALL PrintDrugConservation						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
    !CALL PrintMass							! print the total mass in the system (TEST)
    CALL PrintVolume						! print the volume in the system (TEST)
-   CALL PrintComputationalTime(10) 						! print current status [MODULE: Output]
+   CALL PrintComputationalTime(4) 						! print current status [MODULE: Output]
    IF (MOD(iter,Restart_Intervals) .EQ. 0) THEN
       CALL PrintRestart
    END IF

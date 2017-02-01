@@ -825,9 +825,6 @@ DO WHILE (ASSOCIATED(current))
        GVIB_z_Per(1) = GVIB_z(1) - nz
        GVIB_z_Per(2) = GVIB_z(2) - nz
    ENDIF
-   IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(3) 
-   END IF   
 
    Overlap_sum_l = 0
 !  Overlap       = 0.0_dbl
@@ -836,9 +833,6 @@ DO WHILE (ASSOCIATED(current))
 100 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
       (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
       (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
-   IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(4) 
-   END IF   
     
       NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
       NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
@@ -854,9 +848,6 @@ DO WHILE (ASSOCIATED(current))
       LVIB_y(2) = GVIB_y(2)- REAL(jMin-1.0_dbl , dbl)
       LVIB_z(1) = GVIB_z(1)- REAL(kMin-1.0_dbl , dbl)
       LVIB_z(2) = GVIB_z(2)- REAL(kMin-1.0_dbl , dbl)
-   IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(5) 
-   END IF   
 
 !---- NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
       DO i= NEP_x(1),NEP_x(2) 
@@ -879,9 +870,6 @@ DO WHILE (ASSOCIATED(current))
          END DO
       END DO
    END IF
-   IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(6) 
-   END IF   
 !--Taking care of the Z-dir Periodic BC
    IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
        GNEP_z(1) = GNEP_z_Per(1)
@@ -891,9 +879,6 @@ DO WHILE (ASSOCIATED(current))
        GOTO 100
    ENDIF
 
-   IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(7) 
-   END IF   
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 !--Global Volume of Influence Border (VIB) for this particle
@@ -916,10 +901,6 @@ DO WHILE (ASSOCIATED(current))
    GNEP_z_Per(1) = GNEP_z(1)
    GNEP_z_Per(2) = GNEP_z(2)
 
-   IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(8) 
-   END IF   
-
    IF (GNEP_z(1) .LT. 1) THEN
        GNEP_z_Per(1) = GNEP_z(1) + nz
        GNEP_z_Per(2) = GNEP_z(2) + nz
@@ -929,9 +910,6 @@ DO WHILE (ASSOCIATED(current))
        GNEP_z_Per(1) = GNEP_z(1) - nz
        GNEP_z_Per(2) = GNEP_z(2) - nz
    ENDIF
-   IF (myid .EQ. master) THEN  
-      CALL PrintComputationalTime(9) 
-   END IF   
 !--Finding processor that have overlap with effective volume around the particle
 
 OVERLAP_TEST = 0.0_dbl 
