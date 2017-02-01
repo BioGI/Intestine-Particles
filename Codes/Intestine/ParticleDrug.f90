@@ -830,7 +830,7 @@ DO WHILE (ASSOCIATED(current))
    END IF   
 
    Overlap_sum_l = 0
-   Overlap       = 0.0_dbl
+!  Overlap       = 0.0_dbl
 
 !--Finding processors with overlap with effective volume around the particle       
 100 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
