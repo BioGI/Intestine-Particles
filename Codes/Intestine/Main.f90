@@ -79,11 +79,11 @@ DO iter = iter0-0_lng,nt
    IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN 	! If particle tracking is 'on' then do the following
       CALL Particle_Track
    ENDIF
-   CALL PrintComputationalTime(2) 						! Start simulation timer, print status [MODULE: Output]
+   CALL PrintComputationalTime(5) 						! Start simulation timer, print status [MODULE: Output]
    IF (iter .GE. iter_Start_phi) THEN
       CALL Scalar							! calcuate the evolution of scalar in the domain [MODULE: Algorithm]
    END IF
-   CALL PrintComputationalTime(3) 						! Start simulation timer, print status [MODULE: Output]
+   CALL PrintComputationalTime(6) 						! Start simulation timer, print status [MODULE: Output]
    !----- Outputs------------------------------------------------------
    CALL PrintFields					 	! output the velocity, pressure and scalar fields 
    IF ((Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi)) THEN 	! If particle tracking is 'on' then do the following
@@ -92,7 +92,7 @@ DO iter = iter0-0_lng,nt
    CALL PrintDrugConservation						! print the total absorbed/entering/leaving scalar as a function of time [MODULE: Output]
    !CALL PrintMass							! print the total mass in the system (TEST)
    CALL PrintVolume						! print the volume in the system (TEST)
-   CALL PrintComputationalTime(4) 						! print current status [MODULE: Output]
+   CALL PrintComputationalTime(7) 						! print current status [MODULE: Output]
    IF (MOD(iter,Restart_Intervals) .EQ. 0) THEN
       CALL PrintRestart
    END IF
