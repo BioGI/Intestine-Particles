@@ -343,9 +343,9 @@ SUBROUTINE Particle_Transfer
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl)                :: Particle_Data_l(23), PArticle_Data_g(23)
+REAL(dbl)                :: Particle_Data_l(np,23), PArticle_Data_g(np,23)
 INTEGER(lng)   		       :: i,ipartition,ii,jj,kk
-INTEGER(lng)             :: RANK
+INTEGER(lng)             :: PID, ID, RANK
 INTEGER(lng)             :: mpierr
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
@@ -385,90 +385,93 @@ DO WHILE (ASSOCIATED(current))
          END DO
 !      END IF
   END IF
-
+  
+  ID = current%pardata%parid
   IF (mySub .EQ.current%pardata%cur_part) THEN
-      Particle_Data_l(1) = current%pardata%xp
-      Particle_Data_l(2) = current%pardata%yp
-      Particle_Data_l(3) = current%pardata%zp
-      Particle_Data_l(4) = current%pardata%up
-      Particle_Data_l(5) = current%pardata%vp
-      Particle_Data_l(6) = current%pardata%wp
-      Particle_Data_l(7) = current%pardata%rp
-      Particle_Data_l(8) = current%pardata%sh
-      Particle_Data_l(9) = current%pardata%xpold
-      Particle_Data_l(10)= current%pardata%ypold
-      Particle_Data_l(11)= current%pardata%zpold
-      Particle_Data_l(12)= current%pardata%upold
-      Particle_Data_l(13)= current%pardata%vpold
-      Particle_Data_l(14)= current%pardata%wpold
-      Particle_Data_l(15)= current%pardata%rpold
-      Particle_Data_l(16)= current%pardata%delNBbyCV
-      Particle_Data_l(17)= current%pardata%par_conc
-      Particle_Data_l(18)= current%pardata%bulk_conc
-      Particle_Data_l(19)= current%pardata%gamma_cont
-      Particle_Data_l(20)= current%pardata%Nbj
-      Particle_Data_l(21)= current%pardata%S
-      Particle_Data_l(22)= current%pardata%Sst
-      Particle_Data_l(23)= current%pardata%new_part
+      Particle_Data_l(ID,1) = current%pardata%xp
+      Particle_Data_l(ID,2) = current%pardata%yp
+      Particle_Data_l(ID,3) = current%pardata%zp
+      Particle_Data_l(ID,4) = current%pardata%up
+      Particle_Data_l(ID,5) = current%pardata%vp
+      Particle_Data_l(ID,6) = current%pardata%wp
+      Particle_Data_l(ID,7) = current%pardata%rp
+      Particle_Data_l(ID,8) = current%pardata%sh
+      Particle_Data_l(ID,9) = current%pardata%xpold
+      Particle_Data_l(ID,10)= current%pardata%ypold
+      Particle_Data_l(ID,11)= current%pardata%zpold
+      Particle_Data_l(ID,12)= current%pardata%upold
+      Particle_Data_l(ID,13)= current%pardata%vpold
+      Particle_Data_l(ID,14)= current%pardata%wpold
+      Particle_Data_l(ID,15)= current%pardata%rpold
+      Particle_Data_l(ID,16)= current%pardata%delNBbyCV
+      Particle_Data_l(ID,17)= current%pardata%par_conc
+      Particle_Data_l(ID,18)= current%pardata%bulk_conc
+      Particle_Data_l(ID,19)= current%pardata%gamma_cont
+      Particle_Data_l(ID,20)= current%pardata%Nbj
+      Particle_Data_l(ID,21)= current%pardata%S
+      Particle_Data_l(ID,22)= current%pardata%Sst
+      Particle_Data_l(ID,23)= current%pardata%new_part
    ELSE
-      Particle_Data_l(1) = 1.0e10                         
-      Particle_Data_l(2) = 1.0e10                    
-      Particle_Data_l(3) = 1.0e10                    
-      Particle_Data_l(4) = 1.0e10                    
-      Particle_Data_l(5) = 1.0e10                    
-      Particle_Data_l(6) = 1.0e10                    
-      Particle_Data_l(7) = 1.0e10                    
-      Particle_Data_l(8) = 1.0e10                    
-      Particle_Data_l(9) = 1.0e10                    
-      Particle_Data_l(10)= 1.0e10                    
-      Particle_Data_l(11)= 1.0e10                    
-      Particle_Data_l(12)= 1.0e10                    
-      Particle_Data_l(13)= 1.0e10                    
-      Particle_Data_l(14)= 1.0e10                    
-      Particle_Data_l(15)= 1.0e10                    
-      Particle_Data_l(16)= 1.0e10                    
-      Particle_Data_l(17)= 1.0e10                    
-      Particle_Data_l(18)= 1.0e10                    
-      Particle_Data_l(19)= 1.0e10                    
-      Particle_Data_l(20)= 1.0e10                    
-      Particle_Data_l(21)= 1.0e10                    
-      Particle_Data_l(22)= 1.0e10                    
-      Particle_Data_l(23)= 1.0e10                    
+      Particle_Data_l(ID,1) = 1.0e5                          
+      Particle_Data_l(ID,2) = 1.0e5                    
+      Particle_Data_l(ID,3) = 1.0e5                     
+      Particle_Data_l(ID,4) = 1.0e5                     
+      Particle_Data_l(ID,5) = 1.0e5                     
+      Particle_Data_l(ID,6) = 1.0e5                     
+      Particle_Data_l(ID,7) = 1.0e5                     
+      Particle_Data_l(ID,8) = 1.0e5                     
+      Particle_Data_l(ID,9) = 1.0e5                     
+      Particle_Data_l(ID,10)= 1.0e5                    
+      Particle_Data_l(ID,11)= 1.0e5                     
+      Particle_Data_l(ID,12)= 1.0e5                     
+      Particle_Data_l(ID,13)= 1.0e5                     
+      Particle_Data_l(ID,14)= 1.0e5                     
+      Particle_Data_l(ID,15)= 1.0e5                     
+      Particle_Data_l(ID,16)= 1.0e5                     
+      Particle_Data_l(ID,17)= 1.0e5                     
+      Particle_Data_l(ID,18)= 1.0e5                     
+      Particle_Data_l(ID,19)= 1.0e5                     
+      Particle_Data_l(ID,20)= 1.0e5                     
+      Particle_Data_l(ID,21)= 1.0e5                     
+      Particle_Data_l(ID,22)= 1e5                     
+      Particle_Data_l(ID,23)= 1e5                    
    ENDIF
    current => next
 ENDDO
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Particle_Data_l,Particle_Data_g,23, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*23, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
+!---- Parallel communication between all processors
 
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-      current%pardata%xp=         Particle_Data_g(1)
-      current%pardata%yp=         Particle_Data_g(2)
-      current%pardata%zp=         Particle_Data_g(3)
-      current%pardata%up=         Particle_Data_g(4)
-      current%pardata%vp=         Particle_Data_g(5)
-      current%pardata%wp=         Particle_Data_g(6)
-      current%pardata%rp=         Particle_Data_g(7)
-      current%pardata%sh=         Particle_Data_g(8)
-      current%pardata%xpold=      Particle_Data_g(9)
-      current%pardata%ypold=      Particle_Data_g(10)
-      current%pardata%zpold=      Particle_Data_g(11)
-      current%pardata%upold=      Particle_Data_g(12)
-      current%pardata%vpold=      Particle_Data_g(13)
-      current%pardata%wpold=      Particle_Data_g(14)
-      current%pardata%rpold=      Particle_Data_g(15)
-      current%pardata%delNBbyCV=  Particle_Data_g(16)
-      current%pardata%par_conc=   Particle_Data_g(17)
-      current%pardata%bulk_conc=  Particle_Data_g(18)
-      current%pardata%gamma_cont= Particle_Data_g(19)
-      current%pardata%Nbj=        Particle_Data_g(20)
-      current%pardata%S=          Particle_Data_g(21)
-      current%pardata%Sst=        Particle_Data_g(22)
-	    current%pardata%cur_part=   Particle_Data_g(23)
-      current%pardata%new_part=   Particle_Data_g(23)
+   ID= current%pardata%parid
+      current%pardata%xp=         Particle_Data_g(ID,1)
+      current%pardata%yp=         Particle_Data_g(ID,2)
+      current%pardata%zp=         Particle_Data_g(ID,3)
+      current%pardata%up=         Particle_Data_g(ID,4)
+      current%pardata%vp=         Particle_Data_g(ID,5)
+      current%pardata%wp=         Particle_Data_g(ID,6)
+      current%pardata%rp=         Particle_Data_g(ID,7)
+      current%pardata%sh=         Particle_Data_g(ID,8)
+      current%pardata%xpold=      Particle_Data_g(ID,9)
+      current%pardata%ypold=      Particle_Data_g(ID,10)
+      current%pardata%zpold=      Particle_Data_g(ID,11)
+      current%pardata%upold=      Particle_Data_g(ID,12)
+      current%pardata%vpold=      Particle_Data_g(ID,13)
+      current%pardata%wpold=      Particle_Data_g(ID,14)
+      current%pardata%rpold=      Particle_Data_g(ID,15)
+      current%pardata%delNBbyCV=  Particle_Data_g(ID,16)
+      current%pardata%par_conc=   Particle_Data_g(ID,17)
+      current%pardata%bulk_conc=  Particle_Data_g(ID,18)
+      current%pardata%gamma_cont= Particle_Data_g(ID,19)
+      current%pardata%Nbj=        Particle_Data_g(ID,20)
+      current%pardata%S=          Particle_Data_g(ID,21)
+      current%pardata%Sst=        Particle_Data_g(ID,22)
+	    current%pardata%cur_part=   Particle_Data_g(ID,23)
+      current%pardata%new_part=   Particle_Data_g(ID,23)
 !   END IF
    current => next  
 ENDDO
