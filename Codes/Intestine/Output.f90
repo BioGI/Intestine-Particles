@@ -127,7 +127,7 @@ IF (myid .EQ. master) THEN
       WRITE(5,*) iter, N_Clock, (Time(iter)-Time(iter-1))/REAL(rate)
    END IF
 
-   IF ((MOD(iter,5) .EQ. 0))  THEN
+   IF ((MOD(iter,50) .EQ. 0))  THEN
       CALL FLUSH(5)
    END IF
 END IF
@@ -509,7 +509,9 @@ END DO
 mass_theory = volume *den 
 mass_err= 100*(mass_theory-mass_actual)/mass_theory
 WRITE(2458,'(I8,6E21.12)') iter, iter*tcf, mass_theory, mass_actual, mass_err 
-CALL FLUSH(2458)  
+IF ((MOD(iter,50) .EQ. 0))  THEN
+   CALL FLUSH(2458)  
+ENDIF
 !===================================================================================================
 END SUBROUTINE PrintMass
 !===================================================================================================
@@ -535,7 +537,9 @@ IF (myid .EQ. master) THEN
       volume = volume + PI*rDom(k)*rDom(k)*zcf
    END DO
    WRITE(2460,'(I8,E15.7)') iter, volume
-   CALL FLUSH(2460)  
+   IF ((MOD(iter,50) .EQ. 0))  THEN
+      CALL FLUSH(2460)  
+   ENDIF   
 END IF
 !===================================================================================================
 END SUBROUTINE PrintVolume
@@ -630,7 +634,9 @@ ENDIF
 
 IF (myid .EQ. master) THEN
    WRITE(2472,'(I8, F13.4, 6E18.10)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
-   CALL FLUSH(2472)
+   IF ((MOD(iter,50) .EQ. 0))  THEN
+      CALL FLUSH(2472)
+   ENDIF   
 END IF
 !===================================================================================================
 END SUBROUTINE PrintDrugConservation 
@@ -787,7 +793,9 @@ ELSE
    WRITE(5,*)
    WRITE(5,*) 'Combining field output files and deleting originials...'
    WRITE(5,*)     
-   CALL FLUSH(5)
+   IF ((MOD(iter,50) .EQ. 0))  THEN
+      CALL FLUSH(5)
+   ENDIF    
 
    !----- fill out SubLimits for the master processor (1st subdomain)
    SubLimits(1,1) = nxSub

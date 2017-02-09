@@ -313,21 +313,26 @@ DO WHILE (ASSOCIATED(current))
    current => next
 ENDDO
 
-CALL Particle_Transfer
-CALL Particle_Velocity 		
 CALL PrintComputationalTime(2)
+CALL Particle_Transfer
+CALL PrintComputationalTime(3)
+CALL Particle_Velocity 		
+CALL PrintComputationalTime(4)
 !-----Particle tracking is done, now time for drug relaes calculations---------------------------------
 CALL Compute_C_bulk  
+CALL PrintComputationalTime(5)
 IF (Flag_Shear_Effects) THEN
    CALL Compute_Shear
 END IF   
 CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
 CALL Compute_C_surface
-CALL PrintComputationalTime(3)
+CALL PrintComputationalTime(6)
 CALL Particle_Drug_Release        ! Updates particle radius, calculates drug release rate delNBbyCV. 
+CALL PrintComputationalTime(7)
 CALL Particle_Transfer 
+CALL PrintComputationalTime(8)
 CALL Particle_Drug_To_Nodes       ! distributes released drug concentration to nodes in effective volume. 
-CALL PrintComputationalTime(4)
+CALL PrintComputationalTime(9)
 !CALL Particle_Transfer 
 !CALL Particle_History             ! Keep trak of a few particles
 !===================================================================================================
@@ -353,41 +358,37 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 	
+   ID = current%pardata%parid
 
    IF (mySub .EQ.current%pardata%cur_part) THEN 
-!      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-         !----- Wrappign around in z-direction for periodic BC in z
-         IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
-            current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
-         ENDIF
-         IF (current%pardata%zp.LT.0.0_dbl) THEN
-            current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
-         ENDIF
+      !----- Wrappign around in z-direction for periodic BC in z
+      IF (current%pardata%zp.GE.REAL(nz,dbl)) THEN
+         current%pardata%zp = MOD(current%pardata%zp,REAL(nz,dbl))
+      ENDIF
+      IF (current%pardata%zp.LT.0.0_dbl) THEN
+         current%pardata%zp = current%pardata%zp+REAL(nz,dbl)
+      ENDIF
 
-         !----- Wrappign around in y-direction for periodic BC in y
-         IF (current%pardata%yp.GE.REAL(ny,dbl)) THEN
-            current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
-         ENDIF
-         IF (current%pardata%yp.LT.1.0_dbl) THEN
-            current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
-         ENDIF
+      !----- Wrappign around in y-direction for periodic BC in y
+      IF (current%pardata%yp.GE.REAL(ny,dbl)) THEN
+         current%pardata%yp = MOD(current%pardata%yp,REAL(ny,dbl))
+      ENDIF
+      IF (current%pardata%yp.LT.1.0_dbl) THEN
+         current%pardata%yp = current%pardata%yp+REAL(ny,dbl)
+      ENDIF
 
-         !----- Estimate to which partition the updated position belongs to.
-         DO ipartition = 1_lng,NumSubsTotal
-            IF((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-               (current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-               (current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-               (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-               (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-               (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
-               current%pardata%new_part = ipartition
-            END IF
-         END DO
-!      END IF
-  END IF
+      !----- Estimate to which partition the updated position belongs to.
+      DO ipartition = 1_lng,NumSubsTotal
+         IF((current%pardata%xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+           (current%pardata%xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+           (current%pardata%yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+           (current%pardata%yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+           (current%pardata%zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+           (current%pardata%zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+           current%pardata%new_part = ipartition
+         END IF
+      END DO
   
-  ID = current%pardata%parid
-  IF (mySub .EQ.current%pardata%cur_part) THEN
       Particle_Data_l(ID,1) = current%pardata%xp
       Particle_Data_l(ID,2) = current%pardata%yp
       Particle_Data_l(ID,3) = current%pardata%zp
@@ -406,48 +407,46 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data_l(ID,16)= current%pardata%delNBbyCV
       Particle_Data_l(ID,17)= current%pardata%par_conc
       Particle_Data_l(ID,18)= current%pardata%bulk_conc
-      Particle_Data_l(ID,19)= current%pardata%gamma_cont
-      Particle_Data_l(ID,20)= current%pardata%Nbj
-      Particle_Data_l(ID,21)= current%pardata%S
-      Particle_Data_l(ID,22)= current%pardata%Sst
-      Particle_Data_l(ID,23)= current%pardata%new_part
+      Particle_Data_l(ID,19)= current%pardata%Nbj
+      Particle_Data_l(ID,20)= current%pardata%S
+      Particle_Data_l(ID,21)= current%pardata%Sst
+      Particle_Data_l(ID,22)= current%pardata%new_part
    ELSE
-      Particle_Data_l(ID,1) = 1.0e5                          
-      Particle_Data_l(ID,2) = 1.0e5                    
-      Particle_Data_l(ID,3) = 1.0e5                     
-      Particle_Data_l(ID,4) = 1.0e5                     
-      Particle_Data_l(ID,5) = 1.0e5                     
-      Particle_Data_l(ID,6) = 1.0e5                     
-      Particle_Data_l(ID,7) = 1.0e5                     
-      Particle_Data_l(ID,8) = 1.0e5                     
-      Particle_Data_l(ID,9) = 1.0e5                     
-      Particle_Data_l(ID,10)= 1.0e5                    
-      Particle_Data_l(ID,11)= 1.0e5                     
-      Particle_Data_l(ID,12)= 1.0e5                     
-      Particle_Data_l(ID,13)= 1.0e5                     
-      Particle_Data_l(ID,14)= 1.0e5                     
-      Particle_Data_l(ID,15)= 1.0e5                     
-      Particle_Data_l(ID,16)= 1.0e5                     
-      Particle_Data_l(ID,17)= 1.0e5                     
-      Particle_Data_l(ID,18)= 1.0e5                     
-      Particle_Data_l(ID,19)= 1.0e5                     
-      Particle_Data_l(ID,20)= 1.0e5                     
-      Particle_Data_l(ID,21)= 1.0e5                     
+      Particle_Data_l(ID,1) = 1e5                          
+      Particle_Data_l(ID,2) = 1e5                    
+      Particle_Data_l(ID,3) = 1e5                     
+      Particle_Data_l(ID,4) = 1e5                     
+      Particle_Data_l(ID,5) = 1e5                     
+      Particle_Data_l(ID,6) = 1e5                     
+      Particle_Data_l(ID,7) = 1e5                     
+      Particle_Data_l(ID,8) = 1e5                     
+      Particle_Data_l(ID,9) = 1e5                     
+      Particle_Data_l(ID,10)= 1e5                    
+      Particle_Data_l(ID,11)= 1e5                     
+      Particle_Data_l(ID,12)= 1e5                     
+      Particle_Data_l(ID,13)= 1e5                     
+      Particle_Data_l(ID,14)= 1e5                     
+      Particle_Data_l(ID,15)= 1e5                     
+      Particle_Data_l(ID,16)= 1e5                     
+      Particle_Data_l(ID,17)= 1e5                     
+      Particle_Data_l(ID,18)= 1e5                     
+      Particle_Data_l(ID,19)= 1e5                     
+      Particle_Data_l(ID,20)= 1e5                     
+      Particle_Data_l(ID,21)= 1e5                     
       Particle_Data_l(ID,22)= 1e5                     
-      Particle_Data_l(ID,23)= 1e5                    
    ENDIF
    current => next
 ENDDO
 
-CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*23, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
 !---- Parallel communication between all processors
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*22, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
 
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-   ID= current%pardata%parid
+      ID= current%pardata%parid
       current%pardata%xp=         Particle_Data_g(ID,1)
       current%pardata%yp=         Particle_Data_g(ID,2)
       current%pardata%zp=         Particle_Data_g(ID,3)
@@ -472,7 +471,6 @@ DO WHILE (ASSOCIATED(current))
       current%pardata%Sst=        Particle_Data_g(ID,22)
 	    current%pardata%cur_part=   Particle_Data_g(ID,23)
       current%pardata%new_part=   Particle_Data_g(ID,23)
-!   END IF
    current => next  
 ENDDO
 !===================================================================================================
