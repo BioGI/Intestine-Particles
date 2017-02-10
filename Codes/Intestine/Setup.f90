@@ -50,7 +50,7 @@ LOGICAL :: Flag_Restart                ! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
-REAL(dbl), ALLOCATABLE :: overlap(:,:,:)                                        ! Partitioning for drug dissolution model
+REAL(dbl), ALLOCATABLE :: overlap(:,:,:,:)                                        ! Partitioning for drug dissolution model
 REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)				! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_x(:,:,:)				! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_y(:,:,:)				! passive scalar contribution from particles
@@ -91,15 +91,10 @@ REAL(dbl) :: phiInNodes,phiOutNodes						! total amount of scalar leaving/enteri
 REAL(dbl),    ALLOCATABLE :: GVIB_x(:), GVIB_y(:), GVIB_z(:), GVIB_z_Per(:) 	! Global Volume of Influence's Borders (in whole domain)
 REAL(dbl),    ALLOCATABLE :: LVIB_x(:), LVIB_y(:), LVIB_z(:)               ! Local  Volume of Influence's Borders (in current procesor) 
 REAL(dbl),    ALLOCATABLE :: NVB_x(:),  NVB_y(:),  NVB_z(:)            			! Node Volume's Borders
+REAL(dbl),    ALLOCATABLE :: Overlap_sum(:), Overlap_sum_l(:)
 INTEGER(lng), ALLOCATABLE :: LN_x(:),   LN_y(:),   LN_z(:)				            ! Lattice Nodes Surronding the particle
 INTEGER(lng), ALLOCATABLE :: GNEP_x(:), GNEP_y(:), GNEP_z(:), GNEP_z_Per(:)   ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 INTEGER(lng), ALLOCATABLE :: NEP_x(:),  NEP_y(:),  NEP_z(:)               ! Lattice Nodes Surronding the particle (Local: in current processor)
-!ALLOCATE(GVIB_x(0:1), GVIB_y(0:1), GVIB_z(0:1), GVIB_z_Per(0:1))
-!ALLOCATE(LVIB_x(0:1), LVIB_y(0:1), LVIB_z(0:1))                  ! Local  Volume of Influence's Borders (in current procesor) 
-!ALLOCATE(NVB_x(0:1),  NVB_y(0:1),  NVB_z(0:1))            	       ! Node Volume's Borders
-!ALLOCATE(LN_x(0:1),   LN_y(0:1),   LN_z(0:1))				               ! Lattice Nodes Surronding the particle
-!ALLOCATE(GNEP_x(0:1), GNEP_y(0:1), GNEP_z(0:1), GNEP_z_Per(0:1)) ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
-!ALLOCATE(NEP_x(0:1),  NEP_y(0:1),  NEP_z(0:1))                    ! Lattice Nodes Surronding the particle (Local: in current processor)
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Parallel (MPI) Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -352,6 +347,7 @@ END SUBROUTINE Global_Setup
 SUBROUTINE ReadInput			! read the input file
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
+INTEGER(lng) np
 
 ! Read input from input file
 OPEN(10,FILE='input.txt')
@@ -406,6 +402,10 @@ READ(10,*) Flag_Confinement_Effects    ! Flag for including confinement effectgs
 READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
 READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
+
+OPEN(11,FILE='particle.dat')
+READ(11,*) np ! a flag to denote domain type - 0 for 1/4th cylinder and 1 for full cylinder
+CLOSE(11)
 
 !------------------------------------------------
 END SUBROUTINE ReadInput
@@ -1137,6 +1137,7 @@ ALLOCATE(NVB_x(0:1),  NVB_y(0:1),  NVB_z(0:1))            	       ! Node Volume'
 ALLOCATE(LN_x(0:1),   LN_y(0:1),   LN_z(0:1))				               ! Lattice Nodes Surronding the particle
 ALLOCATE(GNEP_x(0:1), GNEP_y(0:1), GNEP_z(0:1), GNEP_z_Per(0:1)) ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 ALLOCATE(NEP_x(0:1),  NEP_y(0:1),  NEP_z(0:1))                    ! Lattice Nodes Surronding the particle (Local: in current processor)
+ALLOCATE(Overlap_sum(0:np), Overlap_sum_l(0:np))
 
 ! Distribution Functions
 ALLOCATE(f(0:NumDistDirs,0:nxSub+1,0:nySub+1,0:nzSub+1),			&
@@ -1158,7 +1159,7 @@ ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ! Scalar
 ALLOCATE(phi(0:nxSub+1,0:nySub+1,0:nzSub+1), 						&
          phiTemp(0:nxSub+1,0:nySub+1,0:nzSub+1))
-ALLOCATE(overlap(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(overlap(0:np,0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_y(0:nxSub+1,0:nySub+1,0:nzSub+1))
