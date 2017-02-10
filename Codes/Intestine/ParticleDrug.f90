@@ -881,84 +881,66 @@ DO WHILE (ASSOCIATED(current))
 
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
    CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-!--Global Volume of Influence Border (VIB) for this particle
-!   GVIB_x(1)= xp - 0.5_dbl* L_influence_P
-!   GVIB_x(2)= xp + 0.5_dbl* L_influence_P
-!   GVIB_y(1)= yp - 0.5_dbl* L_influence_P
-!   GVIB_y(2)= yp + 0.5_dbl* L_influence_P
-!   GVIB_z(1)= zp - 0.5_dbl* L_influence_P
-!   GVIB_z(2)= zp + 0.5_dbl* L_influence_P
-
-!--Global Nodes Effected by Particle
-   GNEP_x(1)= FLOOR(GVIB_x(1))
-   GNEP_y(1)= FLOOR(GVIB_y(1))
-   GNEP_z(1)= FLOOR(GVIB_z(1))
-   GNEP_x(2)= CEILING(GVIB_x(2))
-   GNEP_y(2)= CEILING(GVIB_y(2))
-   GNEP_z(2)= CEILING(GVIB_z(2))
-
-!--Taking care of the Z-dir Periodic BC
-   GNEP_z_Per(1) = GNEP_z(1)
-   GNEP_z_Per(2) = GNEP_z(2)
-
-   IF (GNEP_z(1) .LT. 1) THEN
-       GNEP_z_Per(1) = GNEP_z(1) + nz
-       GNEP_z_Per(2) = GNEP_z(2) + nz
-   ENDIF
-
-   IF (GNEP_z(2) .GT. nz) THEN
-       GNEP_z_Per(1) = GNEP_z(1) - nz
-       GNEP_z_Per(2) = GNEP_z(2) - nz
-   ENDIF
-!--Finding processor that have overlap with effective volume around the particle
-
-OVERLAP_TEST = 0.0_dbl 
-
-200 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
-      (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
-      (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
-
-      NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
-      NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
-      NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
-
-      NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
-      NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
-      NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
-
-!-----Computing particle release contribution to scalar field at each lattice node
-      DO i= NEP_x(1),NEP_x(2)
-         DO j= NEP_y(1),NEP_y(2)
-            DO k= NEP_z(1),NEP_z(2)
-               IF (node(i,j,k) .EQ. FLUID) THEN                 
-                  IF (Overlap_sum .GT. 1e-18) THEN 			              !Overlap_sum goes to zero when:1-particle is disapearing 2-when all nodes around it are saturated
-                    Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
-                  ELSE
-                     Overlap(i,j,k) = 0.0
-                  END IF
-                   
-       	          delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
-                  OVERLAP_TEST= OVERLAP_TEST + Overlap(i,j,k)
-               END IF 
-            END DO
-         END DO
-      END DO
-     
-   END IF
-
-   IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
-       GNEP_z(1) = GNEP_z_Per(1)
-       GNEP_z(2) = GNEP_z_Per(2)
-       GOTO 200
-   ENDIF
-
-   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-   CALL MPI_ALLREDUCE(Overlap_test, Overlap_test_Global, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-   IF (abs(Overlap_test_Global - 1.0) .GT. 0.5) THEN                        ! Detecting the case of overlap = 0.0
+   IF (Overlap_sum .LT. 1.0e-9) THEN                        ! Detecting the case of overlap = 0.0
       current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
       current%pardata%delNBbyCV = 0.0_dbl
-   END IF
+   ELSE
 
+!-----Global Nodes Effected by Particle
+      GNEP_x(1)= FLOOR(GVIB_x(1))
+      GNEP_y(1)= FLOOR(GVIB_y(1))
+      GNEP_z(1)= FLOOR(GVIB_z(1))
+      GNEP_x(2)= CEILING(GVIB_x(2))
+      GNEP_y(2)= CEILING(GVIB_y(2))
+      GNEP_z(2)= CEILING(GVIB_z(2))
+
+!-----Taking care of the Z-dir Periodic BC
+      GNEP_z_Per(1) = GNEP_z(1)
+      GNEP_z_Per(2) = GNEP_z(2)
+
+      IF (GNEP_z(1) .LT. 1) THEN
+          GNEP_z_Per(1) = GNEP_z(1) + nz
+          GNEP_z_Per(2) = GNEP_z(2) + nz
+      ENDIF
+
+      IF (GNEP_z(2) .GT. nz) THEN
+          GNEP_z_Per(1) = GNEP_z(1) - nz
+          GNEP_z_Per(2) = GNEP_z(2) - nz
+      ENDIF
+!-----Finding processor that have overlap with effective volume around the particle
+
+200   IF ((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
+         (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
+         (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
+
+         NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
+         NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
+         NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
+
+         NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
+         NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
+         NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
+
+!--------Computing particle release contribution to scalar field at each lattice node
+         DO i= NEP_x(1),NEP_x(2)
+            DO j= NEP_y(1),NEP_y(2)
+               DO k= NEP_z(1),NEP_z(2)
+                  IF (node(i,j,k) .EQ. FLUID) THEN                 
+                     Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
+          	         delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
+                  END IF 
+               END DO
+            END DO
+         END DO
+     
+      END IF
+
+      IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
+          GNEP_z(1) = GNEP_z_Per(1)
+          GNEP_z(2) = GNEP_z_Per(2)
+          GOTO 200
+      ENDIF
+   ENDIF            ! Condition to check if Overlap_Sum > 1e-9
  END IF 						! Condition to check if R > R_min_acceptable
  current => next
 ENDDO
