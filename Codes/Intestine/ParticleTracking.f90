@@ -465,12 +465,11 @@ DO WHILE (ASSOCIATED(current))
       current%pardata%delNBbyCV=  Particle_Data_g(ID,16)
       current%pardata%par_conc=   Particle_Data_g(ID,17)
       current%pardata%bulk_conc=  Particle_Data_g(ID,18)
-      current%pardata%gamma_cont= Particle_Data_g(ID,19)
-      current%pardata%Nbj=        Particle_Data_g(ID,20)
-      current%pardata%S=          Particle_Data_g(ID,21)
-      current%pardata%Sst=        Particle_Data_g(ID,22)
-	    current%pardata%cur_part=   Particle_Data_g(ID,23)
-      current%pardata%new_part=   Particle_Data_g(ID,23)
+      current%pardata%Nbj=        Particle_Data_g(ID,19)
+      current%pardata%S=          Particle_Data_g(ID,20)
+      current%pardata%Sst=        Particle_Data_g(ID,21)
+	    current%pardata%cur_part=   Particle_Data_g(ID,22)
+      current%pardata%new_part=   Particle_Data_g(ID,22)
    current => next  
 ENDDO
 !===================================================================================================
