@@ -874,7 +874,7 @@ DO WHILE (ASSOCIATED(current))
       IF (Overlap_sum(ID) .LT. 1.0e-9) THEN                        ! Detecting the case of overlap = 0.0
          current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
          current%pardata%delNBbyCV = 0.0_dbl
-      ELSE
+      !ELSE
          R_P          = current%pardata%rp
          delta_P      = R_P
          R_influence_P= (R_P + n_d * delta_P) / xcf
@@ -887,6 +887,7 @@ DO WHILE (ASSOCIATED(current))
          GVIB_y(1)= yp - 0.5_dbl * L_influence_P
          GVIB_y(2)= yp + 0.5_dbl * L_influence_P
          GVIB_z(1)= zp - 0.5_dbl * L_influence_P
+         GVIB_z(2)= zp + 0.5_dbl * L_influence_P
 
 !--------Global Nodes Effected by Particle
          GNEP_x(1)= FLOOR(GVIB_x(1))
@@ -909,37 +910,37 @@ DO WHILE (ASSOCIATED(current))
          ENDIF
 !-----Finding processor that have overlap with effective volume around the particle
 
-200   IF ((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
-         (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
-         (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
-         NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
-         NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
-         NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
-         NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
-         NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
-         NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
+200      IF ((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
+            (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
+            (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
+            NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
+            NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
+            NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
+            NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
+            NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
+            NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
 
-!--------Computing particle release contribution to scalar field at each lattice node
-         DO i= NEP_x(1),NEP_x(2)
-            DO j= NEP_y(1),NEP_y(2)
-               DO k= NEP_z(1),NEP_z(2)
-                  IF (node(i,j,k) .EQ. FLUID) THEN                 
-                     Overlap(ID,i,j,k) = Overlap(ID,i,j,k) / Overlap_sum(ID)
-          	         delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(ID,i,j,k) 
-                  END IF 
+!-----------Computing particle release contribution to scalar field at each lattice node
+            DO i= NEP_x(1),NEP_x(2)
+               DO j= NEP_y(1),NEP_y(2)
+                  DO k= NEP_z(1),NEP_z(2)
+                     IF (node(i,j,k) .EQ. FLUID) THEN                 
+                        Overlap(ID,i,j,k) = Overlap(ID,i,j,k) / Overlap_sum(ID)
+          	            delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(ID,i,j,k) 
+                     END IF 
+                  END DO
                END DO
             END DO
-         END DO
      
-      END IF
+         END IF
 
-      IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
-          GNEP_z(1) = GNEP_z_Per(1)
-          GNEP_z(2) = GNEP_z_Per(2)
-          GOTO 200
-      ENDIF
-   ENDIF            ! Condition to check if Overlap_Sum > 1e-9
- END IF 						! Condition to check if R > R_min_acceptable
+         IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
+             GNEP_z(1) = GNEP_z_Per(1)
+             GNEP_z(2) = GNEP_z_Per(2)
+             GOTO 200
+         ENDIF
+      ENDIF            ! Condition to check if Overlap_Sum > 1e-9
+    END IF 						! Condition to check if R > R_min_acceptable
  current => next
 ENDDO
 !===================================================================================================
