@@ -754,6 +754,7 @@ REAL(dbl)                 :: n_d         				! Modeling parameter to extend the 
 REAL(dbl)                 :: R_P, Sh_P, delta_P
 REAL(dbl)                 :: R_influence_P, L_influence_P
 REAL(dbl)		  :: tmp 
+REAL(dbl)     ::Overlap_Sum(5000), Overlap_sum_l(5000)
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 

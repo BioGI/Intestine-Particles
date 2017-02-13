@@ -91,7 +91,7 @@ REAL(dbl) :: phiInNodes,phiOutNodes						! total amount of scalar leaving/enteri
 REAL(dbl),    ALLOCATABLE :: GVIB_x(:), GVIB_y(:), GVIB_z(:), GVIB_z_Per(:) 	! Global Volume of Influence's Borders (in whole domain)
 REAL(dbl),    ALLOCATABLE :: LVIB_x(:), LVIB_y(:), LVIB_z(:)               ! Local  Volume of Influence's Borders (in current procesor) 
 REAL(dbl),    ALLOCATABLE :: NVB_x(:),  NVB_y(:),  NVB_z(:)            			! Node Volume's Borders
-REAL(dbl),    ALLOCATABLE :: Overlap_sum(:), Overlap_sum_l(:)
+!REAL(dbl),    ALLOCATABLE :: Overlap_sum(:), Overlap_sum_l(:)
 INTEGER(lng), ALLOCATABLE :: LN_x(:),   LN_y(:),   LN_z(:)				            ! Lattice Nodes Surronding the particle
 INTEGER(lng), ALLOCATABLE :: GNEP_x(:), GNEP_y(:), GNEP_z(:), GNEP_z_Per(:)   ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 INTEGER(lng), ALLOCATABLE :: NEP_x(:),  NEP_y(:),  NEP_z(:)               ! Lattice Nodes Surronding the particle (Local: in current processor)
@@ -1137,7 +1137,7 @@ ALLOCATE(NVB_x(0:1),  NVB_y(0:1),  NVB_z(0:1))            	       ! Node Volume'
 ALLOCATE(LN_x(0:1),   LN_y(0:1),   LN_z(0:1))				               ! Lattice Nodes Surronding the particle
 ALLOCATE(GNEP_x(0:1), GNEP_y(0:1), GNEP_z(0:1), GNEP_z_Per(0:1)) ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 ALLOCATE(NEP_x(0:1),  NEP_y(0:1),  NEP_z(0:1))                    ! Lattice Nodes Surronding the particle (Local: in current processor)
-ALLOCATE(Overlap_sum(0:np), Overlap_sum_l(0:np))
+!ALLOCATE(Overlap_sum(0:np), Overlap_sum_l(0:np))
 
 ! Distribution Functions
 ALLOCATE(f(0:NumDistDirs,0:nxSub+1,0:nySub+1,0:nzSub+1),			&
@@ -1159,7 +1159,7 @@ ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ! Scalar
 ALLOCATE(phi(0:nxSub+1,0:nySub+1,0:nzSub+1), 						&
          phiTemp(0:nxSub+1,0:nySub+1,0:nzSub+1))
-ALLOCATE(overlap(0:np,0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(overlap(1:np,0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_y(0:nxSub+1,0:nySub+1,0:nzSub+1))
