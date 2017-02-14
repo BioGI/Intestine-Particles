@@ -394,7 +394,7 @@ DO WHILE (ASSOCIATED(current))
             IF (Sst .LE. 5.0_dbl) THEN
                current%pardata%sh = 1.0_dbl + 0.281_dbl*(Sst**0.5_dbl)
             ELSE IF ((Sst .GT. 5.0_dbl).AND.(Sst .LE. 80.0)) THEN
-               current%pardata%sh = 0.181_dbl*(Sst**0.2_dbl)
+               current%pardata%sh = 1.181_dbl*(Sst**0.2_dbl)
             ELSE IF (Sst.GT.80.0) THEN
                current%pardata%sh = 4.5_dbl - (7.389/(Sst**(1.0_dbl/3.0_dbl)) )
             END IF
