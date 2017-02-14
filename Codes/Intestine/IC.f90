@@ -118,7 +118,7 @@ INTEGER(lng)   :: i, parid,particle_partition,ipartition
 INTEGER(lng)   :: mpierr
 INTEGER(lng)   :: parid_r
 REAL(dbl)      :: xp_r, yp_r, zp_r, up_r, vp_r, wp_r, rp_r, xpold_r, ypold_r, zpold_r			! parameters read form particle_restart.dat
-REAL(dbl)      :: upold_r, vpold_r, wpold_r, rpold_r, par_conc_r, gamma_cont_r, Sh_r, S_r		! parameters read form particle_restart.dat
+REAL(dbl)      :: upold_r, vpold_r, wpold_r, rpold_r, par_conc_r, gamma_cont_r, Sh_conf_r, Sh_shear_r, Sh_slip_r, S_r		! parameters read form particle_restart.dat
 REAL(dbl)      :: Sst_r, Veff_r, Nbj_r, bulk_conc_r, delNBbyCV_r, cur_part_r, new_part_r		! parameters read form particle_restart.dat
 REAL(dbl) :: xp,yp,zp,par_radius
 CHARACTER(7) :: iter_char                                       ! iteration stored as a character
@@ -140,7 +140,7 @@ IF ((Flag_Restart).AND. (Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi))  
 
    DO i = 1, np
       READ(59,*) parid_r,xp_r,yp_r,zp_r,up_r,vp_r,wp_r,rp_r,xpold_r,ypold_r,zpold_r, &			
-	         upold_r,vpold_r,wpold_r,rpold_r,par_conc_r,gamma_cont_r,Sh_r,S_r,   &
+	         upold_r,vpold_r,wpold_r,rpold_r,par_conc_r,gamma_cont_r,Sh_conf_r,Sh_shear_r,Sh_slip_r,S_r,   &
                  Sst_r,Veff_r,Nbj_r,bulk_conc_r,delNBbyCV_r,cur_part_r,new_part_r                                
       CALL list_init(CurPar%next)      
       CurPar%next%prev => CurPar
@@ -162,8 +162,10 @@ IF ((Flag_Restart).AND. (Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi))  
       CurPar%next%pardata%rpold 	= 	rpold_r
       CurPar%next%pardata%par_conc 	= 	par_conc_r
       CurPar%next%pardata%gamma_cont 	= 	gamma_cont_r
-      CurPar%next%pardata%sh 		=	Sh_r
-      CurPar%next%pardata%S 		=	S_r
+      CurPar%next%pardata%sh_conf =	Sh_conf_r
+      CurPar%next%pardata%sh_shear=	Sh_shear_r
+      CurPar%next%pardata%sh_slip	=	Sh_slip_r
+      CurPar%next%pardata%S 		  =	S_r
       CurPar%next%pardata%Sst 		= 	Sst_r
       CurPar%next%pardata%Veff 		= 	Veff_r
       CurPar%next%pardata%Nbj 		= 	Nbj_r
@@ -213,17 +215,19 @@ ELSE										! starting from scratch. No data to be read from restart files
       CurPar%next%pardata%vpold = CurPar%next%pardata%vp
       CurPar%next%pardata%wpold = CurPar%next%pardata%wp
       CurPar%next%pardata%rpold = CurPar%next%pardata%rp
-      CurPar%next%pardata%par_conc = S_intrinsic 
+      CurPar%next%pardata%par_conc   = S_intrinsic 
       CurPar%next%pardata%gamma_cont = 0.0000_dbl
-      CurPar%next%pardata%sh = 1.0000_dbl/(1.0_dbl-CurPar%next%pardata%gamma_cont)
-      CurPar%next%pardata%S = 0.0_dbl
-      CurPar%next%pardata%Sst = 0.0_dbl
-      CurPar%next%pardata%Veff = 0.0_dbl
-      CurPar%next%pardata%Nbj = 0.0_dbl
-      CurPar%next%pardata%bulk_conc = 0.0000_dbl
+      CurPar%next%pardata%sh_conf  = 0.0_dbl
+      CurPar%next%pardata%sh_shear = 0.0_dbl
+      CurPar%next%pardata%sh_slip  = 0.0_dbl 
+      CurPar%next%pardata%S        = 0.0_dbl
+      CurPar%next%pardata%Sst      = 0.0_dbl
+      CurPar%next%pardata%Veff     = 0.0_dbl
+      CurPar%next%pardata%Nbj      = 0.0_dbl
+      CurPar%next%pardata%bulk_conc= 0.0000_dbl
       CurPar%next%pardata%delNBbyCV= 0.00000_dbl
-      CurPar%next%pardata%cur_part= particle_partition
-      CurPar%next%pardata%new_part= particle_partition
+      CurPar%next%pardata%cur_part = particle_partition
+      CurPar%next%pardata%new_part = particle_partition
       CurPar => CurPar%next
    END DO
    CLOSE(60)

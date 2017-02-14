@@ -221,31 +221,33 @@ IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. iter_Start_ph
    DO WHILE (ASSOCIATED(current))
       next => current%next 
       IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
-         WRITE(156,*)  	current%pardata%parid,	        &
-                        current%pardata%xp, 	  	&
-                        current%pardata%yp,  	  	&
-                        current%pardata%zp, 	  	&
-                        current%pardata%up, 	  	&
-                        current%pardata%vp, 	  	&
-                        current%pardata%wp, 	  	&
-                        current%pardata%rp, 	  	&
-                        current%pardata%xpold,          &
-                        current%pardata%ypold,          &
-                        current%pardata%zpold,          &
-                        current%pardata%upold,          &
-                        current%pardata%vpold,          &
-                        current%pardata%wpold,          &
-                        current%pardata%rpold,          &
-                        current%pardata%par_conc,       &
-                        current%pardata%gamma_cont,	&
-                        current%pardata%sh,	        &
-                        current%pardata%S,    		&
-                        current%pardata%Sst,   		&
-                        current%pardata%Veff,           &
-                        current%pardata%Nbj,		&		
-                        current%pardata%bulk_conc,	&
-                        current%pardata%delNBbyCV, 	&
-                        current%pardata%cur_part,	&
+         WRITE(156,*)  	current%pardata%parid,	   &
+                        current%pardata%xp, 	  	 &
+                        current%pardata%yp,  	  	 &
+                        current%pardata%zp, 	  	 &
+                        current%pardata%up, 	  	 &
+                        current%pardata%vp, 	     &
+                        current%pardata%wp, 	  	 &
+                        current%pardata%rp,        &
+                        current%pardata%xpold,     &
+                        current%pardata%ypold,     &
+                        current%pardata%zpold,     &
+                        current%pardata%upold,     & 
+                        current%pardata%vpold,     &
+                        current%pardata%wpold,     &
+                        current%pardata%rpold,     &
+                        current%pardata%par_conc,  &
+                        current%pardata%gamma_cont,&
+                        current%pardata%sh_conf,   &
+                        current%pardata%sh_shear,  &
+                        current%pardata%sh_slip,   &
+                        current%pardata%S,    		 &
+                        current%pardata%Sst,   		 &
+                        current%pardata%Veff,      &
+                        current%pardata%Nbj,		   &		
+                        current%pardata%bulk_conc, &
+                        current%pardata%delNBbyCV, &
+                        current%pardata%cur_part,	 &
                         current%pardata%new_part  		
 1001                    format (I5,24F18.10,2I5)
         END IF
@@ -384,14 +386,14 @@ IF (myid .EQ. master) THEN
                              current%pardata%vp*vcf 	   ,',',	&
                              current%pardata%wp*vcf 	   ,',',	&
                              current%pardata%parid 	  	 ,',',	&
-                             current%pardata%sh 	  	   ,',',	&
+                             current%pardata%sh_conf 	   ,',',	&
+                             current%pardata%sh_shear    ,',',	&
+                             current%pardata%sh_slip 	   ,',',	&
                              current%pardata%rp          ,',',	&
                              current%pardata%bulk_conc/S_intrinsic,',', 	&
-				current%pardata%delNBbyCV 	,',', 	&
-				current%pardata%Sst 	  	,',',	&
-				current%pardata%S 	  	,',',	&
-				current%pardata%Veff 	  	,',',	&
-				current%pardata%Nbj
+                             current%pardata%delNBbyCV   ,',', 	&
+                             current%pardata%Sst 	     	 ,',',	&
+                             current%pardata%S 	       	 ,',',	&
          END IF	
 1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
          current => next

@@ -301,7 +301,9 @@ TYPE ParRecordTransfer
 	REAL(dbl)	:: vpold   	! particle v-velocity
 	REAL(dbl)	:: wpold	! particle w-velocity
 	REAL(dbl)	:: rpold	! old particle radius
-	REAL(dbl)	:: sh 	! Sherwood number
+	REAL(dbl)	:: sh_conf 	! Sherwood number
+	REAL(dbl)	:: sh_shear 	! Sherwood number
+	REAL(dbl)	:: sh_slip 	! Sherwood number
 	REAL(dbl)	:: gamma_cont	! gamma - container effect
 	REAL(dbl)	:: S 	! Shear rate at particle location
 	REAL(dbl)	:: Sst 	! Shear peclet number

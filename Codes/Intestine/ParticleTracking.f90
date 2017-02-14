@@ -396,21 +396,22 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data_l(ID,5) = current%pardata%vp
       Particle_Data_l(ID,6) = current%pardata%wp
       Particle_Data_l(ID,7) = current%pardata%rp
-      Particle_Data_l(ID,8) = current%pardata%sh
-      Particle_Data_l(ID,9) = current%pardata%xpold
-      Particle_Data_l(ID,10)= current%pardata%ypold
-      Particle_Data_l(ID,11)= current%pardata%zpold
-      Particle_Data_l(ID,12)= current%pardata%upold
-      Particle_Data_l(ID,13)= current%pardata%vpold
-      Particle_Data_l(ID,14)= current%pardata%wpold
-      Particle_Data_l(ID,15)= current%pardata%rpold
-      Particle_Data_l(ID,16)= current%pardata%delNBbyCV
-      Particle_Data_l(ID,17)= current%pardata%par_conc
-      Particle_Data_l(ID,18)= current%pardata%bulk_conc
-      Particle_Data_l(ID,19)= current%pardata%Nbj
-      Particle_Data_l(ID,20)= current%pardata%S
-      Particle_Data_l(ID,21)= current%pardata%Sst
-      Particle_Data_l(ID,22)= current%pardata%new_part
+      Particle_Data_l(ID,8) = current%pardata%sh_conf
+      Particle_Data_l(ID,9) = current%pardata%sh_shear
+      Particle_Data_l(ID,10)= current%pardata%sh_slip
+      Particle_Data_l(ID,11)= current%pardata%xpold
+      Particle_Data_l(ID,12)= current%pardata%ypold
+      Particle_Data_l(ID,13)= current%pardata%zpold
+      Particle_Data_l(ID,14)= current%pardata%upold
+      Particle_Data_l(ID,15)= current%pardata%vpold
+      Particle_Data_l(ID,16)= current%pardata%wpold
+      Particle_Data_l(ID,17)= current%pardata%rpold
+      Particle_Data_l(ID,18)= current%pardata%delNBbyCV
+      Particle_Data_l(ID,19)= current%pardata%par_conc
+      Particle_Data_l(ID,20)= current%pardata%bulk_conc
+      Particle_Data_l(ID,21)= current%pardata%S
+      Particle_Data_l(ID,22)= current%pardata%Sst
+      Particle_Data_l(ID,23)= current%pardata%new_part
    ELSE
       Particle_Data_l(ID,1) = 1e5                          
       Particle_Data_l(ID,2) = 1e5                    
@@ -434,6 +435,7 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data_l(ID,20)= 1e5                     
       Particle_Data_l(ID,21)= 1e5                     
       Particle_Data_l(ID,22)= 1e5                     
+      Particle_Data_l(ID,23)= 1e5                     
    ENDIF
    current => next
 ENDDO
@@ -454,22 +456,23 @@ DO WHILE (ASSOCIATED(current))
       current%pardata%vp=         Particle_Data_g(ID,5)
       current%pardata%wp=         Particle_Data_g(ID,6)
       current%pardata%rp=         Particle_Data_g(ID,7)
-      current%pardata%sh=         Particle_Data_g(ID,8)
-      current%pardata%xpold=      Particle_Data_g(ID,9)
-      current%pardata%ypold=      Particle_Data_g(ID,10)
-      current%pardata%zpold=      Particle_Data_g(ID,11)
-      current%pardata%upold=      Particle_Data_g(ID,12)
-      current%pardata%vpold=      Particle_Data_g(ID,13)
-      current%pardata%wpold=      Particle_Data_g(ID,14)
-      current%pardata%rpold=      Particle_Data_g(ID,15)
-      current%pardata%delNBbyCV=  Particle_Data_g(ID,16)
-      current%pardata%par_conc=   Particle_Data_g(ID,17)
-      current%pardata%bulk_conc=  Particle_Data_g(ID,18)
-      current%pardata%Nbj=        Particle_Data_g(ID,19)
-      current%pardata%S=          Particle_Data_g(ID,20)
-      current%pardata%Sst=        Particle_Data_g(ID,21)
-	    current%pardata%cur_part=   Particle_Data_g(ID,22)
-      current%pardata%new_part=   Particle_Data_g(ID,22)
+      current%pardata%sh_conf=    Particle_Data_g(ID,8)
+      current%pardata%sh_shear=   Particle_Data_g(ID,9)
+      current%pardata%sh_slip=    Particle_Data_g(ID,10)
+      current%pardata%xpold=      Particle_Data_g(ID,11)
+      current%pardata%ypold=      Particle_Data_g(ID,12)
+      current%pardata%zpold=      Particle_Data_g(ID,13)
+      current%pardata%upold=      Particle_Data_g(ID,14)
+      current%pardata%vpold=      Particle_Data_g(ID,15)
+      current%pardata%wpold=      Particle_Data_g(ID,16)
+      current%pardata%rpold=      Particle_Data_g(ID,17)
+      current%pardata%delNBbyCV=  Particle_Data_g(ID,18)
+      current%pardata%par_conc=   Particle_Data_g(ID,19)
+      current%pardata%bulk_conc=  Particle_Data_g(ID,20)
+      current%pardata%S=          Particle_Data_g(ID,21)
+      current%pardata%Sst=        Particle_Data_g(ID,22)
+	    current%pardata%cur_part=   Particle_Data_g(ID,23)
+      current%pardata%new_part=   Particle_Data_g(ID,23)
    current => next  
 ENDDO
 !===================================================================================================
@@ -500,7 +503,7 @@ DO WHILE (ASSOCIATED(current))
             open(72,file='History-Particle-1.dat',position='append')
             write(72,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
             current%pardata%up, current%pardata%vp, current%pardata%wp, &
-            current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+            current%pardata%sh_shear, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
             close(72)
          END IF
 
@@ -509,16 +512,15 @@ DO WHILE (ASSOCIATED(current))
             open(73,file='History-Particle-2.dat',position='append')
             write(73,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
             current%pardata%up, current%pardata%vp, current%pardata%wp, &
-            current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+            current%pardata%sh_shear, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
             close(73)
          END IF
 
-         CASE(3_lng)
          IF (mySub .EQ.current%pardata%cur_part) THEN
             open(74,file='History-Particle-3.dat',position='append')
             write(74,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
             current%pardata%up, current%pardata%vp, current%pardata%wp, &
-            current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+            current%pardata%sh_shear, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
             close(74)
           END IF
                  
@@ -527,7 +529,7 @@ DO WHILE (ASSOCIATED(current))
             open(75,file='History-Particle-4.dat',position='append')
             write(75,101) iter,iter*tcf,current%pardata%xp, current%pardata%yp, current%pardata%zp, &
             current%pardata%up, current%pardata%vp, current%pardata%wp, &
-            current%pardata%sh, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
+            current%pardata%sh_shear, current%pardata%rp, current%pardata%bulk_conc, current%pardata%delNBbyCV
             close(75)
          END IF
       END SELECT

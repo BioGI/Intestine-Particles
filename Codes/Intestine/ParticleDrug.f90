@@ -311,7 +311,8 @@ SUBROUTINE Particle_Drug_Release                     ! Calculates drug release a
 !===================================================================================================
 IMPLICIT NONE
 INTEGER(lng)  :: numFluids,i,j,k,RANK,mpierr
-REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc  
+REAL(dbl)     :: deltaR,temp,cbt,zcf3,bulkconc 
+REAL(dbl)     :: Sherwood
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -324,7 +325,8 @@ DO WHILE (ASSOCIATED(current))
       IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                    !only calculate the drug release when particle radius is larger than 0.1 micron
          current%pardata%rpold = current%pardata%rp
          bulkconc = current%pardata%bulk_conc
-         temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*current%pardata%sh*max((current%pardata%par_conc-bulkconc),0.0_dbl)
+         Sherwood = 1.0_dbl + current%pardata%sh_conf + current%pardata%sh_shear + current%pardata%sh_slip 
+         temp = current%pardata%rpold**2.0_dbl-4.0_dbl*tcf*molarvol*diffm*Sherwood*max((current%pardata%par_conc-bulkconc),0.0_dbl)
          IF (temp.GE.0.0_dbl) THEN
             current%pardata%rp= 0.5_dbl*(current%pardata%rpold+sqrt(temp))
          ELSE
@@ -345,7 +347,9 @@ DO WHILE (ASSOCIATED(current))
          current%pardata%bulk_conc = 0.0_dbl
          current%pardata%S		     = 0.0_Dbl
          current%pardata%Sst       = 0.0_Dbl
-         current%pardata%sh        = 0.0_Dbl
+         current%pardata%sh_conf   = 0.0_Dbl
+         current%pardata%sh_shear  = 0.0_Dbl
+         current%pardata%sh_slip   = 0.0_Dbl
       END IF
    END IF 
    current => next
@@ -377,13 +381,14 @@ TYPE(ParRecord), POINTER :: next
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-   current%pardata%sh= 1.0_dbl 
-
    IF (mySub .EQ.current%pardata%cur_part) THEN
       IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                     ! only calculate the drug release when particle radius is larger than 0.1 micron
+        current%pardata%sh_conf = 0.0_dbl
+        current%pardata%sh_shear= 0.0_dbl
+        current%pardata%sh_slip = 0.0_dbl
          !----- If including the confinement effects ----------------------------------------------- 
          IF (Flag_Confinement_Effects) THEN                                 
-            current%pardata%sh= 1.0_dbl + (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
+            current%pardata%sh_conf= (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
          END IF
 
          !----- If including the shear effects -----------------------------------------------------          
@@ -392,11 +397,11 @@ DO WHILE (ASSOCIATED(current))
             Sst= S* (current%pardata%rp**2.0) / diffm
             current%pardata%Sst= Sst
             IF (Sst .LE. 5.0_dbl) THEN
-               current%pardata%sh = 1.0_dbl + 0.281_dbl*(Sst**0.5_dbl)
-            ELSE IF ((Sst .GT. 5.0_dbl).AND.(Sst .LE. 80.0)) THEN
-               current%pardata%sh = 1.181_dbl*(Sst**0.2_dbl)
+               current%pardata%sh_shear = 1.0_dbl + 0.281_dbl*(Sst**0.5_dbl)          -1.0_dbl
+            ELSE IF ((Sst .GT. 5.0_dbl).AND.(Sst .LE. 80.0)) THEN     
+               current%pardata%sh_shear = 1.181_dbl*(Sst**0.2_dbl)                    -1.0_dbl
             ELSE IF (Sst.GT.80.0) THEN
-               current%pardata%sh = 4.5_dbl - (7.389/(Sst**(1.0_dbl/3.0_dbl)) )
+               current%pardata%sh_shear = 4.5_dbl - (7.389/(Sst**(1.0_dbl/3.0_dbl)) ) -1.0_dbl 
             END IF
          END IF 
       END IF
@@ -694,7 +699,7 @@ DO WHILE (ASSOCIATED(current))
 
          IF (Flag_Buffer) THEN !--- Buffer Capacity =10.5 mM ------------------------------------------------
             R_P  = 1000000.0* current%pardata%rp   !units in  micron
-            Sh_P = current%pardata%sh
+            Sh_P = 1.0_dbl+ current%pardata%sh_conf + current%pardata%sh_shear + current%pardata%sh_slip
             delta_P = (R_P / Sh_P)                 !units in microns
             IF (delta_P .LE. 50.0) THEN
                c6= -0.000000002910474984
