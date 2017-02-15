@@ -65,7 +65,9 @@ DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN
-            phiTotal = phiTotal + phi(i,j,k)
+            IF (iter .EQ. iter_Start_phi) THEN
+               phiTotal = phiTotal + phi(i,j,k)
+            ENDIF
             phi(i,j,k) = Delta * phiTemp(i,j,k)  
 
             DO m=0,NumDistDirs
