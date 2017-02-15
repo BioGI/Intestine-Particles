@@ -371,15 +371,14 @@ IF (myid .EQ. master) THEN
 
       !------ open the proper output file
       OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-      WRITE(160,*) '"CPU","x","y","z","u","v","w","ParID","Sh","rp","Cb/Cs","delNBbyCV","Sst","S","Veff","Nbj"'
+      WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh_conf","Sh_shear","Sh_slip","rp","Cb/Cs","delNBbyCV","Sst","S","CPU"'
       current => ParListHead%next							 
 
       DO WHILE (ASSOCIATED(current))
          numParticlesSub = numParticlesSub + 1_lng
          next => current%next 	
          IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                                           ! only write particle data when particle is not fully dissolved
-             WRITE(160,1001) current%pardata%cur_part    ,',', 	&
-                             current%pardata%xp          ,',',	&
+             WRITE(160,1001) current%pardata%xp          ,',',	&
                              current%pardata%yp          ,',',	&
                              current%pardata%zp          ,',',	&
                              current%pardata%up*vcf 	   ,',',	&
@@ -394,6 +393,7 @@ IF (myid .EQ. master) THEN
                              current%pardata%delNBbyCV   ,',', 	&
                              current%pardata%Sst 	     	 ,',',	&
                              current%pardata%S 	    
+                             current%pardata%cur_part    ,',', 	&
          END IF	
 1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
          current => next
