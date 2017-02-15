@@ -393,7 +393,7 @@ IF (myid .EQ. master) THEN
                              current%pardata%bulk_conc/S_intrinsic,',', 	&
                              current%pardata%delNBbyCV   ,',', 	&
                              current%pardata%Sst 	     	 ,',',	&
-                             current%pardata%S 	       	 ,',',	&
+                             current%pardata%S 	    
          END IF	
 1001     format (I4,a2,F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2)
          current => next
