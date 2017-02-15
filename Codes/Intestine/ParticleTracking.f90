@@ -442,7 +442,7 @@ ENDDO
 
 !---- Parallel communication between all processors
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*22, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*23, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
 
 
 current => ParListHead%next
