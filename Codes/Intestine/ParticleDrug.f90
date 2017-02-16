@@ -17,20 +17,20 @@ SUBROUTINE Compute_C_bulk				  ! Computes the mesh-independent bulk concentratio
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)  		 :: i,j,k, mpierr
-INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
-INTEGER(dbl)		 :: NumFluids_Veff_l, NumFluids_Veff
+INTEGER(lng)  		       :: i,j,k, mpierr,ID
+INTEGER(lng)  		       :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
+INTEGER(dbl)		         :: NumFluids_Veff_l(50000), NumFluids_Veff(50000)
 INTEGER,DIMENSION(2)   	 :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER,DIMENSION(2)     :: GNEP_x, GNEP_y, GNEP_z                      ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 INTEGER,DIMENSION(2)     :: NEP_x,   NEP_y,  NEP_z                      ! Lattice Nodes Surronding the particle (Local: in current processor)
-REAL(dbl)     		 :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
-REAL(dbl)  	   	 :: xp,yp,zp
-REAL(dbl)		 :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)       	 :: n_b
-REAL(dbl)    	         :: R_P, Sh_P, delta_P
+REAL(dbl)     		       :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
+REAL(dbl)  	           	 :: xp,yp,zp
+REAL(dbl)		             :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
+REAL(dbl)       	       :: n_b
+REAL(dbl)    	           :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
 REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
-REAL(dbl)		 :: Cb_Total_Veff_l, Cb_Total_Veff
+REAL(dbl)		             :: Cb_Total_Veff_l(50000), Cb_Total_Veff(50000)
 REAL(dbl),DIMENSION(2)   :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 		! Volume of Influence's Borders
 REAL(dbl),DIMENSION(2)   :: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
 REAL(dbl)                :: Delta_L
@@ -43,16 +43,12 @@ zcf3 = 1.0_dbl
 n_b = 2.0
 
 current => ParListHead%next
-
 DO WHILE (ASSOCIATED(current))
-
 next => current%next
 IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
-
+   ID= current%pardata%parid
 !--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(n_b*delta)
    R_P = current%pardata%rp
-!  Sh_P= current%pardata%sh
-!  delta_P= R_P/Sh_P
    delta_P= R_P 
    R_influence_P= (R_P+n_b*delta_P)/xcf
 
@@ -111,8 +107,11 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
 !------- Interpolation in z-direction
          c   = c0 * (1.0_dbl-zd) + c1 * zd
-         Cb_Hybrid= c 
-         current%pardata%bulk_conc = Cb_Hybrid
+         Cb_Total_Veff_l(ID)  = c
+         NumFluids_Veff_l(ID) = 1                       
+      ELSE
+        Cb_Total_Veff_l(ID)  = 0.0_dbl
+        NumFluids_Veff_l(ID) = 0                       
       END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    END IF 
 
@@ -223,8 +222,8 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
 !------------------------ Interpolation in z-direction
                           c   = c0 * (1.0_dbl-zd) + c1 * zd
 
-                          Cb_Total_Veff_l  = Cb_Total_Veff_l  + c
-                          NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
+                          Cb_Total_Veff_l(ID)  = Cb_Total_Veff_l(ID)  + c
+                          NumFluids_Veff_l(ID) = NumFluids_Veff_l(ID) + 1_lng
                       END IF
                    END DO
                END DO
@@ -256,18 +255,15 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
                 DO j= NEP_y(1),NEP_y(2)
                    DO k= NEP_z(1),NEP_z(2)
                       IF (node(i,j,k) .EQ. FLUID) THEN
-                         Cb_Total_Veff_l  = Cb_Total_Veff_l  + phi(i,j,k)
-                         NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
+                         Cb_Total_Veff_l(ID)  = Cb_Total_Veff_l(ID)  + phi(i,j,k)
+                         NumFluids_Veff_l(ID) = NumFluids_Veff_l(ID) + 1_lng
                       END IF
                    END DO
                 END DO
              END DO
 
          END IF                   ! Conditional for cases 2 and 3
-     END IF 								      ! Conditional for the processor which has overlap with effective volume 
-
-
-
+      END IF 								      ! Conditional for the processor which has overlap with effective volume 
 
 !----TAKING CARE OF THE PERIODIC BC
      IF (GVIB_z_Per(1) .NE. GVIB_z(1)) THEN
@@ -275,27 +271,31 @@ IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
         GVIB_z(2)= GVIB_z_Per(2) 
         GO TO 300
      ENDIF
+  ENDIF
+ENDIF  
+current => next
+END DO
 
 !----Communication with other processors for V_eff greater than 1
-     CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-     CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-     CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , np, MPI_REAL,    MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, np, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, mpierr)
 
-     IF( NumFluids_Veff .GE. 1) THEN 
-        Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
-     ELSE 
-        Cb_Hybrid= 0.0_dbl
-     END IF   
-     current%pardata%bulk_conc = Cb_Hybrid
-	
-   END IF       			                                    		!End of conditional for V_eff greater than 1 
-      
-ENDIF  
-
-!open(172,file='Cb-'//sub//'.dat', position='append')
-current => next
-
-END DO
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
+      ID= current%pardata%parid
+      IF (NumFluids_Veff(ID) .GE. 1) THEN 
+         Cb_Hybrid= Cb_Total_Veff(ID) / NumFluids_Veff(ID)
+      ELSE 
+         Cb_Hybrid= 0.0_dbl
+      ENDIF   
+      current%pardata%bulk_conc = Cb_Hybrid
+      current => next
+   ENDIF
+ENDDO
+   
 !===================================================================================================
 END SUBROUTINE Compute_C_bulk
 !===================================================================================================
