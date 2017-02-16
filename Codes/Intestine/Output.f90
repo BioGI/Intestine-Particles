@@ -601,9 +601,9 @@ IF (myid .EQ. master) THEN
          next => current%next
          IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
             Sherwood = 1.0_dbl + current%pardata%sh_shear  + current%pardata%sh_slip
-            Drug_Released_del_diff = current%pardata%delNBbyCV * (1.0_dbl                 /Sherwood)                                                   
-            Drug_Released_del_shear= current%pardata%delNBbyCV * (current%pardata%sh_shear/Sherwood)                                                  
-            Drug_Released_del_slip = current%pardata%delNBbyCV * (current%pardata%sh_slip /Sherwood) 
+            Drug_Released_del_diff = current%pardata%delNBbyCV *zcf3 * (1.0_dbl                 /Sherwood)                                                   
+            Drug_Released_del_shear= current%pardata%delNBbyCV *zcf3 * (current%pardata%sh_shear/Sherwood)                                                  
+            Drug_Released_del_slip = current%pardata%delNBbyCV *zcf3 * (current%pardata%sh_slip /Sherwood) 
             Drug_Released_Total    = Drug_Released_Total+ Drug_Released_del_diff + Drug_Released_del_shear + Drug_Released_del_slip  
          END IF
          current => next
