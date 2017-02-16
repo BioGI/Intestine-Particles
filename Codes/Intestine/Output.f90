@@ -371,7 +371,7 @@ IF (myid .EQ. master) THEN
 
       !------ open the proper output file
       OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-      WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh_conf","Sh_shear","Sh_slip","rp","Cb/Cs","delNBbyCV","Sst","S","CPU"'
+      WRITE(160,*) '"x","y","z","u","v","w","ParID","Sh_conf","Sh_shear","Sh_slip","rp","Cb/Cs","delNBbyCV","Sst","S","C_surface","CPU"'
       current => ParListHead%next							 
 
       DO WHILE (ASSOCIATED(current))
@@ -393,10 +393,10 @@ IF (myid .EQ. master) THEN
                              current%pardata%delNBbyCV   ,',', 	&
                              current%pardata%Sst 	     	 ,',',	&
                              current%pardata%S 	         ,',', 	&
+                             current%pardata%par_conc    ,',', 	&
                              current%pardata%cur_part    
          END IF	
-!1001     format (F9.4,a2,F9.4,a2,F9.4,a2,F10.6,a2,F10.6,a2,F10.6,a2,I5,a2,F12.8,a2,F15.10,a2,F15.7,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,F15.10,a2,I4)
-1001     format (6(F8.3,a2),I6,a2,3(F9.5,a2),3(F11.8,a2),2(F13.8,a2),I4)
+1001     format (6(F8.3,a2),I6,a2,3(F9.5,a2),3(F11.8,a2),3(F13.8,a2),I4)
          current => next
       ENDDO
 
