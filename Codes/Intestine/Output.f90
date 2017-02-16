@@ -63,8 +63,8 @@ IF (myid .EQ. master) THEN
 
    !----- Drug Conservation
    OPEN(2472,FILE='Drug-Conservation-'//sub//'.dat')
-   WRITE(2472,'(A145)') '#VARIABLES =iter,time, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent'
-
+   WRITE(2472,'(A145)') '#VARIABLES =iter,time, Initial, Released_del_diff, Released_del_shear, Released_del_slip, Released_Total, Absorbed, Remained_in_Domain, Loss_Percent'
+   
    !----- Diensity Correction to improve mass conservation
    OPEN(2473,FILE='Density_Correction.dat')
    WRITE(2473,*) 'VARIABLES: iter, Density Correction'
@@ -566,9 +566,9 @@ REAL(dbl)    :: phiDomain, phiIC, Drug_Initial,Drug_Negative		! current amount o
 REAL(dbl)    :: phiAverage						! average scalar in the domain
 REAL(dbl)    :: zcf3							! node volume in physical units
 REAL(dbl)    :: phiTotal_Global, phiAbsorbed_Global, phiDomain_Global
+REAL(dbl)    :: Sherwood, Drug_Released_del_diff, Drug_Released_del_shear, Drug_Released_del_slip 
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
-
 !----- Calculate the amount of scalar in the domain
 numFluids = 0_lng
 phiDomain = 0.0_dbl
@@ -600,7 +600,11 @@ IF (myid .EQ. master) THEN
       DO WHILE (ASSOCIATED(current))
          next => current%next
          IF (current%pardata%rp .GT. Min_R_Acceptable) THEN
-            Drug_Released_Total = Drug_Released_Total + current%pardata%delNBbyCV * zcf3
+            Sherwood = 1.0_dbl + current%pardata%sh_shear  + current%pardata%sh_slip
+            Drug_Released_del_diff = current%pardata%delNBbyCV * (1.0_dbl                 /Sherwood)                                                   
+            Drug_Released_del_shear= current%pardata%delNBbyCV * (current%pardata%sh_shear/Sherwood)                                                  
+            Drug_Released_del_slip = current%pardata%delNBbyCV * (current%pardata%sh_slip /Sherwood) 
+            Drug_Released_Total    = Drug_Released_Total+ Drug_Released_del_diff + Drug_Released_del_shear + Drug_Released_del_slip  
          END IF
          current => next
       ENDDO
@@ -620,7 +624,7 @@ Drug_Loss 		= (Drug_Released_Total+ Drug_Initial               ) - (Drug_Absorbe
 Drug_Loss_Modified 	= (Drug_Released_Total+ Drug_Initial- Drug_Negative) - (Drug_Absorbed + Drug_Remained_in_Domain)
 
 IF (Drug_Released_Total .LT. 1e-20) THEN
-   Drug_Released_Total =1e-20
+   Drug_Released_Total = 0.0_dbl
 END IF
 
 IF ((Drug_Released_Total+Drug_Initial).GT.1e-18) THEN
@@ -636,7 +640,7 @@ IF (abs(Drug_Absorbed) .lt. 1.0e-40) THEN
 ENDIF
 
 IF (myid .EQ. master) THEN
-   WRITE(2472,'(I8, F13.4, 6E18.10)') iter, iter*tcf, Drug_Initial, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent, Drug_Loss_Modified_Percent 
+   WRITE(2472,'(I8, F13.4, 8E16.8, F11.6)') iter, iter*tcf, Drug_Initial, Drug_Released_del_diff, Drug_Released_del_shear, Drug_Released_del_slip, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent  
    IF ((MOD(iter,50) .EQ. 0))  THEN
       CALL FLUSH(2472)
    ENDIF   
