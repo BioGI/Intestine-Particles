@@ -653,7 +653,7 @@ END IF
 
 
 IF (myid .EQ. master) THEN
-   WRITE(2472,'(I8, F13.4, 7E16.8, F11.6)') iter, iter*tcf, Drug_Initial, Drug_Released_del_diff, Drug_Released_del_shear, Drug_Released_del_slip, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent  
+   WRITE(2472,'(I8, F13.4, 7E18.10, F11.6)') iter, iter*tcf, Drug_Initial, Drug_Released_del_diff, Drug_Released_del_shear, Drug_Released_del_slip, Drug_Released_Total, Drug_Absorbed, Drug_Remained_in_Domain, Drug_Loss_Percent  
    IF ((MOD(iter,50) .EQ. 0))  THEN
       CALL FLUSH(2472)
    ENDIF   
