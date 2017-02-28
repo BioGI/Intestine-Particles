@@ -497,6 +497,153 @@ END SUBROUTINE Macro
 !===================================================================================================
 
 
+
+
+!===================================================================================================
+SUBROUTINE Compute_vel_derivatives
+!===================================================================================================
+! Computing components of velocity gradietns
+! and strain rate tensor using central difference 
+
+IMPLICIT NONE
+
+INTEGER(lng)  :: i,j,k
+REAL(dbl)     :: dudx, dudy, dudz
+REAL(dbl)     :: dvdx, dvdy, dvdz
+REAL(dbl)     :: dwdx, dwdy, dwdz
+REAL(dbl)     :: d2udx2, d2udy2, d2udz2
+REAL(dbl)     :: d2vdx2, d2vdy2, d2vdz2
+REAL(dbl)     :: d2wdx2, d2wdy2, d2wdz2
+
+DO k=1,nzSub
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i1,j,k) .EQ. FLUID) THEN 
+            !--- x-dir 1st derivatives ------------
+            IF (node(i-1,j,k) .EQ. FLUID) THEN 
+               dudx(i,j,k)= (u(i,j,k) - u(i-1,j,k)) * (vcf/xcf)
+               dvdx(i,j,k)= (v(i,j,k) - v(i-1,j,k)) * (vcf/xcf)
+               dwdx(i,j,k)= (w(i,j,k) - w(i-1,j,k)) * (vcf/xcf)
+            ELSEIF (node(i+1,j,k) .EQ. FLUID) THEN
+               dudx(i,j,k)= (u(i+1,j,k) - u(i,j,k)) * (vcf/xcf)
+               dvdx(i,j,k)= (v(i+1,j,k) - v(i,j,k)) * (vcf/xcf)
+               dwdx(i,j,k)= (w(i+1,j,k) - w(i,j,k)) * (vcf/xcf)
+            ELSE 
+               dudx(i,j,k)=0.0_dbl
+               dvdx(i,j,k)=0.0_dbl
+               dwdx(i,j,k)=0.0_dbl
+            ENDIF!---------------------------------
+            !--- x-dir 2nd derivatives ------------
+            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN 
+               d2udx2(i,j,k)= ( u(i+1,j,k) - 2.0_dbl*u(i,j,k) + u(i-1,j,k) ) * (vcf**2)/(xcf**2)
+               d2vdx2(i,j,k)= ( v(i+1,j,k) - 2.0_dbl*u(i,j,k) + v(i-1,j,k) ) * (vcf**2)/(xcf**2)
+               d2wdx2(i,j,k)= ( w(i+1,j,k) - 2.0_dbl*w(i,j,k) + w(i-1,j,k) ) * (vcf**2)/(xcf**2)
+
+            ELSE 
+               d2udx2(i,j,k)=0.0_dbl
+               d2vdx2(i,j,k)=0.0_dbl
+               d2wdx2(i,j,k)=0.0_dbl
+            ENDIF!---------------------------------
+
+            !--- y-dir 1st derivatives ------------
+            IF (node(i,j-1,k) .EQ. FLUID) THEN 
+               dudy(i,j,k)= (u(i,j,k) - u(i,j-1,k)) * (vcf/xcf)
+               dvdy(i,j,k)= (v(i,j,k) - v(i,j-1,k)) * (vcf/xcf)
+               dwdy(i,j,k)= (w(i,j,k) - w(i,j-1,k)) * (vcf/xcf)
+            ELSEIF (node(i,j+1,k) .EQ. FLUID) THEN
+               dudy(i,j,k)= (u(i,j+1,k) - u(i,j,k)) * (vcf/xcf)
+               dvdy(i,j,k)= (v(i,j+1,k) - v(i,j,k)) * (vcf/xcf)
+               dwdy(i,j,k)= (w(i,j+1,k) - w(i,j,k)) * (vcf/xcf)
+            ELSE 
+               dudy(i,j,k)=0.0_dbl
+               dvdy(i,j,k)=0.0_dbl
+               dwdy(i,j,k)=0.0_dbl
+            ENDIF!---------------------------------
+  
+            !--- y-dir 2nd derivatives ------------
+            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN 
+               d2udy2(i,j,k)= (u(i,j+1,k) - 2.0_dbl*u(i,j,k) - u(i,j-1,k)) * (vcf**2)/(xcf**2)
+               d2vdy2(i,j,k)= (v(i,j+1,k) - 2.0_dbl*v(i,j,k) - v(i,j-1,k)) * (vcf**2)/(xcf**2)
+               d2wdy2(i,j,k)= (w(i,j+1,k) - 2.0_dbl*w(i,j,k) - w(i,j-1,k)) * (vcf**2)/(xcf**2)
+            ELSE 
+               d2udy2(i,j,k)=0.0_dbl
+               d2vdy2(i,j,k)=0.0_dbl
+               d2wdy2(i,j,k)=0.0_dbl
+            ENDIF!---------------------------------
+
+            !--- z-Dir 1st derivatives ------------
+            IF (node(i,j,k-1) .EQ. FLUID) THEN   
+               dudz(i,j,k)= (u(i,j,k) - u(i,j,k-1)) * (vcf/xcf)
+               dvdz(i,j,k)= (v(i,j,k) - v(i,j,k-1)) * (vcf/xcf)
+               dwdz(i,j,k)= (w(i,j,k) - w(i,j,k-1)) * (vcf/xcf)
+            ELSEIF (node(i,j,k+1) .EQ. FLUID) THEN
+               dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k)) * (vcf/xcf)
+               dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k)) * (vcf/xcf)
+               dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k)) * (vcf/xcf)
+            ELSE 
+              dudz(i,j,k)=0.0_dbl
+              dvdz(i,j,k)=0.0_dbl
+              dwdz(i,j,k)=0.0_dbl
+            ENDIF!---------------------------------
+            !--- z-Dir 2nd derivatives ------------
+            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN 
+               d2udz2(i,j,k)= (u(i,j,k+1) - 2.0_dbl*u(i,j,k) + u(i,j,k-1)) * (vcf**2)/(xcf**2)
+               d2vdz2(i,j,k)= (v(i,j,k+1) - 2.0_dbl*v(i,j,k) + v(i,j,k-1)) * (vcf**2)/(xcf**2)
+               d2wdz2(i,j,k)= (w(i,j,k+1) - 2.0_dbl*w(i,j,k) + w(i,j,k-1)) * (vcf**2)/(xcf**2)
+            ELSE 
+               d2udz2(i,j,k)=0.0_dbl
+               d2vdz2(i,j,k)=0.0_dbl
+               d2wdz2(i,j,k)=0.0_dbl
+            ENDIF!---------------------------------
+
+            !--- Compute Laplacian ----------------------------------------------------------
+            Laplacian_x(i,j,k)= (d2udx2(i,j,k)+d2udy2(i,j,k)+d2udz2(i,j,k)) * (vcf**2)/(xcf**2)
+            Laplacian_y(i,j,k)= (d2vdx2(i,j,k)+d2vdy2(i,j,k)+d2vdz2(i,j,k)) * (vcf**2)/(xcf**2)
+            Laplacian_z(i,j,k)= (d2wdx2(i,j,k)+d2wdy2(i,j,k)+d2wdz2(i,j,k)) * (vcf**2)/(xcf**2)
+
+            !--- Computing Material Derivative of the Velocity vector -----------------------
+            DUdt_x(i,j,k)= (u(i,j,k)*dudx(i,j,k) + v(i,j,k)*dudy(i,j,k) + w(i,j,k)*dudz(i,j,k)) * (vcf**2)/(xcf**2)
+            DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k) + v(i,j,k)*dvdy(i,j,k) + w(i,j,k)*dvdz(i,j,k)) * (vcf**2)/(xcf**2)
+            DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k) + v(i,j,k)*dwdy(i,j,k) + w(i,j,k)*dwdz(i,j,k)) * (vcf**2)/(xcf**2)
+
+         ELSEIF (node(i1,j,k) .EQ. SOLID) THEN
+            dudx(i,j,k)=0.0_dbl
+            dvdx(i,j,k)=0.0_dbl
+            dwdx(i,j,k)=0.0_dbl
+            dudy(i,j,k)=0.0_dbl
+            dvdy(i,j,k)=0.0_dbl
+            dwdy(i,j,k)=0.0_dbl
+            dudz(i,j,k)=0.0_dbl
+            dvdz(i,j,k)=0.0_dbl
+            dwdz(i,j,k)=0.0_dbl
+            d2udx2(i,j,k)=0.0_dbl
+            d2vdx2(i,j,k)=0.0_dbl
+            d2wdx2(i,j,k)=0.0_dbl
+            d2udy2(i,j,k)=0.0_dbl
+            d2vdy2(i,j,k)=0.0_dbl
+            d2wdy2(i,j,k)=0.0_dbl
+            d2udz2(i,j,k)=0.0_dbl
+            d2vdz2(i,j,k)=0.0_dbl
+            d2wdz2(i,j,k)=0.0_dbl
+            DUdt_x(i,j,k)= 0.0_dbl
+            DUdt_y(i,j,k)= 0.0_dbl
+            DUdt_z(i,j,k)= 0.0_dbl 
+            Laplacian_x(i,j,k)=0.0_dbl 
+            Laplacian_y(i,j,k)=0.0_dbl
+            Laplacian_z(i,j,k)=0.0_dbl
+         ENDIF ! End checking if node(i,j,k).EQ. Fluid 
+      ENDDO
+   ENDDO
+ENDDO
+
+!===================================================================================================
+END SUBROUTINE Compute_vel_derivatives
+!===================================================================================================
+
+
+
+
+
 !===================================================================================================
 SUBROUTINE Mass_Correction
 !===================================================================================================
