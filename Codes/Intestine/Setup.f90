@@ -17,7 +17,16 @@ REAL(dbl), 		ALLOCATABLE :: FSum(:,:,:)                         ! Sum of distrib
 REAL(dbl), 		ALLOCATABLE :: u(:,:,:),v(:,:,:),w(:,:,:)          ! x,y, and z components of the fluid velocity vector
 REAL(dbl), 		ALLOCATABLE :: u_s(:,:,:),v_s(:,:,:),w_s(:,:,:)	 	 ! x,y, and z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
 REAL(dbl), 		ALLOCATABLE :: u_m(:,:,:),v_m(:,:,:),w_m(:,:,:)    ! x,y, and z components of the velocity vector for solid nodes (look at Particle_Velocity routine inside ParticleTracking.f90)
-REAL(dbl), 		ALLOCATABLE :: dudx(:,:,:),dudy(:,:,:),dudz(:,:,:) ! x,y, and z components of the fluid velocity vector
+
+REAL(dbl), 		ALLOCATABLE :: dudx(:,:,:),dudy(:,:,:),dudz(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: dvdx(:,:,:),dvdy(:,:,:),dvdz(:,:,:)
+REAL(dbl), 		ALLOCATABLE :: dwdx(:,:,:),dwdy(:,:,:),dwdz(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: d2udx2(:,:,:),d2udy2(:,:,:),d2udz2(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: d2vdx2(:,:,:),d2vdy2(:,:,:),d2vdz2(:,:,:)
+REAL(dbl), 		ALLOCATABLE :: d2wdx2(:,:,:),d2wdy2(:,:,:),d2wdz2(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: Laplacian_x(:,:,:),Laplacian_y(:,:,:),Laplacian_z(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: Dudt_x(:,:,:),Dudt_y(:,:,:),Dudt_z(:,:,:) 
+
 REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)                          ! density
 INTEGER(lng), 	ALLOCATABLE :: node(:,:,:)                       ! node flags (FLUID/SOLID)
 REAL(dbl), 		ALLOCATABLE :: ex(:),ey(:),ez(:)                   ! LBM discretized velocity vectors
@@ -1155,6 +1164,39 @@ ALLOCATE(u_s(0:nxSub+1,0:nySub+1,0:nzSub+1),                                    
 ALLOCATE(u_m(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
          v_m(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
          w_m(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(dudx(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         dudy(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         dudz(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(dvdx(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         dvdy(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         dvdz(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(dwdx(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         dwdy(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                      &
+         dwdz(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(d2udx2(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         d2udy2(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         d2udz2(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(d2vdx2(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         d2vdy2(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         d2vdz2(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(d2wdx2(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         d2wdy2(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         d2wdz2(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(Dudt_x(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         Dudt_y(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                    &
+         Dudt_z(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(Laplacian_x(0:nxSub+1,0:nySub+1,0:nzSub+1),                                               &
+         Laplacian_y(0:nxSub+1,0:nySub+1,0:nzSub+1),                                               &
+         Laplacian_z(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
 ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 
 ! Scalar

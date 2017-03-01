@@ -442,25 +442,25 @@ REAL(dbl)     :: xp,yp,zp
 REAL(dbl)     :: xd,yd,zd
 
 REAL(dbl)     :: dudx00, dudx01, dudx10, dudx11
-REAL(dbl)     :: dudx0, dudx1, dudx
+REAL(dbl)     :: dudx0, dudx1, dudx_P
 REAL(dbl)     :: dudy00, dudy01, dudy10, dudy11
-REAL(dbl)     :: dudy0, dudy1, dudy
+REAL(dbl)     :: dudy0, dudy1, dudy_P
 REAL(dbl)     :: dudz00, dudz01, dudz10, dudz11
-REAL(dbl)     :: dudz0, dudz1, dudz
+REAL(dbl)     :: dudz0, dudz1, dudz_P
 
 REAL(dbl)     :: dvdx00, dvdx01, dvdx10, dvdx11
-REAL(dbl)     :: dvdx0, dvdx1, dvdx
+REAL(dbl)     :: dvdx0, dvdx1, dvdx_P
 REAL(dbl)     :: dvdy00, dvdy01, dvdy10, dvdy11
-REAL(dbl)     :: dvdy0, dvdy1, dvdy
+REAL(dbl)     :: dvdy0, dvdy1, dvdy_P
 REAL(dbl)     :: dvdz00, dvdz01, dvdz10, dvdz11
-REAL(dbl)     :: dvdz0, dvdz1, dvdz
+REAL(dbl)     :: dvdz0, dvdz1, dvdz_P
 
 REAL(dbl)     :: dwdx00, dwdx01, dwdx10, dwdx11
-REAL(dbl)     :: dwdx0, dwdx1, dwdx
+REAL(dbl)     :: dwdx0, dwdx1, dwdx_P
 REAL(dbl)     :: dwdy00, dwdy01, dwdy10, dwdy11
-REAL(dbl)     :: dwdy0, dwdy1, dwdy
+REAL(dbl)     :: dwdy0, dwdy1, dwdy_P
 REAL(dbl)     :: dwdz00, dwdz01, dwdz10, dwdz11
-REAL(dbl)     :: dwdz0, dwdz1, dwdz
+REAL(dbl)     :: dwdz0, dwdz1, dwdz_P
 
 REAL(dbl)     :: E11, E12, E13, E21, E22, E23, E31, E32, E33
 REAL(dbl)     :: S
@@ -546,7 +546,7 @@ DO WHILE (ASSOCIATED(current))
          dudx0 = dudx00*(1.0_dbl-yd) + dudx10* yd
          dudx1 = dudx01*(1.0_dbl-yd) + dudx11* yd
 !------- z-dir interpolation ----------------------
-         dudx  = dudx0*(1.0_dbl-zd)+dudx1*zd
+         dudx_P  = dudx0*(1.0_dbl-zd)+dudx1*zd
 !--------------------------------------------------
 
 !------- dvdx -------------------------------------
@@ -558,7 +558,7 @@ DO WHILE (ASSOCIATED(current))
          dvdx0 = dvdx00*(1.0_dbl-yd) + dvdx10* yd
          dvdx1 = dvdx01*(1.0_dbl-yd) + dvdx11* yd
 !------- z-dir interpolation ----------------------
-         dvdx  = dvdx0*(1.0_dbl-zd)+dvdx1*zd
+         dvdx_P  = dvdx0*(1.0_dbl-zd)+dvdx1*zd
 !--------------------------------------------------
 
 !------- dwdx -------------------------------------
@@ -570,7 +570,7 @@ DO WHILE (ASSOCIATED(current))
          dwdx0 = dwdx00*(1.0_dbl-yd) + dwdx10* yd
          dwdx1 = dwdx01*(1.0_dbl-yd) + dwdx11* yd
 !------- z-dir interpolation ----------------------
-         dwdx  = dwdx0*(1.0_dbl-zd)+dwdx1*zd
+         dwdx_P  = dwdx0*(1.0_dbl-zd)+dwdx1*zd
 !--------------------------------------------------
 
 !------- dudy -------------------------------------
@@ -582,7 +582,7 @@ DO WHILE (ASSOCIATED(current))
          dudy0 = dudy00*(1.0_dbl-xd) + dudy10* xd
          dudy1 = dudy01*(1.0_dbl-xd) + dudy11* xd
 !------- z-dir interpolation ----------------------
-         dudy  = dudy0*(1.0_dbl-zd)+dudy1*zd
+         dudy_P= dudy0*(1.0_dbl-zd)+dudy1*zd
 !--------------------------------------------------
 
 !------- dvdy -------------------------------------
@@ -594,7 +594,7 @@ DO WHILE (ASSOCIATED(current))
          dvdy0 = dvdy00*(1.0_dbl-xd) + dvdy10* xd
          dvdy1 = dvdy01*(1.0_dbl-xd) + dvdy11* xd
 !------- z-dir interpolation ----------------------
-         dvdy  = dvdy0*(1.0_dbl-zd)+dvdy1*zd
+         dvdy_P= dvdy0*(1.0_dbl-zd)+dvdy1*zd
 !--------------------------------------------------
 
 !------- dwdy -------------------------------------
@@ -606,7 +606,7 @@ DO WHILE (ASSOCIATED(current))
          dwdy0 = dwdy00*(1.0_dbl-xd) + dwdy10* xd
          dwdy1 = dwdy01*(1.0_dbl-xd) + dwdy11* xd
 !------- z-dir interpolation ----------------------
-         dwdy  = dwdy0*(1.0_dbl-zd)+dwdy1*zd
+         dwdy_P= dwdy0*(1.0_dbl-zd)+dwdy1*zd
 !--------------------------------------------------
 
 !------- dudz -------------------------------------
@@ -618,7 +618,7 @@ DO WHILE (ASSOCIATED(current))
          dudz0 = dudz00*(1.0_dbl-xd) + dudz10* xd
          dudz1 = dudz01*(1.0_dbl-xd) + dudz11* xd
 !------- y-dir interpolation ----------------------
-         dudz  = dudz0*(1.0_dbl-yd)+dudz1*yd
+         dudz_P= dudz0*(1.0_dbl-yd)+dudz1*yd
 !--------------------------------------------------
 
 !------- dvdz -------------------------------------
@@ -630,7 +630,7 @@ DO WHILE (ASSOCIATED(current))
          dvdz0 = dvdz00*(1.0_dbl-xd) + dvdz10* xd
          dvdz1 = dvdz01*(1.0_dbl-xd) + dvdz11* xd
 !------- y-dir interpolation ----------------------
-         dvdz  = dvdz0*(1.0_dbl-yd)+dvdz1*yd
+         dvdz_P= dvdz0*(1.0_dbl-yd)+dvdz1*yd
 !--------------------------------------------------
 
 !------- dwdz -------------------------------------
@@ -642,29 +642,29 @@ DO WHILE (ASSOCIATED(current))
          dwdz0 = dwdz00*(1.0_dbl-xd) + dwdz10* xd
          dwdz1 = dwdz01*(1.0_dbl-xd) + dwdz11* xd
 !------- y-dir interpolation ----------------------
-         dwdz  = dwdz0*(1.0_dbl-yd)+dwdz1*yd
+         dwdz_P= dwdz0*(1.0_dbl-yd)+dwdz1*yd
 !--------------------------------------------------
 
 !======= Computing 9 componenets of the strain rate tensor
-         E11= dudx
-         E12= 0.5_dbl*(dudy+dvdx)
-         E13= 0.5_dbl*(dudz+dwdx)
-
-         E21= 0.5_dbl*(dvdx+dudy)
-         E22= dvdy
-         E23= 0.5_dbl*(dvdz+dwdy)
-
-         E31= 0.5_dbl*(dwdx+dudz)
-         E32= 0.5_dbl*(dwdy+dvdz)
-         E33= dwdz
+!         E11= dudx_P
+!         E12= 0.5_dbl*(dudy_P+dvdx_P)
+!         E13= 0.5_dbl*(dudz_P+dwdx_P)
+!
+!         E21= 0.5_dbl*(dvdx_P+dudy_P)
+!         E22= dvdy_P
+!         E23= 0.5_dbl*(dvdz_P+dwdy_P)
+!
+!         E31= 0.5_dbl*(dwdx_P+dudz_P)
+!         E32= 0.5_dbl*(dwdy_P+dvdz_P)
+!         E33= dwdz_P
 
 !======= Computing the strain rate magnitude
-         S = 2.0_dbl*dudx**2.0_dbl + &
-             2.0_dbl*dvdy**2.0_dbl + &
-             2.0_dbl*dwdz**2.0_dbl + &
-              (dudy+dvdx)**2.0_dbl + &
-              (dudz+dwdx)**2.0_dbl + &
-              (dwdy+dvdz)**2.0_dbl
+         S = 2.0_dbl*dudx_P**2.0_dbl  + &
+             2.0_dbl*dvdy_P**2.0_dbl  + &
+             2.0_dbl*dwdz_P**2.0_dbl  + &
+             (dudy_P+dvdx_P)**2.0_dbl + &
+             (dudz_P+dwdx_P)**2.0_dbl + &
+             (dwdy_P+dvdz_P)**2.0_dbl
          S = sqrt(S) 
          S = S * vcf / zcf 
          current%pardata%S = S
