@@ -25,6 +25,10 @@ REAL(dbl), 		ALLOCATABLE :: d2udx2(:,:,:),d2udy2(:,:,:),d2udz2(:,:,:)
 REAL(dbl), 		ALLOCATABLE :: d2vdx2(:,:,:),d2vdy2(:,:,:),d2vdz2(:,:,:)
 REAL(dbl), 		ALLOCATABLE :: d2wdx2(:,:,:),d2wdy2(:,:,:),d2wdz2(:,:,:) 
 REAL(dbl), 		ALLOCATABLE :: Laplacian_x(:,:,:),Laplacian_y(:,:,:),Laplacian_z(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: dA1dx(:,:,:),dA1dy(:,:,:),dA1dz(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: dA2dx(:,:,:),dA2dy(:,:,:),dA2dz(:,:,:) 
+REAL(dbl), 		ALLOCATABLE :: dA3dx(:,:,:),dA3dy(:,:,:),dA3dz(:,:,:)
+REAL(dbl), 		ALLOCATABLE :: DLaplacianDt_x(:,:,:),DLaplacianDt_y(:,:,:),DLaplacianDt_z(:,:,:)
 REAL(dbl), 		ALLOCATABLE :: Dudt_x(:,:,:),Dudt_y(:,:,:),Dudt_z(:,:,:) 
 
 REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)                          ! density
@@ -1196,6 +1200,22 @@ ALLOCATE(Dudt_x(0:nxSub+1,0:nySub+1,0:nzSub+1),                                 
 ALLOCATE(Laplacian_x(0:nxSub+1,0:nySub+1,0:nzSub+1),                                               &
          Laplacian_y(0:nxSub+1,0:nySub+1,0:nzSub+1),                                               &
          Laplacian_z(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(dA1dx(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                     &
+         dA1dy(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                     &
+         dA1dz(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(dA2dx(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                     &
+         dA2dy(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                     &
+         dA2dz(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(dA3dx(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                     &
+         dA3dy(0:nxSub+1,0:nySub+1,0:nzSub+1),                                                     &
+         dA3dz(0:nxSub+1,0:nySub+1,0:nzSub+1))
+
+ALLOCATE(DLaplacianDt_x(0:nxSub+1,0:nySub+1,0:nzSub+1),                                            &
+         DLaplacianDt_y(0:nxSub+1,0:nySub+1,0:nzSub+1),                                            &
+         DLaplacianDt_z(0:nxSub+1,0:nySub+1,0:nzSub+1))
 
 ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 

@@ -602,6 +602,51 @@ DO k=1,nzSub
             DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k)+ v(i,j,k)*dvdy(i,j,k)+ w(i,j,k)*dvdz(i,j,k))* (vcf**2)/(xcf**2)
             DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k)+ v(i,j,k)*dwdy(i,j,k)+ w(i,j,k)*dwdz(i,j,k))* (vcf**2)/(xcf**2)
 
+            !=== Computing Material Derivative of Laplacian vector =================================
+            IF (node(i-1,j,k) .EQ. FLUID) THEN 
+               dA1dx(i,j,k)= (d2udx2(i,j,k)-d2udx2(i-1,j,k) + d2udy2(i,j,k)-d2udy2(i-1,j,k) + d2udz2(i,j,k)-d2udz2(i-1,j,k)) /xcf 
+               dA2dx(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i-1,j,k) + d2vdy2(i,j,k)-d2vdy2(i-1,j,k) + d2vdz2(i,j,k)-d2vdz2(i-1,j,k)) /xcf
+               dA3dx(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i-1,j,k) + d2wdy2(i,j,k)-d2wdy2(i-1,j,k) + d2wdz2(i,j,k)-d2wdz2(i-1,j,k)) /xcf
+            ELSEIF (node(i+1,j,k) .EQ. FLUID) THEN
+               dA1dx(i,j,k)= (d2udx2(i+1,j,k)-d2udx2(i,j,k) + d2udy2(i+1,j,k)-d2udy2(i,j,k) + d2udz2(i+1,j,k)-d2udz2(i,j,k)) /xcf
+               dA2dx(i,j,k)= (d2vdx2(i+1,j,k)-d2vdx2(i,j,k) + d2vdy2(i+1,j,k)-d2vdy2(i,j,k) + d2vdz2(i+1,j,k)-d2vdz2(i,j,k)) /xcf
+               dA3dx(i,j,k)= (d2wdx2(i+1,j,k)-d2wdx2(i,j,k) + d2wdy2(i+1,j,k)-d2wdy2(i,j,k) + d2wdz2(i+1,j,k)-d2wdz2(i,j,k)) /xcf
+            ELSE 
+               dA1dx(i,j,k)=0.0_dbl
+               dA2dx(i,j,k)=0.0_dbl
+               dA3dx(i,j,k)=0.0_dbl
+            ENDIF
+            IF (node(i,j-1,k) .EQ. FLUID) THEN 
+               dA1dy(i,j,k)= (d2udx2(i,j,k)-d2udx2(i,j-1,k) + d2udy2(i,j,k)-d2udy2(i,j-1,k) + d2udz2(i,j,k)-d2udz2(i,j-1,k)) /ycf
+               dA2dy(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i,j-1,k) + d2vdy2(i,j,k)-d2vdy2(i,j-1,k) + d2vdz2(i,j,k)-d2vdz2(i,j-1,k)) /ycf
+               dA3dy(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i,j-1,k) + d2wdy2(i,j,k)-d2wdy2(i,j-1,k) + d2wdz2(i,j,k)-d2wdz2(i,j-1,k)) /ycf
+            ELSEIF (node(i,j+1,k) .EQ. FLUID) THEN
+               dA1dy(i,j,k)= (d2udx2(i,j+1,k)-d2udx2(i,j,k) + d2udy2(i,j+1,k)-d2udy2(i,j,k) + d2udz2(i,j+1,k)-d2udz2(i,j,k)) /ycf
+               dA2dy(i,j,k)= (d2vdx2(i,j+1,k)-d2vdx2(i,j,k) + d2vdy2(i,j+1,k)-d2vdy2(i,j,k) + d2vdz2(i,j+1,k)-d2vdz2(i,j,k)) /ycf
+               dA3dy(i,j,k)= (d2wdx2(i,j+1,k)-d2wdx2(i,j,k) + d2wdy2(i,j+1,k)-d2wdy2(i,j,k) + d2wdz2(i,j+1,k)-d2wdz2(i,j,k)) /ycf
+            ELSE 
+               dA1dy(i,j,k)=0.0_dbl
+               dA2dy(i,j,k)=0.0_dbl
+               dA3dy(i,j,k)=0.0_dbl
+            ENDIF
+            IF (node(i,j,k-1) .EQ. FLUID) THEN 
+               dA1dz(i,j,k)= (d2udx2(i,j,k)-d2udx2(i,j,k-1) + d2udy2(i,j,k)-d2udy2(i,j,k-1) + d2udz2(i,j,k)-d2udz2(i,j,k-1)) /zcf
+               dA2dz(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i,j,k-1) + d2vdy2(i,j,k)-d2vdy2(i,j,k-1) + d2vdz2(i,j,k)-d2vdz2(i,j,k-1)) /zcf
+               dA3dz(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i,j,k-1) + d2wdy2(i,j,k)-d2wdy2(i,j,k-1) + d2wdz2(i,j,k)-d2wdz2(i,j,k-1)) /zcf
+            ELSEIF (node(i,j,k+1) .EQ. FLUID) THEN
+               dA1dz(i,j,k)= (d2udx2(i,j,k+1)-d2udx2(i,j,k) + d2udy2(i,j,k+1)-d2udy2(i,j,k) + d2udz2(i,j,k+1)-d2udz2(i,j,k)) /zcf
+               dA2dz(i,j,k)= (d2vdx2(i,j,k+1)-d2vdx2(i,j,k) + d2vdy2(i,j,k+1)-d2vdy2(i,j,k) + d2vdz2(i,j,k+1)-d2vdz2(i,j,k)) /zcf
+               dA3dz(i,j,k)= (d2wdx2(i,j,k+1)-d2wdx2(i,j,k) + d2wdy2(i,j,k+1)-d2wdy2(i,j,k) + d2wdz2(i,j,k+1)-d2wdz2(i,j,k)) /zcf
+            ELSE 
+               dA1dz(i,j,k)=0.0_dbl
+               dA2dz(i,j,k)=0.0_dbl
+               dA3dz(i,j,k)=0.0_dbl
+            ENDIF
+
+            DLaplacianDt_x= u(i,j,k)*dA1dx(i,j,k) + v(i,j,k)*dA1dy(i,j,k) + w(i,j,k)*dA1dz(i,j,k)
+            DLaplacianDt_y= u(i,j,k)*dA2dx(i,j,k) + v(i,j,k)*dA2dy(i,j,k) + w(i,j,k)*dA2dz(i,j,k)
+            DLaplacianDt_z= u(i,j,k)*dA3dx(i,j,k) + v(i,j,k)*dA3dy(i,j,k) + w(i,j,k)*dA3dz(i,j,k)
+
          ELSEIF (node(i,j,k) .EQ. SOLID) THEN
             dudx(i,j,k)=0.0_dbl
             dvdx(i,j,k)=0.0_dbl
