@@ -502,22 +502,23 @@ END SUBROUTINE Macro
 !===================================================================================================
 SUBROUTINE Compute_vel_derivatives
 !===================================================================================================
-! Computing components of velocity gradietns
-! and strain rate tensor using central difference 
-
 IMPLICIT NONE
-INTEGER(lng)  :: i,j,k
+INTEGER(lng):: i,j,k
 
 DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
-         IF (node(1,j,k) .EQ. FLUID) THEN 
+         IF (node(i,j,k) .EQ. FLUID) THEN 
             !=== x-dir 1st derivatives =============================================================
-            IF (node(i-1,j,k) .EQ. FLUID) THEN 
+            IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN
+               dudx(i,j,k)= (u(i+1,j,k) - u(i-1,j,k)) * 0.5_dbl * (vcf/xcf)
+               dvdx(i,j,k)= (v(i+1,j,k) - v(i-1,j,k)) * 0.5_dbl * (vcf/xcf)
+               dwdx(i,j,k)= (w(i+1,j,k) - w(i-1,j,k)) * 0.5_Dbl * (vcf/xcf)
+            ELSEIF (node(i+1,j,k) .EQ. SOLID) THEN                                  !Backward difference 
                dudx(i,j,k)= (u(i,j,k) - u(i-1,j,k)) * (vcf/xcf)
                dvdx(i,j,k)= (v(i,j,k) - v(i-1,j,k)) * (vcf/xcf)
                dwdx(i,j,k)= (w(i,j,k) - w(i-1,j,k)) * (vcf/xcf)
-            ELSEIF (node(i+1,j,k) .EQ. FLUID) THEN
+            ELSEIF (node(i-1,j,k) .EQ. SOLID) THEN                               !Forward difference
                dudx(i,j,k)= (u(i+1,j,k) - u(i,j,k)) * (vcf/xcf)
                dvdx(i,j,k)= (v(i+1,j,k) - v(i,j,k)) * (vcf/xcf)
                dwdx(i,j,k)= (w(i+1,j,k) - w(i,j,k)) * (vcf/xcf)
@@ -539,14 +540,18 @@ DO k=1,nzSub
 
 
             !=== y-dir 1st derivatives =============================================================
-            IF (node(i,j-1,k) .EQ. FLUID) THEN 
-               dudy(i,j,k)= (u(i,j,k) - u(i,j-1,k)) * (vcf/xcf)
-               dvdy(i,j,k)= (v(i,j,k) - v(i,j-1,k)) * (vcf/xcf)
-               dwdy(i,j,k)= (w(i,j,k) - w(i,j-1,k)) * (vcf/xcf)
-            ELSEIF (node(i,j+1,k) .EQ. FLUID) THEN
-               dudy(i,j,k)= (u(i,j+1,k) - u(i,j,k)) * (vcf/xcf)
-               dvdy(i,j,k)= (v(i,j+1,k) - v(i,j,k)) * (vcf/xcf)
-               dwdy(i,j,k)= (w(i,j+1,k) - w(i,j,k)) * (vcf/xcf)
+            IF ((node(i,j-1,k) .EQ. FLUID) .AND. (node(i,j+1,k) .EQ. FLUID)) THEN
+               dudy(i,j,k)= (u(i,j+1,k) - u(i,j-1,k)) * 0.5_dbl * (vcf/ycf)
+               dvdy(i,j,k)= (v(i,j+1,k) - v(i,j-1,k)) * 0.5_dbl * (vcf/ycf)
+               dwdy(i,j,k)= (w(i,j+1,k) - w(i,j-1,k)) * 0.5_Dbl * (vcf/ycf)
+            ELSEIF (node(i,j+1,k) .EQ. SOLID) THEN 
+               dudy(i,j,k)= (u(i,j,k) - u(i,j-1,k)) * (vcf/ycf)
+               dvdy(i,j,k)= (v(i,j,k) - v(i,j-1,k)) * (vcf/ycf)
+               dwdy(i,j,k)= (w(i,j,k) - w(i,j-1,k)) * (vcf/ycf)
+            ELSEIF (node(i,j-1,k) .EQ. SOLID) THEN
+               dudy(i,j,k)= (u(i,j+1,k) - u(i,j,k)) * (vcf/ycf)
+               dvdy(i,j,k)= (v(i,j+1,k) - v(i,j,k)) * (vcf/ycf)
+               dwdy(i,j,k)= (w(i,j+1,k) - w(i,j,k)) * (vcf/ycf)
             ELSE 
                dudy(i,j,k)=0.0_dbl
                dvdy(i,j,k)=0.0_dbl
@@ -566,14 +571,18 @@ DO k=1,nzSub
 
 
             !=== z-Dir 1st derivatives =============================================================
-            IF (node(i,j,k-1) .EQ. FLUID) THEN   
-               dudz(i,j,k)= (u(i,j,k) - u(i,j,k-1)) * (vcf/xcf)
-               dvdz(i,j,k)= (v(i,j,k) - v(i,j,k-1)) * (vcf/xcf)
-               dwdz(i,j,k)= (w(i,j,k) - w(i,j,k-1)) * (vcf/xcf)
-            ELSEIF (node(i,j,k+1) .EQ. FLUID) THEN
-               dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k)) * (vcf/xcf)
-               dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k)) * (vcf/xcf)
-               dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k)) * (vcf/xcf)
+            IF ((node(i,j,k-1) .EQ. FLUID) .AND. (node(i,j,k+1) .EQ. FLUID)) THEN
+               dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k-1)) * 0.5_dbl * (vcf/zcf)
+               dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k-1)) * 0.5_dbl * (vcf/zcf)
+               dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k-1)) * 0.5_Dbl * (vcf/zcf)
+            ELSEIF (node(i,j,k+1) .EQ. SOLID) THEN   
+               dudz(i,j,k)= (u(i,j,k) - u(i,j,k-1)) * (vcf/zcf)
+               dvdz(i,j,k)= (v(i,j,k) - v(i,j,k-1)) * (vcf/zcf)
+               dwdz(i,j,k)= (w(i,j,k) - w(i,j,k-1)) * (vcf/zcf)
+            ELSEIF (node(i,j,k-1) .EQ. SOLID) THEN
+               dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k)) * (vcf/zcf)
+               dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k)) * (vcf/zcf)
+               dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k)) * (vcf/zcf)
             ELSE 
               dudz(i,j,k)=0.0_dbl
               dvdz(i,j,k)=0.0_dbl
