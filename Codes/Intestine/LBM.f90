@@ -509,16 +509,16 @@ DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
          IF (node(i,j,k) .EQ. FLUID) THEN 
-            !=== x-dir 1st derivatives =============================================================
-            IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN
+            !=== x-dir 1st derivatives ============================================================
+            IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN                  !Cental difference
                dudx(i,j,k)= (u(i+1,j,k) - u(i-1,j,k)) * 0.5_dbl * (vcf/xcf)
                dvdx(i,j,k)= (v(i+1,j,k) - v(i-1,j,k)) * 0.5_dbl * (vcf/xcf)
                dwdx(i,j,k)= (w(i+1,j,k) - w(i-1,j,k)) * 0.5_Dbl * (vcf/xcf)
-            ELSEIF (node(i+1,j,k) .EQ. SOLID) THEN                                  !Backward difference 
+            ELSEIF (node(i+1,j,k) .EQ. SOLID) THEN                                                 !Backward difference 
                dudx(i,j,k)= (u(i,j,k) - u(i-1,j,k)) * (vcf/xcf)
                dvdx(i,j,k)= (v(i,j,k) - v(i-1,j,k)) * (vcf/xcf)
                dwdx(i,j,k)= (w(i,j,k) - w(i-1,j,k)) * (vcf/xcf)
-            ELSEIF (node(i-1,j,k) .EQ. SOLID) THEN                               !Forward difference
+            ELSEIF (node(i-1,j,k) .EQ. SOLID) THEN                                                 !Forward difference
                dudx(i,j,k)= (u(i+1,j,k) - u(i,j,k)) * (vcf/xcf)
                dvdx(i,j,k)= (v(i+1,j,k) - v(i,j,k)) * (vcf/xcf)
                dwdx(i,j,k)= (w(i+1,j,k) - w(i,j,k)) * (vcf/xcf)
@@ -528,10 +528,18 @@ DO k=1,nzSub
                dwdx(i,j,k)=0.0_dbl
             ENDIF
             !--- x-dir 2nd derivatives -------------------------------------------------------------
-            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN 
-               d2udx2(i,j,k)= ( u(i+1,j,k) - 2.0_dbl*u(i,j,k) + u(i-1,j,k) ) * (vcf**2)/(xcf**2)
-               d2vdx2(i,j,k)= ( v(i+1,j,k) - 2.0_dbl*u(i,j,k) + v(i-1,j,k) ) * (vcf**2)/(xcf**2)
-               d2wdx2(i,j,k)= ( w(i+1,j,k) - 2.0_dbl*w(i,j,k) + w(i-1,j,k) ) * (vcf**2)/(xcf**2)
+            IF ((node(i-1,j,k).EQ.FLUID).AND.(node(i+1,j,k).EQ.FLUID)) THEN                         !Central difference
+               d2udx2(i,j,k)= ( u(i+1,j,k) - 2.0_dbl*u(i,j,k)   + u(i-1,j,k) ) * (vcf**2)/(xcf**2)
+               d2vdx2(i,j,k)= ( v(i+1,j,k) - 2.0_dbl*u(i,j,k)   + v(i-1,j,k) ) * (vcf**2)/(xcf**2)
+               d2wdx2(i,j,k)= ( w(i+1,j,k) - 2.0_dbl*w(i,j,k)   + w(i-1,j,k) ) * (vcf**2)/(xcf**2)
+            ELSEIF ((node(i+1,j,k) .EQ. SOLID).AND.(node(i-2,j,k).EQ.FLUID)) THEN                   !Backward difference 
+               d2udx2(i,j,k)= ( u(i,j,k)   - 2.0_dbl*u(i-1,j,k) + u(i-2,j,k) ) * (vcf**2)/(xcf**2)
+               d2vdx2(i,j,k)= ( v(i,j,k)   - 2.0_dbl*u(i-1,j,k) + v(i-2,j,k) ) * (vcf**2)/(xcf**2)
+               d2wdx2(i,j,k)= ( w(i,j,k)   - 2.0_dbl*w(i-1,j,k) + w(i-2,j,k) ) * (vcf**2)/(xcf**2)
+            ELSEIF ((node(i-1,j,k) .EQ. SOLID).AND.(node(i+2,j,k).EQ.FLUID)) THEN                   !Forward difference 
+               d2udx2(i,j,k)= ( u(i+2,j,k) - 2.0_dbl*u(i+1,j,k) + u(i,j,k) )   * (vcf**2)/(xcf**2)
+               d2vdx2(i,j,k)= ( v(i+2,j,k) - 2.0_dbl*u(i+1,j,k) + v(i,j,k) )   * (vcf**2)/(xcf**2)
+               d2wdx2(i,j,k)= ( w(i+2,j,k) - 2.0_dbl*w(i+1,j,k) + w(i,j,k) )   * (vcf**2)/(xcf**2)
             ELSE 
                d2udx2(i,j,k)=0.0_dbl
                d2vdx2(i,j,k)=0.0_dbl
@@ -540,15 +548,15 @@ DO k=1,nzSub
 
 
             !=== y-dir 1st derivatives =============================================================
-            IF ((node(i,j-1,k) .EQ. FLUID) .AND. (node(i,j+1,k) .EQ. FLUID)) THEN
+            IF ((node(i,j-1,k) .EQ. FLUID) .AND. (node(i,j+1,k) .EQ. FLUID)) THEN                  !Cental difference
                dudy(i,j,k)= (u(i,j+1,k) - u(i,j-1,k)) * 0.5_dbl * (vcf/ycf)
                dvdy(i,j,k)= (v(i,j+1,k) - v(i,j-1,k)) * 0.5_dbl * (vcf/ycf)
                dwdy(i,j,k)= (w(i,j+1,k) - w(i,j-1,k)) * 0.5_Dbl * (vcf/ycf)
-            ELSEIF (node(i,j+1,k) .EQ. SOLID) THEN 
-               dudy(i,j,k)= (u(i,j,k) - u(i,j-1,k)) * (vcf/ycf)
+            ELSEIF (node(i,j+1,k) .EQ. SOLID) THEN                                                 !Backward difference
+               dudy(i,j,k)= (u(i,j,k) - u(i,j-1,k)) * (vcf/ycf)  
                dvdy(i,j,k)= (v(i,j,k) - v(i,j-1,k)) * (vcf/ycf)
                dwdy(i,j,k)= (w(i,j,k) - w(i,j-1,k)) * (vcf/ycf)
-            ELSEIF (node(i,j-1,k) .EQ. SOLID) THEN
+            ELSEIF (node(i,j-1,k) .EQ. SOLID) THEN                                                 !Forward difference
                dudy(i,j,k)= (u(i,j+1,k) - u(i,j,k)) * (vcf/ycf)
                dvdy(i,j,k)= (v(i,j+1,k) - v(i,j,k)) * (vcf/ycf)
                dwdy(i,j,k)= (w(i,j+1,k) - w(i,j,k)) * (vcf/ycf)
@@ -559,10 +567,18 @@ DO k=1,nzSub
             ENDIF                                  
   
             !--- y-dir 2nd derivatives -------------------------------------------------------------
-            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN 
-               d2udy2(i,j,k)= (u(i,j+1,k) - 2.0_dbl*u(i,j,k) - u(i,j-1,k)) * (vcf**2)/(xcf**2)
-               d2vdy2(i,j,k)= (v(i,j+1,k) - 2.0_dbl*v(i,j,k) - v(i,j-1,k)) * (vcf**2)/(xcf**2)
-               d2wdy2(i,j,k)= (w(i,j+1,k) - 2.0_dbl*w(i,j,k) - w(i,j-1,k)) * (vcf**2)/(xcf**2)
+            IF ((node(i,j-1,k).EQ.FLUID).AND.(node(i,j+1,k).EQ.FLUID)) THEN                         !Central difference
+               d2udy2(i,j,k)= (u(i,j+1,k) - 2.0_dbl*u(i,j,k)   + u(i,j-1,k)) * (vcf**2)/(ycf**2)
+               d2vdy2(i,j,k)= (v(i,j+1,k) - 2.0_dbl*v(i,j,k)   + v(i,j-1,k)) * (vcf**2)/(ycf**2)
+               d2wdy2(i,j,k)= (w(i,j+1,k) - 2.0_dbl*w(i,j,k)   + w(i,j-1,k)) * (vcf**2)/(ycf**2)
+            ELSEIF ((node(i,j+1,k) .EQ. SOLID).AND.(node(i,j-2,k).EQ.FLUID)) THEN                   !Backward difference 
+               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j-1,k) + u(i,j-2,k)) * (vcf**2)/(ycf**2)
+               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j-1,k) + v(i,j-2,k)) * (vcf**2)/(ycf**2)
+               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j-1,k) + w(i,j-2,k)) * (vcf**2)/(ycf**2)
+            ELSEIF ((node(i,j-1,k) .EQ. SOLID).AND.(node(i,j+2,k).EQ.FLUID)) THEN                   !Forward difference 
+               d2udx2(i,j,k)= (u(i,j+2,k) - 2.0_dbl*u(i,j+1,k) + u(i,j,k) )  * (vcf**2)/(ycf**2)
+               d2vdx2(i,j,k)= (v(i,j+2,k) - 2.0_dbl*u(i,j+1,k) + v(i,j,k) )  * (vcf**2)/(ycf**2)
+               d2wdx2(i,j,k)= (w(i,j+2,k) - 2.0_dbl*w(i,j+1,k) + w(i,j,k) )  * (vcf**2)/(ycf**2)
             ELSE 
                d2udy2(i,j,k)=0.0_dbl
                d2vdy2(i,j,k)=0.0_dbl
@@ -571,15 +587,15 @@ DO k=1,nzSub
 
 
             !=== z-Dir 1st derivatives =============================================================
-            IF ((node(i,j,k-1) .EQ. FLUID) .AND. (node(i,j,k+1) .EQ. FLUID)) THEN
+            IF ((node(i,j,k-1) .EQ. FLUID) .AND. (node(i,j,k+1) .EQ. FLUID)) THEN                   !Central difference
                dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k-1)) * 0.5_dbl * (vcf/zcf)
                dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k-1)) * 0.5_dbl * (vcf/zcf)
                dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k-1)) * 0.5_Dbl * (vcf/zcf)
-            ELSEIF (node(i,j,k+1) .EQ. SOLID) THEN   
+            ELSEIF (node(i,j,k+1) .EQ. SOLID) THEN                                                  !Backward difference
                dudz(i,j,k)= (u(i,j,k) - u(i,j,k-1)) * (vcf/zcf)
                dvdz(i,j,k)= (v(i,j,k) - v(i,j,k-1)) * (vcf/zcf)
                dwdz(i,j,k)= (w(i,j,k) - w(i,j,k-1)) * (vcf/zcf)
-            ELSEIF (node(i,j,k-1) .EQ. SOLID) THEN
+            ELSEIF (node(i,j,k-1) .EQ. SOLID) THEN                                                  !Forward difference
                dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k)) * (vcf/zcf)
                dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k)) * (vcf/zcf)
                dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k)) * (vcf/zcf)
@@ -589,34 +605,45 @@ DO k=1,nzSub
               dwdz(i,j,k)=0.0_dbl
             ENDIF                                  
             !--- z-Dir 2nd derivatives -------------------------------------------------------------
-            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN 
-               d2udz2(i,j,k)= (u(i,j,k+1) - 2.0_dbl*u(i,j,k) + u(i,j,k-1)) * (vcf**2)/(xcf**2)
-               d2vdz2(i,j,k)= (v(i,j,k+1) - 2.0_dbl*v(i,j,k) + v(i,j,k-1)) * (vcf**2)/(xcf**2)
-               d2wdz2(i,j,k)= (w(i,j,k+1) - 2.0_dbl*w(i,j,k) + w(i,j,k-1)) * (vcf**2)/(xcf**2)
+            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN                         !Central difference           
+               d2udz2(i,j,k)= (u(i,j,k+1) - 2.0_dbl*u(i,j,k)   + u(i,j,k-1)) * (vcf**2)/(zcf**2)             
+               d2vdz2(i,j,k)= (v(i,j,k+1) - 2.0_dbl*v(i,j,k)   + v(i,j,k-1)) * (vcf**2)/(zcf**2)
+               d2wdz2(i,j,k)= (w(i,j,k+1) - 2.0_dbl*w(i,j,k)   + w(i,j,k-1)) * (vcf**2)/(zcf**2)
+            ELSEIF ((node(i,j,k+1) .EQ. SOLID).AND.(node(i,j,k-2).EQ.FLUID)) THEN                   !Backward difference 
+               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j,k-1) + u(i,j,k-2)) * (vcf**2)/(zcf**2)
+               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j,k-1) + v(i,j,k-2)) * (vcf**2)/(zcf**2)
+               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j,k-1) + w(i,j,k-2)) * (vcf**2)/(zcf**2)
+            ELSEIF ((node(i,j,k-1) .EQ. SOLID).AND.(node(i,j,k+2).EQ.FLUID)) THEN                   !Forward difference 
+               d2udx2(i,j,k)= (u(i,j,k+2) - 2.0_dbl*u(i,j,k+1) + u(i,j,k)  )  * (vcf**2)/(zcf**2)
+               d2vdx2(i,j,k)= (v(i,j,k+2) - 2.0_dbl*u(i,j,k+1) + v(i,j,k)  )  * (vcf**2)/(zcf**2)
+               d2wdx2(i,j,k)= (w(i,j,k+2) - 2.0_dbl*w(i,j,k+1) + w(i,j,k)  )  * (vcf**2)/(zcf**2)
             ELSE 
                d2udz2(i,j,k)=0.0_dbl
                d2vdz2(i,j,k)=0.0_dbl
                d2wdz2(i,j,k)=0.0_dbl
             ENDIF                                  
 
-
             !=== Compute Laplacian =================================================================
-            Laplacian_x(i,j,k)= (d2udx2(i,j,k)+d2udy2(i,j,k)+d2udz2(i,j,k)) * (vcf**2)/(xcf**2)
-            Laplacian_y(i,j,k)= (d2vdx2(i,j,k)+d2vdy2(i,j,k)+d2vdz2(i,j,k)) * (vcf**2)/(xcf**2)
-            Laplacian_z(i,j,k)= (d2wdx2(i,j,k)+d2wdy2(i,j,k)+d2wdz2(i,j,k)) * (vcf**2)/(xcf**2)
+            Laplacian_x(i,j,k)= (d2udx2(i,j,k)+d2udy2(i,j,k)+d2udz2(i,j,k)) 
+            Laplacian_y(i,j,k)= (d2vdx2(i,j,k)+d2vdy2(i,j,k)+d2vdz2(i,j,k))
+            Laplacian_z(i,j,k)= (d2wdx2(i,j,k)+d2wdy2(i,j,k)+d2wdz2(i,j,k)) 
 
 
             !=== Computing Material Derivative of the Velocity vector ==============================
-            DUdt_x(i,j,k)= (u(i,j,k)*dudx(i,j,k)+ v(i,j,k)*dudy(i,j,k)+ w(i,j,k)*dudz(i,j,k))* (vcf**2)/(xcf**2)
-            DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k)+ v(i,j,k)*dvdy(i,j,k)+ w(i,j,k)*dvdz(i,j,k))* (vcf**2)/(xcf**2)
-            DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k)+ v(i,j,k)*dwdy(i,j,k)+ w(i,j,k)*dwdz(i,j,k))* (vcf**2)/(xcf**2)
+            DUdt_x(i,j,k)= (u(i,j,k)*dudx(i,j,k)+ v(i,j,k)*dudy(i,j,k)+ w(i,j,k)*dudz(i,j,k))* vcf
+            DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k)+ v(i,j,k)*dvdy(i,j,k)+ w(i,j,k)*dvdz(i,j,k))* vcf
+            DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k)+ v(i,j,k)*dwdy(i,j,k)+ w(i,j,k)*dwdz(i,j,k))* vcf
 
             !=== Computing Material Derivative of Laplacian vector =================================
-            IF (node(i-1,j,k) .EQ. FLUID) THEN 
-               dA1dx(i,j,k)= (d2udx2(i,j,k)-d2udx2(i-1,j,k) + d2udy2(i,j,k)-d2udy2(i-1,j,k) + d2udz2(i,j,k)-d2udz2(i-1,j,k)) /xcf 
+            IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN                   !Cental difference
+               dA1dx(i,j,k)= (d2udx2(i+1,j,k)-d2udx2(i-1,j,k) + d2udy2(i+1,j,k)-d2udy2(i-1,j,k) + d2udz2(i+1,j,k)-d2udz2(i-1,j,k)) * 0.5_dbl/xcf  
+               dA2dx(i,j,k)= (d2vdx2(i+1,j,k)-d2vdx2(i-1,j,k) + d2vdy2(i+1,j,k)-d2vdy2(i-1,j,k) + d2vdz2(i+1,j,k)-d2vdz2(i-1,j,k)) * 0.5_dbl/xcf
+               dA3dx(i,j,k)= (d2wdx2(i+1,j,k)-d2wdx2(i-1,j,k) + d2wdy2(i+1,j,k)-d2wdy2(i-1,j,k) + d2wdz2(i+1,j,k)-d2wdz2(i-1,j,k)) * 0.5_dbl/xcf
+            ELSEIF (node(i+1,j,k) .EQ. SOLID) THEN                                                      !Backward difference
+               dA1dx(i,j,k)= (d2udx2(i,j,k)-d2udx2(i-1,j,k) + d2udy2(i,j,k)-d2udy2(i-1,j,k) + d2udz2(i,j,k)-d2udz2(i-1,j,k)) /xcf  
                dA2dx(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i-1,j,k) + d2vdy2(i,j,k)-d2vdy2(i-1,j,k) + d2vdz2(i,j,k)-d2vdz2(i-1,j,k)) /xcf
                dA3dx(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i-1,j,k) + d2wdy2(i,j,k)-d2wdy2(i-1,j,k) + d2wdz2(i,j,k)-d2wdz2(i-1,j,k)) /xcf
-            ELSEIF (node(i+1,j,k) .EQ. FLUID) THEN
+            ELSEIF (node(i-1,j,k) .EQ. SOLID) THEN                                                  !Forwad difference
                dA1dx(i,j,k)= (d2udx2(i+1,j,k)-d2udx2(i,j,k) + d2udy2(i+1,j,k)-d2udy2(i,j,k) + d2udz2(i+1,j,k)-d2udz2(i,j,k)) /xcf
                dA2dx(i,j,k)= (d2vdx2(i+1,j,k)-d2vdx2(i,j,k) + d2vdy2(i+1,j,k)-d2vdy2(i,j,k) + d2vdz2(i+1,j,k)-d2vdz2(i,j,k)) /xcf
                dA3dx(i,j,k)= (d2wdx2(i+1,j,k)-d2wdx2(i,j,k) + d2wdy2(i+1,j,k)-d2wdy2(i,j,k) + d2wdz2(i+1,j,k)-d2wdz2(i,j,k)) /xcf
@@ -625,11 +652,16 @@ DO k=1,nzSub
                dA2dx(i,j,k)=0.0_dbl
                dA3dx(i,j,k)=0.0_dbl
             ENDIF
-            IF (node(i,j-1,k) .EQ. FLUID) THEN 
+           
+            IF ((node(i,j-1,k) .EQ. FLUID) .AND. (node(i,j+1,k) .EQ. FLUID)) THEN                   !Cental difference
+               dA1dy(i,j,k)= (d2udx2(i,j+1,k)-d2udx2(i,j-1,k) + d2udy2(i,j+1,k)-d2udy2(i,j-1,k) + d2udz2(i,j+1,k)-d2udz2(i,j-1,k)) * 0.5_dbl/ycf
+               dA2dy(i,j,k)= (d2vdx2(i,j+1,k)-d2vdx2(i,j-1,k) + d2vdy2(i,j+1,k)-d2vdy2(i,j-1,k) + d2vdz2(i,j+1,k)-d2vdz2(i,j-1,k)) * 0.5_dbl/ycf
+               dA3dy(i,j,k)= (d2wdx2(i,j+1,k)-d2wdx2(i,j-1,k) + d2wdy2(i,j+1,k)-d2wdy2(i,j-1,k) + d2wdz2(i,j+1,k)-d2wdz2(i,j-1,k)) * 0.5_dbl/ycf
+            ELSEIF (node(i,j+1,k) .EQ. SOLID) THEN                                                      !Backward difference             
                dA1dy(i,j,k)= (d2udx2(i,j,k)-d2udx2(i,j-1,k) + d2udy2(i,j,k)-d2udy2(i,j-1,k) + d2udz2(i,j,k)-d2udz2(i,j-1,k)) /ycf
                dA2dy(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i,j-1,k) + d2vdy2(i,j,k)-d2vdy2(i,j-1,k) + d2vdz2(i,j,k)-d2vdz2(i,j-1,k)) /ycf
                dA3dy(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i,j-1,k) + d2wdy2(i,j,k)-d2wdy2(i,j-1,k) + d2wdz2(i,j,k)-d2wdz2(i,j-1,k)) /ycf
-            ELSEIF (node(i,j+1,k) .EQ. FLUID) THEN
+            ELSEIF (node(i,j-1,k) .EQ. SOLID) THEN                                                  !Forward difference
                dA1dy(i,j,k)= (d2udx2(i,j+1,k)-d2udx2(i,j,k) + d2udy2(i,j+1,k)-d2udy2(i,j,k) + d2udz2(i,j+1,k)-d2udz2(i,j,k)) /ycf
                dA2dy(i,j,k)= (d2vdx2(i,j+1,k)-d2vdx2(i,j,k) + d2vdy2(i,j+1,k)-d2vdy2(i,j,k) + d2vdz2(i,j+1,k)-d2vdz2(i,j,k)) /ycf
                dA3dy(i,j,k)= (d2wdx2(i,j+1,k)-d2wdx2(i,j,k) + d2wdy2(i,j+1,k)-d2wdy2(i,j,k) + d2wdz2(i,j+1,k)-d2wdz2(i,j,k)) /ycf
@@ -638,11 +670,16 @@ DO k=1,nzSub
                dA2dy(i,j,k)=0.0_dbl
                dA3dy(i,j,k)=0.0_dbl
             ENDIF
-            IF (node(i,j,k-1) .EQ. FLUID) THEN 
+
+            IF ((node(i,j,k-1) .EQ. FLUID) .AND. (node(i,j,k+1) .EQ. FLUID)) THEN                   !Central difference
+               dA1dz(i,j,k)= (d2udx2(i,j,k+1)-d2udx2(i,j,k-1) + d2udy2(i,j,k+1)-d2udy2(i,j,k-1) + d2udz2(i,j,k+1)-d2udz2(i,j,k-1)) * 0.5_dbl/zcf
+               dA2dz(i,j,k)= (d2vdx2(i,j,k+1)-d2vdx2(i,j,k-1) + d2vdy2(i,j,k+1)-d2vdy2(i,j,k-1) + d2vdz2(i,j,k+1)-d2vdz2(i,j,k-1)) * 0.5_dbl/zcf
+               dA3dz(i,j,k)= (d2wdx2(i,j,k+1)-d2wdx2(i,j,k-1) + d2wdy2(i,j,k+1)-d2wdy2(i,j,k-1) + d2wdz2(i,j,k+1)-d2wdz2(i,j,k-1)) * 0.5_dbl/zcf
+            ELSEIF (node(i,j,k+1) .EQ. SOLID) THEN                                                      !Backward difference  
                dA1dz(i,j,k)= (d2udx2(i,j,k)-d2udx2(i,j,k-1) + d2udy2(i,j,k)-d2udy2(i,j,k-1) + d2udz2(i,j,k)-d2udz2(i,j,k-1)) /zcf
                dA2dz(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i,j,k-1) + d2vdy2(i,j,k)-d2vdy2(i,j,k-1) + d2vdz2(i,j,k)-d2vdz2(i,j,k-1)) /zcf
                dA3dz(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i,j,k-1) + d2wdy2(i,j,k)-d2wdy2(i,j,k-1) + d2wdz2(i,j,k)-d2wdz2(i,j,k-1)) /zcf
-            ELSEIF (node(i,j,k+1) .EQ. FLUID) THEN
+            ELSEIF (node(i,j,k-1) .EQ. SOLID) THEN                                                  !Forward difference
                dA1dz(i,j,k)= (d2udx2(i,j,k+1)-d2udx2(i,j,k) + d2udy2(i,j,k+1)-d2udy2(i,j,k) + d2udz2(i,j,k+1)-d2udz2(i,j,k)) /zcf
                dA2dz(i,j,k)= (d2vdx2(i,j,k+1)-d2vdx2(i,j,k) + d2vdy2(i,j,k+1)-d2vdy2(i,j,k) + d2vdz2(i,j,k+1)-d2vdz2(i,j,k)) /zcf
                dA3dz(i,j,k)= (d2wdx2(i,j,k+1)-d2wdx2(i,j,k) + d2wdy2(i,j,k+1)-d2wdy2(i,j,k) + d2wdz2(i,j,k+1)-d2wdz2(i,j,k)) /zcf
@@ -652,9 +689,9 @@ DO k=1,nzSub
                dA3dz(i,j,k)=0.0_dbl
             ENDIF
 
-            DLaplacianDt_x= u(i,j,k)*dA1dx(i,j,k) + v(i,j,k)*dA1dy(i,j,k) + w(i,j,k)*dA1dz(i,j,k)
-            DLaplacianDt_y= u(i,j,k)*dA2dx(i,j,k) + v(i,j,k)*dA2dy(i,j,k) + w(i,j,k)*dA2dz(i,j,k)
-            DLaplacianDt_z= u(i,j,k)*dA3dx(i,j,k) + v(i,j,k)*dA3dy(i,j,k) + w(i,j,k)*dA3dz(i,j,k)
+            DLaplacianDt_x(i,j,k)= (u(i,j,k)*dA1dx(i,j,k) + v(i,j,k)*dA1dy(i,j,k) + w(i,j,k)*dA1dz(i,j,k)) *vcf
+            DLaplacianDt_y(i,j,k)= (u(i,j,k)*dA2dx(i,j,k) + v(i,j,k)*dA2dy(i,j,k) + w(i,j,k)*dA2dz(i,j,k)) *vcf
+            DLaplacianDt_z(i,j,k)= (u(i,j,k)*dA3dx(i,j,k) + v(i,j,k)*dA3dy(i,j,k) + w(i,j,k)*dA3dz(i,j,k)) *vcf
 
          ELSEIF (node(i,j,k) .EQ. SOLID) THEN
             dudx(i,j,k)=0.0_dbl
@@ -681,6 +718,9 @@ DO k=1,nzSub
             Laplacian_x(i,j,k)=0.0_dbl 
             Laplacian_y(i,j,k)=0.0_dbl
             Laplacian_z(i,j,k)=0.0_dbl
+            DLaplacianDt_x(i,j,k)= 0.0_dbl
+            DLaplacianDt_y(i,j,k)= 0.0_dbl
+            DLaplacianDt_z(i,j,k)= 0.0_dbl
          ENDIF ! End checking if node(i,j,k).EQ. Fluid 
       ENDDO
    ENDDO
