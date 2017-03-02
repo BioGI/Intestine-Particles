@@ -66,12 +66,15 @@ DO iter = iter0-0_lng,nt
       ENDIF
       CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
       CALL Macro							! calcuate the macroscopic quantities [MODULE: Algorithm]
+      IF ((MOD(iter,Output_Intervals) .EQ. 0) .OR. MOD(iter,Restart_Intervals) .EQ. 0) THEN
+         CALL Compute_vel_derivatives
+      ENDIF   
    ELSEIF ((iter .GE. iter_Freeze_LBM) .AND. (iter .EQ. iter0)) THEN 
       CALL AdvanceGeometry						! advance the geometry to the next time step [MODULE: Geometry]
       CALL Collision							! collision step [MODULE: Algorithm]
       CALL MPI_Transfer					        	! transfer the data (distribution functions, density, scalar) [MODULE: Parallel]
       IF (domaintype .EQ. 0) THEN  					! only needed when planes of symmetry exist
-         CALL SymmetryBC						! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
+          CALL SymmetryBC						! enforce symmetry boundary condition at the planes of symmetry [MODULE: ICBC]
       ENDIF
    ENDIF
    CALL MPI_Transfer 
