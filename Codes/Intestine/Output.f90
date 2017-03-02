@@ -313,7 +313,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                        Laplacian_x(i,j,k),Laplacian_y(i,j,k),Laplacian_z(i,j,k),                                                                         &
                        DLaplacianDt_x(i,j,k),DLaplacianDt_y(i,j,k),DLaplacianDt_z(i,j,k)
                ELSE
-                  WRITE(60,'(I3,2I4,6I2)') ii,jj,kk,0,0,0,0,0,node(i,j,k),0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+                  WRITE(60,'(I3,2I4,6I2,27I2)') ii,jj,kk,0,0,0,0,0,node(i,j,k),0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
                END IF
             END DO
