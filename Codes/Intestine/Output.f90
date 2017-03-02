@@ -290,7 +290,11 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
    OPEN(60,FILE='out-'//iter_char//'-'//sub//'.dat')
 
    IF (iter .LT. iter_Freeze_LBM) THEN
-      WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "P" "phi/Cs" "node"'
+      WRITE(60,*) 'VARIABLES = "x" "y" "z" "u(mm/s)" "v(mm/s)" "w(mm/s)" "P" "phi/Cs" "node"              &  
+                       "dudx" "dvdx" "dwdx" "dudy" "dvdy" "dwdy" "dudz" "dvdz" "dwdz"                     &
+                       "d2udx2" " d2vdx2" "d2wdx2" "d2udy2" "d2vdy2" "d2wdy2" "d2udz2" "d2vdz2" "d2wdz2"  &
+                       "DUdt_x" "DUdt_y" "DUdt_z" "Laplacian_x" "Laplacian_y" "Laplacian_z"               &
+                       "DLaplacianDt_x" "DLaplacianDt_y" "DLaplacianDt_z"'
       WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
       DO k=1,nzSub
          DO j=1,nySub
