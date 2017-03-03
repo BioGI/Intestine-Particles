@@ -503,7 +503,7 @@ END SUBROUTINE Macro
 SUBROUTINE Compute_vel_derivatives
 !===================================================================================================
 IMPLICIT NONE
-INTEGER(lng):: i,j,k
+INTEGER(lng):: i,j,k,kL1,kL2,kR1,KR2
 
 DO k=1,nzSub
    DO j=1,nySub
@@ -586,37 +586,56 @@ DO k=1,nzSub
             ENDIF                                  
 
 
+
+            !=== Dealing with periodic BC at z-dir =================================================
+            kL2= k-2
+            kL1= k-1
+            kR1= k+1
+            KR2= k+2
+            IF(kL2 .GT. nz) THEN
+              kL2=kL2-nz
+            ENDIF
+            IF(kL1 .GT. nz) THEN
+              kL1=kL1-nz
+            ENDIF
+            IF(kR2 .LT. 1) THEN
+              kR2=kR2+nz
+            ENDIF
+            IF(kR1 .LT. 1) THEN
+              kR1=kR1+nz
+            ENDIF
+  
             !=== z-Dir 1st derivatives =============================================================
-            IF ((node(i,j,k-1) .EQ. FLUID) .AND. (node(i,j,k+1) .EQ. FLUID)) THEN                   !Central difference
-               dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k-1)) * 0.5_dbl * (vcf/zcf)
-               dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k-1)) * 0.5_dbl * (vcf/zcf)
-               dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k-1)) * 0.5_Dbl * (vcf/zcf)
-            ELSEIF (node(i,j,k+1) .EQ. SOLID) THEN                                                  !Backward difference
-               dudz(i,j,k)= (u(i,j,k) - u(i,j,k-1)) * (vcf/zcf)
-               dvdz(i,j,k)= (v(i,j,k) - v(i,j,k-1)) * (vcf/zcf)
-               dwdz(i,j,k)= (w(i,j,k) - w(i,j,k-1)) * (vcf/zcf)
-            ELSEIF (node(i,j,k-1) .EQ. SOLID) THEN                                                  !Forward difference
-               dudz(i,j,k)= (u(i,j,k+1) - u(i,j,k)) * (vcf/zcf)
-               dvdz(i,j,k)= (v(i,j,k+1) - v(i,j,k)) * (vcf/zcf)
-               dwdz(i,j,k)= (w(i,j,k+1) - w(i,j,k)) * (vcf/zcf)
+            IF ((node(i,j,kL1) .EQ. FLUID) .AND. (node(i,j,kR1) .EQ. FLUID)) THEN                   !Central difference
+               dudz(i,j,k)= (u(i,j,kR1) - u(i,j,kL1)) * 0.5_dbl * (vcf/zcf)
+               dvdz(i,j,k)= (v(i,j,kR1) - v(i,j,kL1)) * 0.5_dbl * (vcf/zcf)
+               dwdz(i,j,k)= (w(i,j,kR1) - w(i,j,kL1)) * 0.5_Dbl * (vcf/zcf)
+            ELSEIF (node(i,j,kR1) .EQ. SOLID) THEN                                                  !Backward difference
+               dudz(i,j,k)= (u(i,j,k) - u(i,j,kL1)) * (vcf/zcf)
+               dvdz(i,j,k)= (v(i,j,k) - v(i,j,kL1)) * (vcf/zcf)
+               dwdz(i,j,k)= (w(i,j,k) - w(i,j,kL1)) * (vcf/zcf)
+            ELSEIF (node(i,j,kL1) .EQ. SOLID) THEN                                                  !Forward difference
+               dudz(i,j,k)= (u(i,j,kR1) - u(i,j,k)) * (vcf/zcf)
+               dvdz(i,j,k)= (v(i,j,kR1) - v(i,j,k)) * (vcf/zcf)
+               dwdz(i,j,k)= (w(i,j,kR1) - w(i,j,k)) * (vcf/zcf)
             ELSE 
               dudz(i,j,k)=0.0_dbl
               dvdz(i,j,k)=0.0_dbl
               dwdz(i,j,k)=0.0_dbl
             ENDIF                                  
             !--- z-Dir 2nd derivatives -------------------------------------------------------------
-            IF ((node(i,j,k-1).EQ.FLUID).AND.(node(i,j,k+1).EQ.FLUID)) THEN                         !Central difference           
-               d2udz2(i,j,k)= (u(i,j,k+1) - 2.0_dbl*u(i,j,k)   + u(i,j,k-1)) * (vcf**2)/(zcf**2)             
-               d2vdz2(i,j,k)= (v(i,j,k+1) - 2.0_dbl*v(i,j,k)   + v(i,j,k-1)) * (vcf**2)/(zcf**2)
-               d2wdz2(i,j,k)= (w(i,j,k+1) - 2.0_dbl*w(i,j,k)   + w(i,j,k-1)) * (vcf**2)/(zcf**2)
-            ELSEIF ((node(i,j,k+1) .EQ. SOLID).AND.(node(i,j,k-2).EQ.FLUID)) THEN                   !Backward difference 
-               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j,k-1) + u(i,j,k-2)) * (vcf**2)/(zcf**2)
-               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j,k-1) + v(i,j,k-2)) * (vcf**2)/(zcf**2)
-               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j,k-1) + w(i,j,k-2)) * (vcf**2)/(zcf**2)
-            ELSEIF ((node(i,j,k-1) .EQ. SOLID).AND.(node(i,j,k+2).EQ.FLUID)) THEN                   !Forward difference 
-               d2udx2(i,j,k)= (u(i,j,k+2) - 2.0_dbl*u(i,j,k+1) + u(i,j,k)  )  * (vcf**2)/(zcf**2)
-               d2vdx2(i,j,k)= (v(i,j,k+2) - 2.0_dbl*u(i,j,k+1) + v(i,j,k)  )  * (vcf**2)/(zcf**2)
-               d2wdx2(i,j,k)= (w(i,j,k+2) - 2.0_dbl*w(i,j,k+1) + w(i,j,k)  )  * (vcf**2)/(zcf**2)
+            IF ((node(i,j,kL1).EQ.FLUID).AND.(node(i,j,KR1).EQ.FLUID)) THEN                         !Central difference           
+               d2udz2(i,j,k)= (u(i,j,kR1) - 2.0_dbl*u(i,j,k)   + u(i,j,kL1)) * (vcf**2)/(zcf**2)             
+               d2vdz2(i,j,k)= (v(i,j,kR1) - 2.0_dbl*v(i,j,k)   + v(i,j,kL1)) * (vcf**2)/(zcf**2)
+               d2wdz2(i,j,k)= (w(i,j,kR1) - 2.0_dbl*w(i,j,k)   + w(i,j,kL1)) * (vcf**2)/(zcf**2)
+            ELSEIF ((node(i,j,kR1) .EQ. SOLID).AND.(node(i,j,kL2).EQ.FLUID)) THEN                   !Backward difference 
+               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j,kL1) + u(i,j,kL2)) * (vcf**2)/(zcf**2)
+               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j,kL1) + v(i,j,kL2)) * (vcf**2)/(zcf**2)
+               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j,kL1) + w(i,j,kL2)) * (vcf**2)/(zcf**2)
+            ELSEIF ((node(i,j,kL1) .EQ. SOLID).AND.(node(i,j,kR2).EQ.FLUID)) THEN                   !Forward difference 
+               d2udx2(i,j,k)= (u(i,j,kR2) - 2.0_dbl*u(i,j,kR1) + u(i,j,k)  )  * (vcf**2)/(zcf**2)
+               d2vdx2(i,j,k)= (v(i,j,kR2) - 2.0_dbl*u(i,j,kR1) + v(i,j,k)  )  * (vcf**2)/(zcf**2)
+               d2wdx2(i,j,k)= (w(i,j,kR2) - 2.0_dbl*w(i,j,kR1) + w(i,j,k)  )  * (vcf**2)/(zcf**2)
             ELSE 
                d2udz2(i,j,k)=0.0_dbl
                d2vdz2(i,j,k)=0.0_dbl
@@ -624,26 +643,25 @@ DO k=1,nzSub
             ENDIF                                  
 
             !=== Compute Laplacian =================================================================
-            Laplacian_x(i,j,k)= (d2udx2(i,j,k)+d2udy2(i,j,k)+d2udz2(i,j,k)) 
-            Laplacian_y(i,j,k)= (d2vdx2(i,j,k)+d2vdy2(i,j,k)+d2vdz2(i,j,k))
-            Laplacian_z(i,j,k)= (d2wdx2(i,j,k)+d2wdy2(i,j,k)+d2wdz2(i,j,k)) 
-
+            Laplacian_x(i,j,k)= d2udx2(i,j,k)+ d2udy2(i,j,k)+ d2udz2(i,j,k) 
+            Laplacian_y(i,j,k)= d2vdx2(i,j,k)+ d2vdy2(i,j,k)+ d2vdz2(i,j,k)
+            Laplacian_z(i,j,k)= d2wdx2(i,j,k)+ d2wdy2(i,j,k)+ d2wdz2(i,j,k) 
 
             !=== Computing Material Derivative of the Velocity vector ==============================
             DUdt_x(i,j,k)= (u(i,j,k)*dudx(i,j,k)+ v(i,j,k)*dudy(i,j,k)+ w(i,j,k)*dudz(i,j,k))* vcf
             DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k)+ v(i,j,k)*dvdy(i,j,k)+ w(i,j,k)*dvdz(i,j,k))* vcf
             DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k)+ v(i,j,k)*dwdy(i,j,k)+ w(i,j,k)*dwdz(i,j,k))* vcf
 
-            !=== Computing Material Derivative of Laplacian vector =================================
-            IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN                   !Cental difference
+            !=== X_dir derivatives: Material Derivative of Laplacian vector ====================================================================
+            IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN                                             !Cental difference
                dA1dx(i,j,k)= (d2udx2(i+1,j,k)-d2udx2(i-1,j,k) + d2udy2(i+1,j,k)-d2udy2(i-1,j,k) + d2udz2(i+1,j,k)-d2udz2(i-1,j,k)) * 0.5_dbl/xcf  
                dA2dx(i,j,k)= (d2vdx2(i+1,j,k)-d2vdx2(i-1,j,k) + d2vdy2(i+1,j,k)-d2vdy2(i-1,j,k) + d2vdz2(i+1,j,k)-d2vdz2(i-1,j,k)) * 0.5_dbl/xcf
                dA3dx(i,j,k)= (d2wdx2(i+1,j,k)-d2wdx2(i-1,j,k) + d2wdy2(i+1,j,k)-d2wdy2(i-1,j,k) + d2wdz2(i+1,j,k)-d2wdz2(i-1,j,k)) * 0.5_dbl/xcf
-            ELSEIF (node(i+1,j,k) .EQ. SOLID) THEN                                                      !Backward difference
+            ELSEIF (node(i+1,j,k) .EQ. SOLID) THEN                                                                          !Backward difference
                dA1dx(i,j,k)= (d2udx2(i,j,k)-d2udx2(i-1,j,k) + d2udy2(i,j,k)-d2udy2(i-1,j,k) + d2udz2(i,j,k)-d2udz2(i-1,j,k)) /xcf  
                dA2dx(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i-1,j,k) + d2vdy2(i,j,k)-d2vdy2(i-1,j,k) + d2vdz2(i,j,k)-d2vdz2(i-1,j,k)) /xcf
                dA3dx(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i-1,j,k) + d2wdy2(i,j,k)-d2wdy2(i-1,j,k) + d2wdz2(i,j,k)-d2wdz2(i-1,j,k)) /xcf
-            ELSEIF (node(i-1,j,k) .EQ. SOLID) THEN                                                  !Forwad difference
+            ELSEIF (node(i-1,j,k) .EQ. SOLID) THEN                                                                            !Forwad difference
                dA1dx(i,j,k)= (d2udx2(i+1,j,k)-d2udx2(i,j,k) + d2udy2(i+1,j,k)-d2udy2(i,j,k) + d2udz2(i+1,j,k)-d2udz2(i,j,k)) /xcf
                dA2dx(i,j,k)= (d2vdx2(i+1,j,k)-d2vdx2(i,j,k) + d2vdy2(i+1,j,k)-d2vdy2(i,j,k) + d2vdz2(i+1,j,k)-d2vdz2(i,j,k)) /xcf
                dA3dx(i,j,k)= (d2wdx2(i+1,j,k)-d2wdx2(i,j,k) + d2wdy2(i+1,j,k)-d2wdy2(i,j,k) + d2wdz2(i+1,j,k)-d2wdz2(i,j,k)) /xcf
@@ -653,15 +671,16 @@ DO k=1,nzSub
                dA3dx(i,j,k)=0.0_dbl
             ENDIF
            
-            IF ((node(i,j-1,k) .EQ. FLUID) .AND. (node(i,j+1,k) .EQ. FLUID)) THEN                   !Cental difference
+            !=== Y_dir derivatives: Computing Material Derivative of Laplacian vector ==========================================================
+            IF ((node(i,j-1,k) .EQ. FLUID) .AND. (node(i,j+1,k) .EQ. FLUID)) THEN                                             !Cental difference
                dA1dy(i,j,k)= (d2udx2(i,j+1,k)-d2udx2(i,j-1,k) + d2udy2(i,j+1,k)-d2udy2(i,j-1,k) + d2udz2(i,j+1,k)-d2udz2(i,j-1,k)) * 0.5_dbl/ycf
                dA2dy(i,j,k)= (d2vdx2(i,j+1,k)-d2vdx2(i,j-1,k) + d2vdy2(i,j+1,k)-d2vdy2(i,j-1,k) + d2vdz2(i,j+1,k)-d2vdz2(i,j-1,k)) * 0.5_dbl/ycf
                dA3dy(i,j,k)= (d2wdx2(i,j+1,k)-d2wdx2(i,j-1,k) + d2wdy2(i,j+1,k)-d2wdy2(i,j-1,k) + d2wdz2(i,j+1,k)-d2wdz2(i,j-1,k)) * 0.5_dbl/ycf
-            ELSEIF (node(i,j+1,k) .EQ. SOLID) THEN                                                      !Backward difference             
+            ELSEIF (node(i,j+1,k) .EQ. SOLID) THEN                                                                          !Backward difference             
                dA1dy(i,j,k)= (d2udx2(i,j,k)-d2udx2(i,j-1,k) + d2udy2(i,j,k)-d2udy2(i,j-1,k) + d2udz2(i,j,k)-d2udz2(i,j-1,k)) /ycf
                dA2dy(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i,j-1,k) + d2vdy2(i,j,k)-d2vdy2(i,j-1,k) + d2vdz2(i,j,k)-d2vdz2(i,j-1,k)) /ycf
                dA3dy(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i,j-1,k) + d2wdy2(i,j,k)-d2wdy2(i,j-1,k) + d2wdz2(i,j,k)-d2wdz2(i,j-1,k)) /ycf
-            ELSEIF (node(i,j-1,k) .EQ. SOLID) THEN                                                  !Forward difference
+            ELSEIF (node(i,j-1,k) .EQ. SOLID) THEN                                                                           !Forward difference
                dA1dy(i,j,k)= (d2udx2(i,j+1,k)-d2udx2(i,j,k) + d2udy2(i,j+1,k)-d2udy2(i,j,k) + d2udz2(i,j+1,k)-d2udz2(i,j,k)) /ycf
                dA2dy(i,j,k)= (d2vdx2(i,j+1,k)-d2vdx2(i,j,k) + d2vdy2(i,j+1,k)-d2vdy2(i,j,k) + d2vdz2(i,j+1,k)-d2vdz2(i,j,k)) /ycf
                dA3dy(i,j,k)= (d2wdx2(i,j+1,k)-d2wdx2(i,j,k) + d2wdy2(i,j+1,k)-d2wdy2(i,j,k) + d2wdz2(i,j+1,k)-d2wdz2(i,j,k)) /ycf
@@ -671,24 +690,26 @@ DO k=1,nzSub
                dA3dy(i,j,k)=0.0_dbl
             ENDIF
 
-            IF ((node(i,j,k-1) .EQ. FLUID) .AND. (node(i,j,k+1) .EQ. FLUID)) THEN                   !Central difference
-               dA1dz(i,j,k)= (d2udx2(i,j,k+1)-d2udx2(i,j,k-1) + d2udy2(i,j,k+1)-d2udy2(i,j,k-1) + d2udz2(i,j,k+1)-d2udz2(i,j,k-1)) * 0.5_dbl/zcf
-               dA2dz(i,j,k)= (d2vdx2(i,j,k+1)-d2vdx2(i,j,k-1) + d2vdy2(i,j,k+1)-d2vdy2(i,j,k-1) + d2vdz2(i,j,k+1)-d2vdz2(i,j,k-1)) * 0.5_dbl/zcf
-               dA3dz(i,j,k)= (d2wdx2(i,j,k+1)-d2wdx2(i,j,k-1) + d2wdy2(i,j,k+1)-d2wdy2(i,j,k-1) + d2wdz2(i,j,k+1)-d2wdz2(i,j,k-1)) * 0.5_dbl/zcf
-            ELSEIF (node(i,j,k+1) .EQ. SOLID) THEN                                                      !Backward difference  
-               dA1dz(i,j,k)= (d2udx2(i,j,k)-d2udx2(i,j,k-1) + d2udy2(i,j,k)-d2udy2(i,j,k-1) + d2udz2(i,j,k)-d2udz2(i,j,k-1)) /zcf
-               dA2dz(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i,j,k-1) + d2vdy2(i,j,k)-d2vdy2(i,j,k-1) + d2vdz2(i,j,k)-d2vdz2(i,j,k-1)) /zcf
-               dA3dz(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i,j,k-1) + d2wdy2(i,j,k)-d2wdy2(i,j,k-1) + d2wdz2(i,j,k)-d2wdz2(i,j,k-1)) /zcf
-            ELSEIF (node(i,j,k-1) .EQ. SOLID) THEN                                                  !Forward difference
-               dA1dz(i,j,k)= (d2udx2(i,j,k+1)-d2udx2(i,j,k) + d2udy2(i,j,k+1)-d2udy2(i,j,k) + d2udz2(i,j,k+1)-d2udz2(i,j,k)) /zcf
-               dA2dz(i,j,k)= (d2vdx2(i,j,k+1)-d2vdx2(i,j,k) + d2vdy2(i,j,k+1)-d2vdy2(i,j,k) + d2vdz2(i,j,k+1)-d2vdz2(i,j,k)) /zcf
-               dA3dz(i,j,k)= (d2wdx2(i,j,k+1)-d2wdx2(i,j,k) + d2wdy2(i,j,k+1)-d2wdy2(i,j,k) + d2wdz2(i,j,k+1)-d2wdz2(i,j,k)) /zcf
+            !=== Z_dir derivatives: Material Derivative of Laplacian vector ====================================================================
+            IF ((node(i,j,kL1) .EQ. FLUID) .AND. (node(i,j,kR1) .EQ. FLUID)) THEN                                            !Central difference
+               dA1dz(i,j,k)= (d2udx2(i,j,kR1)-d2udx2(i,j,kL1) + d2udy2(i,j,kR1)-d2udy2(i,j,kL1) + d2udz2(i,j,kR1)-d2udz2(i,j,kL1)) * 0.5_dbl/zcf
+               dA2dz(i,j,k)= (d2vdx2(i,j,kR1)-d2vdx2(i,j,kL1) + d2vdy2(i,j,kR1)-d2vdy2(i,j,kL1) + d2vdz2(i,j,kR1)-d2vdz2(i,j,kL1)) * 0.5_dbl/zcf
+               dA3dz(i,j,k)= (d2wdx2(i,j,kR1)-d2wdx2(i,j,kL1) + d2wdy2(i,j,kR1)-d2wdy2(i,j,kL1) + d2wdz2(i,j,kR1)-d2wdz2(i,j,kL1)) * 0.5_dbl/zcf
+            ELSEIF (node(i,j,kR1) .EQ. SOLID) THEN                                                                          !Backward difference  
+               dA1dz(i,j,k)= (d2udx2(i,j,k)-d2udx2(i,j,kL1) + d2udy2(i,j,k)-d2udy2(i,j,kL1) + d2udz2(i,j,k)-d2udz2(i,j,kL1)) /zcf
+               dA2dz(i,j,k)= (d2vdx2(i,j,k)-d2vdx2(i,j,kL1) + d2vdy2(i,j,k)-d2vdy2(i,j,kL1) + d2vdz2(i,j,k)-d2vdz2(i,j,kL1)) /zcf
+               dA3dz(i,j,k)= (d2wdx2(i,j,k)-d2wdx2(i,j,kL1) + d2wdy2(i,j,k)-d2wdy2(i,j,kL1) + d2wdz2(i,j,k)-d2wdz2(i,j,kL1)) /zcf
+            ELSEIF (node(i,j,kL1) .EQ. SOLID) THEN                                                                           !Forward difference
+               dA1dz(i,j,k)= (d2udx2(i,j,kR1)-d2udx2(i,j,k) + d2udy2(i,j,kR1)-d2udy2(i,j,k) + d2udz2(i,j,kR1)-d2udz2(i,j,k)) /zcf
+               dA2dz(i,j,k)= (d2vdx2(i,j,kR1)-d2vdx2(i,j,k) + d2vdy2(i,j,kR1)-d2vdy2(i,j,k) + d2vdz2(i,j,kR1)-d2vdz2(i,j,k)) /zcf
+               dA3dz(i,j,k)= (d2wdx2(i,j,kR1)-d2wdx2(i,j,k) + d2wdy2(i,j,kR1)-d2wdy2(i,j,k) + d2wdz2(i,j,kR1)-d2wdz2(i,j,k)) /zcf
             ELSE 
                dA1dz(i,j,k)=0.0_dbl
                dA2dz(i,j,k)=0.0_dbl
                dA3dz(i,j,k)=0.0_dbl
             ENDIF
 
+            !=== Material Derivative of Laplacian vector ======================================================
             DLaplacianDt_x(i,j,k)= (u(i,j,k)*dA1dx(i,j,k) + v(i,j,k)*dA1dy(i,j,k) + w(i,j,k)*dA1dz(i,j,k)) *vcf
             DLaplacianDt_y(i,j,k)= (u(i,j,k)*dA2dx(i,j,k) + v(i,j,k)*dA2dy(i,j,k) + w(i,j,k)*dA2dz(i,j,k)) *vcf
             DLaplacianDt_z(i,j,k)= (u(i,j,k)*dA3dx(i,j,k) + v(i,j,k)*dA3dy(i,j,k) + w(i,j,k)*dA3dz(i,j,k)) *vcf
