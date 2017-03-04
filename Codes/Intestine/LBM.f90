@@ -529,17 +529,17 @@ DO k=1,nzSub
             ENDIF
             !--- x-dir 2nd derivatives -------------------------------------------------------------
             IF ((node(i-1,j,k).EQ.FLUID).AND.(node(i+1,j,k).EQ.FLUID)) THEN                         !Central difference
-               d2udx2(i,j,k)= ( u(i+1,j,k) - 2.0_dbl*u(i,j,k)   + u(i-1,j,k) ) * (vcf**2)/(xcf**2)
-               d2vdx2(i,j,k)= ( v(i+1,j,k) - 2.0_dbl*u(i,j,k)   + v(i-1,j,k) ) * (vcf**2)/(xcf**2)
-               d2wdx2(i,j,k)= ( w(i+1,j,k) - 2.0_dbl*w(i,j,k)   + w(i-1,j,k) ) * (vcf**2)/(xcf**2)
+               d2udx2(i,j,k)= ( u(i+1,j,k) - 2.0_dbl*u(i,j,k)   + u(i-1,j,k) ) * vcf/(xcf**2.0_dbl)
+               d2vdx2(i,j,k)= ( v(i+1,j,k) - 2.0_dbl*u(i,j,k)   + v(i-1,j,k) ) * vcf/(xcf**2.0_dbl)
+               d2wdx2(i,j,k)= ( w(i+1,j,k) - 2.0_dbl*w(i,j,k)   + w(i-1,j,k) ) * vcf/(xcf**2.0_dbl)
             ELSEIF ((node(i+1,j,k) .EQ. SOLID).AND.(node(i-2,j,k).EQ.FLUID)) THEN                   !Backward difference 
-               d2udx2(i,j,k)= ( u(i,j,k)   - 2.0_dbl*u(i-1,j,k) + u(i-2,j,k) ) * (vcf**2)/(xcf**2)
-               d2vdx2(i,j,k)= ( v(i,j,k)   - 2.0_dbl*u(i-1,j,k) + v(i-2,j,k) ) * (vcf**2)/(xcf**2)
-               d2wdx2(i,j,k)= ( w(i,j,k)   - 2.0_dbl*w(i-1,j,k) + w(i-2,j,k) ) * (vcf**2)/(xcf**2)
+               d2udx2(i,j,k)= ( u(i,j,k)   - 2.0_dbl*u(i-1,j,k) + u(i-2,j,k) ) * vcf/(xcf**2.0_dbl)
+               d2vdx2(i,j,k)= ( v(i,j,k)   - 2.0_dbl*u(i-1,j,k) + v(i-2,j,k) ) * vcf/(xcf**2.0_dbl)
+               d2wdx2(i,j,k)= ( w(i,j,k)   - 2.0_dbl*w(i-1,j,k) + w(i-2,j,k) ) * vcf/(xcf**2.0_dbl)
             ELSEIF ((node(i-1,j,k) .EQ. SOLID).AND.(node(i+2,j,k).EQ.FLUID)) THEN                   !Forward difference 
-               d2udx2(i,j,k)= ( u(i+2,j,k) - 2.0_dbl*u(i+1,j,k) + u(i,j,k) )   * (vcf**2)/(xcf**2)
-               d2vdx2(i,j,k)= ( v(i+2,j,k) - 2.0_dbl*u(i+1,j,k) + v(i,j,k) )   * (vcf**2)/(xcf**2)
-               d2wdx2(i,j,k)= ( w(i+2,j,k) - 2.0_dbl*w(i+1,j,k) + w(i,j,k) )   * (vcf**2)/(xcf**2)
+               d2udx2(i,j,k)= ( u(i+2,j,k) - 2.0_dbl*u(i+1,j,k) + u(i,j,k) )   * vcf/(xcf**2.0_dbl)
+               d2vdx2(i,j,k)= ( v(i+2,j,k) - 2.0_dbl*u(i+1,j,k) + v(i,j,k) )   * vcf/(xcf**2.0_dbl)
+               d2wdx2(i,j,k)= ( w(i+2,j,k) - 2.0_dbl*w(i+1,j,k) + w(i,j,k) )   * vcf/(xcf**2.0_dbl)
             ELSE 
                d2udx2(i,j,k)=0.0_dbl
                d2vdx2(i,j,k)=0.0_dbl
@@ -568,17 +568,17 @@ DO k=1,nzSub
   
             !--- y-dir 2nd derivatives -------------------------------------------------------------
             IF ((node(i,j-1,k).EQ.FLUID).AND.(node(i,j+1,k).EQ.FLUID)) THEN                         !Central difference
-               d2udy2(i,j,k)= (u(i,j+1,k) - 2.0_dbl*u(i,j,k)   + u(i,j-1,k)) * (vcf**2)/(ycf**2)
-               d2vdy2(i,j,k)= (v(i,j+1,k) - 2.0_dbl*v(i,j,k)   + v(i,j-1,k)) * (vcf**2)/(ycf**2)
-               d2wdy2(i,j,k)= (w(i,j+1,k) - 2.0_dbl*w(i,j,k)   + w(i,j-1,k)) * (vcf**2)/(ycf**2)
+               d2udy2(i,j,k)= (u(i,j+1,k) - 2.0_dbl*u(i,j,k)   + u(i,j-1,k)) * vcf/(ycf**2.0_dbl)
+               d2vdy2(i,j,k)= (v(i,j+1,k) - 2.0_dbl*v(i,j,k)   + v(i,j-1,k)) * vcf/(ycf**2.0_dbl)
+               d2wdy2(i,j,k)= (w(i,j+1,k) - 2.0_dbl*w(i,j,k)   + w(i,j-1,k)) * vcf/(ycf**2.0_dbl)
             ELSEIF ((node(i,j+1,k) .EQ. SOLID).AND.(node(i,j-2,k).EQ.FLUID)) THEN                   !Backward difference 
-               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j-1,k) + u(i,j-2,k)) * (vcf**2)/(ycf**2)
-               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j-1,k) + v(i,j-2,k)) * (vcf**2)/(ycf**2)
-               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j-1,k) + w(i,j-2,k)) * (vcf**2)/(ycf**2)
+               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j-1,k) + u(i,j-2,k)) * vcf/(ycf**2.0_dbl)
+               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j-1,k) + v(i,j-2,k)) * vcf/(ycf**2.0_dbl)
+               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j-1,k) + w(i,j-2,k)) * vcf/(ycf**2.0_dbl)
             ELSEIF ((node(i,j-1,k) .EQ. SOLID).AND.(node(i,j+2,k).EQ.FLUID)) THEN                   !Forward difference 
-               d2udx2(i,j,k)= (u(i,j+2,k) - 2.0_dbl*u(i,j+1,k) + u(i,j,k) )  * (vcf**2)/(ycf**2)
-               d2vdx2(i,j,k)= (v(i,j+2,k) - 2.0_dbl*u(i,j+1,k) + v(i,j,k) )  * (vcf**2)/(ycf**2)
-               d2wdx2(i,j,k)= (w(i,j+2,k) - 2.0_dbl*w(i,j+1,k) + w(i,j,k) )  * (vcf**2)/(ycf**2)
+               d2udx2(i,j,k)= (u(i,j+2,k) - 2.0_dbl*u(i,j+1,k) + u(i,j,k) )  * vcf/(ycf**2.0_dbl)
+               d2vdx2(i,j,k)= (v(i,j+2,k) - 2.0_dbl*u(i,j+1,k) + v(i,j,k) )  * vcf/(ycf**2.0_dbl)
+               d2wdx2(i,j,k)= (w(i,j+2,k) - 2.0_dbl*w(i,j+1,k) + w(i,j,k) )  * vcf/(ycf**2.0_dbl)
             ELSE 
                d2udy2(i,j,k)=0.0_dbl
                d2vdy2(i,j,k)=0.0_dbl
@@ -619,23 +619,23 @@ DO k=1,nzSub
                dvdz(i,j,k)= (v(i,j,kR1) - v(i,j,k)) * (vcf/zcf)
                dwdz(i,j,k)= (w(i,j,kR1) - w(i,j,k)) * (vcf/zcf)
             ELSE 
-              dudz(i,j,k)=0.0_dbl
-              dvdz(i,j,k)=0.0_dbl
-              dwdz(i,j,k)=0.0_dbl
+               dudz(i,j,k)=0.0_dbl
+               dvdz(i,j,k)=0.0_dbl
+               dwdz(i,j,k)=0.0_dbl
             ENDIF                                  
             !--- z-Dir 2nd derivatives -------------------------------------------------------------
             IF ((node(i,j,kL1).EQ.FLUID).AND.(node(i,j,KR1).EQ.FLUID)) THEN                         !Central difference           
-               d2udz2(i,j,k)= (u(i,j,kR1) - 2.0_dbl*u(i,j,k)   + u(i,j,kL1)) * (vcf**2)/(zcf**2)             
-               d2vdz2(i,j,k)= (v(i,j,kR1) - 2.0_dbl*v(i,j,k)   + v(i,j,kL1)) * (vcf**2)/(zcf**2)
-               d2wdz2(i,j,k)= (w(i,j,kR1) - 2.0_dbl*w(i,j,k)   + w(i,j,kL1)) * (vcf**2)/(zcf**2)
+               d2udz2(i,j,k)= (u(i,j,kR1) - 2.0_dbl*u(i,j,k)   + u(i,j,kL1)) * vcf/(zcf**2.0_dbl)             
+               d2vdz2(i,j,k)= (v(i,j,kR1) - 2.0_dbl*v(i,j,k)   + v(i,j,kL1)) * vcf/(zcf**2.0_dbl)
+               d2wdz2(i,j,k)= (w(i,j,kR1) - 2.0_dbl*w(i,j,k)   + w(i,j,kL1)) * vcf/(zcf**2.0_dbl)
             ELSEIF ((node(i,j,kR1) .EQ. SOLID).AND.(node(i,j,kL2).EQ.FLUID)) THEN                   !Backward difference 
-               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j,kL1) + u(i,j,kL2)) * (vcf**2)/(zcf**2)
-               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j,kL1) + v(i,j,kL2)) * (vcf**2)/(zcf**2)
-               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j,kL1) + w(i,j,kL2)) * (vcf**2)/(zcf**2)
+               d2udx2(i,j,k)= (u(i,j,k)   - 2.0_dbl*u(i,j,kL1) + u(i,j,kL2)) * vcf/(zcf**2.0_dbl)
+               d2vdx2(i,j,k)= (v(i,j,k)   - 2.0_dbl*u(i,j,kL1) + v(i,j,kL2)) * vcf/(zcf**2.0_dbl)
+               d2wdx2(i,j,k)= (w(i,j,k)   - 2.0_dbl*w(i,j,kL1) + w(i,j,kL2)) * vcf/(zcf**2.0_dbl)
             ELSEIF ((node(i,j,kL1) .EQ. SOLID).AND.(node(i,j,kR2).EQ.FLUID)) THEN                   !Forward difference 
-               d2udx2(i,j,k)= (u(i,j,kR2) - 2.0_dbl*u(i,j,kR1) + u(i,j,k)  )  * (vcf**2)/(zcf**2)
-               d2vdx2(i,j,k)= (v(i,j,kR2) - 2.0_dbl*u(i,j,kR1) + v(i,j,k)  )  * (vcf**2)/(zcf**2)
-               d2wdx2(i,j,k)= (w(i,j,kR2) - 2.0_dbl*w(i,j,kR1) + w(i,j,k)  )  * (vcf**2)/(zcf**2)
+               d2udx2(i,j,k)= (u(i,j,kR2) - 2.0_dbl*u(i,j,kR1) + u(i,j,k)  ) * vcf/(zcf**2.0_dbl)
+               d2vdx2(i,j,k)= (v(i,j,kR2) - 2.0_dbl*u(i,j,kR1) + v(i,j,k)  ) * vcf/(zcf**2.0_dbl)
+               d2wdx2(i,j,k)= (w(i,j,kR2) - 2.0_dbl*w(i,j,kR1) + w(i,j,k)  ) * vcf/(zcf**2.0_dbl)
             ELSE 
                d2udz2(i,j,k)=0.0_dbl
                d2vdz2(i,j,k)=0.0_dbl
