@@ -592,17 +592,17 @@ DO k=1,nzSub
             kL1= k-1
             kR1= k+1
             KR2= k+2
-            IF(kL2 .GT. nz) THEN
-              kL2=kL2-nz
+            IF(kL2 .LT. 1 ) THEN
+              kL2=kL2+nz
             ENDIF
-            IF(kL1 .GT. nz) THEN
-              kL1=kL1-nz
+            IF(kL1 .LT. 1 ) THEN
+              kL1=kL1+nz
             ENDIF
-            IF(kR2 .LT. 1) THEN
-              kR2=kR2+nz
+            IF(kR2 .GT. nz)THEN
+              kR2=kR2-nz
             ENDIF
-            IF(kR1 .LT. 1) THEN
-              kR1=kR1+nz
+            IF(kR1 .GT. nz)THEN
+              kR1=kR1-nz
             ENDIF
   
             !=== z-Dir 1st derivatives =============================================================
