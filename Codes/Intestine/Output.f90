@@ -294,6 +294,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                        "dudx" "dvdx" "dwdx" "dudy" "dvdy" "dwdy" "dudz" "dvdz" "dwdz"                     &
                        "d2udx2" " d2vdx2" "d2wdx2" "d2udy2" "d2vdy2" "d2wdy2" "d2udz2" "d2vdz2" "d2wdz2"  &
                        "DUdt_x" "DUdt_y" "DUdt_z" "Laplacian_x" "Laplacian_y" "Laplacian_z"               &
+                       "dA1dx" "dA1dy" "dA1dz" "dA2dx" "dA2dy" "dA2dz" "dA3dx" "dA3dy" "dA3dz"            &
                        "DLaplacianDt_x" "DLaplacianDt_y" "DLaplacianDt_z"'
       WRITE(60,'(A10,E15.5,A5,I4,A5,I4,A5,I4,A8)') 'ZONE T="',iter/(nt/nPers),'" I=',nxSub,' J=',nySub,' K=',nzSub,'F=POINT'
       DO k=1,nzSub
@@ -311,6 +312,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                        d2udx2(i,j,k), d2vdx2(i,j,k),d2wdx2(i,j,k),d2udy2(i,j,k),d2vdy2(i,j,k),d2wdy2(i,j,k),d2udz2(i,j,k),d2vdz2(i,j,k),d2wdz2(i,j,k),   &
                        DUdt_x(i,j,k),DUdt_y(i,j,k),DUdt_z(i,j,k),                                                                                        &
                        Laplacian_x(i,j,k),Laplacian_y(i,j,k),Laplacian_z(i,j,k),                                                                         &
+                       dA1dx(i,j,k),dA1dy(i,j,k),dA1dz(i,j,k),dA2dx(i,j,k),dA2dy(i,j,k),dA2dz(i,j,k),dA3dx(i,j,k),dA3dy(i,j,k),dA3dz(i,j,k),             &
                        DLaplacianDt_x(i,j,k),DLaplacianDt_y(i,j,k),DLaplacianDt_z(i,j,k)
                ELSE
                   WRITE(60,'(I3,2I4,6I2,27I2)') ii,jj,kk,0,0,0,0,0,node(i,j,k),0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
