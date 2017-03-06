@@ -315,7 +315,7 @@ IF ((MOD(iter, Output_Intervals) .EQ. 0) 	   .OR. &
                        dA1dx(i,j,k),dA1dy(i,j,k),dA1dz(i,j,k),dA2dx(i,j,k),dA2dy(i,j,k),dA2dz(i,j,k),dA3dx(i,j,k),dA3dy(i,j,k),dA3dz(i,j,k),             &
                        DLaplacianDt_x(i,j,k),DLaplacianDt_y(i,j,k),DLaplacianDt_z(i,j,k)
                ELSE
-                  WRITE(60,'(I3,2I4,6I2,27I2)') ii,jj,kk,0,0,0,0,0,node(i,j,k),0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+                  WRITE(60,'(I3,2I4,6I2,27I2)') ii,jj,kk,0,0,0,0,0,node(i,j,k),0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
                END IF
             END DO
