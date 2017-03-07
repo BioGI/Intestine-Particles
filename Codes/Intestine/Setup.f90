@@ -36,7 +36,7 @@ INTEGER(lng), 	ALLOCATABLE :: node(:,:,:)                       ! node flags (FL
 REAL(dbl), 		ALLOCATABLE :: ex(:),ey(:),ez(:)                   ! LBM discretized velocity vectors
 INTEGER(lng), 	ALLOCATABLE :: bb(:), sym(:,:)                   ! bounceback and symmetry directions
 REAL(dbl), 		ALLOCATABLE :: wt(:)                               ! weighting coefficients for the equilibrium distribution functions
-REAL(dbl)		:: den, denL						! density (physical, lattice units)
+REAL(dbl)		:: den, den_P, denL						! density (fluid physical, particle physical, fluid lattice units)
 REAL(dbl)		:: nu, nuL						! kinematic viscosity (physical, lattice units)
 REAL(dbl) 		:: cs							! speed of sound on the lattice
 REAL(dbl)		:: tau							! relaxation parameters of coarse and fine blocks
@@ -57,6 +57,7 @@ LOGICAL :: Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False -->
 LOGICAL :: Flag_Particle_Init_Sphere   ! Flag to initiate particles in  a sphere (TRUE) or in the whole domain (False) 
 LOGICAL :: Flag_ParticleTrack          ! Flag for tracking particles
 LOGICAL :: Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number
+LOGICAL :: Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number
 LOGICAL :: Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number
 LOGICAL :: Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
 LOGICAL :: Flag_Restart                ! Restart Flag
@@ -294,34 +295,35 @@ INTEGER(lng) :: NumParVar = 16_lng
 
 TYPE ParRecordTransfer
 	SEQUENCE
-	INTEGER(lng)	:: parid ! particle id in the overall list - a tag that can be used to track the particle
+	INTEGER(lng)	:: parid    ! particle id in the overall list - a tag that can be used to track the particle
 	INTEGER(lng)	:: cur_part	! current sub-domain id / partition number
 	INTEGER(lng)	:: new_part	! current sub-domain id / partition number
-	REAL(dbl)	:: xp	! particle x-position
-	REAL(dbl)	:: yp ! particle y-position
-	REAL(dbl)	:: zp	! particle z-position
-	REAL(dbl)	:: up	! particle u-velocity
-	REAL(dbl)	:: vp   ! particle v-velocity
-	REAL(dbl)	:: wp	! particle w-velocity
-	REAL(dbl)	:: rp	! particle radius
-	REAL(dbl)	:: delNBbyCV ! particle drug release concentration 
-	REAL(dbl)	:: par_conc ! particle concentration
-	REAL(dbl)	:: bulk_conc ! bulk concentration at particle location
-	REAL(dbl)	:: xpold	! particle x-position
-	REAL(dbl)	:: ypold 	! particle y-position
-	REAL(dbl)	:: zpold	! particle z-position
-	REAL(dbl)	:: upold	! particle u-velocity
-	REAL(dbl)	:: vpold   	! particle v-velocity
-	REAL(dbl)	:: wpold	! particle w-velocity
-	REAL(dbl)	:: rpold	! old particle radius
-	REAL(dbl)	:: sh_conf 	! Sherwood number
-	REAL(dbl)	:: sh_shear 	! Sherwood number
-	REAL(dbl)	:: sh_slip 	! Sherwood number
-	REAL(dbl)	:: gamma_cont	! gamma - container effect
-	REAL(dbl)	:: S 	! Shear rate at particle location
-	REAL(dbl)	:: Sst 	! Shear peclet number
-	REAL(dbl)	:: Veff ! effective particle container volume
-	REAL(dbl)	:: Nbj  ! number of moles associated with the particlnumber of moles associated with the particle
+	REAL(dbl)	:: xp	          ! particle x-position
+	REAL(dbl)	:: yp           ! particle y-position
+	REAL(dbl)	:: zp           ! particle z-position
+	REAL(dbl)	:: up	          ! particle u-velocity
+	REAL(dbl)	:: vp           ! particle v-velocity
+	REAL(dbl)	:: wp           ! particle w-velocity
+  REAL(dbl) :: U_slip       ! Slip velocity (for hydrodynamic convection)
+	REAL(dbl)	:: rp           ! particle radius
+	REAL(dbl)	:: delNBbyCV    ! particle drug release concentration 
+	REAL(dbl)	:: par_conc     ! particle concentration
+	REAL(dbl)	:: bulk_conc    ! bulk concentration at particle location
+	REAL(dbl)	:: xpold        ! particle x-position
+	REAL(dbl)	:: ypold        ! particle y-position
+	REAL(dbl)	:: zpold        ! particle z-position
+	REAL(dbl)	:: upold        ! particle u-velocity
+	REAL(dbl)	:: vpold        ! particle v-velocity
+	REAL(dbl)	:: wpold        ! particle w-velocity
+	REAL(dbl)	:: rpold        ! old particle radius
+	REAL(dbl)	:: sh_conf      ! Sherwood number
+	REAL(dbl)	:: sh_shear     ! Sherwood number
+	REAL(dbl)	:: sh_slip      ! Sherwood number
+	REAL(dbl)	:: gamma_cont   ! gamma - container effect
+	REAL(dbl)	:: S            ! Shear rate at particle location
+	REAL(dbl)	:: Sst          ! Shear peclet number
+	REAL(dbl)	:: Veff         ! effective particle container volume
+	REAL(dbl)	:: Nbj          ! number of moles associated with the particlnumber of moles associated with the particle
 END TYPE ParRecordTransfer
 
 TYPE ParRecord
@@ -374,7 +376,6 @@ READ(10,*) domaintype ! a flag to denote domain type - 0 for 1/4th cylinder and 
 READ(10,*) nx	 				! number of nodes in the x-direction
 READ(10,*) ny					! number of nodes in the y-direction
 READ(10,*) nz					! number of nodes in the z-direction
-
 READ(10,*) NumSubsX		! number of subdomains in the X direction
 READ(10,*) NumSubsY		! number of subdomains in the Y direction
 READ(10,*) NumSubsZ		! number of subdomains in the Z direction
@@ -397,6 +398,7 @@ READ(10,*) S_intrinsic	   ! Drug solubility: intrinsic (mu mole/cm^3)
 READ(10,*) S_bulk     	   ! Drug solubility: at bulk pH of 6.5  (mu mole/cm^3)
 READ(10,*) diffm           ! Drug's diffusivity (cm2/s)
 READ(10,*) molarvol        ! Drug's molar volume (cm^3/mole)
+READ(10,*) den_P           ! Drug's density  (kg/m3)
 READ(10,*) tau             ! relaxation parameter
 READ(10,*) Sc              ! Schmidt number
 READ(10,*) sclrIC          ! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
@@ -417,6 +419,7 @@ READ(10,*) Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False -->
 READ(10,*) Flag_ParticleTrack          ! Flag for tracking particles           
 READ(10,*) Flag_Particle_Init_Sphere   ! Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
 READ(10,*) Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
+READ(10,*) Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number        
 READ(10,*) Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
 READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
 READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   

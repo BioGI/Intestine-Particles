@@ -375,6 +375,7 @@ IMPLICIT NONE
 INTEGER(lng)  :: mpierr, RANK
 REAL(dbl)     :: S,Sst,Sh0 
 REAL(dbl)     :: xp, yp, zp
+REAL(dbl)     :: Re_P_du, Pe_P_du   !Reynolds and Peclet numbers for each particle based on the slip velocity
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
@@ -389,9 +390,9 @@ DO WHILE (ASSOCIATED(current))
          !----- If including the confinement effects ----------------------------------------------- 
          IF (Flag_Confinement_Effects) THEN                                 
             current%pardata%sh_conf= (current%pardata%gamma_cont / (1.0_dbl-current%pardata%gamma_cont)) 
-         END IF
+         ENDIF
 
-         !----- If including the shear effects -----------------------------------------------------          
+         !----- If including hydrodynamic shear -----------------------------------------------------          
          IF (Flag_Shear_Effects) THEN            
             S= current%pardata%S
             Sst= S* (current%pardata%rp**2.0) / diffm
@@ -402,15 +403,17 @@ DO WHILE (ASSOCIATED(current))
                current%pardata%sh_shear = 1.181_dbl*(Sst**0.2_dbl)                    -1.0_dbl
             ELSE IF (Sst.GT.80.0) THEN
                current%pardata%sh_shear = 4.5_dbl - (7.389/(Sst**(1.0_dbl/3.0_dbl)) ) -1.0_dbl 
-            END IF
-         END IF 
-      END IF
-   END IF
-      !RANK= current%pardata%cur_part - 1
-      !CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-      !CALL MPI_BCast(current%pardata%sh,1,MPI_DOUBLE_PRECISION, RANK, MPI_COMM_WORLD,mpierr)
-  !END IF 
+            ENDIF
+         ENDIF 
 
+         !----- If including hydrodynamic convection ------------------------------------------------          
+         IF (Flag_Convection_Effects) THEN            
+            Re_P_du= current%pardata%U_slip* current%pardata%rp / nu                          !Computing Reynolds number
+            Pe_P_du= current%pardata%U_slip* current%pardata%rp / diffm                         !Computing Peclet number
+            current%pardata%sh_slip = 0.424* (Pe_P_du**0.33) * (Re_P_du**0.17)     
+         ENDIF
+      ENDIF
+   ENDIF
    current => next
 ENDDO
 !===================================================================================================
@@ -676,6 +679,159 @@ ENDDO
 !===================================================================================================
 END SUBROUTINE Compute_shear
 !===================================================================================================
+
+
+
+
+
+!===================================================================================================
+SUBROUTINE Compute_U_slip
+!===================================================================================================
+IMPLICIT NONE
+
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+INTEGER(lng):: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
+REAL(dbl)  	:: xp,yp,zp
+REAL(dbl)   :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
+REAL(dbl)   :: U_slip_x,U_slip_y, U_slip_z
+REAL(dbl)   :: alpha_P
+REAL(dbl)   :: R_P
+REAL(dbl)   :: Laplacian_x_P, Laplacian_y_P, Laplacian_z_P
+REAL(dbl)   :: DLaplacianDt_x_P, DLaplacianDt_y_P, DLaplacianDt_z_P
+REAL(dbl)   :: DUDt_x_P, DUDt_y_P, DUDt_z_P
+REAL(dbl)   :: A_P, B_P, C_P
+
+alpha_P= den/(den_P+0.5_dbl*den)
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN 
+         R_P= current%pardata%rp 
+!------- Finding local particle location (at current processor)
+         xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+         yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+         zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+         ix0 =FLOOR(xp)
+         ix1 =CEILING(xp)
+         iy0 =FLOOR(yp)
+         iy1 =CEILING(yp)
+         iz0 =FLOOR(zp)
+         iz1 =CEILING(zp)
+!------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES !!!!!!!!!!!!!!!!!!!!!!!11
+         IF (ix1 /= ix0) THEN
+            xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+         ELSE
+            xd= 0.0_dbl
+         END IF
+
+         IF (iy1 /= iy0) THEN
+            yd= (yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+         ELSE
+            yd= 0.0_dbl
+         END IF
+
+         IF (iz1 /= iz0) THEN
+            zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+         ELSE
+            zd= 0.0_dbl
+         END IF
+!======= Laplacian_x: interpolation to the location of the particle ====================
+!------- Interpolation in x-direction
+         c00 = Laplacian_x(ix0,iy0,iz0) * (1.0_dbl-xd) + Laplacian_x(ix1,iy0,iz0) * xd
+         c01 = Laplacian_x(ix0,iy0,iz1) * (1.0_dbl-xd) + Laplacian_x(ix1,iy0,iz1) * xd
+         c10 = Laplacian_x(ix0,iy1,iz0) * (1.0_dbl-xd) + Laplacian_x(ix1,iy1,iz0) * xd
+         c11 = Laplacian_x(ix0,iy1,iz1) * (1.0_dbl-xd) + Laplacian_x(ix1,iy1,iz1) * xd
+!------- Interpolation in y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- Interpolation in z-direction
+         Laplacian_x_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+
+!======= Laplacian_y: interpolation to the location of the particle ====================
+!------- Interpolation in x-direction
+         c00 = Laplacian_y(ix0,iy0,iz0) * (1.0_dbl-xd) + Laplacian_y(ix1,iy0,iz0) * xd
+         c01 = Laplacian_y(ix0,iy0,iz1) * (1.0_dbl-xd) + Laplacian_y(ix1,iy0,iz1) * xd
+         c10 = Laplacian_y(ix0,iy1,iz0) * (1.0_dbl-xd) + Laplacian_y(ix1,iy1,iz0) * xd
+         c11 = Laplacian_y(ix0,iy1,iz1) * (1.0_dbl-xd) + Laplacian_y(ix1,iy1,iz1) * xd
+!------- Interpolation in y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- Interpolation in z-direction
+         Laplacian_y_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+
+!======= Laplacian_z: interpolation to the location of the particle ====================
+!------- Interpolation in x-direction
+         c00 = Laplacian_z(ix0,iy0,iz0) * (1.0_dbl-xd) + Laplacian_z(ix1,iy0,iz0) * xd
+         c01 = Laplacian_z(ix0,iy0,iz1) * (1.0_dbl-xd) + Laplacian_z(ix1,iy0,iz1) * xd
+         c10 = Laplacian_z(ix0,iy1,iz0) * (1.0_dbl-xd) + Laplacian_z(ix1,iy1,iz0) * xd
+         c11 = Laplacian_z(ix0,iy1,iz1) * (1.0_dbl-xd) + Laplacian_z(ix1,iy1,iz1) * xd
+!------- Interpolation in y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- Interpolation in z-direction
+         Laplacian_z_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+!======= Laplacian_x: interpolation to the location of the particle ====================
+!------- Interpolation in x-direction
+         c00 = DUDt_x(ix0,iy0,iz0) * (1.0_dbl-xd) + DUDt_x(ix1,iy0,iz0) * xd
+         c01 = DUDt_x(ix0,iy0,iz1) * (1.0_dbl-xd) + DUDt_x(ix1,iy0,iz1) * xd
+         c10 = DUDt_x(ix0,iy1,iz0) * (1.0_dbl-xd) + DUDt_x(ix1,iy1,iz0) * xd
+         c11 = DUDt_x(ix0,iy1,iz1) * (1.0_dbl-xd) + DUDt_x(ix1,iy1,iz1) * xd
+!------- Interpolation in y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- Interpolation in z-direction
+         DUDt_x_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+
+!======= Laplacian_y: interpolation to the location of the particle ====================
+!------- Interpolation in x-direction
+         c00 = DUDt_y(ix0,iy0,iz0) * (1.0_dbl-xd) + DUDt_y(ix1,iy0,iz0) * xd
+         c01 = DUDt_y(ix0,iy0,iz1) * (1.0_dbl-xd) + DUDt_y(ix1,iy0,iz1) * xd
+         c10 = DUDt_y(ix0,iy1,iz0) * (1.0_dbl-xd) + DUDt_y(ix1,iy1,iz0) * xd
+         c11 = DUDt_y(ix0,iy1,iz1) * (1.0_dbl-xd) + DUDt_y(ix1,iy1,iz1) * xd
+!------- Interpolation in y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- Interpolation in z-direction
+         DLaplacianDt_y_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+
+!======= Laplacian_z: interpolation to the location of the particle ====================
+!------- Interpolation in x-direction
+         c00 = DUDt_z(ix0,iy0,iz0) * (1.0_dbl-xd) + DUDt_z(ix1,iy0,iz0) * xd
+         c01 = DUDt_z(ix0,iy0,iz1) * (1.0_dbl-xd) + DUDt_z(ix1,iy0,iz1) * xd
+         c10 = DUDt_z(ix0,iy1,iz0) * (1.0_dbl-xd) + DUDt_z(ix1,iy1,iz0) * xd
+         c11 = DUDt_z(ix0,iy1,iz1) * (1.0_dbl-xd) + DUDt_z(ix1,iy1,iz1) * xd
+!------- Interpolation in y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- Interpolation in z-direction
+         DUDt_z_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+
+!======= Computing slip velocity =======================================================
+         A_P= (R_P**2.0_dbl) / 6.0_dbl
+         B_P= ((R_P**4.0_dbl)/(27.0_dbl*alpha_P*nu)) *(1.0_dbl-(3.0_dbl*alpha_P)/10.0_dbl)
+         C_P= (2.0_dbl*(R_P**2.0_dbl)/(9.0_dbl*alpha_P*nu))*(1.0_dbl-(3.0_dbl*alpha_P/2.0_dbl))
+         U_slip_x= A_P*Laplacian_x_P + B_P*DLaplacianDt_x_P - C_P*Dudt_x_P
+         U_slip_y= A_P*Laplacian_y_P + B_P*DLaplacianDt_y_P - C_P*Dudt_y_P
+         U_slip_z= A_P*Laplacian_z_P + B_P*DLaplacianDt_z_P - C_P*Dudt_z_P
+         current%pardata%U_Slip = sqrt(U_slip_x**2.0_dbl + U_slip_y**2.0_dbl + U_slip_z**2.0_dbl)
+
+      END IF  
+   END IF  
+   current => next
+END DO   
+!===================================================================================================
+END SUBROUTINE Compute_U_slip
+!===================================================================================================
+
 
 
 

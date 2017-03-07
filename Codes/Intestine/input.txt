@@ -24,6 +24,7 @@
 41.8745    ! [S_bulk] (mu mol/cm3)       Drug solubility: at bulk pH 0f 6.5  
 7.50e-10   ! [diffm] (m2/s)              Drug's diffusivity
 268.0e-6   ! [molarvol] (cm^3/micromol)  Drug's molar volume
+1029.0     ! [den_P] (kg/m3)             Drug's density
 1.0        ! [tau]                       Relaxation parameter
 20.0       ! [SC}                        Schmidt Number
 4          ! [sclrIC]                    Initial/maintained scalar distribution [1=BLOB,2=LINE,3=INLET,4=UNIFORM]
@@ -43,6 +44,7 @@
 .TRUE.     ! [Flag_ParticleTrack]        Flag for tracking particles       
 .FALSE.    ! [Flag_Particle_Init_Sphere] Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
 .TRUE.     ! [Flag_Shear_Effects]        Flag for including shear effects in Sherwood number  
+.TRUE.     ! [Flag_Convection_Effects]   Flag for including convection effects in Sherwood number  
 .FALSE.    ! [Flag_Confinement_Effects]  Flag for including confinement effectgs in Sherwood number       
 .FALSE.    ! [Flag_Rectify_Neg_phi]      Flag for rectifying negative phi (make it zero) or leave it as is  (Flag_Rectify_Neg_phi) 
 .FALSE.    ! [Flag_Restart]              Falg for using restart files instead of starting from zero
