@@ -738,81 +738,111 @@ DO WHILE (ASSOCIATED(current))
          ELSE
             zd= 0.0_dbl
          END IF
+
 !======= Laplacian_x: interpolation to the location of the particle ====================
-!------- Interpolation in x-direction
+!------- x-direction -----------------------------------------------------------------
          c00 = Laplacian_x(ix0,iy0,iz0) * (1.0_dbl-xd) + Laplacian_x(ix1,iy0,iz0) * xd
          c01 = Laplacian_x(ix0,iy0,iz1) * (1.0_dbl-xd) + Laplacian_x(ix1,iy0,iz1) * xd
          c10 = Laplacian_x(ix0,iy1,iz0) * (1.0_dbl-xd) + Laplacian_x(ix1,iy1,iz0) * xd
          c11 = Laplacian_x(ix0,iy1,iz1) * (1.0_dbl-xd) + Laplacian_x(ix1,iy1,iz1) * xd
-!------- Interpolation in y-direction
-         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+!------- y-direction
+         0  = c00 * (1.0_dbl-yd) + c10 * yd
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------- Interpolation in z-direction
+!------- z-direction
          Laplacian_x_P = c0 * (1.0_dbl-zd) + c1 * zd
 
-
-!======= Laplacian_y: interpolation to the location of the particle ====================
-!------- Interpolation in x-direction
+!------- x-direction -----------------------------------------------------------------
          c00 = Laplacian_y(ix0,iy0,iz0) * (1.0_dbl-xd) + Laplacian_y(ix1,iy0,iz0) * xd
          c01 = Laplacian_y(ix0,iy0,iz1) * (1.0_dbl-xd) + Laplacian_y(ix1,iy0,iz1) * xd
          c10 = Laplacian_y(ix0,iy1,iz0) * (1.0_dbl-xd) + Laplacian_y(ix1,iy1,iz0) * xd
          c11 = Laplacian_y(ix0,iy1,iz1) * (1.0_dbl-xd) + Laplacian_y(ix1,iy1,iz1) * xd
-!------- Interpolation in y-direction
+!------- y-direction
          c0  = c00 * (1.0_dbl-yd) + c10 * yd
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------- Interpolation in z-direction
+!------- z-direction
          Laplacian_y_P = c0 * (1.0_dbl-zd) + c1 * zd
 
-
-!======= Laplacian_z: interpolation to the location of the particle ====================
-!------- Interpolation in x-direction
+!------- x-direction -----------------------------------------------------------------
          c00 = Laplacian_z(ix0,iy0,iz0) * (1.0_dbl-xd) + Laplacian_z(ix1,iy0,iz0) * xd
          c01 = Laplacian_z(ix0,iy0,iz1) * (1.0_dbl-xd) + Laplacian_z(ix1,iy0,iz1) * xd
          c10 = Laplacian_z(ix0,iy1,iz0) * (1.0_dbl-xd) + Laplacian_z(ix1,iy1,iz0) * xd
          c11 = Laplacian_z(ix0,iy1,iz1) * (1.0_dbl-xd) + Laplacian_z(ix1,iy1,iz1) * xd
-!------- Interpolation in y-direction
+!------- y-direction
          c0  = c00 * (1.0_dbl-yd) + c10 * yd
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------- Interpolation in z-direction
+!------- z-direction
          Laplacian_z_P = c0 * (1.0_dbl-zd) + c1 * zd
 
-!======= Laplacian_x: interpolation to the location of the particle ====================
-!------- Interpolation in x-direction
+
+!======= DUDt: interpolation to the location of the particle ===========================
+!------- x-direction
          c00 = DUDt_x(ix0,iy0,iz0) * (1.0_dbl-xd) + DUDt_x(ix1,iy0,iz0) * xd
          c01 = DUDt_x(ix0,iy0,iz1) * (1.0_dbl-xd) + DUDt_x(ix1,iy0,iz1) * xd
          c10 = DUDt_x(ix0,iy1,iz0) * (1.0_dbl-xd) + DUDt_x(ix1,iy1,iz0) * xd
          c11 = DUDt_x(ix0,iy1,iz1) * (1.0_dbl-xd) + DUDt_x(ix1,iy1,iz1) * xd
-!------- Interpolation in y-direction
+!------- y-direction
          c0  = c00 * (1.0_dbl-yd) + c10 * yd
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------- Interpolation in z-direction
+!------- z-direction
          DUDt_x_P = c0 * (1.0_dbl-zd) + c1 * zd
 
-
-!======= Laplacian_y: interpolation to the location of the particle ====================
-!------- Interpolation in x-direction
+!------- x-direction
          c00 = DUDt_y(ix0,iy0,iz0) * (1.0_dbl-xd) + DUDt_y(ix1,iy0,iz0) * xd
          c01 = DUDt_y(ix0,iy0,iz1) * (1.0_dbl-xd) + DUDt_y(ix1,iy0,iz1) * xd
          c10 = DUDt_y(ix0,iy1,iz0) * (1.0_dbl-xd) + DUDt_y(ix1,iy1,iz0) * xd
          c11 = DUDt_y(ix0,iy1,iz1) * (1.0_dbl-xd) + DUDt_y(ix1,iy1,iz1) * xd
-!------- Interpolation in y-direction
+!------- y-direction
          c0  = c00 * (1.0_dbl-yd) + c10 * yd
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------- Interpolation in z-direction
-         DLaplacianDt_y_P = c0 * (1.0_dbl-zd) + c1 * zd
+!------- z-direction
+         DUDt_y_P = c0 * (1.0_dbl-zd) + c1 * zd
 
-
-!======= Laplacian_z: interpolation to the location of the particle ====================
-!------- Interpolation in x-direction
+!------- x-direction
          c00 = DUDt_z(ix0,iy0,iz0) * (1.0_dbl-xd) + DUDt_z(ix1,iy0,iz0) * xd
          c01 = DUDt_z(ix0,iy0,iz1) * (1.0_dbl-xd) + DUDt_z(ix1,iy0,iz1) * xd
          c10 = DUDt_z(ix0,iy1,iz0) * (1.0_dbl-xd) + DUDt_z(ix1,iy1,iz0) * xd
          c11 = DUDt_z(ix0,iy1,iz1) * (1.0_dbl-xd) + DUDt_z(ix1,iy1,iz1) * xd
-!------- Interpolation in y-direction
+!------- y-direction
          c0  = c00 * (1.0_dbl-yd) + c10 * yd
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------- Interpolation in z-direction
+!------- z-direction
          DUDt_z_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+
+
+!======= DLaplacianDt: interpolation to the location of the particle ====================
+!------- x-direction
+         c00 = DLaplacianDt_x(ix0,iy0,iz0) * (1.0_dbl-xd) + DLaplacianDt_x(ix1,iy0,iz0) * xd
+         c01 = DLaplacianDt_x(ix0,iy0,iz1) * (1.0_dbl-xd) + DLaplacianDt_x(ix1,iy0,iz1) * xd
+         c10 = DLaplacianDt_x(ix0,iy1,iz0) * (1.0_dbl-xd) + DLaplacianDt_x(ix1,iy1,iz0) * xd
+         c11 = DLaplacianDt_x(ix0,iy1,iz1) * (1.0_dbl-xd) + DLaplacianDt_x(ix1,iy1,iz1) * xd
+!------- y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- z-direction
+         DLaplacianDt_x_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+!------- x-direction
+         c00 = DLaplacianDt_y(ix0,iy0,iz0) * (1.0_dbl-xd) + DLaplacianDt_y(ix1,iy0,iz0) * xd
+         c01 = DLaplacianDt_y(ix0,iy0,iz1) * (1.0_dbl-xd) + DLaplacianDt_y(ix1,iy0,iz1) * xd
+         c10 = DLaplacianDt_y(ix0,iy1,iz0) * (1.0_dbl-xd) + DLaplacianDt_y(ix1,iy1,iz0) * xd
+         c11 = DLaplacianDt_y(ix0,iy1,iz1) * (1.0_dbl-xd) + DLaplacianDt_y(ix1,iy1,iz1) * xd
+!------- y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- z-direction
+         DLaplacianDt_y_P = c0 * (1.0_dbl-zd) + c1 * zd
+
+!------- x-direction
+         c00 = DLaplacianDt_z(ix0,iy0,iz0) * (1.0_dbl-xd) + DLaplacianDt_z(ix1,iy0,iz0) * xd
+         c01 = DLaplacianDt_z(ix0,iy0,iz1) * (1.0_dbl-xd) + DLaplacianDt_z(ix1,iy0,iz1) * xd
+         c10 = DLaplacianDt_z(ix0,iy1,iz0) * (1.0_dbl-xd) + DLaplacianDt_z(ix1,iy1,iz0) * xd
+         c11 = DLaplacianDt_z(ix0,iy1,iz1) * (1.0_dbl-xd) + DLaplacianDt_z(ix1,iy1,iz1) * xd
+!------- y-direction
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------- z-direction
+         DLaplacianDt_z_P = c0 * (1.0_dbl-zd) + c1 * zd
 
 
 !======= Computing slip velocity =======================================================
