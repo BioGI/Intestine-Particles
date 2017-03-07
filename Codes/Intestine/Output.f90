@@ -397,7 +397,7 @@ IF (myid .EQ. master) THEN
                              current%pardata%up*vcf 	   ,',',	&
                              current%pardata%vp*vcf 	   ,',',	&
                              current%pardata%wp*vcf 	   ,',',	&
-                             current%pardata%U_slp  	   ,',',	&
+                             current%pardata%U_slip  	   ,',',	&
                              current%pardata%parid 	  	 ,',',	&
                              current%pardata%sh_conf 	   ,',',	&
                              current%pardata%sh_shear    ,',',	&
