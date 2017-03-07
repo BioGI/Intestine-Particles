@@ -746,7 +746,7 @@ DO WHILE (ASSOCIATED(current))
          c10 = Laplacian_x(ix0,iy1,iz0) * (1.0_dbl-xd) + Laplacian_x(ix1,iy1,iz0) * xd
          c11 = Laplacian_x(ix0,iy1,iz1) * (1.0_dbl-xd) + Laplacian_x(ix1,iy1,iz1) * xd
 !------- y-direction
-         0  = c00 * (1.0_dbl-yd) + c10 * yd
+         c0  = c00 * (1.0_dbl-yd) + c10 * yd
          c1  = c01 * (1.0_dbl-yd) + c11 * yd
 !------- z-direction
          Laplacian_x_P = c0 * (1.0_dbl-zd) + c1 * zd
