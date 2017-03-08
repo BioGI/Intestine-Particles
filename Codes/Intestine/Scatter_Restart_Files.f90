@@ -1,5 +1,6 @@
 IMPLICIT NONE 
 
+LOGICAL :: Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number
 CHARACTER(7) :: iter_char                                  ! iteration stored as a character
 CHARACTER(5) :: sub
 INTEGER :: iter0,i,j,k,m                                    ! index variables
@@ -19,6 +20,9 @@ REAL*8  :: delphi_particle
 REAL*8,	ALLOCATABLE :: f(:,:,:,:)                    ! distribution function
 REAL*8,	ALLOCATABLE :: phi(:,:,:)                    ! distribution function
 REAL*8,	ALLOCATABLE :: u(:,:,:),v(:,:,:),w(:,:,:)    ! x,y, and z components of the fluid velocity vector
+REAL*8,	ALLOCATABLE :: DUdt_x(:,:,:),DUdt_y(:,:,:),DUdt_z(:,:,:) 
+REAL*8,	ALLOCATABLE :: Laplacian_x(:,:,:),Laplacian_y(:,:,:),Laplacian_z(:,:,:)
+REAL*8,	ALLOCATABLE :: DLaplacianDt_x(:,:,:),DLaplacianDt_y(:,:,:),DLaplacianDt_z(:,:,:)
 REAL*8, ALLOCATABLE :: rho(:,:,:)                    ! density
 INTEGER,ALLOCATABLE :: node(:,:,:)                   ! node flags (FLUID/SOLID)
 
@@ -30,12 +34,66 @@ READ(10,*) nz					! number of nodes in the z-direction
 READ(10,*) NumSubsX		! number of subdomains in the X direction
 READ(10,*) NumSubsY		! number of subdomains in the Y direction
 READ(10,*) NumSubsZ		! number of subdomains in the Z direction
+READ(10,*) tmp !Width      ! Width (only in case of Couette simulation)
+READ(10,*) tmp !D					 ! diameter
+READ(10,*) tmp !L					  ! length
+READ(10,*) tmp !epsOVERa1		! peristaltic occlusion ratio (distance of occlusion/mean half-width)
+READ(10,*) tmp !s1					  ! peristaltic wave speed
+READ(10,*) tmp !s_movingF    ! Moving Frame of Reference speed
+READ(10,*) tmp !numw1				! number of peristaltic waves
+READ(10,*) tmp !wc1					! peristaltic weighting coefficient
+READ(10,*) tmp !epsOVERa2		! segmental occlusion ratio (distance of occlusion/mean half-width)
+READ(10,*) tmp !Ts					  ! segmental contraction period
+READ(10,*) tmp !numw2				! number of segmental waves
+READ(10,*) tmp !wc2					! segmental weighting coefficient
+READ(10,*) tmp !Tmix				  ! period of mixed mode simulation
+READ(10,*) tmp !den					! Liquid's density
+READ(10,*) tmp !nu					  ! Liquid's kinematic viscosity
+READ(10,*) tmp !S_intrinsic	   ! Drug solubility: intrinsic (mu mole/cm^3)
+READ(10,*) tmp !S_bulk     	   ! Drug solubility: at bulk pH of 6.5  (mu mole/cm^3)
+READ(10,*) tmp !diffm           ! Drug's diffusivity (cm2/s)
+READ(10,*) tmp !molarvol        ! Drug's molar volume (cm^3/mole)
+READ(10,*) tmp !den_P           ! Drug's density  (kg/m3)
+READ(10,*) tmp !tau             ! relaxation parameter
+READ(10,*) tmp !Sc              ! Schmidt number
+READ(10,*) tmp !sclrIC          ! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
+READ(10,*) tmp !iter_Start_phi  ! iteration at which to start particle tracking & scalar calculation  
+READ(10,*) tmp !iter_Freeze_LBM ! iteration at wich steady state (for P & V) has reached so all LBM related functions can be turned OFF  
+READ(10,*) tmp !phiIC           ! maximum scalar concentration
+!----- Coefficients for the generalized scalar BC (coeffPhi*phiWall + coeffGrad*dPhiDn_wall = coeffConst). 'n' is normal vector from  wall into fluid.
+READ(10,*) tmp !coeffPhi
+READ(10,*) tmp !coeffGrad
+READ(10,*) tmp !coeffConst
+READ(10,*) tmp !nPers                       ! total number of periods to run
+READ(10,*) tmp !Output_Intervals            ! number of iterations between writing the output files 
+READ(10,*) tmp !Restart_Intervals           ! number of iterations between writing the restart files 
+READ(10,*) tmp !Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM 
+READ(10,*) tmp !Flag_Couette                ! Flag to run the Couette simulation
+READ(10,*) tmp !Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
+READ(10,*) tmp !Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False --> 1st order LBM BC 
+READ(10,*) tmp !Flag_ParticleTrack          ! Flag for tracking particles           
+READ(10,*) tmp !Flag_Particle_Init_Sphere   ! Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
+READ(10,*) tmp !Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
+READ(10,*) Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number        
+READ(10,*) tmp !Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
+READ(10,*) tmp !Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
+READ(10,*) tmp !Flag_Restart                ! Falg for using restart files instead of starting from zero
 CLOSE(10)
 
 ALLOCATE(node(0:nx+1,0:ny+1,0:nz+1))
 ALLOCATE(u(0:nx+1,0:ny+1,0:nz+1),							&
          v(0:nx+1,0:ny+1,0:nz+1),							&
          w(0:nx+1,0:ny+1,0:nz+1))
+ALLOCATE(DUdt_x(0:nx+1,0:ny+1,0:nz+1),				&
+         DUdt_y(0:nx+1,0:ny+1,0:nz+1),				&
+         DUdt_z(0:nx+1,0:ny+1,0:nz+1))				
+ALLOCATE(Laplacian_x(0:nx+1,0:ny+1,0:nz+1),				&
+         Laplacian_y(0:nx+1,0:ny+1,0:nz+1),				&
+         Laplacian_z(0:nx+1,0:ny+1,0:nz+1))				
+ALLOCATE(DLaplacianDt_x(0:nx+1,0:ny+1,0:nz+1),				&
+         DLaplacianDt_y(0:nx+1,0:ny+1,0:nz+1),				&
+         DLaplacianDt_z(0:nx+1,0:ny+1,0:nz+1))				
+
 ALLOCATE(rho(0:nx+1,0:ny+1,0:nz+1))
 ALLOCATE(phi(0:nx+1,0:ny+1,0:nz+1))
 ALLOCATE(f(0:NumDistDirs,0:nx+1,0:ny+1,0:nz+1))	
@@ -58,6 +116,17 @@ DO k=0,nz+1
          DO m=0,NumDistDirs
             READ(12,*) f(m,i,j,k)
          END DO
+         IF (Flag_Convection_Effects) THEN
+            READ(12,*)  DUdt_x(i,j,k) 
+            READ(12,*)  DUdt_y(i,j,k) 
+            READ(12,*)  DUdt_z(i,j,k) 
+            READ(12,*)  Laplacian_x(i,j,k)
+            READ(12,*)  Laplacian_y(i,j,k)
+            READ(12,*)  Laplacian_z(i,j,k)
+            READ(12,*)  DLaplacianDt_x(i,j,k)
+            READ(12,*)  DLaplacianDt_y(i,j,k)
+            READ(12,*)  DLaplacianDt_z(i,j,k)
+         ENDIF
      END DO
    END DO
 END DO
@@ -108,6 +177,17 @@ DO CPU = 0, N_CPU-1
             DO m=0,NumDistDirs
                WRITE(13,'(F10.8)') f(m,i,j,k)
             END DO
+            IF (Flag_Convection_Effects) THEN
+               WRITE(13,'(E16.9)')  DUdt_x(i,j,k) 
+               WRITE(13,'(E16.9)')  DUdt_y(i,j,k) 
+               WRITE(13,'(E16.9)')  DUdt_z(i,j,k) 
+               WRITE(13,'(E16.9)')  Laplacian_x(i,j,k)
+               WRITE(13,'(E16.9)')  Laplacian_y(i,j,k)
+               WRITE(13,'(E16.9)')  Laplacian_z(i,j,k)
+               WRITE(13,'(E16.9)')  DLaplacianDt_x(i,j,k)
+               WRITE(13,'(E16.9)')  DLaplacianDt_y(i,j,k)
+               WRITE(13,'(E16.9)')  DLaplacianDt_z(i,j,k)
+            ENDIF
          END DO
       END DO
    END DO
