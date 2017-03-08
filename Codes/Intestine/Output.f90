@@ -176,6 +176,17 @@ DO k=0,nzSub+1
             DO m=0,NumDistDirs
                WRITE(500,'(F10.8)') f(m,i,j,k)
             END DO
+            IF (Flag_Convection_Effects) THEN
+               WRITE(500,'(E16.9)')  DUdt_x(i,j,k) 
+               WRITE(500,'(E16.9)')  DUdt_y(i,j,k) 
+               WRITE(500,'(E16.9)')  DUdt_z(i,j,k) 
+               WRITE(500,'(E16.9)')  Laplacian_x(i,j,k)
+               WRITE(500,'(E16.9)')  Laplacian_y(i,j,k)
+               WRITE(500,'(E16.9)')  Laplacian_z(i,j,k)
+               WRITE(500,'(E16.9)')  DLaplacianDt_x(i,j,k)
+               WRITE(500,'(E16.9)')  DLaplacianDt_y(i,j,k)
+               WRITE(500,'(E16.9)')  DLaplacianDt_z(i,j,k)
+            ENDIF
          ELSE 
             WRITE(500,'(I1)') 0
             WRITE(500,'(I1)') 0
@@ -185,6 +196,17 @@ DO k=0,nzSub+1
             DO m=0,NumDistDirs
                WRITE(500,'(I1)') 0
             END DO
+            IF (Flag_Convection_Effects) THEN
+               WRITE(500,'(I1)') 0 
+               WRITE(500,'(I1)') 0 
+               WRITE(500,'(I1)') 0 
+               WRITE(500,'(I1)') 0 
+               WRITE(500,'(I1)') 0 
+               WRITE(500,'(I1)') 0
+               WRITE(500,'(I1)') 0
+               WRITE(500,'(I1)') 0 
+               WRITE(500,'(I1)') 0 
+            ENDIF
          ENDIF
       END DO
    END DO
