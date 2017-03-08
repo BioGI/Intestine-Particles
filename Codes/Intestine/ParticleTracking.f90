@@ -323,7 +323,10 @@ CALL Compute_C_bulk
 CALL PrintComputationalTime(5)
 IF (Flag_Shear_Effects) THEN
    CALL Compute_Shear
-END IF   
+END IF
+IF (Flag_Convection_Effects) THEN
+   CALL Compute_U_slip
+END IF
 CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
 CALL Compute_C_surface
 CALL PrintComputationalTime(6)
