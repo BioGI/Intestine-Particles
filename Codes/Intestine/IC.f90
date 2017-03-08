@@ -41,6 +41,17 @@ IF (Flag_Restart) THEN                           ! restart from  file
             DO m=0,NumDistDirs
                READ(50,*) f(m,i,j,k)
             END DO
+            IF (Flag_Convection_Effects) THEN
+               READ(50,*)  DUdt_x(i,j,k)
+               READ(50,*)  DUdt_y(i,j,k)
+               READ(50,*)  DUdt_z(i,j,k)
+               READ(50,*)  Laplacian_x(i,j,k)
+               READ(50,*)  Laplacian_y(i,j,k)
+               READ(50,*)  Laplacian_z(i,j,k)
+               READ(50,*)  DLaplacianDt_x(i,j,k)
+               READ(50,*)  DLaplacianDt_y(i,j,k)
+               READ(50,*)  DLaplacianDt_z(i,j,k)
+            ENDIF   
         END DO
       END DO
    END DO
