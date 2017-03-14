@@ -642,8 +642,7 @@ DO k=1,nzSub
                d2udz2(i,j,k)=0.0_dbl
                d2vdz2(i,j,k)=0.0_dbl
                d2wdz2(i,j,k)=0.0_dbl
-            ENDIF                                  
-
+            ENDIF  
             !=== Compute Laplacian =================================================================
             Laplacian_x(i,j,k)= d2udx2(i,j,k)+ d2udy2(i,j,k)+ d2udz2(i,j,k) 
             Laplacian_y(i,j,k)= d2vdx2(i,j,k)+ d2vdy2(i,j,k)+ d2vdz2(i,j,k)
@@ -653,6 +652,41 @@ DO k=1,nzSub
             DUdt_x(i,j,k)= (u(i,j,k)*dudx(i,j,k)+ v(i,j,k)*dudy(i,j,k)+ (w(i,j,k)+(s_movingF/vcf))*dudz(i,j,k)) * vcf
             DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k)+ v(i,j,k)*dvdy(i,j,k)+ (w(i,j,k)+(s_movingF/vcf))*dvdz(i,j,k)) * vcf
             DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k)+ v(i,j,k)*dwdy(i,j,k)+ (w(i,j,k)+(s_movingF/vcf))*dwdz(i,j,k)) * vcf
+        ELSEIF (node(i,j,k) .EQ. SOLID) THEN
+            dudx(i,j,k)=0.0_dbl
+            dvdx(i,j,k)=0.0_dbl
+            dwdx(i,j,k)=0.0_dbl
+            dudy(i,j,k)=0.0_dbl
+            dvdy(i,j,k)=0.0_dbl
+            dwdy(i,j,k)=0.0_dbl
+            dudz(i,j,k)=0.0_dbl
+            dvdz(i,j,k)=0.0_dbl
+            dwdz(i,j,k)=0.0_dbl
+            d2udx2(i,j,k)=0.0_dbl
+            d2vdx2(i,j,k)=0.0_dbl
+            d2wdx2(i,j,k)=0.0_dbl
+            d2udy2(i,j,k)=0.0_dbl
+            d2vdy2(i,j,k)=0.0_dbl
+            d2wdy2(i,j,k)=0.0_dbl
+            d2udz2(i,j,k)=0.0_dbl
+            d2vdz2(i,j,k)=0.0_dbl
+            d2wdz2(i,j,k)=0.0_dbl
+            DUdt_x(i,j,k)= 0.0_dbl
+            DUdt_y(i,j,k)= 0.0_dbl
+            DUdt_z(i,j,k)= 0.0_dbl 
+            Laplacian_x(i,j,k)=0.0_dbl 
+            Laplacian_y(i,j,k)=0.0_dbl
+            Laplacian_z(i,j,k)=0.0_dbl
+         ENDIF   
+      ENDDO
+   ENDDO
+ENDDO
+
+
+DO k=1,nzSub
+   DO j=1,nySub
+      DO i=1,nxSub
+         IF (node(i,j,k) .EQ. FLUID) THEN 
 
             !=== X_dir derivatives: Material Derivative of Laplacian vector ====================================================================
             IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN                                             !Cental difference
@@ -692,6 +726,23 @@ DO k=1,nzSub
                dA3dy(i,j,k)=0.0_dbl
             ENDIF
 
+            !=== Dealing with periodic BC at z-dir =================================================
+            kL2= k-2
+            kL1= k-1
+            kR1= k+1
+            KR2= k+2
+            IF(kL2 .LT. 1 ) THEN
+              kL2=kL2+nz
+            ENDIF
+            IF(kL1 .LT. 1 ) THEN
+              kL1=kL1+nz
+            ENDIF
+            IF(kR2 .GT. nz)THEN
+              kR2=kR2-nz
+            ENDIF
+            IF(kR1 .GT. nz)THEN
+              kR1=kR1-nz
+            ENDIF
             !=== Z_dir derivatives: Material Derivative of Laplacian vector ====================================================================
             IF ((node(i,j,kL1) .EQ. FLUID) .AND. (node(i,j,kR1) .EQ. FLUID)) THEN                                            !Central difference
                dA1dz(i,j,k)= (d2udx2(i,j,kR1)-d2udx2(i,j,kL1) + d2udy2(i,j,kR1)-d2udy2(i,j,kL1) + d2udz2(i,j,kR1)-d2udz2(i,j,kL1)) * 0.5_dbl/zcf
@@ -775,30 +826,6 @@ DO k=1,nzSub
                        DLaplacianDt_x(i,j,k),DLaplacianDt_y(i,j,k),DLaplacianDt_z(i,j,k)
             ENDIF
          ELSEIF (node(i,j,k) .EQ. SOLID) THEN
-            dudx(i,j,k)=0.0_dbl
-            dvdx(i,j,k)=0.0_dbl
-            dwdx(i,j,k)=0.0_dbl
-            dudy(i,j,k)=0.0_dbl
-            dvdy(i,j,k)=0.0_dbl
-            dwdy(i,j,k)=0.0_dbl
-            dudz(i,j,k)=0.0_dbl
-            dvdz(i,j,k)=0.0_dbl
-            dwdz(i,j,k)=0.0_dbl
-            d2udx2(i,j,k)=0.0_dbl
-            d2vdx2(i,j,k)=0.0_dbl
-            d2wdx2(i,j,k)=0.0_dbl
-            d2udy2(i,j,k)=0.0_dbl
-            d2vdy2(i,j,k)=0.0_dbl
-            d2wdy2(i,j,k)=0.0_dbl
-            d2udz2(i,j,k)=0.0_dbl
-            d2vdz2(i,j,k)=0.0_dbl
-            d2wdz2(i,j,k)=0.0_dbl
-            DUdt_x(i,j,k)= 0.0_dbl
-            DUdt_y(i,j,k)= 0.0_dbl
-            DUdt_z(i,j,k)= 0.0_dbl 
-            Laplacian_x(i,j,k)=0.0_dbl 
-            Laplacian_y(i,j,k)=0.0_dbl
-            Laplacian_z(i,j,k)=0.0_dbl
             DLaplacianDt_x(i,j,k)= 0.0_dbl
             DLaplacianDt_y(i,j,k)= 0.0_dbl
             DLaplacianDt_z(i,j,k)= 0.0_dbl
