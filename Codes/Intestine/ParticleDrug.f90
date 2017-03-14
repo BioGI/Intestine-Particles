@@ -411,6 +411,7 @@ DO WHILE (ASSOCIATED(current))
             Re_P_du= current%pardata%U_slip* current%pardata%rp / nu                          !Computing Reynolds number
             Pe_P_du= current%pardata%U_slip* current%pardata%rp / diffm                         !Computing Peclet number
             current%pardata%sh_slip = 0.424* (Pe_P_du**0.33) * (Re_P_du**0.17)     
+            write(*,*) 'iter,ID,nu,Dm,Re,Pe,Sh',iter,current%pardata%parid,nu,diffm,Re_P_du,Pe_P_du,current%pardata%sh_slip  
          ENDIF
       ENDIF
    ENDIF
@@ -853,8 +854,15 @@ DO WHILE (ASSOCIATED(current))
          U_slip_y= A_P*Laplacian_y_P + B_P*DLaplacianDt_y_P - C_P*Dudt_y_P
          U_slip_z= A_P*Laplacian_z_P + B_P*DLaplacianDt_z_P - C_P*Dudt_z_P
          current%pardata%U_Slip = sqrt(U_slip_x**2.0_dbl + U_slip_y**2.0_dbl + U_slip_z**2.0_dbl)
-
-      END IF  
+         IF(current%pardata%parid .EQ.1) THEN 
+            write(*,*) iter,current%pardata%parid  
+            write(*,*) iter, alpha_P,A_P,B_P,C_P
+            write(*,*) iter, Laplacian_x_P,Laplacian_y_P,Laplacian_z_P   
+            write(*,*) iter, DLaplacianDt_x_P,DLaplacianDt_y_P,DLaplacianDt_z_P   
+            write(*,*) iter, DUDt_x_P,DUDt_y_P,DUDt_z_P  
+            write(*,*) '------------------------------------------------------'
+         ENDIF
+      ENDIF
    END IF  
    current => next
 END DO   
