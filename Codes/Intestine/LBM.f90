@@ -673,9 +673,9 @@ DO k=1,nzSub
             Laplacian_z(i,j,k)= d2wdx2(i,j,k)+ d2wdy2(i,j,k)+ d2wdz2(i,j,k) 
 
             !=== Computing Material Derivative of the Velocity vector ==============================
-            DUdt_x(i,j,k)= (u(i,j,k)*dudx(i,j,k)+ v(i,j,k)*dudy(i,j,k)+ (w(i,j,k)+s_movingF)*dudz(i,j,k)) * vcf
-            DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k)+ v(i,j,k)*dvdy(i,j,k)+ (w(i,j,k)+s_movingF)*dvdz(i,j,k)) * vcf
-            DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k)+ v(i,j,k)*dwdy(i,j,k)+ (w(i,j,k)+s_movingF)*dwdz(i,j,k)) * vcf
+            DUdt_x(i,j,k)= (u(i,j,k)*dudx(i,j,k)+ v(i,j,k)*dudy(i,j,k)+ (w(i,j,k)+(s_movingF/vcf))*dudz(i,j,k)) * vcf
+            DUdt_y(i,j,k)= (u(i,j,k)*dvdx(i,j,k)+ v(i,j,k)*dvdy(i,j,k)+ (w(i,j,k)+(s_movingF/vcf))*dvdz(i,j,k)) * vcf
+            DUdt_z(i,j,k)= (u(i,j,k)*dwdx(i,j,k)+ v(i,j,k)*dwdy(i,j,k)+ (w(i,j,k)+(s_movingF/vcf))*dwdz(i,j,k)) * vcf
 
             !=== X_dir derivatives: Material Derivative of Laplacian vector ====================================================================
             IF ((node(i-1,j,k) .EQ. FLUID) .AND. (node(i+1,j,k) .EQ. FLUID)) THEN                                             !Cental difference
@@ -735,9 +735,9 @@ DO k=1,nzSub
             ENDIF
 
             !=== Material Derivative of Laplacian vector ======================================================
-            DLaplacianDt_x(i,j,k)= (u(i,j,k)*dA1dx(i,j,k) + v(i,j,k)*dA1dy(i,j,k) + (w(i,j,k)+s_movingF)*dA1dz(i,j,k)) *vcf
-            DLaplacianDt_y(i,j,k)= (u(i,j,k)*dA2dx(i,j,k) + v(i,j,k)*dA2dy(i,j,k) + (w(i,j,k)+s_movingF)*dA2dz(i,j,k)) *vcf
-            DLaplacianDt_z(i,j,k)= (u(i,j,k)*dA3dx(i,j,k) + v(i,j,k)*dA3dy(i,j,k) + (w(i,j,k)+s_movingF)*dA3dz(i,j,k)) *vcf
+            DLaplacianDt_x(i,j,k)= (u(i,j,k)*dA1dx(i,j,k) + v(i,j,k)*dA1dy(i,j,k) + (w(i,j,k)+(s_movingF/vcf))*dA1dz(i,j,k)) *vcf
+            DLaplacianDt_y(i,j,k)= (u(i,j,k)*dA2dx(i,j,k) + v(i,j,k)*dA2dy(i,j,k) + (w(i,j,k)+(s_movingF/vcf))*dA2dz(i,j,k)) *vcf
+            DLaplacianDt_z(i,j,k)= (u(i,j,k)*dA3dx(i,j,k) + v(i,j,k)*dA3dy(i,j,k) + (w(i,j,k)+(s_movingF/vcf))*dA3dz(i,j,k)) *vcf
             
             IF ((i.EQ.92) .AND. (j.EQ.23) .AND. (k.EQ.130)) THEN
                  WRITE(*,'(I3,2I4,3F9.4,36E18.10)') i, j,k,                                                                                &
