@@ -741,30 +741,30 @@ DO k=1,nzSub
                write(*,*) 'w(92,23,129)',w(92,23,129) 
                write(*,*) 'w(92,23,131)',w(92,23,131) 
               
-               write(*,*) 'A1(92,23,130)',A1(92,23,130) 
-               write(*,*) 'A1(91,23,130)',A1(91,23,130) 
-               write(*,*) 'A1(93,23,130)',A1(93,23,130) 
-               write(*,*) 'A1(92,22,130)',A1(92,22,130) 
-               write(*,*) 'A1(92,24,130)',A1(92,24,130) 
-               write(*,*) 'A1(92,23,129)',A1(92,23,129) 
-               write(*,*) 'A1(92,23,131)',A1(92,23,131) 
+               write(*,*) 'Laplacian_x(92,23,130)',Laplacian_x(92,23,130) 
+               write(*,*) 'Laplacian_x(91,23,130)',Laplacian_x(91,23,130) 
+               write(*,*) 'Laplacian_x(93,23,130)',Laplacian_x(93,23,130) 
+               write(*,*) 'Laplacian_x(92,22,130)',Laplacian_x(92,22,130) 
+               write(*,*) 'Laplacian_x(92,24,130)',Laplacian_x(92,24,130) 
+               write(*,*) 'Laplacian_x(92,23,129)',Laplacian_x(92,23,129) 
+               write(*,*) 'Laplacian_x(92,23,131)',Laplacian_x(92,23,131) 
 
-               write(*,*) 'A2(92,23,130)',A2(92,23,130) 
-               write(*,*) 'A2(91,23,130)',A2(91,23,130) 
-               write(*,*) 'A2(93,23,130)',A2(93,23,130) 
-               write(*,*) 'A2(92,22,130)',A2(92,22,130) 
-               write(*,*) 'A2(92,24,130)',A2(92,24,130) 
-               write(*,*) 'A2(92,23,129)',A2(92,23,129) 
-               write(*,*) 'A2(92,23,131)',A2(92,23,131) 
-               
-               write(*,*) 'A3(92,23,130)',A2(92,23,130) 
-               write(*,*) 'A3(91,23,130)',A2(91,23,130) 
-               write(*,*) 'A3(93,23,130)',A2(93,23,130) 
-               write(*,*) 'A3(92,22,130)',A2(92,22,130) 
-               write(*,*) 'A3(92,24,130)',A2(92,24,130) 
-               write(*,*) 'A3(92,23,129)',A2(92,23,129) 
-               write(*,*) 'A3(92,23,131)',A2(92,23,131) 
-               
+               write(*,*) 'Laplacian_y(92,23,130)',Laplacian_y(92,23,130) 
+               write(*,*) 'Laplacian_y(91,23,130)',Laplacian_y(91,23,130) 
+               write(*,*) 'Laplacian_y(93,23,130)',Laplacian_y(93,23,130) 
+               write(*,*) 'Laplacian_y(92,22,130)',Laplacian_y(92,22,130) 
+               write(*,*) 'Laplacian_y(92,24,130)',Laplacian_y(92,24,130) 
+               write(*,*) 'Laplacian_y(92,23,129)',Laplacian_y(92,23,129) 
+               write(*,*) 'Laplacian_y(92,23,131)',Laplacian_y(92,23,131) 
+
+               write(*,*) 'Laplacian_z(92,23,130)',Laplacian_z(92,23,130) 
+               write(*,*) 'Laplacian_z(91,23,130)',Laplacian_z(91,23,130) 
+               write(*,*) 'Laplacian_z(93,23,130)',Laplacian_z(93,23,130) 
+               write(*,*) 'Laplacian_z(92,22,130)',Laplacian_z(92,22,130) 
+               write(*,*) 'Laplacian_z(92,24,130)',Laplacian_z(92,24,130) 
+               write(*,*) 'Laplacian_z(92,23,129)',Laplacian_z(92,23,129) 
+               write(*,*) 'Laplacian_z(92,23,131)',Laplacian_z(92,23,131) 
+
                WRITE(*,'(I3,2I4,3F9.4,36E18.10)') i, j,k,                                                                                                &
                        1000.0_dbl*u(i,j,k)*vcf, 1000.0_dbl*v(i,j,k)*vcf, 1000.0_dbl*w(i,j,k)*vcf,                                                        &
                        dudx(i,j,k),dvdx(i,j,k), dwdx(i,j,k),dudy(i,j,k),dvdy(i,j,k),dwdy(i,j,k),dudz(i,j,k),dvdz(i,j,k),dwdz(i,j,k),                     &
