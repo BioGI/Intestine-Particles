@@ -505,6 +505,31 @@ SUBROUTINE Compute_vel_derivatives
 IMPLICIT NONE
 INTEGER(lng):: i,j,k,kL1,kL2,kR1,KR2
 
+
+write(*,*) 'u(92,23,130)',u(92,23,130) 
+write(*,*) 'u(91,23,130)',u(91,23,130) 
+write(*,*) 'u(93,23,130)',u(93,23,130) 
+write(*,*) 'u(92,22,130)',u(92,22,130) 
+write(*,*) 'u(92,24,130)',u(92,24,130) 
+write(*,*) 'u(92,23,129)',u(92,23,129) 
+write(*,*) 'u(92,23,131)',u(92,23,131) 
+
+write(*,*) 'v(92,23,130)',v(92,23,130) 
+write(*,*) 'v(91,23,130)',v(91,23,130) 
+write(*,*) 'v(93,23,130)',v(93,23,130) 
+write(*,*) 'v(92,22,130)',v(92,22,130) 
+write(*,*) 'v(92,24,130)',v(92,24,130) 
+write(*,*) 'v(92,23,129)',v(92,23,129) 
+write(*,*) 'v(92,23,131)',v(92,23,131) 
+
+write(*,*) 'w(92,23,130)',w(92,23,130) 
+write(*,*) 'w(91,23,130)',w(91,23,130) 
+write(*,*) 'w(93,23,130)',w(93,23,130) 
+write(*,*) 'w(92,22,130)',w(92,22,130) 
+write(*,*) 'w(92,24,130)',w(92,24,130) 
+write(*,*) 'w(92,23,129)',w(92,23,129) 
+write(*,*) 'w(92,23,131)',w(92,23,131) 
+
 DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
@@ -713,7 +738,17 @@ DO k=1,nzSub
             DLaplacianDt_x(i,j,k)= (u(i,j,k)*dA1dx(i,j,k) + v(i,j,k)*dA1dy(i,j,k) + (w(i,j,k)+s_movingF)*dA1dz(i,j,k)) *vcf
             DLaplacianDt_y(i,j,k)= (u(i,j,k)*dA2dx(i,j,k) + v(i,j,k)*dA2dy(i,j,k) + (w(i,j,k)+s_movingF)*dA2dz(i,j,k)) *vcf
             DLaplacianDt_z(i,j,k)= (u(i,j,k)*dA3dx(i,j,k) + v(i,j,k)*dA3dy(i,j,k) + (w(i,j,k)+s_movingF)*dA3dz(i,j,k)) *vcf
-
+            
+            IF ((i.EQ.92) .AND. (j.EQ.23) .AND. (k.EQ.130)) THEN
+                 WRITE(*,'(I3,2I4,3F9.4,36E18.10)') i, j,k,                                                                                &
+                       1000.0_dbl*u(i,j,k)*vcf, 1000.0_dbl*v(i,j,k)*vcf, 1000.0_dbl*w(i,j,k)*vcf,       &
+                       dudx(i,j,k),dvdx(i,j,k), dwdx(i,j,k),dudy(i,j,k),dvdy(i,j,k),dwdy(i,j,k),dudz(i,j,k),dvdz(i,j,k),dwdz(i,j,k),                     &
+                       d2udx2(i,j,k), d2vdx2(i,j,k),d2wdx2(i,j,k),d2udy2(i,j,k),d2vdy2(i,j,k),d2wdy2(i,j,k),d2udz2(i,j,k),d2vdz2(i,j,k),d2wdz2(i,j,k),   &
+                       DUdt_x(i,j,k),DUdt_y(i,j,k),DUdt_z(i,j,k),                                                                                        &
+                       Laplacian_x(i,j,k),Laplacian_y(i,j,k),Laplacian_z(i,j,k),                                                                         &
+                       dA1dx(i,j,k),dA1dy(i,j,k),dA1dz(i,j,k),dA2dx(i,j,k),dA2dy(i,j,k),dA2dz(i,j,k),dA3dx(i,j,k),dA3dy(i,j,k),dA3dz(i,j,k),             &
+                       DLaplacianDt_x(i,j,k),DLaplacianDt_y(i,j,k),DLaplacianDt_z(i,j,k)
+            ENDIF
          ELSEIF (node(i,j,k) .EQ. SOLID) THEN
             dudx(i,j,k)=0.0_dbl
             dvdx(i,j,k)=0.0_dbl
