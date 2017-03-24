@@ -411,7 +411,7 @@ DO WHILE (ASSOCIATED(current))
             Re_P_du= current%pardata%U_slip* current%pardata%rp / nu                          !Computing Reynolds number
             Pe_P_du= current%pardata%U_slip* current%pardata%rp / diffm                         !Computing Peclet number
             current%pardata%sh_slip = 0.424* (Pe_P_du**0.33) * (Re_P_du**0.17)     
-            write(*,*) 'iter,ID,nu,Dm,Re,Pe,Sh',iter,current%pardata%parid,nu,diffm,Re_P_du,Pe_P_du,current%pardata%sh_slip  
+            !write(*,*) 'iter,ID,nu,Dm,Re,Pe,Sh',iter,current%pardata%parid,nu,diffm,Re_P_du,Pe_P_du,current%pardata%sh_slip  
          ENDIF
       ENDIF
    ENDIF
