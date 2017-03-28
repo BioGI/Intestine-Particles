@@ -869,12 +869,10 @@ DO i=1,nz
    ENDIF
 ENDDO   
 
-write(*,*) 'k_Min,k_Max,mySub',k_Min(mySub) ,k_Max(mySub),mySub
-kMin = k_Min(mySub)
-kMax = k_Max(mySub)
+kMin = k_Min(myid/(NumSubsX*NumSubsY)+1)
+kMax = k_Max(myid/(NumSubsX*NumSubsY)+1)
 
-
-write(*,*) 'kMin,kMax,myid', kMin,kMax,myid
+!write(*,*) 'A: kMin,kMax,myid', kMin,kMax,myid
 
 ! Check the bounds
 IF(iMax .GT. nx) THEN
@@ -900,19 +898,14 @@ DO kSub=1,NumSubsZ
       thisSub = iSub + (jSub-1)*NumSubsX + (kSub-1)*NumSubsX*NumSubsY	! get the ID of the current Subdomain
 
       IF(mySub .EQ. thisSub) THEN													! fill out the SubID array of the current subdomain is the 
-     
         ! Loop through the communication directions for the current subdomain
         DO iComm=1,NumCommDirs
-
           iiSub = iSub + CDx(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
           jjSub = jSub + CDy(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
           kkSub = kSub + CDz(iComm)													! subdomain index of neighboring subdomain in the iCommth communication direction
-      
           !CALL SetSubID(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
           CALL SetSubIDNew(iComm,iiSub,jjSub,kkSub)								! identify the neighboring subdomains (SubID)
-
         END DO
-
       END IF
 
 ! Fill up arrays containging iMax, iMin, jMax,jMin,kMax, kMin for all subdomains
@@ -924,21 +917,22 @@ DO kSub=1,NumSubsZ
 	jMinDomain(thisSub) = MOD(((thisSub-1_lng)/NumSubsX),NumSubsY)*quotientY + 1_lng	! starting local j index
 	jMaxDomain(thisSub) = jMinDomain(thisSub) + (quotientY - 1_lng)				! ending local j index
 	
-	kMinDomain(thisSub) = ((thisSub-1_lng)/(NumSubsX*NumSubsY))*quotientZ + 1_lng		! starting local k index 
-	kMaxDomain(thisSub) = kMinDomain(thisSub) + (quotientZ - 1_lng)				! ending local k index
+	kMinDomain(thisSub) = k_Min(((thisSub-1_lng)/(NumSubsX*NumSubsY))+1)
+	kMaxDomain(thisSub) = k_Max(((thisSub-1_lng)/(NumSubsX*NumSubsY))+1)
 	
+  !write(*,*) 'B:',thisSub,iMinDomain(thisSub),iMaxDomain(thisSub),jMinDomain(thisSub),jMaxDomain(thisSub),kMinDomain(thisSub),kMaxDomain(thisSub) 
 	! Check the bounds
-	IF(iMaxDomain(thisSub) .GT. nx) THEN
-	  iMaxDomain(thisSub) = nx																! if iMax is greater than nx, correct it
-	END IF
-	
-	IF(jMaxDomain(thisSub) .GT. ny) THEN
-	  jMaxDomain(thisSub) = ny																! if jMax is greater than ny, correct it
-	END IF
-	
-	IF(kMaxDomain(thisSub) .GT. nz) THEN
-	  kMaxDomain(thisSub) = nz																! if kMax is greater than nz, correct it
-	END IF
+!	IF(iMaxDomain(thisSub) .GT. nx) THEN
+!	  iMaxDomain(thisSub) = nx																! if iMax is greater than nx, correct it
+!	END IF
+!	
+!	IF(jMaxDomain(thisSub) .GT. ny) THEN
+!	  jMaxDomain(thisSub) = ny																! if jMax is greater than ny, correct it
+!	END IF
+!	
+!	IF(kMaxDomain(thisSub) .GT. nz) THEN
+!	  kMaxDomain(thisSub) = nz																! if kMax is greater than nz, correct it
+!	END IF
 
     END DO
   END DO
