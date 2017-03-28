@@ -151,8 +151,6 @@ ey(14) =  1.0_dbl
 ez(14) = -1.0_dbl
 
 !---- Define other simulation parameters -----------------------------------------------------------
-nuL   	   = (2.0_dbl*tau - 1.0_dbl)/6.0_dbl	! lattice kinematic viscosity
-denL 	   = 1.0_dbl				! arbitrary lattice density (1.0 for convenience)
 oneOVERtau = 1.0_dbl/tau			! reciprical of tau
 cs	   = (1.0_dbl)/(SQRT(3.0_dbl))		! speed of sound on the lattice
 

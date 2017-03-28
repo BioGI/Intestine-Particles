@@ -25,7 +25,8 @@ nzSub= nz
 
 CALL AllocateArrays                   ! allocate global variable arrays  
 CALL Geometry_Setup
-CALL BoundaryPosition
+CALL AdvanceGeometry
+r(0:nzSub+1) = rDom(kMin-1:kMax+1)   ! Fill out the local radius array
 
 Volume=0.0
 DO i=1,nz
