@@ -17,9 +17,8 @@ SUBROUTINE Compute_C_bulk				  ! Computes the mesh-independent bulk concentratio
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng)  		 :: i,j,k, mpierr
+INTEGER(lng)  		 :: i,j,k, mpierr,ID
 INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
-INTEGER(dbl)		 :: NumFluids_Veff_l, NumFluids_Veff
 INTEGER,DIMENSION(2)   	 :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
 INTEGER,DIMENSION(2)     :: GNEP_x, GNEP_y, GNEP_z                      ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
 INTEGER,DIMENSION(2)     :: NEP_x,   NEP_y,  NEP_z                      ! Lattice Nodes Surronding the particle (Local: in current processor)
@@ -30,7 +29,6 @@ REAL(dbl)       	 :: n_b
 REAL(dbl)    	         :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
 REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
-REAL(dbl)		 :: Cb_Total_Veff_l, Cb_Total_Veff
 REAL(dbl),DIMENSION(2)   :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 		! Volume of Influence's Borders
 REAL(dbl),DIMENSION(2)   :: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
 REAL(dbl)                :: Delta_L
@@ -42,259 +40,243 @@ delta_mesh = 1.0_dbl
 zcf3 = 1.0_dbl
 n_b = 2.0
 
+Cb_Total_Veff   = 0_dbl
+Cb_Total_Veff_l = 0_dbl
+NumFluids_Veff_l= 0
+NumFluids_Veff  = 0
+
+
 current => ParListHead%next
-
 DO WHILE (ASSOCIATED(current))
-
-next => current%next
-IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
-
-!--Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(n_b*delta)
-   R_P = current%pardata%rp
-!  Sh_P= current%pardata%sh
-!  delta_P= R_P/Sh_P
-   delta_P= R_P 
-   R_influence_P= (R_P+n_b*delta_P)/xcf
-
-!--Computing equivalent cubic mesh length scale
-   V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
-   L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
-   V_eff_Ratio  = V_influence_P/zcf3 					! Ratio of the effective volume to cell size 
-
-   Cb_Total_Veff_l  = 0.0_lng
-   Cb_Total_Veff    = 0.0_lng
-   NumFluids_Veff_l = 0.0_lng
-   NumFluids_Veff   = 0.0_lng
+   next => current%next
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
+      ID=current%pardata%parid
+      R_P = current%pardata%rp   !Particle length scale: delta= R/Sh & effective radius: R_influence_P= R+(n_b*delta)
+      delta_P= R_P 
+      R_influence_P= (R_P+n_b*delta_P)/xcf
+!---- Computing equivalent cubic mesh length scale
+      V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
+      L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
+      V_eff_Ratio  = V_influence_P/zcf3 					! Ratio of the effective volume to cell size 
+      Cb_Total_Veff_l  = 0.0_dbl
+      Cb_Total_Veff    = 0.0_dbl
+      NumFluids_Veff_l = 0
+      NumFluids_Veff   = 0
 
 !----------------------------------------------------------------------------------------------------------------------
 !--Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
 !--No communication is necessary between processors
 !----------------------------------------------------------------------------------------------------------------------
-   IF (V_eff_Ratio .LE. 3.375) THEN 					
-      CaseNo= 1
-      IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!------- Finding local particle location (at current processor)
-         xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
-         yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
-         zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
-         ix0 =FLOOR(xp)
-         ix1 =CEILING(xp)
-         iy0 =FLOOR(yp)
-         iy1 =CEILING(yp)
-         iz0 =FLOOR(zp)
-         iz1 =CEILING(zp)
-!------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
-         IF (ix1 /= ix0) THEN
-            xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-         ELSE
-            xd= 0.0_dbl
-         END IF
+      IF (V_eff_Ratio .LE. 3.375) THEN 					
+         CaseNo= 1
+         IF (mySub .EQ.current%pardata%cur_part) THEN !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!---------- Finding local particle location (at current processor)
+            xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+            yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+            zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+            ix0 =FLOOR(xp)
+            ix1 =CEILING(xp)
+            iy0 =FLOOR(yp)
+            iy1 =CEILING(yp)
+            iz0 =FLOOR(zp)
+            iz1 =CEILING(zp)
+!---------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
+            IF (ix1 /= ix0) THEN
+               xd= (xp-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+            ELSE
+               xd= 0.0_dbl
+            END IF
 
-         IF (iy1 /= iy0) THEN
-            yd= (yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-         ELSE
-            yd= 0.0_dbl
-         END IF
+            IF (iy1 /= iy0) THEN
+               yd= (yp-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+            ELSE
+               yd= 0.0_dbl
+            END IF
 
-         IF (iz1 /= iz0) THEN
-            zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-         ELSE
-            zd= 0.0_dbl
-         END IF
-!------- Interpolation in x-direction
-         c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
-         c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
-         c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
-         c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
-!------- Interpolation in y-direction
-         c0  = c00 * (1.0_dbl-yd) + c10 * yd
-         c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------- Interpolation in z-direction
-         c   = c0 * (1.0_dbl-zd) + c1 * zd
-         Cb_Hybrid= c 
-         current%pardata%bulk_conc = Cb_Hybrid
-      END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-   END IF 
+            IF (iz1 /= iz0) THEN
+               zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+            ELSE
+               zd= 0.0_dbl
+            END IF
+!---------- Interpolation in x-direction
+            c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
+            c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
+            c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
+            c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+!---------- Interpolation in y-direction
+            c0  = c00 * (1.0_dbl-yd) + c10 * yd
+            c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!---------- Interpolation in z-direction
+            c   = c0 * (1.0_dbl-zd) + c1 * zd
+            Cb_Hybrid= c 
+            current%pardata%bulk_conc = Cb_Hybrid
+         END IF !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      END IF 
 
 
 
 
 
 !-----------------------------------------------------------------------------------------------------------------------
-!--Veff is larger than 1 which means parallel communication might be necessary 
+!-----Veff is larger than 1 which means parallel communication might be necessary 
 !-----------------------------------------------------------------------------------------------------------------------
-   IF (V_eff_Ratio .GT. 3.375) THEN
+      IF (V_eff_Ratio .GT. 3.375) THEN
+!------- Finding particle global location (in the whole domain not this particular processor)
+         xp= current%pardata%xp 
+         yp= current%pardata%yp 
+         zp= current%pardata%zp 
+!------- Global Volume of Influence Border (GVIB) for this particle (in the whole domain not this particular processor)
+         GVIB_x(1)= xp - 0.5_dbl * L_influence_P
+         GVIB_x(2)= xp + 0.5_dbl * L_influence_P
+         GVIB_y(1)= yp - 0.5_dbl * L_influence_P
+         GVIB_y(2)= yp + 0.5_dbl * L_influence_P
+         GVIB_z(1)= zp - 0.5_dbl * L_influence_P
+         GVIB_z(2)= zp + 0.5_dbl * L_influence_P
 
-!-----Finding particle global location (in the whole domain not this particular processor)
-      xp= current%pardata%xp 
-      yp= current%pardata%yp 
-      zp= current%pardata%zp 
+!------- TAKING CARE OF THE PERIODIC BC
+         GVIB_z_Per(1) = GVIB_z(1)
+         GVIB_z_Per(2) = GVIB_z(2)
 
-!-----Global Volume of Influence Border (GVIB) for this particle (in the whole domain not this particular processor)
-      GVIB_x(1)= xp - 0.5_dbl * L_influence_P
-      GVIB_x(2)= xp + 0.5_dbl * L_influence_P
-      GVIB_y(1)= yp - 0.5_dbl * L_influence_P
-      GVIB_y(2)= yp + 0.5_dbl * L_influence_P
-      GVIB_z(1)= zp - 0.5_dbl * L_influence_P
-      GVIB_z(2)= zp + 0.5_dbl * L_influence_P
+         IF (GVIB_z(1) .LT. 1) THEN
+            GVIB_z_Per(1) = GVIB_z(1) + nz
+            GVIB_z_Per(2) = GVIB_z(2) + nz
+         ENDIF
+         IF (GVIB_z(2) .GT. nz) THEN
+            GVIB_z_Per(1) = GVIB_z(1) - nz
+            GVIB_z_Per(2) = GVIB_z(2) - nz
+         ENDIF
 
-!-----TAKING CARE OF THE PERIODIC BC
-      GVIB_z_Per(1) = GVIB_z(1)
-      GVIB_z_Per(2) = GVIB_z(2)
+!------- Finding processor that have overlap with effective volume around the particle       
+300      IF ((((GVIB_x(1) .GE. (iMin-1_lng)) .AND. (GVIB_x(1) .LT. iMax)) .OR. ((GVIB_x(2) .GE. (iMin-1_lng)) .AND. (GVIB_x(2) .LT. iMax))) .AND. &
+             (((GVIB_y(1) .GE. (jMin-1_lng)) .AND. (GVIB_y(1) .LT. jMax)) .OR. ((GVIB_y(2) .GE. (jMin-1_lng)) .AND. (GVIB_y(2) .LT. jMax))) .AND. &
+             (((GVIB_z(1) .GE. (kMin-1_lng)) .AND. (GVIB_z(1) .LT. kMax)) .OR. ((GVIB_z(2) .GE. (kMin-1_lng)) .AND. (GVIB_z(2) .LT. kMax)))  )THEN
 
-      IF (GVIB_z(1) .LT. 1) THEN
-         GVIB_z_Per(1) = GVIB_z(1) + nz
-         GVIB_z_Per(2) = GVIB_z(2) + nz
-      ENDIF
-
-      IF (GVIB_z(2) .GT. nz) THEN
-         GVIB_z_Per(1) = GVIB_z(1) - nz
-         GVIB_z_Per(2) = GVIB_z(2) - nz
-      ENDIF
-
-!-----Finding processor that have overlap with effective volume around the particle       
-300   IF ((((GVIB_x(1) .GE. (iMin-1_lng)) .AND. (GVIB_x(1) .LT. iMax)) .OR. ((GVIB_x(2) .GE. (iMin-1_lng)) .AND. (GVIB_x(2) .LT. iMax))) .AND. &
-          (((GVIB_y(1) .GE. (jMin-1_lng)) .AND. (GVIB_y(1) .LT. jMax)) .OR. ((GVIB_y(2) .GE. (jMin-1_lng)) .AND. (GVIB_y(2) .LT. jMax))) .AND. &
-          (((GVIB_z(1) .GE. (kMin-1_lng)) .AND. (GVIB_z(1) .LT. kMax)) .OR. ((GVIB_z(2) .GE. (kMin-1_lng)) .AND. (GVIB_z(2) .LT. kMax)))  )THEN
-
-!-------------------------------------------------------------------------------------------------------------------------
-!------- Veff is slightly larger than lattice cell volume --> Volume of influence is discretized to provide 27 points
-!------- Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence
-!-------------------------------------------------------------------------------------------------------------------------
-         IF ((V_eff_Ratio .GT. 3.375) .AND. (V_eff_Ratio .LT. 8.0)) THEN		
-             CaseNo= 2
-
-!------------Discretizing the volume of influence to  make sure at least 27 points are available
-             Delta_L = (GVIB_x(2)-GVIB_x(1)) / 2.0 
-
-!------------Loop over discretized points and averaging the concentration
-             DO i= 0, 2
-                DO j= 0, 2
-                   DO k= 0, 2
-                      x_DP= GVIB_x(1) + (i * Delta_L) 
-                      y_DP= GVIB_y(1) + (j * Delta_L)
-                      z_DP= GVIB_z(1) + (k * Delta_L)
-                      IF ((x_DP .GE. (REAL(iMin,dbl)-1.0_dbl)) .AND. &               
-                          (x_DP .LT.  REAL(iMax,dbl)         ) .AND. &
-                          (y_DP .GE. (REAL(jMin,dbl)-1.0_dbl)) .AND. & 
-                          (y_DP .LT.  REAL(jMax,dbl)         ) .AND. &
-                          (z_DP .GE. (REAL(kMin,dbl)-1.0_dbl)) .AND. & 
-                          (z_DP .LT.  REAL(kMax,dbl)         )) THEN
-
-!-------------------------Finding Local lattice nodes surrounding this point (This point is discretized and is not a lattice node))
-                          ix0 = FLOOR(x_DP)   - (REAL(iMin,dbl)-1.0_dbl)
-                          ix1 = CEILING(x_DP) - (REAL(iMin,dbl)-1.0_dbl)
-                          iy0 = FLOOR(y_DP)   - (REAL(jMin,dbl)-1.0_dbl)
-                          iy1 = CEILING(y_DP) - (REAL(jMin,dbl)-1.0_dbl) 
-                          iz0 = FLOOR(z_DP)   - (REAL(kMin,dbl)-1.0_dbl)
-                          iz1 = CEILING(z_DP) - (REAL(kMin,dbl)-1.0_dbl)
+!---------- Veff is slightly larger than lattice cell volume --> Volume of influence is discretized to provide 27 points
+!---------- Cb= Average of concentration interpolated on each of the descritized nodes inside volume of influence
+            IF ((V_eff_Ratio .GT. 3.375) .AND. (V_eff_Ratio .LT. 8.0)) THEN		
+               CaseNo= 2
+!------------- Discretizing the volume of influence to  make sure at least 27 points are available
+               Delta_L = (GVIB_x(2)-GVIB_x(1)) / 2.0 
+!------------- Loop over discretized points and averaging the concentration
+               DO i= 0, 2
+                  DO j= 0, 2
+                     DO k= 0, 2
+                        x_DP= GVIB_x(1) + (i * Delta_L) 
+                        y_DP= GVIB_y(1) + (j * Delta_L)
+                        z_DP= GVIB_z(1) + (k * Delta_L)
+                        IF((x_DP .GE. (REAL(iMin,dbl)-1.0_dbl)) .AND. &               
+                           (x_DP .LT.  REAL(iMax,dbl)         ) .AND. &
+                           (y_DP .GE. (REAL(jMin,dbl)-1.0_dbl)) .AND. & 
+                           (y_DP .LT.  REAL(jMax,dbl)         ) .AND. &
+                           (z_DP .GE. (REAL(kMin,dbl)-1.0_dbl)) .AND. & 
+                           (z_DP .LT.  REAL(kMax,dbl)         )) THEN
+!------------------------- Finding Local lattice nodes surrounding this point (This point is discretized and is not a lattice node))
+                           ix0 = FLOOR(x_DP)   - (REAL(iMin,dbl)-1.0_dbl)
+                           ix1 = CEILING(x_DP) - (REAL(iMin,dbl)-1.0_dbl)
+                           iy0 = FLOOR(y_DP)   - (REAL(jMin,dbl)-1.0_dbl)
+                           iy1 = CEILING(y_DP) - (REAL(jMin,dbl)-1.0_dbl) 
+                           iz0 = FLOOR(z_DP)   - (REAL(kMin,dbl)-1.0_dbl)
+                           iz1 = CEILING(z_DP) - (REAL(kMin,dbl)-1.0_dbl)
                               
-                          x_DP = x_DP - REAL(iMin-1_lng,dbl)
-                          y_DP = y_DP - REAL(jMin-1_lng,dbl)
-                          z_DP = z_DP - REAL(kMin-1_lng,dbl)
+                           x_DP = x_DP - REAL(iMin-1_lng,dbl)
+                           y_DP = y_DP - REAL(jMin-1_lng,dbl)
+                           z_DP = z_DP - REAL(kMin-1_lng,dbl)
  
-!-------------------------TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
-                          IF (ix1 /= ix0) THEN
-                             xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
-                          ELSE
-                             xd=0.0_dbl
-                          END IF
- 
-                          IF (iy1 /= iy0) THEN
-                             yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
-                          ELSE
-                             yd=0.0_dbl
-                          END IF
-        
-                          IF (iz1 /= iz0) THEN
-                             zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-                          ELSE
-                             zd=0.0_dbl
-                          END IF
+!------------------------- TO BE DONE: MAKE SURE THE ABOVE NODES ARE FLUID NODES
+                           IF (ix1 /= ix0) THEN
+                              xd=(x_DP-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
+                           ELSE
+                              xd=0.0_dbl
+                           END IF
+                           IF (iy1 /= iy0) THEN
+                              yd=(y_DP-REAL(iy0,dbl))/(REAL(iy1,dbl)-REAL(iy0,dbl))
+                           ELSE
+                              yd=0.0_dbl
+                           END IF
+                           IF (iz1 /= iz0) THEN
+                              zd=(z_DP-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                           ELSE
+                              zd=0.0_dbl
+                           END IF
 
-!-------------------------Interpolation in x-direction
-                          c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
-                          c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
-                          c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
-                          c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
-!------------------------ Interpolation in y-direction
-                          c0  = c00 * (1.0_dbl-yd) + c10 * yd
-                          c1  = c01 * (1.0_dbl-yd) + c11 * yd
-!------------------------ Interpolation in z-direction
-                          c   = c0 * (1.0_dbl-zd) + c1 * zd
+!------------------------- Interpolation in x-direction
+                           c00 = phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
+                           c01 = phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
+                           c10 = phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
+                           c11 = phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+!------------------------- Interpolation in y-direction
+                           c0  = c00 * (1.0_dbl-yd) + c10 * yd
+                           c1  = c01 * (1.0_dbl-yd) + c11 * yd
+!------------------------- Interpolation in z-direction
+                           c   = c0 * (1.0_dbl-zd) + c1 * zd
 
-                          Cb_Total_Veff_l  = Cb_Total_Veff_l  + c
-                          NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
-                      END IF
-                   END DO
+                           Cb_Total_Veff_l(ID)  = Cb_Total_Veff_l(ID)  + c
+                           NumFluids_Veff_l(ID) = NumFluids_Veff_l(ID) + 1_lng
+                        END IF
+                     END DO
+                  END DO
                END DO
-            END DO
           
 !----------------------------------------------------------------------------------------------------------------------
-!--------Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
+!---------- Veff is much larger than mesh volume --> Cb= total number of moles in volume of influence / volume of influence 
 !----------------------------------------------------------------------------------------------------------------------
-         ELSE IF (V_eff_Ratio .GE. 8.0) THEN                             
-             CaseNo = 3
-!------------Finding the lattice "Nodes Effected by Particle"
-             GNEP_x(1)= CEILING(GVIB_x(1))
-             GNEP_y(1)= CEILING(GVIB_y(1))
-             GNEP_z(1)= CEILING(GVIB_z(1))
-             GNEP_x(2)= FLOOR  (GVIB_x(2))
-             GNEP_y(2)= FLOOR  (GVIB_y(2))
-             GNEP_z(2)= FLOOR  (GVIB_z(2))
+            ELSE IF (V_eff_Ratio .GE. 8.0) THEN                             
+               CaseNo = 3
+!------------- Finding the lattice "Nodes Effected by Particle"
+               GNEP_x(1)= CEILING(GVIB_x(1))
+               GNEP_y(1)= CEILING(GVIB_y(1))
+               GNEP_z(1)= CEILING(GVIB_z(1))
+               GNEP_x(2)= FLOOR  (GVIB_x(2))
+               GNEP_y(2)= FLOOR  (GVIB_y(2))
+               GNEP_z(2)= FLOOR  (GVIB_z(2))
+!------------- Finding the lattice "Nodes Effected by Particle"
+               NEP_x(1)= Max(GNEP_x(1),iMin)- (iMin-1)
+               NEP_y(1)= Max(GNEP_y(1),jMin)- (jMin-1)
+               NEP_z(1)= Max(GNEP_z(1),kMin)- (kMin-1)
+               NEP_x(2)= Min(GNEP_x(2),iMax)- (iMin-1)
+               NEP_y(2)= Min(GNEP_y(2),jMax)- (jMin-1)
+               NEP_z(2)= Min(GNEP_z(2),kMax)- (kMin-1)
 
-!------------Finding the lattice "Nodes Effected by Particle"
-             NEP_x(1)= Max(GNEP_x(1),iMin)- (iMin-1)
-             NEP_y(1)= Max(GNEP_y(1),jMin)- (jMin-1)
-             NEP_z(1)= Max(GNEP_z(1),kMin)- (kMin-1)
+               DO i= NEP_x(1),NEP_x(2) 
+                  DO j= NEP_y(1),NEP_y(2)
+                     DO k= NEP_z(1),NEP_z(2)
+                        IF (node(i,j,k) .EQ. FLUID) THEN
+                           Cb_Total_Veff_l(ID)  = Cb_Total_Veff_l(ID)  + phi(i,j,k)
+                           NumFluids_Veff_l(ID) = NumFluids_Veff_l(ID) + 1_lng
+                        END IF
+                     END DO
+                  END DO
+               END DO
+            END IF                   ! Conditional for cases 2 and 3
+         END IF 								      ! Conditional for the processor which has overlap with effective volume 
 
-             NEP_x(2)= Min(GNEP_x(2),iMax)- (iMin-1)
-             NEP_y(2)= Min(GNEP_y(2),jMax)- (jMin-1)
-             NEP_z(2)= Min(GNEP_z(2),kMax)- (kMin-1)
-
-             DO i= NEP_x(1),NEP_x(2) 
-                DO j= NEP_y(1),NEP_y(2)
-                   DO k= NEP_z(1),NEP_z(2)
-                      IF (node(i,j,k) .EQ. FLUID) THEN
-                         Cb_Total_Veff_l  = Cb_Total_Veff_l  + phi(i,j,k)
-                         NumFluids_Veff_l = NumFluids_Veff_l + 1_lng
-                      END IF
-                   END DO
-                END DO
-             END DO
-
-         END IF                   ! Conditional for cases 2 and 3
-     END IF 								      ! Conditional for the processor which has overlap with effective volume 
-
-
-
-
-!----TAKING CARE OF THE PERIODIC BC
-     IF (GVIB_z_Per(1) .NE. GVIB_z(1)) THEN
-        GVIB_z(1)= GVIB_z_Per(1) 
-        GVIB_z(2)= GVIB_z_Per(2) 
-        GO TO 300
-     ENDIF
+!------- TAKING CARE OF THE PERIODIC BC
+         IF (GVIB_z_Per(1) .NE. GVIB_z(1)) THEN
+            GVIB_z(1)= GVIB_z_Per(1) 
+            GVIB_z(2)= GVIB_z_Per(2) 
+            GO TO 300
+         ENDIF
+      ENDIF
+   ENDIF   
+   current => next
+END DO
 
 !----Communication with other processors for V_eff greater than 1
-     CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-     CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-     CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, 1, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(Cb_Total_Veff_l , Cb_Total_Veff , np, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(NumFluids_Veff_l, NumFluids_Veff, np, MPI_INTEGER,          MPI_SUM, MPI_COMM_WORLD, mpierr)
 
-     IF( NumFluids_Veff .GE. 1) THEN 
-        Cb_Hybrid= Cb_Total_Veff / NumFluids_Veff
-     ELSE 
-        Cb_Hybrid= 0.0_dbl
-     END IF   
-     current%pardata%bulk_conc = Cb_Hybrid
-	
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN	
+      ID= current%pardata%parid
+      IF (NumFluids_Veff(ID) .GE. 1) THEN 
+         Cb_Hybrid= Cb_Total_Veff(ID) / NumFluids_Veff(ID)
+         current%pardata%bulk_conc = Cb_Hybrid
+      END IF   
    END IF       			                                    		!End of conditional for V_eff greater than 1 
-      
-ENDIF  
-
-!open(172,file='Cb-'//sub//'.dat', position='append')
-current => next
-
+   current => next
 END DO
 !===================================================================================================
 END SUBROUTINE Compute_C_bulk
@@ -946,20 +928,14 @@ SUBROUTINE Particle_Drug_To_Nodes
 !----- Called by Particle_Track (LBM.f90) to get delphi_particle
 
 IMPLICIT NONE
-INTEGER(lng)  		  :: i,j,k,mpierr
-REAL(dbl)     		  :: xp,yp,zp
+INTEGER(lng)  :: ID,i,j,k,mpierr
+REAL(dbl)     :: xp,yp,zp
 REAL(dbl)		  :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
-REAL(dbl)                 :: n_d         				! Modeling parameter to extend the volume of influence around 
-REAL(dbl)                 :: R_P, Sh_P, delta_P
-REAL(dbl)                 :: R_influence_P, L_influence_P
-!REAL(dbl),DIMENSION(2)    :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 	! Global Volume of Influence's Borders (in whole domain)
-!REAL(dbl),DIMENSION(2)    :: LVIB_x, LVIB_y, LVIB_z                     ! Local  Volume of Influence's Borders (in current procesor) 
-!REAL(dbl),DIMENSION(2)    :: NVB_x, NVB_y, NVB_z			! Node Volume's Borders
-!INTEGER  ,DIMENSION(2)    :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
-!INTEGER  ,DIMENSION(2)    :: GNEP_x, GNEP_y, GNEP_z, GNEP_z_Per         ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
-!INTEGER  ,DIMENSION(2)    :: NEP_x,   NEP_y,  NEP_z                     ! Lattice Nodes Surronding the particle (Local: in current processor)
-REAL(dbl)		  :: tmp, Overlap_sum_l, Overlap_sum
-REAL(dbl)   		  ::  Overlap_test,Overlap_test_Global
+REAL(dbl)     :: n_d         				! Modeling parameter to extend the volume of influence around 
+REAL(dbl)     :: R_P, Sh_P, delta_P
+REAL(dbl)     :: R_influence_P, L_influence_P
+REAL(dbl)		  :: tmp
+REAL(dbl)   	::  Overlap_test,Overlap_test_Global
 TYPE(ParRecord), POINTER  :: current
 TYPE(ParRecord), POINTER  :: next
 
@@ -970,123 +946,35 @@ n_d = 2.5
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 
-
    IF (current%pardata%rp .GT. Min_R_Acceptable) THEN                   !only calculate the drug release when particle radius is larger than 0.1 micron
+!-----Calculate length scale for jth particle:  delta = R / Sh
+!-----Calculate effective radius: R_influence_P = R + (n_d *delta)
+!-----Note: need to convert this into Lattice units and not use the physical length units
+!-----Then compute equivalent cubic mesh length scale
+      ID= current%pardata%parid 
+      R_P  = current%pardata%rp
+!     Sh_P = current%pardata%sh
+!     delta_P = R_P / Sh_P
+      delta_P = R_P
+      R_influence_P = (R_P + n_d * delta_P) / xcf
+  
+!-----iomputing equivalent cubic mesh length scale
+      L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
 
-!--Calculate length scale for jth particle:  delta = R / Sh
-!--Calculate effective radius: R_influence_P = R + (n_d *delta)
-!--Note: need to convert this into Lattice units and not use the physical length units
-!--Then compute equivalent cubic mesh length scale
-   R_P  = current%pardata%rp
-!  Sh_P = current%pardata%sh
-!  delta_P = R_P / Sh_P
-   delta_P = R_P
-   R_influence_P = (R_P + n_d * delta_P) / xcf
+!-----Global particle location (in whole domain and not in current processor)
+      xp= current%pardata%xp 
+      yp= current%pardata%yp
+      zp= current%pardata%zp
 
-!--iomputing equivalent cubic mesh length scale
-   L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
+!-----Global Volume of Influence Border (GVIB) for this particle
+      GVIB_x(1)= xp - 0.5_dbl * L_influence_P
+      GVIB_x(2)= xp + 0.5_dbl * L_influence_P
+      GVIB_y(1)= yp - 0.5_dbl * L_influence_P
+      GVIB_y(2)= yp + 0.5_dbl * L_influence_P
+      GVIB_z(1)= zp - 0.5_dbl * L_influence_P
+      GVIB_z(2)= zp + 0.5_dbl * L_influence_P
 
-!--Global particle location (in whole domain and not in current processor)
-   xp= current%pardata%xp 
-   yp= current%pardata%yp
-   zp= current%pardata%zp
-
-!--Global Volume of Influence Border (GVIB) for this particle
-   GVIB_x(1)= xp - 0.5_dbl * L_influence_P
-   GVIB_x(2)= xp + 0.5_dbl * L_influence_P
-   GVIB_y(1)= yp - 0.5_dbl * L_influence_P
-   GVIB_y(2)= yp + 0.5_dbl * L_influence_P
-   GVIB_z(1)= zp - 0.5_dbl * L_influence_P
-   GVIB_z(2)= zp + 0.5_dbl * L_influence_P
-
-!--Global Nodes Effected by Particle 
-   GNEP_x(1)= FLOOR(GVIB_x(1))
-   GNEP_y(1)= FLOOR(GVIB_y(1))
-   GNEP_z(1)= FLOOR(GVIB_z(1))
-   GNEP_x(2)= CEILING(GVIB_x(2))
-   GNEP_y(2)= CEILING(GVIB_y(2))
-   GNEP_z(2)= CEILING(GVIB_z(2))
-
-!--Taking care of the Z-dir Periodic BC
-   GNEP_z_Per(1) = GNEP_z(1)
-   GNEP_z_Per(2) = GNEP_z(2)
-
-   IF (GNEP_z(1) .LT. 1) THEN
-       GNEP_z_Per(1) = GNEP_z(1) + nz
-       GNEP_z_Per(2) = GNEP_z(2) + nz
-       GVIB_z_Per(1) = GVIB_z(1) + nz
-       GVIB_z_Per(2) = GVIB_z(2) + nz
-   ENDIF
-
-   IF (GNEP_z(2) .GT. nz) THEN
-       GNEP_z_Per(1) = GNEP_z(1) - nz
-       GNEP_z_Per(2) = GNEP_z(2) - nz
-       GVIB_z_Per(1) = GVIB_z(1) - nz
-       GVIB_z_Per(2) = GVIB_z(2) - nz
-   ENDIF
-
-   Overlap_sum_l = 0
-!  Overlap       = 0.0_dbl
-
-!--Finding processors with overlap with effective volume around the particle       
-100 IF((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
-      (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
-      (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
-    
-      NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
-      NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
-      NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
-
-      NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
-      NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
-      NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1) 
-
-      LVIB_x(1) = GVIB_x(1)- REAL(iMin-1.0_dbl , dbl)
-      LVIB_x(2) = GVIB_x(2)- REAL(iMin-1.0_dbl , dbl)
-      LVIB_y(1) = GVIB_y(1)- REAL(jMin-1.0_dbl , dbl)
-      LVIB_y(2) = GVIB_y(2)- REAL(jMin-1.0_dbl , dbl)
-      LVIB_z(1) = GVIB_z(1)- REAL(kMin-1.0_dbl , dbl)
-      LVIB_z(2) = GVIB_z(2)- REAL(kMin-1.0_dbl , dbl)
-
-!---- NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
-      DO i= NEP_x(1),NEP_x(2) 
-         DO j= NEP_y(1),NEP_y(2)
-            DO k= NEP_z(1),NEP_z(2)
-               NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
-               NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
-               NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
-               NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
-               NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
-	             NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
-               IF (node(i,j,k) .EQ. FLUID) THEN
-                  Overlap(i,j,k)= MAX ( MIN(LVIB_x(2),NVB_x(2)) - MAX(LVIB_x(1),NVB_x(1)), 0.0_dbl) * & 
-                                  MAX ( MIN(LVIB_y(2),NVB_y(2)) - MAX(LVIB_y(1),NVB_y(1)), 0.0_dbl) * &
-                                  MAX ( MIN(LVIB_z(2),NVB_z(2)) - MAX(LVIB_z(1),NVB_z(1)), 0.0_dbl)
-            		  Overlap(i,j,k) = Overlap(i,j,k) * (max((current%pardata%par_conc-phi(i,j,k) ),0.0_dbl) / current%pardata%par_conc)
-            		  Overlap_sum_l= Overlap_sum_l + Overlap(i,j,k)
-               END IF
-            END DO
-         END DO
-      END DO
-   END IF
-!--Taking care of the Z-dir Periodic BC
-   IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
-       GNEP_z(1) = GNEP_z_Per(1)
-       GNEP_z(2) = GNEP_z_Per(2)
-       GVIB_z(1) = GVIB_z_Per(1)
-       GVIB_z(2) = GVIB_z_Per(2) 
-       GOTO 100
-   ENDIF
-
-   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-   CALL MPI_ALLREDUCE(Overlap_sum_l, Overlap_sum, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
-
-   IF (Overlap_sum .LT. 1.0e-9) THEN                        ! Detecting the case of overlap = 0.0
-      current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
-      current%pardata%delNBbyCV = 0.0_dbl
-   ELSE
-
-!-----Global Nodes Effected by Particle
+!-----Global Nodes Effected by Particle 
       GNEP_x(1)= FLOOR(GVIB_x(1))
       GNEP_y(1)= FLOOR(GVIB_y(1))
       GNEP_z(1)= FLOOR(GVIB_z(1))
@@ -1099,50 +987,155 @@ DO WHILE (ASSOCIATED(current))
       GNEP_z_Per(2) = GNEP_z(2)
 
       IF (GNEP_z(1) .LT. 1) THEN
-          GNEP_z_Per(1) = GNEP_z(1) + nz
-          GNEP_z_Per(2) = GNEP_z(2) + nz
+         GNEP_z_Per(1) = GNEP_z(1) + nz
+         GNEP_z_Per(2) = GNEP_z(2) + nz
+         GVIB_z_Per(1) = GVIB_z(1) + nz
+         GVIB_z_Per(2) = GVIB_z(2) + nz
       ENDIF
 
       IF (GNEP_z(2) .GT. nz) THEN
           GNEP_z_Per(1) = GNEP_z(1) - nz
           GNEP_z_Per(2) = GNEP_z(2) - nz
+          GVIB_z_Per(1) = GVIB_z(1) - nz
+          GVIB_z_Per(2) = GVIB_z(2) - nz
       ENDIF
-!-----Finding processor that have overlap with effective volume around the particle
 
-200   IF ((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
+      Overlap_sum_l = 0
+!     Overlap       = 0.0_dbl
+
+!-----Finding processors with overlap with effective volume around the particle       
+100   IF ((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax))) .AND. &
          (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax))) .AND. &
          (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax)))  )THEN
-
+    
          NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
          NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
          NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
-
          NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
          NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
-         NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
+         NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1) 
 
-!--------Computing particle release contribution to scalar field at each lattice node
-         DO i= NEP_x(1),NEP_x(2)
+         LVIB_x(1) = GVIB_x(1)- REAL(iMin-1.0_dbl , dbl)
+         LVIB_x(2) = GVIB_x(2)- REAL(iMin-1.0_dbl , dbl)
+         LVIB_y(1) = GVIB_y(1)- REAL(jMin-1.0_dbl , dbl)
+         LVIB_y(2) = GVIB_y(2)- REAL(jMin-1.0_dbl , dbl)
+         LVIB_z(1) = GVIB_z(1)- REAL(kMin-1.0_dbl , dbl)
+         LVIB_z(2) = GVIB_z(2)- REAL(kMin-1.0_dbl , dbl)
+
+!------- NEW: Finding the volume overlapping between particle-effetive-volume and the volume around each lattice node
+         DO i= NEP_x(1),NEP_x(2) 
             DO j= NEP_y(1),NEP_y(2)
                DO k= NEP_z(1),NEP_z(2)
-                  IF (node(i,j,k) .EQ. FLUID) THEN                 
-                     Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum
-          	         delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
-                  END IF 
+                  NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
+                  NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
+                  NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
+                  NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
+                  NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
+	                NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+                  IF (node(i,j,k) .EQ. FLUID) THEN
+                     Overlap(i,j,k)= MAX ( MIN(LVIB_x(2),NVB_x(2)) - MAX(LVIB_x(1),NVB_x(1)), 0.0_dbl) * & 
+                                  MAX ( MIN(LVIB_y(2),NVB_y(2)) - MAX(LVIB_y(1),NVB_y(1)), 0.0_dbl) * &
+                                  MAX ( MIN(LVIB_z(2),NVB_z(2)) - MAX(LVIB_z(1),NVB_z(1)), 0.0_dbl)
+                     Overlap(i,j,k) = Overlap(i,j,k) * (max((current%pardata%par_conc-phi(i,j,k) ),0.0_dbl) / current%pardata%par_conc)
+            		     Overlap_sum_l(ID)= Overlap_sum_l(ID) + Overlap(i,j,k)
+                  END IF
                END DO
             END DO
          END DO
-     
       END IF
-
+!---- Taking care of the Z-dir Periodic BC
       IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
-          GNEP_z(1) = GNEP_z_Per(1)
-          GNEP_z(2) = GNEP_z_Per(2)
-          GOTO 200
+         GNEP_z(1) = GNEP_z_Per(1)
+         GNEP_z(2) = GNEP_z_Per(2)
+         GVIB_z(1) = GVIB_z_Per(1)
+         GVIB_z(2) = GVIB_z_Per(2) 
+         GOTO 100
       ENDIF
-   ENDIF            ! Condition to check if Overlap_Sum > 1e-9
- END IF 						! Condition to check if R > R_min_acceptable
- current => next
+    END IF 						! Condition to check if R > R_min_acceptable
+    current => next
+ENDDO
+
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(Overlap_sum_l(ID), Overlap_sum(ID), np, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+
+
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 
+   IF (current%pardata%rp .GT. Min_R_Acceptable) THEN     
+      ID= current%pardata%parid 
+      IF (Overlap_sum(ID) .LT. 1.0e-9) THEN                        ! Detecting the case of overlap = 0.0
+         current%pardata%rp =  (current%pardata%rp**3 + current%pardata%delNBbyCV * (molarvol*zcf3) * (3/(4*PI)) )**(1.0_dbl/3.0_dbl)
+         current%pardata%delNBbyCV = 0.0_dbl
+      ELSE
+         R_P  = current%pardata%rp
+         delta_P = R_P
+         R_influence_P = (R_P + n_d * delta_P) / xcf
+         L_influence_P = ( (4.0_dbl*PI/3.0_dbl) * R_influence_P**3.0_dbl)**(1.0_dbl/3.0_dbl)
+         xp= current%pardata%xp 
+         yp= current%pardata%yp
+         zp= current%pardata%zp
+!------- Global Volume of Influence Border (GVIB) for this particle
+         GVIB_x(1)= xp - 0.5_dbl * L_influence_P
+         GVIB_x(2)= xp + 0.5_dbl * L_influence_P
+         GVIB_y(1)= yp - 0.5_dbl * L_influence_P
+         GVIB_y(2)= yp + 0.5_dbl * L_influence_P
+         GVIB_z(1)= zp - 0.5_dbl * L_influence_P
+         GVIB_z(2)= zp + 0.5_dbl * L_influence_P
+!------- Global Nodes Effected by Particle 
+         GNEP_x(1)= FLOOR(GVIB_x(1))
+         GNEP_y(1)= FLOOR(GVIB_y(1))
+         GNEP_z(1)= FLOOR(GVIB_z(1))
+         GNEP_x(2)= CEILING(GVIB_x(2))
+         GNEP_y(2)= CEILING(GVIB_y(2))
+         GNEP_z(2)= CEILING(GVIB_z(2))
+
+!------- Taking care of the Z-dir Periodic BC
+         GNEP_z_Per(1) = GNEP_z(1)
+         GNEP_z_Per(2) = GNEP_z(2)
+         IF (GNEP_z(1) .LT. 1) THEN
+            GNEP_z_Per(1) = GNEP_z(1) + nz
+            GNEP_z_Per(2) = GNEP_z(2) + nz
+            GVIB_z_Per(1) = GVIB_z(1) + nz
+            GVIB_z_Per(2) = GVIB_z(2) + nz
+         ENDIF
+         IF (GNEP_z(2) .GT. nz) THEN
+            GNEP_z_Per(1) = GNEP_z(1) - nz
+            GNEP_z_Per(2) = GNEP_z(2) - nz
+            GVIB_z_Per(1) = GVIB_z(1) - nz
+            GVIB_z_Per(2) = GVIB_z(2) - nz
+         ENDIF
+!------- Finding processor that have overlap with effective volume around the particle
+200      IF ((((GNEP_x(1) .GT. (iMin-1_lng)) .AND. (GNEP_x(1) .LE. iMax)) .OR. ((GNEP_x(2) .GT. (iMin-1_lng)) .AND. (GNEP_x(2) .LE. iMax)))  .AND. &
+             (((GNEP_y(1) .GT. (jMin-1_lng)) .AND. (GNEP_y(1) .LE. jMax)) .OR. ((GNEP_y(2) .GT. (jMin-1_lng)) .AND. (GNEP_y(2) .LE. jMax)))  .AND. &
+             (((GNEP_z(1) .GT. (kMin-1_lng)) .AND. (GNEP_z(1) .LE. kMax)) .OR. ((GNEP_z(2) .GT. (kMin-1_lng)) .AND. (GNEP_z(2) .LE. kMax))) ) THEN
+            NEP_x(1) = Max(GNEP_x(1), iMin) - (iMin-1)          
+            NEP_y(1) = Max(GNEP_y(1), jMin) - (jMin-1)
+            NEP_z(1) = Max(GNEP_z(1), kMin) - (kMin-1)
+            NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
+            NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
+            NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
+!---------- Computing particle release contribution to scalar field at each lattice node
+            DO i= NEP_x(1),NEP_x(2)
+               DO j= NEP_y(1),NEP_y(2)
+                  DO k= NEP_z(1),NEP_z(2)
+                     IF (node(i,j,k) .EQ. FLUID) THEN                 
+                        Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum(ID)
+          	            delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
+                     END IF 
+                  END DO
+               END DO
+            END DO
+         END IF
+
+         IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
+            GNEP_z(1) = GNEP_z_Per(1)
+            GNEP_z(2) = GNEP_z_Per(2)
+            GOTO 200
+         ENDIF
+      ENDIF            ! Condition to check if Overlap_Sum > 1e-9
+   END IF             ! Condition to check if R > R_min_acceptable
+   current => next
 ENDDO
 !===================================================================================================
 END SUBROUTINE Particle_Drug_To_Nodes  		 

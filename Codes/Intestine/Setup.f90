@@ -64,11 +64,14 @@ LOGICAL :: Flag_Restart                ! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
-REAL(dbl), ALLOCATABLE :: overlap(:,:,:)                                        ! Partitioning for drug dissolution model
-REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)				! passive scalar contribution from particles
-REAL(dbl), ALLOCATABLE :: tausgs_particle_x(:,:,:)				! passive scalar contribution from particles
-REAL(dbl), ALLOCATABLE :: tausgs_particle_y(:,:,:)				! passive scalar contribution from particles
-REAL(dbl), ALLOCATABLE :: tausgs_particle_z(:,:,:)				! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: overlap(:,:,:)                   ! Partitioning for drug dissolution model
+REAL(dbl), ALLOCATABLE :: overlap_sum(:),overlap_sum_l(:) ! Partitioning for drug dissolution model
+REAL(dbl), ALLOCATABLE :: Cb_Total_Veff_l(:),Cb_Total_Veff(:)
+INTEGER(lng) ,ALLOCATABLE::NumFluids_Veff_l(:),NumFluids_Veff(:)
+REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)				   ! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: tausgs_particle_x(:,:,:)	 			 ! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: tausgs_particle_y(:,:,:)	 		   ! passive scalar contribution from particles
+REAL(dbl), ALLOCATABLE :: tausgs_particle_z(:,:,:)	       ! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: phiTemp(:,:,:)					! temporary storage of passive scalar
 REAL(dbl) :: Sc 								! Schmidt number
 REAL(dbl) :: Dm,Dmcf								! binary molecular diffusivity (passive scalar in fluid), diffusivity conversion factor
@@ -426,6 +429,9 @@ READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make 
 READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
 
+OPEN(60,FILE='particle.dat')
+READ(60,*) np
+CLOSE(60)
 !------------------------------------------------
 END SUBROUTINE ReadInput
 !------------------------------------------------
@@ -1536,6 +1542,10 @@ ALLOCATE(rho(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(phi(0:nxSub+1,0:nySub+1,0:nzSub+1), 						&
          phiTemp(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(overlap(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(overlap_sum(0:np),overlap_Sum_l(0:np))
+ALLOCATE(Cb_Total_Veff_l(0:np),Cb_Total_Veff(0:np))
+ALLOCATE(NumFluids_Veff_l(0:np),NumFluids_Veff(0:np))
+
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_y(0:nxSub+1,0:nySub+1,0:nzSub+1))
