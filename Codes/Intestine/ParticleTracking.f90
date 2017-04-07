@@ -206,8 +206,8 @@ DO WHILE (ASSOCIATED(current))
              iy1= CEILING(yp)
              iz0= FLOOR(zp)
              iz1= CEILING(zp)
-             Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
-             IF (Number_of_Solid_nodes .GT. 0) THEN         !there is a solid node around the particle
+             !Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
+             !IF (Number_of_Solid_nodes .GT. 0) THEN         !there is a solid node around the particle
                 IF (iz1 .NE. iz0) THEN 
                   zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
                 ELSE 
@@ -240,7 +240,7 @@ DO WHILE (ASSOCIATED(current))
                    Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
                    write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
                 END IF
-             END IF               ! If Number_of_Solid_nodes > 0 
+             !END IF               ! If Number_of_Solid_nodes > 0 
           END IF                  ! If 1<zp<nz        
         END IF                    ! If this simulation is Couette 
       END IF                      ! If particle radius is over Min_R_Acceptable
