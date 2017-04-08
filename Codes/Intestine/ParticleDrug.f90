@@ -58,10 +58,6 @@ DO WHILE (ASSOCIATED(current))
       V_influence_P= (4.0_dbl/3.0_dbl)*PI* R_influence_P**3.0_dbl
       L_influence_P= V_influence_P **(1.0_dbl/3.0_dbl)
       V_eff_Ratio  = V_influence_P/zcf3 					! Ratio of the effective volume to cell size 
-      Cb_Total_Veff_l  = 0.0_dbl
-      Cb_Total_Veff    = 0.0_dbl
-      NumFluids_Veff_l = 0
-      NumFluids_Veff   = 0
 
 !----------------------------------------------------------------------------------------------------------------------
 !--Veff is smaller than the mesh volume --> Cb = Trilinear interpolation of the concentration at particle location
@@ -274,6 +270,7 @@ DO WHILE (ASSOCIATED(current))
       IF (NumFluids_Veff(ID) .GE. 1) THEN 
          Cb_Hybrid= Cb_Total_Veff(ID) / NumFluids_Veff(ID)
          current%pardata%bulk_conc = Cb_Hybrid
+         write(*,*) iter,myid, 
       END IF   
    END IF       			                                    		!End of conditional for V_eff greater than 1 
    current => next
