@@ -1111,11 +1111,30 @@ DO WHILE (ASSOCIATED(current))
             NEP_x(2) = Min(GNEP_x(2), iMax) - (iMin-1)
             NEP_y(2) = Min(GNEP_y(2), jMax) - (jMin-1)
             NEP_z(2) = Min(GNEP_z(2), kMax) - (kMin-1)
+
+            
+            LVIB_x(1) = GVIB_x(1)- REAL(iMin-1.0_dbl , dbl)
+            LVIB_x(2) = GVIB_x(2)- REAL(iMin-1.0_dbl , dbl)
+            LVIB_y(1) = GVIB_y(1)- REAL(jMin-1.0_dbl , dbl)
+            LVIB_y(2) = GVIB_y(2)- REAL(jMin-1.0_dbl , dbl)
+            LVIB_z(1) = GVIB_z(1)- REAL(kMin-1.0_dbl , dbl)
+            LVIB_z(2) = GVIB_z(2)- REAL(kMin-1.0_dbl , dbl)
 !---------- Computing particle release contribution to scalar field at each lattice node
             DO i= NEP_x(1),NEP_x(2)
                DO j= NEP_y(1),NEP_y(2)
                   DO k= NEP_z(1),NEP_z(2)
+                     NVB_x(1) = REAL(i,dbl) - 0.5_dbl*delta_mesh
+                     NVB_x(2) = REAL(i,dbl) + 0.5_dbl*delta_mesh
+                     NVB_y(1) = REAL(j,dbl) - 0.5_dbl*delta_mesh
+                     NVB_y(2) = REAL(j,dbl) + 0.5_dbl*delta_mesh
+                     NVB_z(1) = REAL(k,dbl) - 0.5_dbl*delta_mesh
+	                   NVB_z(2) = REAL(k,dbl) + 0.5_dbl*delta_mesh
+
                      IF (node(i,j,k) .EQ. FLUID) THEN                 
+                        Overlap(i,j,k)= MAX ( MIN(LVIB_x(2),NVB_x(2)) - MAX(LVIB_x(1),NVB_x(1)), 0.0_dbl) * & 
+                                        MAX ( MIN(LVIB_y(2),NVB_y(2)) - MAX(LVIB_y(1),NVB_y(1)), 0.0_dbl) * &
+                                        MAX ( MIN(LVIB_z(2),NVB_z(2)) - MAX(LVIB_z(1),NVB_z(1)), 0.0_dbl)
+                        Overlap(i,j,k) = Overlap(i,j,k) * (max((current%pardata%par_conc-phi(i,j,k) ),0.0_dbl) / current%pardata%par_conc)
                         Overlap(i,j,k) = Overlap(i,j,k) / Overlap_sum(ID)
           	            delphi_particle(i,j,k)  = delphi_particle(i,j,k)  + current%pardata%delNBbyCV * Overlap(i,j,k) 
                      END IF 
@@ -1127,6 +1146,8 @@ DO WHILE (ASSOCIATED(current))
          IF (GNEP_z_Per(1) .ne. GNEP_z(1)) THEN
             GNEP_z(1) = GNEP_z_Per(1)
             GNEP_z(2) = GNEP_z_Per(2)
+            GVIB_z(1) = GVIB_z_Per(1)
+            GVIB_z(2) = GVIB_z_Per(2)
             GOTO 200
          ENDIF
       ENDIF            ! Condition to check if Overlap_Sum > 1e-9
