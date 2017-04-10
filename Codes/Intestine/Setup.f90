@@ -1543,8 +1543,8 @@ ALLOCATE(phi(0:nxSub+1,0:nySub+1,0:nzSub+1), 						&
          phiTemp(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(overlap(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(overlap_sum(0:np),overlap_Sum_l(0:np))
-ALLOCATE(Cb_Total_Veff_l(0:np),Cb_Total_Veff(0:np))
-ALLOCATE(NumFluids_Veff_l(0:np),NumFluids_Veff(0:np))
+ALLOCATE(Cb_Total_Veff_l(1:np),Cb_Total_Veff(1:np))
+ALLOCATE(NumFluids_Veff_l(1:np),NumFluids_Veff(1:np))
 
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
