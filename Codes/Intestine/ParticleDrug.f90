@@ -270,7 +270,6 @@ DO WHILE (ASSOCIATED(current))
       IF (NumFluids_Veff(ID) .GE. 1) THEN 
          Cb_Hybrid= Cb_Total_Veff(ID) / NumFluids_Veff(ID)
          current%pardata%bulk_conc = Cb_Hybrid
-         write(*,*) iter,myid, 
       END IF   
    END IF       			                                    		!End of conditional for V_eff greater than 1 
    current => next
