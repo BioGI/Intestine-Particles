@@ -938,6 +938,7 @@ TYPE(ParRecord), POINTER  :: next
 delta_mesh = 1.0_dbl
 zcf3 = xcf*ycf*zcf
 n_d = 2.5
+Overlap_sum_l = 0
 
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
@@ -996,7 +997,6 @@ DO WHILE (ASSOCIATED(current))
           GVIB_z_Per(2) = GVIB_z(2) - nz
       ENDIF
 
-      Overlap_sum_l = 0
 !     Overlap       = 0.0_dbl
 
 !-----Finding processors with overlap with effective volume around the particle       
@@ -1052,7 +1052,7 @@ DO WHILE (ASSOCIATED(current))
 ENDDO
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Overlap_sum_l(ID), Overlap_sum(ID), np, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Overlap_sum_l,Overlap_sum,np,MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 
 
 current => ParListHead%next
