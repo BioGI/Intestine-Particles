@@ -22,9 +22,8 @@ denL = 1.0_dbl		                	  ! arbitrary lattice density (1.0 for convenie
 kMin = 1
 kMax = nz
 nzSub= nz
-
-CALL AllocateArrays                   ! allocate global variable arrays  
-CALL Geometry_Setup
+numprocs=1
+CALL Global_Setup
 CALL AdvanceGeometry
 r(0:nzSub+1) = rDom(kMin-1:kMax+1)   ! Fill out the local radius array
 

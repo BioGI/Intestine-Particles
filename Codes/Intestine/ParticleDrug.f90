@@ -19,9 +19,6 @@ IMPLICIT NONE
 
 INTEGER(lng)  		 :: i,j,k, mpierr,ID
 INTEGER(lng)  		 :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
-INTEGER,DIMENSION(2)   	 :: LN_x,  LN_y,  LN_z				! Lattice Nodes Surronding the particle
-INTEGER,DIMENSION(2)     :: GNEP_x, GNEP_y, GNEP_z                      ! Lattice Nodes Surronding the particle (Global: not considering the partitioning for parallel processing)
-INTEGER,DIMENSION(2)     :: NEP_x,   NEP_y,  NEP_z                      ! Lattice Nodes Surronding the particle (Local: in current processor)
 REAL(dbl)     		 :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
 REAL(dbl)  	   	 :: xp,yp,zp
 REAL(dbl)		 :: delta_par,delta_mesh,zcf3,Nbj,Veff,bulkconc
@@ -29,8 +26,6 @@ REAL(dbl)       	 :: n_b
 REAL(dbl)    	         :: R_P, Sh_P, delta_P
 REAl(dbl)                :: R_influence_p, L_influence_p		! Parameters related to particle's volume of influence
 REAl(dbl)                :: V_influence_P	 			! Parameters related to particle's volume of influence
-REAL(dbl),DIMENSION(2)   :: GVIB_x, GVIB_y, GVIB_z, GVIB_z_Per 		! Volume of Influence's Borders
-REAL(dbl),DIMENSION(2)   :: NVB_x, NVB_y, NVB_z				! Node Volume's Borders
 REAL(dbl)                :: Delta_L
 REAL(dbl)                :: x_DP, y_DP, z_DP				! Coordinates of "Discretized Point" (DP)
 TYPE(ParRecord), POINTER :: current
