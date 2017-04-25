@@ -135,7 +135,7 @@ REAL(dbl) :: xp,yp,zp,par_radius
 CHARACTER(7) :: iter_char                                       ! iteration stored as a character
 TYPE(ParRecord), POINTER	:: CurPar
 
-IF ((Flag_Restart).AND. (Flag_ParticleTrack) .AND. (iter .GE. iter_Start_phi))  THEN								! restarting: read particle data from  particle_restart.dat
+IF ((Flag_Restart).AND. (Flag_ParticleTrack) .AND. (iter0 .GE. iter_Start_phi))  THEN								! restarting: read particle data from  particle_restart.dat
    OPEN(55,FILE='Restart-iter.dat')                                    ! open initial iteration file
    READ(55,*) iter0                                             ! read and set initial iteration
    CLOSE(55)
