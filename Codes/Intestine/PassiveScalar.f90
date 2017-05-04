@@ -78,9 +78,13 @@ DO k=1,nzSub
                IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
                   phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
-                  CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
-                  phi(i,j,k) = phi(i,j,k) + phiBC     
-                  CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 								! measure the absorption rate
+                  IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) .AND. (Flag_Couette) ) THEN !Coette with no absorption
+                     phi(i,j,k) = phi(i,j,k) + (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)
+                  ELSE 
+                     CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
+                     phi(i,j,k) = phi(i,j,k) + phiBC     
+                     CALL AbsorbedScalarS(i,j,k,m,im1,jm1,km1,phiBC) 								! measure the absorption rate
+                  ENDIF   
                ELSE
                   OPEN(1000,FILE="error.txt")
                   WRITE(1000,'(A75)') "error in PassiveScalar.f90 at Line 89: node(im1,jm1,km1) is out of range"
