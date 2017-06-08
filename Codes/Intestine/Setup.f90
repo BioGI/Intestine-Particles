@@ -429,9 +429,21 @@ READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make 
 READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
 
-OPEN(60,FILE='particle.dat')
-READ(60,*) np
-CLOSE(60)
+IF ((Flag_ParticleTrack).AND.(iter0 .GE. iter_Start_phi)) THEN 
+   IF (Flag_Restart) THEN                                   ! restarting: read particle data from  particle_restart.dat
+      OPEN(55,FILE='Restart-iter.dat')                         ! open initial iteration file
+      READ(55,*) iter0                                         ! read and set initial iteration
+      CLOSE(55)
+      WRITE(iter_char(1:7),'(I7.7)') iter0
+      OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
+      READ(59,*) np
+      CLOSE(59)
+   ELSE
+      OPEN(60,FILE='particle.dat')
+      READ(60,*) np
+      CLOSE(60)
+   ENDIF
+ENDIF
 !------------------------------------------------
 END SUBROUTINE ReadInput
 !------------------------------------------------
