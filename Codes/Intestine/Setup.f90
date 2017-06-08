@@ -373,6 +373,7 @@ END SUBROUTINE Global_Setup
 SUBROUTINE ReadInput			! read the input file
 !--------------------------------------------------------------------------------------------------
 IMPLICIT NONE
+CHARACTER(7) :: iter_char
 
 ! Read input from input file
 OPEN(10,FILE='input.txt')
