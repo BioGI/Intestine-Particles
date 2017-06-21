@@ -430,11 +430,15 @@ READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make 
 READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
 
-IF ((Flag_ParticleTrack).AND.(iter0 .GE. iter_Start_phi)) THEN 
-   IF (Flag_Restart) THEN                                   ! restarting: read particle data from  particle_restart.dat
-      OPEN(55,FILE='Restart-iter.dat')                         ! open initial iteration file
-      READ(55,*) iter0                                         ! read and set initial iteration
-      CLOSE(55)
+IF ((Flag_Restart).AND. (Flag_ParticleTrack))THEN
+   OPEN(55,FILE='Restart-iter.dat')                                    ! open initial iteration file
+   READ(55,*) iter0  
+   WRITE(*,*) 'iter0i of Restart, iter_Start_phi',iter0,iter_Start_phi
+   CLOSE(55)
+ENDIF 
+
+IF (Flag_ParticleTrack) THEN
+   IF ((Flag_Restart).AND.(iter0 .GE.iter_Start_phi)) THEN 
       WRITE(iter_char(1:7),'(I7.7)') iter0
       OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
       READ(59,*) np
@@ -505,7 +509,6 @@ ENDIF
 IF (Flag_Couette) THEN
    xcf	= Width / (nx-1_lng)          ! length conversion factor: x-direction
    ycf	= D     / (ny-1_lng)			    ! length conversion factor: y-direction
-
 END IF
 
 
@@ -860,7 +863,7 @@ WRITE(sub(1:5),'(I5.5)') mySub			! write subdomain number to 'sub' for output fi
 ! Define the local computational domain bounds (iMin:iMax,jMin:jMax,kMin:kMax)
 quotientX	= CEILING(REAL(nx)/NumSubsX)						! divide the number of nodes by the number of subdomains (round up)
 quotientY	= CEILING(REAL(ny)/NumSubsY)						! divide the number of nodes by the number of subdomains (round up)
-quotientZ	= CEILING(REAL(nz)/NumSubsZ)						! divide the number of nodes by the number of subdomains (round up)
+!quotientZ	= CEILING(REAL(nz)/NumSubsZ)						! divide the number of nodes by the number of subdomains (round up)
 
 iMin = MOD(myid,NumSubsX)*quotientX + 1_lng					! starting local i index 
 iMax = iMin + (quotientX - 1_lng)								! ending local i index
@@ -868,32 +871,31 @@ iMax = iMin + (quotientX - 1_lng)								! ending local i index
 jMin = MOD((myid/NumSubsX),NumSubsY)*quotientY + 1_lng	! starting local j index
 jMax = jMin + (quotientY - 1_lng)								! ending local j index
 
-IF (Flag_Couette) THEN 
-   kMin = (myid/(NumSubsX*NumSubsY))*quotientZ + 1_lng		! starting local k index 
-   KMax = kMin + (quotientZ - 1_lng)								! ending local k index
-ELSE ! Intestine
-   Volume_tot= 0.0_dbl
-   Vol=        0.0_dbl
-   j=          1_lng
-   k_Min(1)=   1_lng
-   DO i=1,nz
-      Volume_tot= Volume_tot + zcf*PI*(rDom(i)**2.0)
-   END DO
+!kMin = (myid/(NumSubsX*NumSubsY))*quotientZ + 1_lng		! starting local k index 
+!kMax = kMin + (quotientZ - 1_lng)								! ending local k index
+Volume_tot= 0.0_dbl
+Vol=        0.0_dbl
+j=          1_lng
+k_Min(1)=   1_lng
 
-   DO i=1,nz
-      Vol = Vol + zcf*PI*(rDom(i)**2.0)
-      IF ((Vol .GE. (Volume_tot/numSubsZ)) .OR.(i.EQ.nz)) THEN
-         k_Max(j) = i
-         k_Min(j+1) = K_Max(j) + 1
-         j= j +1
-         Vol = 0.0_dbl
-      ENDIF
-   ENDDO   
+DO i=1,nz
+   Volume_tot= Volume_tot + zcf*PI*(rDom(i)**2.0)
+END DO
 
-   kMin = k_Min(myid/(NumSubsX*NumSubsY)+1)
-   kMax = k_Max(myid/(NumSubsX*NumSubsY)+1)
-ENDIF
+DO i=1,nz
+   Vol = Vol + zcf*PI*(rDom(i)**2.0)
+   IF ((Vol .GE. (Volume_tot/numSubsZ)) .OR.(i.EQ.nz)) THEN
+      k_Max(j) = i
+      k_Min(j+1) = K_Max(j) + 1
+      j= j +1
+      Vol = 0.0_dbl
+   ENDIF
+ENDDO   
 
+kMin = k_Min(myid/(NumSubsX*NumSubsY)+1)
+kMax = k_Max(myid/(NumSubsX*NumSubsY)+1)
+
+!write(*,*) 'A: kMin,kMax,myid', kMin,kMax,myid
 
 ! Check the bounds
 IF(iMax .GT. nx) THEN
@@ -904,9 +906,9 @@ IF(jMax .GT. ny) THEN
   jMax = ny																! if jMax is greater than ny, correct it
 END IF
 
-IF(kMax .GT. nz) THEN
-  kMax = nz																! if kMax is greater than nz, correct it
-END IF
+!IF(kMax .GT. nz) THEN
+!  kMax = nz																! if kMax is greater than nz, correct it
+!END IF
 
 
 
@@ -937,14 +939,12 @@ DO kSub=1,NumSubsZ
 	
 	jMinDomain(thisSub) = MOD(((thisSub-1_lng)/NumSubsX),NumSubsY)*quotientY + 1_lng	! starting local j index
 	jMaxDomain(thisSub) = jMinDomain(thisSub) + (quotientY - 1_lng)				! ending local j index
-  IF (Flag_Couette) THEN 
-     kMinDomain(thisSub) = ((thisSub-1_lng)/(NumSubsX*NumSubsY))*quotientZ + 1_lng		! starting local k index 
-	   kMaxDomain(thisSub) = kMinDomain(thisSub) + (quotientZ - 1_lng)				! ending local k index
-  ELSE ! Intestine
-    	kMinDomain(thisSub) = k_Min(((thisSub-1_lng)/(NumSubsX*NumSubsY))+1)
-    	kMaxDomain(thisSub) = k_Max(((thisSub-1_lng)/(NumSubsX*NumSubsY))+1)
-	ENDIF
-! Check the bounds
+	
+	kMinDomain(thisSub) = k_Min(((thisSub-1_lng)/(NumSubsX*NumSubsY))+1)
+	kMaxDomain(thisSub) = k_Max(((thisSub-1_lng)/(NumSubsX*NumSubsY))+1)
+	
+  !write(*,*) 'B:',thisSub,iMinDomain(thisSub),iMaxDomain(thisSub),jMinDomain(thisSub),jMaxDomain(thisSub),kMinDomain(thisSub),kMaxDomain(thisSub) 
+	! Check the bounds
 !	IF(iMaxDomain(thisSub) .GT. nx) THEN
 !	  iMaxDomain(thisSub) = nx																! if iMax is greater than nx, correct it
 !	END IF

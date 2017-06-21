@@ -135,114 +135,121 @@ REAL(dbl) :: xp,yp,zp,par_radius
 CHARACTER(7) :: iter_char                                       ! iteration stored as a character
 TYPE(ParRecord), POINTER	:: CurPar
 
-IF ((Flag_Restart).AND. (Flag_ParticleTrack) .AND. (iter0 .GE. iter_Start_phi))  THEN								! restarting: read particle data from  particle_restart.dat
+IF ((Flag_Restart).AND. (Flag_ParticleTrack))THEN
    OPEN(55,FILE='Restart-iter.dat')                                    ! open initial iteration file
    READ(55,*) iter0                                             ! read and set initial iteration
    CLOSE(55)
+ENDIF   
 
-   WRITE(iter_char(1:7),'(I7.7)') iter0
-   OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
-   iter0= iter0 + 1
+write(*,*) 'iter0',iter0
 
-   READ(59,*) np
-   num_particles = np
-   CALL list_init(ParListHead)
-   CurPar => ParListHead
+IF (Flag_ParticleTrack) THEN
+   IF((Flag_Restart).AND.(iter0 .GE. iter_Start_phi))  THEN								! restarting: read particle data from  particle_restart.dat
+      write(*,*) 'coockie 1'
+      WRITE(iter_char(1:7),'(I7.7)') iter0
+      OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
+      iter0= iter0 + 1
 
-   DO i = 1, np
-      READ(59,*) parid_r,xp_r,yp_r,zp_r,up_r,vp_r,wp_r,rp_r,xpold_r,ypold_r,zpold_r, &			
-	         upold_r,vpold_r,wpold_r,rpold_r,par_conc_r,gamma_cont_r,Sh_conf_r,Sh_shear_r,Sh_slip_r,S_r,   &
-                 Sst_r,Veff_r,Nbj_r,bulk_conc_r,delNBbyCV_r,cur_part_r,new_part_r                                
-      CALL list_init(CurPar%next)      
-      CurPar%next%prev => CurPar
-      CurPar%next%next => null()
-      CurPar%next%pardata%parid 	= 	parid_r
-      CurPar%next%pardata%xp 		=	xp_r
-      CurPar%next%pardata%yp 		=	yp_r
-      CurPar%next%pardata%zp 		= 	zp_r
-      CurPar%next%pardata%up 		=	up_r
-      CurPar%next%pardata%vp 		=	vp_r
-      CurPar%next%pardata%wp    	=	wp_r
-      CurPar%next%pardata%rp    	=	rp_r
-      CurPar%next%pardata%xpold 	= 	xpold_r
-      CurPar%next%pardata%ypold 	= 	ypold_r
-      CurPar%next%pardata%zpold 	= 	zpold_r
-      CurPar%next%pardata%upold 	= 	upold_r
-      CurPar%next%pardata%vpold 	= 	vpold_r
-      CurPar%next%pardata%wpold 	= 	wpold_r
-      CurPar%next%pardata%rpold 	= 	rpold_r
-      CurPar%next%pardata%par_conc 	= 	par_conc_r
-      CurPar%next%pardata%gamma_cont 	= 	gamma_cont_r
-      CurPar%next%pardata%sh_conf =	Sh_conf_r
-      CurPar%next%pardata%sh_shear=	Sh_shear_r
-      CurPar%next%pardata%sh_slip	=	Sh_slip_r
-      CurPar%next%pardata%S 		  =	S_r
-      CurPar%next%pardata%Sst 		= 	Sst_r
-      CurPar%next%pardata%Veff 		= 	Veff_r
-      CurPar%next%pardata%Nbj 		= 	Nbj_r
-      CurPar%next%pardata%bulk_conc 	= 	bulk_conc_r 
-      CurPar%next%pardata%delNBbyCV	= 	delNBbyCV_r
-      CurPar%next%pardata%cur_part	= 	cur_part_r
-      CurPar%next%pardata%new_part	= 	new_part_r
-      CurPar => CurPar%next
-   END DO
-   CLOSE(59)
-ELSE										! starting from scratch. No data to be read from restart files
-   OPEN(60,FILE='particle.dat')
-   READ(60,*) np
-   num_particles = np
+      READ(59,*) np
+      num_particles = np
+      CALL list_init(ParListHead)
+      CurPar => ParListHead
 
-   CALL list_init(ParListHead)
-   CurPar => ParListHead
-   DO i = 1, np
-      READ(60,*) parid,xp,yp,zp,par_radius					! read particle.dat file
-      !----- Search the partition this particle belongs to
-      DO ipartition = 1_lng,NumSubsTotal 
-         IF ((xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
-             (xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-             (yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-             (yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
-             (zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
-             (zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
-             particle_partition = ipartition
-         END IF
+      DO i = 1, np
+         READ(59,*) parid_r,xp_r,yp_r,zp_r,up_r,vp_r,wp_r,rp_r,xpold_r,ypold_r,zpold_r, &			
+	                  upold_r,vpold_r,wpold_r,rpold_r,par_conc_r,gamma_cont_r,Sh_conf_r,Sh_shear_r,Sh_slip_r,S_r,   &
+                    Sst_r,Veff_r,Nbj_r,bulk_conc_r,delNBbyCV_r,cur_part_r,new_part_r                                
+         CALL list_init(CurPar%next)      
+         CurPar%next%prev => CurPar
+         CurPar%next%next => null()
+         CurPar%next%pardata%parid 	= 	parid_r
+         CurPar%next%pardata%xp 		=	xp_r
+         CurPar%next%pardata%yp 		=	yp_r
+         CurPar%next%pardata%zp 		= 	zp_r
+         CurPar%next%pardata%up 		=	up_r
+         CurPar%next%pardata%vp 		=	vp_r
+         CurPar%next%pardata%wp    	=	wp_r
+         CurPar%next%pardata%rp    	=	rp_r
+         CurPar%next%pardata%xpold 	= 	xpold_r
+         CurPar%next%pardata%ypold 	= 	ypold_r
+         CurPar%next%pardata%zpold 	= 	zpold_r
+         CurPar%next%pardata%upold 	= 	upold_r
+         CurPar%next%pardata%vpold 	= 	vpold_r
+         CurPar%next%pardata%wpold 	= 	wpold_r
+         CurPar%next%pardata%rpold 	= 	rpold_r
+         CurPar%next%pardata%par_conc 	= 	par_conc_r
+         CurPar%next%pardata%gamma_cont 	= 	gamma_cont_r
+         CurPar%next%pardata%sh_conf =	Sh_conf_r
+         CurPar%next%pardata%sh_shear=	Sh_shear_r
+         CurPar%next%pardata%sh_slip	=	Sh_slip_r
+         CurPar%next%pardata%S 		  =	S_r
+         CurPar%next%pardata%Sst 		= 	Sst_r
+         CurPar%next%pardata%Veff 		= 	Veff_r
+         CurPar%next%pardata%Nbj 		= 	Nbj_r
+         CurPar%next%pardata%bulk_conc 	= 	bulk_conc_r 
+         CurPar%next%pardata%delNBbyCV	= 	delNBbyCV_r
+         CurPar%next%pardata%cur_part	= 	cur_part_r
+         CurPar%next%pardata%new_part	= 	new_part_r
+         CurPar => CurPar%next
       END DO
- 
-      CALL list_init(CurPar%next)		
-      CurPar%next%prev => CurPar
-      CurPar%next%next => null()
-      CurPar%next%pardata%parid = parid
-      CurPar%next%pardata%xp = xp
-      CurPar%next%pardata%yp = yp
-      CurPar%next%pardata%zp = zp
-      CurPar%next%pardata%up = 0.0_dbl
-      CurPar%next%pardata%vp = 0.0_dbl
-      CurPar%next%pardata%wp = 0.0_dbl
-      CurPar%next%pardata%rp = par_radius
-      CurPar%next%pardata%xpold = CurPar%next%pardata%xp
-      CurPar%next%pardata%ypold = CurPar%next%pardata%yp
-      CurPar%next%pardata%zpold = CurPar%next%pardata%zp
-      CurPar%next%pardata%upold = CurPar%next%pardata%up
-      CurPar%next%pardata%vpold = CurPar%next%pardata%vp
-      CurPar%next%pardata%wpold = CurPar%next%pardata%wp
-      CurPar%next%pardata%rpold = CurPar%next%pardata%rp
-      CurPar%next%pardata%par_conc   = S_intrinsic 
-      CurPar%next%pardata%gamma_cont = 0.0000_dbl
-      CurPar%next%pardata%sh_conf  = 0.0_dbl
-      CurPar%next%pardata%sh_shear = 0.0_dbl
-      CurPar%next%pardata%sh_slip  = 0.0_dbl 
-      CurPar%next%pardata%S        = 0.0_dbl
-      CurPar%next%pardata%Sst      = 0.0_dbl
-      CurPar%next%pardata%Veff     = 0.0_dbl
-      CurPar%next%pardata%Nbj      = 0.0_dbl
-      CurPar%next%pardata%bulk_conc= 0.0000_dbl
-      CurPar%next%pardata%delNBbyCV= 0.00000_dbl
-      CurPar%next%pardata%cur_part = particle_partition
-      CurPar%next%pardata%new_part = particle_partition
-      CurPar => CurPar%next
-   END DO
-   CLOSE(60)
+      CLOSE(59)
+   ELSE
+      write(*,*) 'coockie 2'
+      OPEN(60,FILE='particle.dat')
+      READ(60,*) np
+      num_particles = np
 
+      CALL list_init(ParListHead)
+      CurPar => ParListHead
+      DO i = 1, np
+         READ(60,*) parid,xp,yp,zp,par_radius					! read particle.dat file
+         !----- Search the partition this particle belongs to
+         DO ipartition = 1_lng,NumSubsTotal 
+            IF ((xp.GE.REAL(iMinDomain(ipartition),dbl)-1.0_dbl).AND.&
+                (xp.LT.(REAL(iMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+                (yp.GE.REAL(jMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+                (yp.LT.(REAL(jMaxDomain(ipartition),dbl)+0.0_dbl)).AND. &
+                (zp.GE.REAL(kMinDomain(ipartition),dbl)-1.0_dbl).AND. &
+                (zp.LT.(REAL(kMaxDomain(ipartition),dbl)+0.0_dbl))) THEN
+                particle_partition = ipartition
+            END IF
+         END DO
+ 
+         CALL list_init(CurPar%next)		
+         CurPar%next%prev => CurPar
+         CurPar%next%next => null()
+         CurPar%next%pardata%parid = parid
+         CurPar%next%pardata%xp = xp
+         CurPar%next%pardata%yp = yp
+         CurPar%next%pardata%zp = zp
+         CurPar%next%pardata%up = 0.0_dbl
+         CurPar%next%pardata%vp = 0.0_dbl
+         CurPar%next%pardata%wp = 0.0_dbl
+         CurPar%next%pardata%rp = par_radius
+         CurPar%next%pardata%xpold = CurPar%next%pardata%xp
+         CurPar%next%pardata%ypold = CurPar%next%pardata%yp
+         CurPar%next%pardata%zpold = CurPar%next%pardata%zp
+         CurPar%next%pardata%upold = CurPar%next%pardata%up
+         CurPar%next%pardata%vpold = CurPar%next%pardata%vp
+         CurPar%next%pardata%wpold = CurPar%next%pardata%wp
+         CurPar%next%pardata%rpold = CurPar%next%pardata%rp
+         CurPar%next%pardata%par_conc   = S_intrinsic 
+         CurPar%next%pardata%gamma_cont = 0.0000_dbl
+         CurPar%next%pardata%sh_conf  = 0.0_dbl
+         CurPar%next%pardata%sh_shear = 0.0_dbl
+         CurPar%next%pardata%sh_slip  = 0.0_dbl 
+         CurPar%next%pardata%S        = 0.0_dbl
+         CurPar%next%pardata%Sst      = 0.0_dbl
+         CurPar%next%pardata%Veff     = 0.0_dbl
+         CurPar%next%pardata%Nbj      = 0.0_dbl
+         CurPar%next%pardata%bulk_conc= 0.0000_dbl
+         CurPar%next%pardata%delNBbyCV= 0.00000_dbl
+         CurPar%next%pardata%cur_part = particle_partition
+         CurPar%next%pardata%new_part = particle_partition
+         CurPar => CurPar%next
+      END DO
+      CLOSE(60)
+   ENDIF
 ENDIF
 !------------------------------------------------
 END SUBROUTINE IniParticles

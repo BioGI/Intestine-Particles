@@ -145,9 +145,8 @@ INTEGER(lng) :: it                                              ! loop index var
 REAL(dbl)    :: rijk                                            ! radius of current node
 REAL(dbl)    :: x1,y1,z1,x2,y2,z2,xt,yt,zt,ht,rt,vt             ! temporary coordinates to search for exact boundary coordinate 
 
-r(0:nzSub+1) = rDom(kMin-1:kMax+1)
 IF (Flag_Couette) THEN !----- Couette Geometry ---------------------------------------------
-   q= (abs(x(i))-r(k))/ (1.0*xcf)
+!  q= (abs(x(i))-r(k))/ (1.0*xcf)
    q=0.5
 ELSE !-----------------------Intestine Geometry --------------------------------------------
    !----- Initial fluid node guess
