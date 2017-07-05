@@ -1047,7 +1047,7 @@ DO WHILE (ASSOCIATED(current))
 ENDDO
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Overlap_sum_l,Overlap_sum,np,MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Overlap_sum_l,Overlap_sum,np+1,MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
 
 
 current => ParListHead%next
