@@ -34,50 +34,50 @@ READ(10,*) nz					! number of nodes in the z-direction
 READ(10,*) NumSubsX		! number of subdomains in the X direction
 READ(10,*) NumSubsY		! number of subdomains in the Y direction
 READ(10,*) NumSubsZ		! number of subdomains in the Z direction
-READ(10,*) tmp !Width      ! Width (only in case of Couette simulation)
-READ(10,*) tmp !D					 ! diameter
-READ(10,*) tmp !L					  ! length
-READ(10,*) tmp !epsOVERa1		! peristaltic occlusion ratio (distance of occlusion/mean half-width)
-READ(10,*) tmp !s1					  ! peristaltic wave speed
-READ(10,*) tmp !s_movingF    ! Moving Frame of Reference speed
-READ(10,*) tmp !numw1				! number of peristaltic waves
-READ(10,*) tmp !wc1					! peristaltic weighting coefficient
-READ(10,*) tmp !epsOVERa2		! segmental occlusion ratio (distance of occlusion/mean half-width)
-READ(10,*) tmp !Ts					  ! segmental contraction period
-READ(10,*) tmp !numw2				! number of segmental waves
-READ(10,*) tmp !wc2					! segmental weighting coefficient
-READ(10,*) tmp !Tmix				  ! period of mixed mode simulation
-READ(10,*) tmp !den					! Liquid's density
-READ(10,*) tmp !nu					  ! Liquid's kinematic viscosity
-READ(10,*) tmp !S_intrinsic	   ! Drug solubility: intrinsic (mu mole/cm^3)
-READ(10,*) tmp !S_bulk     	   ! Drug solubility: at bulk pH of 6.5  (mu mole/cm^3)
-READ(10,*) tmp !diffm           ! Drug's diffusivity (cm2/s)
-READ(10,*) tmp !molarvol        ! Drug's molar volume (cm^3/mole)
-READ(10,*) tmp !den_P           ! Drug's density  (kg/m3)
-READ(10,*) tmp !tau             ! relaxation parameter
-READ(10,*) tmp !Sc              ! Schmidt number
-READ(10,*) tmp !sclrIC          ! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
-READ(10,*) tmp !iter_Start_phi  ! iteration at which to start particle tracking & scalar calculation  
-READ(10,*) tmp !iter_Freeze_LBM ! iteration at wich steady state (for P & V) has reached so all LBM related functions can be turned OFF  
-READ(10,*) tmp !phiIC           ! maximum scalar concentration
+READ(10,*)  !Width      ! Width (only in case of Couette simulation)
+READ(10,*)  !D					 ! diameter
+READ(10,*)  !L					  ! length
+READ(10,*)  !epsOVERa1		! peristaltic occlusion ratio (distance of occlusion/mean half-width)
+READ(10,*)  !s1					  ! peristaltic wave speed
+READ(10,*)  !s_movingF    ! Moving Frame of Reference speed
+READ(10,*)  !numw1				! number of peristaltic waves
+READ(10,*)  !wc1					! peristaltic weighting coefficient
+READ(10,*)  !epsOVERa2		! segmental occlusion ratio (distance of occlusion/mean half-width)
+READ(10,*)  !Ts					  ! segmental contraction period
+READ(10,*)  !numw2				! number of segmental waves
+READ(10,*)  !wc2					! segmental weighting coefficient
+READ(10,*)  !Tmix				  ! period of mixed mode simulation
+READ(10,*)  !den					! Liquid's density
+READ(10,*)  !nu					  ! Liquid's kinematic viscosity
+READ(10,*)  !S_intrinsic	   ! Drug solubility: intrinsic (mu mole/cm^3)
+READ(10,*)  !S_bulk     	   ! Drug solubility: at bulk pH of 6.5  (mu mole/cm^3)
+READ(10,*)  !diffm           ! Drug's diffusivity (cm2/s)
+READ(10,*)  !molarvol        ! Drug's molar volume (cm^3/mole)
+READ(10,*)  !den_P           ! Drug's density  (kg/m3)
+READ(10,*)  !tau             ! relaxation parameter
+READ(10,*)  !Sc              ! Schmidt number
+READ(10,*)  !sclrIC          ! initial/maintained scalar distribution (1=BLOB,2=LINE,3=INLET,4=UNIFORM)
+READ(10,*)  !iter_Start_phi  ! iteration at which to start particle tracking & scalar calculation  
+READ(10,*)  !iter_Freeze_LBM ! iteration at wich steady state (for P & V) has reached so all LBM related functions can be turned OFF  
+READ(10,*)  !phiIC           ! maximum scalar concentration
 !----- Coefficients for the generalized scalar BC (coeffPhi*phiWall + coeffGrad*dPhiDn_wall = coeffConst). 'n' is normal vector from  wall into fluid.
-READ(10,*) tmp !coeffPhi
-READ(10,*) tmp !coeffGrad
-READ(10,*) tmp !coeffConst
-READ(10,*) tmp !nPers                       ! total number of periods to run
-READ(10,*) tmp !Output_Intervals            ! number of iterations between writing the output files 
-READ(10,*) tmp !Restart_Intervals           ! number of iterations between writing the restart files 
-READ(10,*) tmp !Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM 
-READ(10,*) tmp !Flag_Couette                ! Flag to run the Couette simulation
-READ(10,*) tmp !Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
-READ(10,*) tmp !Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False --> 1st order LBM BC 
-READ(10,*) tmp !Flag_ParticleTrack          ! Flag for tracking particles           
-READ(10,*) tmp !Flag_Particle_Init_Sphere   ! Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
-READ(10,*) tmp !Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
+READ(10,*)  !coeffPhi
+READ(10,*)  !coeffGrad
+READ(10,*)  !coeffConst
+READ(10,*)  !nPers                       ! total number of periods to run
+READ(10,*)  !Output_Intervals            ! number of iterations between writing the output files 
+READ(10,*)  !Restart_Intervals           ! number of iterations between writing the restart files 
+READ(10,*)  !Flag_Buffer                 ! Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM 
+READ(10,*)  !Flag_Couette                ! Flag to run the Couette simulation
+READ(10,*)  !Flag_Correcting_Mass        ! Flag for mass correction by bringing back rho to 1.0        
+READ(10,*)  !Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False --> 1st order LBM BC 
+READ(10,*)  !Flag_ParticleTrack          ! Flag for tracking particles           
+READ(10,*)  !Flag_Particle_Init_Sphere   ! Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
+READ(10,*)  !Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
 READ(10,*) Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number        
-READ(10,*) tmp !Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
-READ(10,*) tmp !Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
-READ(10,*) tmp !Flag_Restart                ! Falg for using restart files instead of starting from zero
+READ(10,*)  !Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
+READ(10,*)  !Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
+READ(10,*)  !Flag_Restart                ! Falg for using restart files instead of starting from zero
 CLOSE(10)
 
 ALLOCATE(node(0:nx+1,0:ny+1,0:nz+1))
