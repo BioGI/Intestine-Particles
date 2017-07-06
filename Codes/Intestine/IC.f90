@@ -141,11 +141,10 @@ IF ((Flag_Restart).AND. (Flag_ParticleTrack))THEN
    CLOSE(55)
 ENDIF   
 
-write(*,*) 'iter0',iter0
+!write(*,*) 'iter0',iter0
 
 IF (Flag_ParticleTrack) THEN
    IF((Flag_Restart).AND.(iter0 .GE. iter_Start_phi))  THEN								! restarting: read particle data from  particle_restart.dat
-      write(*,*) 'coockie 1'
       WRITE(iter_char(1:7),'(I7.7)') iter0
       OPEN(59,FILE='Restart-Particles-'//iter_char//'.dat')
       iter0= iter0 + 1
@@ -194,7 +193,6 @@ IF (Flag_ParticleTrack) THEN
       END DO
       CLOSE(59)
    ELSE
-      write(*,*) 'coockie 2'
       OPEN(60,FILE='particle.dat')
       READ(60,*) np
       num_particles = np
