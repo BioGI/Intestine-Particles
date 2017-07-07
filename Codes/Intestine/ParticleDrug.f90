@@ -826,6 +826,9 @@ DO WHILE (ASSOCIATED(current))
          U_slip_x= A_P*Laplacian_x_P + B_P*DLaplacianDt_x_P - C_P*Dudt_x_P
          U_slip_y= A_P*Laplacian_y_P + B_P*DLaplacianDt_y_P - C_P*Dudt_y_P
          U_slip_z= A_P*Laplacian_z_P + B_P*DLaplacianDt_z_P - C_P*Dudt_z_P
+         current%pardata%U_Slip_x= U_slip_x
+         current%pardata%U_Slip_y= U_slip_y
+         current%pardata%U_Slip_z= U_slip_z
          current%pardata%U_Slip = sqrt(U_slip_x**2.0_dbl + U_slip_y**2.0_dbl + U_slip_z**2.0_dbl)
         !IF(current%pardata%parid .EQ.1) THEN 
         !   write(*,*) iter,current%pardata%parid  

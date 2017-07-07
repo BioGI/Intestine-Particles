@@ -38,6 +38,10 @@ REAL(dbl)     :: xaxis,yaxis,X_s,Y_s,R_s,CosTheta_s,SinTheta_s,Vel_s
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
 
+IF (Flag_Convection_Effects) THEN
+   CALL Compute_U_slip
+END IF
+
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next
@@ -118,7 +122,11 @@ DO WHILE (ASSOCIATED(current))
          c1 = c01*(1.0_dbl-yd)+c11*yd
 !--------3rd level linear interpolation in z-direction
          c  = c0*(1.0_dbl-zd)+c1*zd
-         current%pardata%up=c
+         IF (Flag_Convection_Effects) THEN
+            current%pardata%up=c-current%pardata%U_Slip_x
+         ELSE
+            current%pardata%up=c
+         ENDIF
 
 !--------v-interpolation
 !--------1st level linear interpolation in x-direction
@@ -131,7 +139,11 @@ DO WHILE (ASSOCIATED(current))
          c1 = c01*(1.0_dbl-yd)+c11*yd
 !--------3rd level linear interpolation in z-direction
          c  = c0*(1.0_dbl-zd)+c1*zd
-         current%pardata%vp=c
+         IF (Flag_Convection_Effects) THEN
+            current%pardata%vp=c-current%pardata%U_Slip_y
+         ELSE
+            current%pardata%vp=c
+         ENDIF
 
 !--------w-interpolation
 !--------1st level linear interpolation in x-direction
@@ -144,7 +156,11 @@ DO WHILE (ASSOCIATED(current))
          c1  = c01*(1.0_dbl-yd)+c11*yd
 !--------3rd level linear interpolation in z-direction
          c   = c0*(1.0_dbl-zd)+c1*zd
-         current%pardata%wp=c
+         IF (Flag_Convection_Effects) THEN
+            current%pardata%wp=c-current%pardata%U_Slip_z
+         ELSE
+            current%pardata%wp=c
+         ENDIF
       END IF 
    END IF
    current => next
@@ -323,9 +339,6 @@ CALL Compute_C_bulk
 CALL PrintComputationalTime(5)
 IF (Flag_Shear_Effects) THEN
    CALL Compute_Shear
-END IF
-IF (Flag_Convection_Effects) THEN
-   CALL Compute_U_slip
 END IF
 CALL Compute_Sherwood             ! Update the Sherwood number for each particle depending on the shear rate. 
 CALL Compute_C_surface

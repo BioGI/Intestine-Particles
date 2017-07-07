@@ -307,6 +307,9 @@ TYPE ParRecordTransfer
 	REAL(dbl)	:: up	          ! particle u-velocity
 	REAL(dbl)	:: vp           ! particle v-velocity
 	REAL(dbl)	:: wp           ! particle w-velocity
+  REAL(dbl) :: U_slip_x     ! Slip velocity x comp (for hydrodynamic convection)
+  REAL(dbl) :: U_slip_y     ! Slip velocity y comp (for hydrodynamic convection)
+  REAL(dbl) :: U_slip_z     ! Slip velocity z comp (for hydrodynamic convection)
   REAL(dbl) :: U_slip       ! Slip velocity (for hydrodynamic convection)
 	REAL(dbl)	:: rp           ! particle radius
 	REAL(dbl)	:: delNBbyCV    ! particle drug release concentration 
