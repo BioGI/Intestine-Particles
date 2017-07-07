@@ -34,6 +34,8 @@ FCFLAGS += -I/opt/local/include
 
 PARFILES = GenParList.o
 PARDIST  = GenParDist.o 
+EXTRAP   = Extrapolate_Experiments.o 
+PCONCENT = Particle_Concentration.o
 RESTART  = Scatter_Restart_Files.o
 PROGRAMS = Intestine.exe
 
@@ -54,6 +56,8 @@ all:
 	@$(MAKE) Intestine.exe
 	@$(MAKE) GenParList.exe
 	@$(MAKE) GenParDist.exe 
+	@$(MAKE) Extrapolate_Experiments.exe 
+	@$(MAKE) Particle_Concentration.exe 
 	@$(MAKE) Scatter_Restart_Files.exe 
 
 GenParList.exe: $(PARFILES)
@@ -67,6 +71,12 @@ Scatter_Restart_Files.exe: $(RESTART)
 
 Intestine.exe: $(OBJS)
 	     $(FC) -o Intestine.exe $(FCFLAGS) $(OBJS) $(MODULES)
+
+Extrapolate_Experiments.exe: $(EXTRAP)
+	      $(FC) -o Extrapolate_Experiments.exe $(FCFLAGS) $(EXTRAP) $(MODULES)
+
+Particle_Concentration.exe: $(PCONCENT)
+	      $(FC) -o Particle_Concentration.exe $(FCFLAGS) $(PCONCENT) $(MODULES)
 
 $(OBJS): $(MODULES)
 
