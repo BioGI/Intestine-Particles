@@ -67,7 +67,7 @@ DO iter = iter0-0_lng,nt
       CALL Stream							! perform the streaming operation (with Lallemand 2nd order BB) [MODULE: Algorithm]
       CALL Macro							! calcuate the macroscopic quantities [MODULE: Algorithm]
       IF ((Flag_Convection_Effects) .AND. ((MOD(iter,Output_Intervals).EQ.0).OR.(MOD(iter,Restart_Intervals).EQ.0))) THEN
-         IF ((NumSubsX*NumSubsX*NumSubsX).EQ.1)THEN
+         IF ((NumSubsX*NumSubsY*NumSubsZ).EQ.1)THEN
             CALL Compute_vel_derivatives
          ENDIF   
       ENDIF   
