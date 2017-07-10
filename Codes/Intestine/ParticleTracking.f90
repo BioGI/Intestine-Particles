@@ -209,56 +209,54 @@ DO WHILE (ASSOCIATED(current))
          current%pardata%xp=current%pardata%xpold+current%pardata%up
          current%pardata%yp=current%pardata%ypold+current%pardata%vp
          current%pardata%zp=current%pardata%zpold+current%pardata%wp
-
-         IF (Flag_Couette) THEN !----- Couette simulation, no need to make sure particles do not leave the fluid domain
-         ELSE !----------------------- Intestine simulation: make sure particles do not leave the fluid domain    
-          IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1))THEN              
-             xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
-             yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
-             zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
-             ix0= FLOOR(xp)
-             ix1= CEILING(xp)
-             iy0= FLOOR(yp)
-             iy1= CEILING(yp)
-             iz0= FLOOR(zp)
-             iz1= CEILING(zp)
-             !Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
-             !IF (Number_of_Solid_nodes .GT. 0) THEN         !there is a solid node around the particle
-                IF (iz1 .NE. iz0) THEN 
-                  zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
-                ELSE 
-                  zd= 0.0_dbl
-                END IF
-                R_Boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd      !radius of solid boundary at z location of the particle 
-                xaxis= 0.5_dbl*(nx+1)
-                yaxis= 0.5_dbl*(ny+1)
-                xpp = xcf*(current%pardata%xp- xaxis) 
-                ypp = ycf*(current%pardata%yp- yaxis) 
-                R_Particle    = SQRT(xpp**2 + ypp**2)              !radius at location of the particle
-                CosTheta_p    = xpp/R_Particle
-                SinTheta_p    = ypp/R_Particle
+         IF (.NOT. Flag_Couette) THEN                         ! Intestine simulation: make sure particles do not leave the fluid domain    
+            xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+            yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+            zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+            ix0= ABS(FLOOR(xp))
+            ix1= CEILING(xp)
+            iy0= ABS(FLOOR(yp))
+            iy1= CEILING(yp)
+            iz0= ABS(FLOOR(zp))
+            iz1= CEILING(zp)
+            Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
+            IF (Number_of_Solid_nodes .GE. 1) THEN
+               IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1))THEN              
+                  IF (iz1 .NE. iz0) THEN 
+                     zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
+                  ELSE 
+                     zd= 0.0_dbl
+                  END IF
+                  R_Boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd      !radius of solid boundary at z location of the particle 
+                  xaxis= 0.5_dbl*(nx+1)
+                  yaxis= 0.5_dbl*(ny+1)
+                  xpp = xcf*(current%pardata%xp- xaxis) 
+                  ypp = ycf*(current%pardata%yp- yaxis) 
+                  R_Particle    = SQRT(xpp**2 + ypp**2)              !radius at location of the particle
+                  CosTheta_p    = xpp/R_Particle
+                  SinTheta_p    = ypp/R_Particle
             
-                IF ((R_Boundary.GT.xcf).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN ! particle is outside analytical boundary
-                   write(*,*) '=========================================================================================='
-                   write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,r(iz0),r(iz1)
-                   write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                   Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
-                   write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
-                   write(*,*) '---------------------------------------------------------------------------'
-                   write(*,*) 'Treating the particle:'
-                   xpp = (R_Boundary-1.20_dbl*xcf) * CosTheta_p
-                   ypp = (R_Boundary-1.20_dbl*xcf) * SinTheta_p
-                   R_Particle = SQRT(xpp**2 + ypp**2)
-                   current%pardata%xp = (xpp/xcf) + xaxis
-                   current%pardata%yp = (ypp/ycf) + yaxis 
-                   write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp, zd,r(iz0),r(iz1)
-                   write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                   Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
-                   write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
-                END IF
-             !END IF               ! If Number_of_Solid_nodes > 0 
-          END IF                  ! If 1<zp<nz        
-        END IF                    ! If this simulation is Couette 
+                  IF ((R_Boundary.GT.xcf).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN ! particle is outside analytical boundary
+                     write(*,*) '=========================================================================================='
+                     write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,r(iz0),r(iz1)
+                     write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                     Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+                     write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
+                     write(*,*) '---------------------------------------------------------------------------'
+                     write(*,*) 'Treating the particle:'
+                     xpp = (R_Boundary-1.20_dbl*xcf) * CosTheta_p
+                     ypp = (R_Boundary-1.20_dbl*xcf) * SinTheta_p
+                     R_Particle = SQRT(xpp**2 + ypp**2)
+                     current%pardata%xp = (xpp/xcf) + xaxis
+                     current%pardata%yp = (ypp/ycf) + yaxis 
+                     write(*,*) 'A:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp, zd,r(iz0),r(iz1)
+                     write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                     Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+                     write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
+                  ENDIF
+               ENDIF               ! If Number_of_Solid_nodes > 0 
+            ENDIF                  ! If 1<zp<nz        
+         ENDIF                    ! If this simulation is Couette 
       END IF                      ! If particle radius is over Min_R_Acceptable
    END IF                         ! If particle resides in this processor
    current => next
@@ -275,57 +273,58 @@ DO WHILE (ASSOCIATED(current))
          current%pardata%xp=current%pardata%xpold+0.5*(current%pardata%up+current%pardata%upold)
          current%pardata%yp=current%pardata%ypold+0.5*(current%pardata%vp+current%pardata%vpold)
          current%pardata%zp=current%pardata%zpold+0.5*(current%pardata%wp+current%pardata%wpold)
-         IF (Flag_Couette) THEN !----- Couette simulation, no need to make sure particles do not leave the fluid domain
-         ELSE !----------------------- Intestine simulation: make sure particles do not leave the fluid domain    
-            IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1) ) THEN 
-               !----- If Particle leaves the fluid domain---------------------------------------
-               xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
-               yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
-               zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
-               ix0= FLOOR(xp)
-               ix1= CEILING(xp)
-               iy0= FLOOR(yp)
-               iy1= CEILING(yp)
-               iz0= FLOOR(zp)
-               iz1= CEILING(zp)
-               Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
-               IF (Number_of_Solid_nodes .GT. 0) THEN !a solid node is around the particle
-                  IF (iz1 .NE. iz0) THEN
+
+         IF (.NOT. Flag_Couette) THEN                         ! Intestine simulation: make sure particles do not leave the fluid domain    
+            xp= current%pardata%xp - REAL(iMin-1_lng,dbl)
+            yp= current%pardata%yp - REAL(jMin-1_lng,dbl)
+            zp= current%pardata%zp - REAL(kMin-1_lng,dbl)
+            ix0= ABS(FLOOR(xp))
+            ix1= CEILING(xp)
+            iy0= ABS(FLOOR(yp))
+            iy1= CEILING(yp)
+            iz0= ABS(FLOOR(zp))
+            iz1= CEILING(zp)
+            Number_of_Solid_nodes= node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)
+            IF (Number_of_Solid_nodes .GE. 1) THEN
+               IF ((current%pardata%zp .LT. nz) .AND. (current%pardata%zp .GT. 1))THEN              
+                  IF (iz1 .NE. iz0) THEN 
                      zd= (zp-REAL(iz0,dbl))/(REAL(iz1,dbl)-REAL(iz0,dbl))
                   ELSE 
                      zd= 0.0_dbl
                   END IF
-                  R_Boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd
+                  R_Boundary = r(iz0)*(1.0_dbl-zd) + r(iz1)*zd      !radius of solid boundary at z location of the particle 
                   xaxis= 0.5_dbl*(nx+1)
                   yaxis= 0.5_dbl*(ny+1)
-                  xpp = xcf*(current%pardata%xp- xaxis)
-                  ypp = ycf*(current%pardata%yp- yaxis)
-                  R_Particle    = SQRT(xpp**2 + ypp**2)
+                  xpp = xcf*(current%pardata%xp- xaxis) 
+                  ypp = ycf*(current%pardata%yp- yaxis) 
+                  R_Particle    = SQRT(xpp**2 + ypp**2)              !radius at location of the particle
                   CosTheta_p    = xpp/R_Particle
                   SinTheta_p    = ypp/R_Particle
-                  IF ((R_Boundary .GT. xcf).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN  !particle is outside analytical boundary
-                    write(*,*) '=========================================================================================='
-                    write(*,*) 'B:Iter, parID,xp,yp,zp,zd,iz0,iz1,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,iz0,iz1,r(iz0),r(iz1)
-                    write(*,*) 'B: CPU,iMin,iMax,jMin,jMax,kMin,kMax',myid,iMin,iMax,jMin,jMax,kMin,kMax
-                    write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                    write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
-                    write(*,*) '---------------------------------------------------------------------------'
-                    write(*,*) 'Treating the particle:'
-                    xpp = (R_Boundary-1.20_dbl*xcf) * CosTheta_p
-                    ypp = (R_Boundary-1.20_dbl*xcf) * SinTheta_p
-                    R_Particle = SQRT(xpp**2 + ypp**2)
-                    current%pardata%xp = (xpp/xcf) + xaxis
-                    current%pardata%yp = (ypp/ycf) + yaxis
-                    write(*,*) 'B:Iter, parID,xp,yp,zp,zd,iz0,iz1,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,iz0,iz1,r(iz0),r(iz1)
-                    write(*,*) 'B: CPU,iMin,iMax,jMin,jMax,kMin,kMax',myid,iMin,iMax,jMin,jMax,kMin,kMax
-                    write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
-                    write(*,*) 'No of solid nodes', node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1)  
-                  END IF
-               END IF   ! If Number_of_Solid_nodes > 0
-            ENDIF       ! If 1<zp<nz
-         END IF         ! If the simulation is Couette
-      END IF            ! If particle's radius is larger than Min_R_Acceptable
-   END IF               ! If particle resides inthis processor
+            
+                  IF ((R_Boundary.GT.xcf).AND.(R_Particle .GT. (R_Boundary-xcf))) THEN ! particle is outside analytical boundary
+                     write(*,*) '=========================================================================================='
+                     write(*,*) 'B:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp,zd,r(iz0),r(iz1)
+                     write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                     Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+                     write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
+                     write(*,*) '---------------------------------------------------------------------------'
+                     write(*,*) 'Treating the particle:'
+                     xpp = (R_Boundary-1.20_dbl*xcf) * CosTheta_p
+                     ypp = (R_Boundary-1.20_dbl*xcf) * SinTheta_p
+                     R_Particle = SQRT(xpp**2 + ypp**2)
+                     current%pardata%xp = (xpp/xcf) + xaxis
+                     current%pardata%yp = (ypp/ycf) + yaxis 
+                     write(*,*) 'B:Iter, parID,xp,yp,zp,zd,Rz1,Rz2:', iter,current%pardata%parid, current%pardata%xp, current%pardata%yp, current%pardata%zp, zd,r(iz0),r(iz1)
+                     write(*,*) 'R_Particle, R_Boundary:', R_Particle,R_Boundary
+                     Number_of_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+                     write(*,*) 'No of solid nodes', Number_of_Solid_nodes 
+                  ENDIF
+               ENDIF               ! If Number_of_Solid_nodes > 0 
+            ENDIF                  ! If 1<zp<nz        
+         ENDIF                    ! If this simulation is Couette 
+      END IF                      ! If particle radius is over Min_R_Acceptable
+   END IF                         ! If particle resides in this processor
+
    current => next
 ENDDO
 
