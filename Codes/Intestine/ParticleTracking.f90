@@ -427,6 +427,8 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data_l(ID,21)= current%pardata%S
       Particle_Data_l(ID,22)= current%pardata%Sst
       Particle_Data_l(ID,23)= current%pardata%new_part
+      Particle_Data_l(ID,24)= current%pardata%U_slip
+
    ELSE
       Particle_Data_l(ID,1) = 1e5                          
       Particle_Data_l(ID,2) = 1e5                    
@@ -451,6 +453,7 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data_l(ID,21)= 1e5                     
       Particle_Data_l(ID,22)= 1e5                     
       Particle_Data_l(ID,23)= 1e5                     
+      Particle_Data_l(ID,24)= 1e5                     
    ENDIF
    current => next
 ENDDO
@@ -488,6 +491,7 @@ DO WHILE (ASSOCIATED(current))
       current%pardata%Sst=        Particle_Data_g(ID,22)
 	    current%pardata%cur_part=   Particle_Data_g(ID,23)
       current%pardata%new_part=   Particle_Data_g(ID,23)
+      current%pardata%U_slip  =   Particle_Data_g(ID,24)
    current => next  
 ENDDO
 !===================================================================================================
