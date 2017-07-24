@@ -96,7 +96,7 @@ CALL list_init(ParListHead)
 CurPar => ParListHead
 READ(160,*) 
 DO i = 1, np
-   READ(160,*) xp,yp,zp,up,vp,wp,parid,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_Conc,cur_part 
+   READ(160,*) xp,yp,zp,up,vp,wp,U_slip,parid,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_Conc,cur_part 
    CALL list_init(CurPar%next)		
    CurPar%next%prev => CurPar
    CurPar%next%next => null()      
