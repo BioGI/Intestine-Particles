@@ -363,7 +363,7 @@ SUBROUTINE Particle_Transfer
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl)                :: Particle_Data_l(np,23), PArticle_Data_g(np,23)
+REAL(dbl)                :: Particle_Data_l(np,24), PArticle_Data_g(np,24)
 INTEGER(lng)   		       :: i,ipartition,ii,jj,kk
 INTEGER(lng)             :: PID, ID, RANK
 INTEGER(lng)             :: mpierr
@@ -460,7 +460,7 @@ ENDDO
 
 !---- Parallel communication between all processors
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*23, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*24, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
 
 
 current => ParListHead%next
