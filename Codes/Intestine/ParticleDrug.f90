@@ -850,6 +850,91 @@ END SUBROUTINE Compute_U_slip
 
 
 
+
+!===============================================================================================================
+SUBROUTINE Compute_C_surface_new !Calculating surface pH of drug with bicarbonate buffer using the IRR approach
+!===============================================================================================================
+IMPLICIT NONE
+
+REAL(dbl)                :: c0,c1,c2,c3,c4,c5,c6
+REAL(dbl)                :: S_ratio
+REAL(dbl)                :: R_P,Sh_P,delta_P
+REAL(dbl)                :: HA_o,pKaa,Kaa,Dha,Da,pKab,Kab,pKa1,Ka1
+REAL(dbl)                :: Hh,Kw,OHh,BHh,Btotal,Dh,Doh,Dbh,Db,kd
+REAL(dbl)                :: h,p,q,r,s,t,yy,yy_min,pH_s,proton,proton_bulk
+INTEGER(lng)             :: ii
+TYPE(ParRecord), POINTER :: current
+TYPE(ParRecord), POINTER :: next
+proton_bulk=10.0**(-pH_bulk)
+HA_o= S_intrinsic /1000.0_dbl     ! Intrinsic solubility of ibuprofen in mole/L (=0.00033)
+pKaa= 4.43                        ! pKaa = the pka of the drug (ibuprofen)
+Kaa=  10**(-pKaa)
+
+!--- Dha and Da are the diffusion coefficients of the unionized and ionized form of the drug---------
+Dha=7.93e-6
+Da= 7.93e-6
+
+!--- Bicarbonate Ka properties ---------------------------------------------------------------------
+pKab= 3.55                        ! pka of bicarbonate used in the diffusion layer
+Kab=  10**(-pKab) 
+pKa1= 6.04                        ! pKa1 = the pka of of bicarbonate in the bulk solution
+Ka1=  10**(-pKa1)
+
+!--- Bicarbonate Buffer properties -----------------------------------------------------------------
+Hh=10**(-pH_bulk)
+Kw=2.57e-14
+OHh=Kw/Hh
+BHh=(Hh*Bh)/(10**(-3.55))          ! BHh = the concentration of H2CO3 in the bulk solution
+Btotal=Bh+BHh
+Dh=104.9e-6                       ! Dh = diffusion coefficient of H+
+Doh=63.0e-6                       ! Doh= diffusion coefficient of OH-
+Dbh=14.6e-6                       ! Dbh= diffusion coefficient of H2CO3
+Db= 14.6e-6                       ! Db = diffusion coefficient of HCO3-
+kd=50                             ! kd = dehydration rate constant for the IRR model
+
+OPEN(131,FILE='Farhad_Debug.dat')
+current => ParListHead%next
+DO WHILE (ASSOCIATED(current))
+   next => current%next 
+   IF (mySub .EQ.current%pardata%cur_part) THEN
+      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN 
+         IF (Flag_Buffer) THEN 
+            R_P  = 1000000.0* current%pardata%rp                        ! particle radius (um)
+            Sh_P = 1.0_dbl+ current%pardata%sh_conf + current%pardata%sh_shear + current%pardata%sh_slip
+            delta_P = (R_P / Sh_P)                                      ! diffusion layer thickness (um)
+            !--- find roots of pH^3+qH^2+rH+s=0 to get the concentration of H+ ions at the particle's surface ------------------------
+            h= delta_P/10000.0_dbl                                      ! diffusion layer thickness (cm)  
+            p=1.0e16*(Dh*h*(sqrt(Dbh*kd)))
+            q=1.0e16*((Kab*Db*Dh)-(h*(sqrt(Dbh*kd))*Dh*Hh)+(h*(sqrt(Dbh*kd))*Doh*OHh) +(h*(sqrt(Db*kd))*Db*Bh))
+            r=1.0e16*((-Kab*Db*Dh*Hh)+(Kab*Db*Doh*OHh)-(h*(sqrt(Dbh*kd))*Doh*Kw) -(h*(sqrt(Dbh*kd))*Da*HA_o*Kaa) -(Kab*(h*((sqrt(Db*kd))*Db*BHh)))-(Db**(2)*Kab*Bh)+(Db**(2)*Kab*Bh))
+            s=1.0e16*((-Kab*Db*Doh*Kw)-(Kab*Db*Da*HA_o*Kaa))
+            yy_min=1.0e16
+!           Do ii=1,10000000
+!              proton= proton_bulk + ii*1e-8 ! /10000000.0
+!              pH_s=-log10(proton) 
+            Do ii=1,6000
+               pH_s=pH_bulk- ii*0.001
+               proton= 10.0_dbl**(-pH_s)
+               yy= p*proton**3.0 + q*proton**2 + r*proton + s
+               IF (yy.GE.0) THEN
+                 GOTO 100
+               ENDIF
+            ENDDO
+100         WRITE(*,*) 'pH_s',pH_s 
+         ENDIF   
+      END IF  
+   END IF  
+   current => next
+END DO   
+
+!===================================================================================================
+END SUBROUTINE Compute_C_surface_new
+!===================================================================================================
+
+
+
+
+
 !===================================================================================================
 SUBROUTINE Compute_C_surface
 !===================================================================================================

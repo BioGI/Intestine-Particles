@@ -19,9 +19,14 @@ read(*,*) sigma
 Write(*,*) 'Please enter 1 for Normal_Distribution and 0 for Modified_Normal_Distribution:'
 read(*,*) Flag_Normal_Dist
 
+!--- Ibuprophen
+nu_m            = 268.0e6             ! (\mu m)^3 / (\mu mol)  		
+M_d             = 206.285             ! (\mu g)   / (\mu mol)
+!--- Benzoic Acid
+!nu_m           = 92.73e6             ! (\mu m)^3 / (\mu mol)    
+!M_d            = 122.12              ! (\mu g)   / (\mu mol)
+
 pi              = 4.0 * atan(1.0)
-nu_m            = 268.0e6  	           ! (\mu m)^3 / (\mu mol)  		
-M_d             = 206.285              ! (\mu g)   / (\mu mol)
 Vp_tot_Achieved = 0.0
 Vp_tot          = (Dose/M_d) * nu_m    ! (\mu m) ^3
 d_up            = dmax

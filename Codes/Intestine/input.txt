@@ -1,13 +1,13 @@
 1          !                             Domain type 0 for 1 quadrant of a cylinder and 1 for a full cylinder
-121        ! [nx]                        Number of nodes in the x-direction                                
-121        ! [ny]                        Number of nodes in the y-direction                                
-200        ! [nz]                        Number of nodes in the z-direction
+135      ! [nx]                        Number of nodes in the x-direction                                
+135        ! [ny]                        Number of nodes in the y-direction                                
+216        ! [nz]                        Number of nodes in the z-direction
 1          ! [NumSubsX]                  Number of x-subdomains
 1          ! [NumSubsY]                  Number of y-subdomains 
 1          ! [NumSubsZ]                  Number of z-subdomains  
 0.001      ! [Width] (m)                 Width (only in Couette simulations)                           
-0.0168     ! [D] (m)                     Maximum diameter                                                   
-0.028      ! [L} (m)                     Domain's length
+0.01541    ! [D] (m)                     Maximum diameter                                                   
+0.02484    ! [L} (m)                     Domain's length
 0.3        ! [epsOVERa1]                 Peristaltic occlusion ratio-distance of occlusion/mean half-width  
 0.005      ! [s1] (m/s)                  Peristaltic wave speed 
 0.005      ! [s_movingF] (m/s)           Moving Frame of Reference speed  (set to 0.0 for stationary frame of reference) 
@@ -17,34 +17,35 @@
 2.5        ! [Ts] (s)                    Segmental contraction period
 1          ! [numw2]                     Segmental number of waves
 0.0        ! [wc2]                       Segmental weighting coefficient
-5.6        ! [Tmix]                      Period of mixed mode simulation
+4.968      ! [Tmix]                      Period of mixed mode simulation
 1000.0     ! [den] (kg/m3)               Fluid's density
 1.00e-6    ! [nu] (m2/s)                 kinematic viscosity 
 0.3300     ! [S_intrinsic] (mu mol/cm3)  Drug solubility: intrinsic 
-41.8745    ! [S_bulk] (mu mol/cm3)       Drug solubility: at bulk pH 0f 6.5  
+2.0        ! [pH_bulk]                   Bulk pH 0f 6.5  
+0.00     ! [Bh]                        Bicarbonate buffer concentration (Molar)   
 7.50e-10   ! [diffm] (m2/s)              Drug's diffusivity
 268.0e-6   ! [molarvol] (cm^3/micromol)  Drug's molar volume
-1029.0     ! [den_P] (kg/m3)             Drug's density
+1000.0     ! [den_P] (kg/m3)             Drug's density
 1.0        ! [tau]                       Relaxation parameter
 20.0       ! [SC}                        Schmidt Number
 4          ! [sclrIC]                    Initial/maintained scalar distribution [1=BLOB,2=LINE,3=INLET,4=UNIFORM]
-1714       ! [iter_Start_phi]            Iteration at which to start particle tracking & scalar calculation 
-17140      ! [iter_Freeze_LBM]           Iteration at wich steady state for P & V has reached so LBM functions can be turned OFF  
+10001      ! [iter_Start_phi]            Iteration at which to start particle tracking & scalar calculation 
+10005      ! [iter_Freeze_LBM]           Iteration at wich steady state for P & V has reached so LBM functions can be turned OFF  
 0.0        ! [phiIC]                     Maximum value of scalar distribution
 1.0        ! [coeffPhi]                  CoeffPhi*phi_wall + coeffGrad *(dphi/dn) = coeffConst  
 0.0        ! [coeffGrad]                 CoeffPhi*phi_wall + coeffGrad *(dphi/dn) = coeffConst      
 0.0        ! [coeffConst]                CoeffPhi*phi_wall + coeffGrad *(dphi/dn) = coeffConst 
-100.0      ! [nPers]                     Number of Periods
-1714       ! [Output_Intervals]          Number of iterations between writing the output files 
-17140      ! [Restart_Intervals]         number of iterations between writing the restart files 
-.FALSE.    ! [Flag_Buffer]               Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM  
+10000.0    ! [nPers]                     Number of Periods
+453        ! [Output_Intervals]          Number of iterations between writing the output files 
+20000      ! [Restart_Intervals]         number of iterations between writing the restart files 
+.TRUE.     ! [Flag_Buffer]               Flag for Buffer Capacity: False-->0mM, TRUE-->10.5mM  
 .FALSE.    ! [Flag_Couette]              Flag for Couette isumulations   
 .FALSE.    ! [Flag_Correcting_Mass]      Flag for mass correction by bringing back rho to 1.0    
 .TRUE.     ! [Flag_BounceBack_2nd_Order] Flag for 2nd order LBM BC. If False --> 1st order LBM BC  
 .TRUE.     ! [Flag_ParticleTrack]        Flag for tracking particles       
 .FALSE.    ! [Flag_Particle_Init_Sphere] Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
 .TRUE.     ! [Flag_Shear_Effects]        Flag for including shear effects in Sherwood number  
-.TRUE.     ! [Flag_Convection_Effects]   Flag for including convection effects in Sherwood number  
+.FALSE.    ! [Flag_Convection_Effects]   Flag for including convection effects in Sherwood number  
 .FALSE.    ! [Flag_Confinement_Effects]  Flag for including confinement effectgs in Sherwood number       
 .FALSE.    ! [Flag_Rectify_Neg_phi]      Flag for rectifying negative phi (make it zero) or leave it as is  (Flag_Rectify_Neg_phi) 
 .FALSE.    ! [Flag_Restart]              Falg for using restart files instead of starting from zero
