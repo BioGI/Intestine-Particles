@@ -129,7 +129,7 @@ INTEGER(lng)   :: i, parid,particle_partition,ipartition
 INTEGER(lng)   :: mpierr
 INTEGER(lng)   :: parid_r
 REAL(dbl)      :: xp_r, yp_r, zp_r, up_r, vp_r, wp_r, rp_r, xpold_r, ypold_r, zpold_r			! parameters read form particle_restart.dat
-REAL(dbl)      :: upold_r, vpold_r, wpold_r, rpold_r, par_conc_r, gamma_cont_r, Sh_conf_r, Sh_shear_r, Sh_slip_r, S_r		! parameters read form particle_restart.dat
+REAL(dbl)      :: upold_r, vpold_r, wpold_r, rpold_r, par_pH_r,par_conc_r, gamma_cont_r, Sh_conf_r, Sh_shear_r, Sh_slip_r, S_r		! parameters read form particle_restart.dat
 REAL(dbl)      :: Sst_r, Veff_r, Nbj_r, bulk_conc_r, delNBbyCV_r, cur_part_r, new_part_r		! parameters read form particle_restart.dat
 REAL(dbl) :: xp,yp,zp,par_radius
 CHARACTER(7) :: iter_char                                       ! iteration stored as a character
@@ -156,7 +156,7 @@ IF (Flag_ParticleTrack) THEN
 
       DO i = 1, np
          READ(59,*) parid_r,xp_r,yp_r,zp_r,up_r,vp_r,wp_r,rp_r,xpold_r,ypold_r,zpold_r, &			
-	                  upold_r,vpold_r,wpold_r,rpold_r,par_conc_r,gamma_cont_r,Sh_conf_r,Sh_shear_r,Sh_slip_r,S_r,   &
+	                  upold_r,vpold_r,wpold_r,rpold_r,par_pH_r,par_conc_r,gamma_cont_r,Sh_conf_r,Sh_shear_r,Sh_slip_r,S_r,   &
                     Sst_r,Veff_r,Nbj_r,bulk_conc_r,delNBbyCV_r,cur_part_r,new_part_r                                
          CALL list_init(CurPar%next)      
          CurPar%next%prev => CurPar
@@ -176,6 +176,7 @@ IF (Flag_ParticleTrack) THEN
          CurPar%next%pardata%vpold 	= 	vpold_r
          CurPar%next%pardata%wpold 	= 	wpold_r
          CurPar%next%pardata%rpold 	= 	rpold_r
+         CurPar%next%pardata%par_pH = 	par_pH_r
          CurPar%next%pardata%par_conc 	= 	par_conc_r
          CurPar%next%pardata%gamma_cont 	= 	gamma_cont_r
          CurPar%next%pardata%sh_conf =	Sh_conf_r
@@ -231,6 +232,7 @@ IF (Flag_ParticleTrack) THEN
          CurPar%next%pardata%vpold = CurPar%next%pardata%vp
          CurPar%next%pardata%wpold = CurPar%next%pardata%wp
          CurPar%next%pardata%rpold = CurPar%next%pardata%rp
+         CurPar%next%pardata%par_pH   = pH_bulk 
          CurPar%next%pardata%par_conc   = S_intrinsic 
          CurPar%next%pardata%gamma_cont = 0.0000_dbl
          CurPar%next%pardata%sh_conf  = 0.0_dbl

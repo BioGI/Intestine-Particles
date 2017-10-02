@@ -852,7 +852,7 @@ END SUBROUTINE Compute_U_slip
 
 
 !===============================================================================================================
-SUBROUTINE Compute_C_surface_new !Calculating surface pH of drug with bicarbonate buffer using the IRR approach
+SUBROUTINE Compute_C_surface !Calculating surface pH of drug with bicarbonate buffer using the IRR approach
 !===============================================================================================================
 IMPLICIT NONE
 
@@ -909,9 +909,6 @@ DO WHILE (ASSOCIATED(current))
             r=1.0e16*((-Kab*Db*Dh*Hh)+(Kab*Db*Doh*OHh)-(h*(sqrt(Dbh*kd))*Doh*Kw) -(h*(sqrt(Dbh*kd))*Da*HA_o*Kaa) -(Kab*(h*((sqrt(Db*kd))*Db*BHh)))-(Db**(2)*Kab*Bh)+(Db**(2)*Kab*Bh))
             s=1.0e16*((-Kab*Db*Doh*Kw)-(Kab*Db*Da*HA_o*Kaa))
             yy_min=1.0e16
-!           Do ii=1,10000000
-!              proton= proton_bulk + ii*1e-8 ! /10000000.0
-!              pH_s=-log10(proton) 
             Do ii=1,6000
                pH_s=pH_bulk- ii*0.001
                proton= 10.0_dbl**(-pH_s)
@@ -920,7 +917,8 @@ DO WHILE (ASSOCIATED(current))
                  GOTO 100
                ENDIF
             ENDDO
-100         WRITE(*,*) 'pH_s',pH_s 
+100         current%pardata%par_pH= pH_s
+            current%pardata%par_conc= S_intrinsic*(1.0_dbl + kaa/proton)
          ENDIF   
       END IF  
    END IF  
@@ -928,70 +926,12 @@ DO WHILE (ASSOCIATED(current))
 END DO   
 
 !===================================================================================================
-END SUBROUTINE Compute_C_surface_new
-!===================================================================================================
-
-
-
-
-
-!===================================================================================================
-SUBROUTINE Compute_C_surface
-!===================================================================================================
-IMPLICIT NONE
-
-REAL(dbl)                :: c0,c1,c2,c3,c4,c5,c6
-REAL(dbl)                :: S_ratio
-REAL(dbl)                :: R_P,Sh_P,delta_P
-TYPE(ParRecord), POINTER :: current
-TYPE(ParRecord), POINTER :: next
-
-current => ParListHead%next
-DO WHILE (ASSOCIATED(current))
-   next => current%next 
-   IF (mySub .EQ.current%pardata%cur_part) THEN
-      IF (current%pardata%rp .GT. Min_R_Acceptable) THEN 
-
-         IF (Flag_Buffer) THEN !--- Buffer Capacity =10.5 mM ------------------------------------------------
-            R_P  = 1000000.0* current%pardata%rp   !units in  micron
-            Sh_P = 1.0_dbl+ current%pardata%sh_conf + current%pardata%sh_shear + current%pardata%sh_slip
-            delta_P = (R_P / Sh_P)                 !units in microns
-            IF (delta_P .LE. 50.0) THEN
-               c6= -0.000000002910474984
-               c5=  0.000000504714268975
-               c4= -0.000035024962744930
-               c3=  0.001258840857793950
-               c2= -0.026259477974747900
-               c1=  0.435387995939737000
-               c0=  2.398778083334100000
-            ELSE IF ((delta_P .GT. 50.0) .AND. (delta_P.LE. 1000.0)) THEN
-              c6= -0.000000000000000126
-              c5=  0.000000000000461219
-              c4= -0.000000000686316847
-              c3=  0.000000540218636146
-              c2= -0.000251691712619862
-              c1=  0.083217749423939100
-              c0=  5.755370460706180000
-            ELSE                           !No correlations for larger diffusion layer thicknesses (YET)
-               write(*,*) 'ERROR: delta_P > 1000 micron in Compute_Surface_Solubility'
-               STOP
-            END IF  
-            S_ratio= (c6*delta_P**6) + (c5*delta_P**5) + (c4*delta_P**4) + (c3*delta_P**3) + (c2*delta_P**2) + (c1*delta_P) +(c0)
-
-         ELSE !--- Buffer Capacity= 0.0 mM -----------------------------------------------------------------
-            S_ratio =2.30196707
-         END IF
-         current%pardata%par_conc = S_ratio * S_intrinsic
-         !write(*,*) 'iter,ID,delta,Cs',iter,current%pardata%parid,delta_P,current%pardata%par_conc 
-      END IF  
-   END IF  
-   current => next
-
-END DO   
-
-!===================================================================================================
 END SUBROUTINE Compute_C_surface
 !===================================================================================================
+
+
+
+
 
 
 

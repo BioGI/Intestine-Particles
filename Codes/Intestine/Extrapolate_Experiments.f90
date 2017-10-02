@@ -13,7 +13,7 @@ REAL(dbl) :: rMax, teta1Max, teta2Max, rr, teta1, teta2
 REAL(dbl) :: x_particle, y_particle, z_particle
 REAL(dbl) :: R_Particle, R_Par_Max, D_Par_Max, R_Boundary
 REAL(dbl) :: R_left, R_right, dz, Volume, Area
-REAL(dbl) :: xp,yp,zp,up,vp,wp,U_slip,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_Conc 
+REAL(dbl) :: xp,yp,zp,up,vp,wp,U_slip,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_pH,par_conc 
 REAL(dbl) :: eps,S_ratio,Sh,tmp,Cb,deltaR,zcf3,Drug_Released
 REAL(dbl) :: Drug_Released_del_diff, Drug_Released_del_shear, Drug_Released_del_slip
 REAL(dbl) :: Pw,Gut_Surface,Gut_volume,Drug_Absorbed_Total
@@ -71,7 +71,7 @@ IF (Continuation.EQ.1) THEN
    READ(160,*) tmp_char
    DO i = 1, np
       write(*,*) i 
-      READ(160,*) xp,yp,zp,up,vp,wp,U_slip,parid,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_Conc,cur_part 
+      READ(160,*) xp,yp,zp,up,vp,wp,U_slip,parid,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_pH,par_conc,cur_part 
       CALL list_init(CurPar%next)		
       CurPar%next%prev => CurPar
       CurPar%next%next => null()      
@@ -90,7 +90,8 @@ IF (Continuation.EQ.1) THEN
       CurPar%next%pardata%vpold = 0.0_dbl 
       CurPar%next%pardata%wpold = 0.0_dbl 
       CurPar%next%pardata%rpold = 0.0_dbl 
-      CurPar%next%pardata%par_conc =  par_Conc
+      CurPar%next%pardata%par_pH   =  par_pH
+      CurPar%next%pardata%par_conc =  par_conc
       CurPar%next%pardata%gamma_cont = 0.0000_dbl
       CurPar%next%pardata%sh_conf  = Sh_conf
       CurPar%next%pardata%sh_shear = Sh_shear
@@ -131,6 +132,7 @@ ELSE
       CurPar%next%pardata%vpold = CurPar%next%pardata%vp
       CurPar%next%pardata%wpold = CurPar%next%pardata%wp
       CurPar%next%pardata%rpold = CurPar%next%pardata%rp
+      CurPar%next%pardata%par_pH     = 0.0_dbl
       CurPar%next%pardata%par_conc   = 0.0_dbl
       CurPar%next%pardata%gamma_cont = 0.0000_dbl
       CurPar%next%pardata%sh_conf  = 0.0_dbl
@@ -207,7 +209,7 @@ Do i=iter, 2
       currentt => nextt
    ENDDO
 
-   CALL  Compute_C_surface_new
+   CALL  Compute_C_surface
 
    currentt => ParListHead%next
    DO WHILE (ASSOCIATED(currentt))
@@ -268,6 +270,7 @@ Do i=iter, 2
                             currentt%pardata%delNBbyCV            ,',', &
                             currentt%pardata%Sst                  ,',', &
                             currentt%pardata%S                    ,',', &
+                            currentt%pardata%par_pH               ,',', &
                             currentt%pardata%par_conc             ,',', &
                             currentt%pardata%cur_part
         END IF 

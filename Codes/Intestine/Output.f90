@@ -258,6 +258,7 @@ IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. iter_Start_ph
                         current%pardata%vpold,     &
                         current%pardata%wpold,     &
                         current%pardata%rpold,     &
+                        current%pardata%par_pH,    &
                         current%pardata%par_conc,  &
                         current%pardata%gamma_cont,&
                         current%pardata%sh_conf,   &
@@ -406,7 +407,7 @@ IF (myid .EQ. master) THEN
 
       !------ open the proper output file
       OPEN(160,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-      WRITE(160,*) '"x","y","z","u","v","w","U_slip", "ParID","Sh_conf","Sh_shear","Sh_slip","rp","Cb/Cs","delNBbyCV","Sst","S","C_surface","CPU"'
+      WRITE(160,*) '"x","y","z","u","v","w","U_slip", "ParID","Sh_conf","Sh_shear","Sh_slip","rp","Cb/Cs","delNBbyCV","Sst","S","pH_surface","C_surface","CPU"'
       current => ParListHead%next							 
 
       DO WHILE (ASSOCIATED(current))
@@ -429,6 +430,7 @@ IF (myid .EQ. master) THEN
                              current%pardata%delNBbyCV   ,',', 	&
                              current%pardata%Sst 	     	 ,',',	&
                              current%pardata%S 	         ,',', 	&
+                             current%pardata%par_pH      ,',',  &
                              current%pardata%par_conc    ,',', 	&
                              current%pardata%cur_part    
          END IF	

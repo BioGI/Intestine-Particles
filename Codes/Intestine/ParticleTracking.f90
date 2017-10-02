@@ -363,7 +363,7 @@ SUBROUTINE Particle_Transfer
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl)                :: Particle_Data_l(np,24), PArticle_Data_g(np,24)
+REAL(dbl)                :: Particle_Data_l(np,25), PArticle_Data_g(np,25)
 INTEGER(lng)   		       :: i,ipartition,ii,jj,kk
 INTEGER(lng)             :: PID, ID, RANK
 INTEGER(lng)             :: mpierr
@@ -422,12 +422,13 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data_l(ID,16)= current%pardata%wpold
       Particle_Data_l(ID,17)= current%pardata%rpold
       Particle_Data_l(ID,18)= current%pardata%delNBbyCV
-      Particle_Data_l(ID,19)= current%pardata%par_conc
-      Particle_Data_l(ID,20)= current%pardata%bulk_conc
-      Particle_Data_l(ID,21)= current%pardata%S
-      Particle_Data_l(ID,22)= current%pardata%Sst
-      Particle_Data_l(ID,23)= current%pardata%new_part
-      Particle_Data_l(ID,24)= current%pardata%U_slip
+      Particle_Data_l(ID,19)= current%pardata%par_pH
+      Particle_Data_l(ID,20)= current%pardata%par_conc
+      Particle_Data_l(ID,21)= current%pardata%bulk_conc
+      Particle_Data_l(ID,22)= current%pardata%S
+      Particle_Data_l(ID,23)= current%pardata%Sst
+      Particle_Data_l(ID,24)= current%pardata%new_part
+      Particle_Data_l(ID,25)= current%pardata%U_slip
 
    ELSE
       Particle_Data_l(ID,1) = 1e5                          
@@ -454,13 +455,14 @@ DO WHILE (ASSOCIATED(current))
       Particle_Data_l(ID,22)= 1e5                     
       Particle_Data_l(ID,23)= 1e5                     
       Particle_Data_l(ID,24)= 1e5                     
+      Particle_Data_l(ID,25)= 1e5                     
    ENDIF
    current => next
 ENDDO
 
 !---- Parallel communication between all processors
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*24, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
+CALL MPI_ALLREDUCE(Particle_Data_l, Particle_Data_g, np*25, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, mpierr)
 
 
 current => ParListHead%next
@@ -485,13 +487,14 @@ DO WHILE (ASSOCIATED(current))
       current%pardata%wpold=      Particle_Data_g(ID,16)
       current%pardata%rpold=      Particle_Data_g(ID,17)
       current%pardata%delNBbyCV=  Particle_Data_g(ID,18)
-      current%pardata%par_conc=   Particle_Data_g(ID,19)
-      current%pardata%bulk_conc=  Particle_Data_g(ID,20)
-      current%pardata%S=          Particle_Data_g(ID,21)
-      current%pardata%Sst=        Particle_Data_g(ID,22)
-	    current%pardata%cur_part=   Particle_Data_g(ID,23)
-      current%pardata%new_part=   Particle_Data_g(ID,23)
-      current%pardata%U_slip  =   Particle_Data_g(ID,24)
+      current%pardata%par_pH=     Particle_Data_g(ID,19)
+      current%pardata%par_conc=   Particle_Data_g(ID,20)
+      current%pardata%bulk_conc=  Particle_Data_g(ID,21)
+      current%pardata%S=          Particle_Data_g(ID,22)
+      current%pardata%Sst=        Particle_Data_g(ID,23)
+	    current%pardata%cur_part=   Particle_Data_g(ID,24)
+      current%pardata%new_part=   Particle_Data_g(ID,24)
+      current%pardata%U_slip  =   Particle_Data_g(ID,25)
    current => next  
 ENDDO
 !===================================================================================================
