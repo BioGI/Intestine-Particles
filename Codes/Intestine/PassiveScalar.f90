@@ -40,7 +40,7 @@ SUBROUTINE Scalar				! calculates the evolution of scalar in the domain
 IMPLICIT NONE
 
 INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr
-INTEGER(lng):: N_Boundary,iamBoundary(136,136,217)
+INTEGER(lng):: iamBoundary(136,136,217)
 REAL(dbl)   :: dV,dM         
 INTEGER(lng):: Over_Sat_Counter, Over_Sat_Counter_Global
 REAL(dbl)   :: Over_sat_Total,   Over_Sat_Total_Global
@@ -62,7 +62,7 @@ Largest_phi	        = 0.0_dbl
 Over_Sat_Total      = 0.0_dbl
 !phiTotal            = 0.0_dbl
 iamBoundary=0
-N_Boundary=0
+dV= (100.0*zcf)**3.0_dbl
 !----- Stream the scalar
 DO k=1,nzSub
    DO j=1,nySub
@@ -126,8 +126,7 @@ DO k=1,nzSub
 !            END IF
 
          END IF
-         IF (Pw .GT. 0) THEN    
-            dV= (100.0*zcf)**3.0_dbl
+         IF (iamBoundary(i,j,k).EQ.1) THEN    
             dM=  phi(i,j,k) * tcf * Pw * dA_permeability(k)
             phi(i,j,k) = phi(i,j,k) - dM /dV
             phiAbsorbedS =phiAbsorbedS + dM/dV
