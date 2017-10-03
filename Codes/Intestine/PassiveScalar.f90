@@ -39,7 +39,9 @@ SUBROUTINE Scalar				! calculates the evolution of scalar in the domain
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr                   ! index variables
+INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr
+INTEGER(lng):: N_Boundary,iamBoundary(136,136,217)
+REAL(dbl)   :: dV,dM         
 INTEGER(lng):: Over_Sat_Counter, Over_Sat_Counter_Global
 REAL(dbl)   :: Over_sat_Total,   Over_Sat_Total_Global
 REAL(dbl)   :: Largest_phi, Largest_phi_Global							! OverSaturation issue monitoring
@@ -58,8 +60,9 @@ Negative_phi_Total  = 0.0_dbl
 Over_Sat_Counter    = 0
 Largest_phi	        = 0.0_dbl
 Over_Sat_Total      = 0.0_dbl
-phiTotal            = 0.0_dbl
-
+!phiTotal            = 0.0_dbl
+iamBoundary=0
+N_Boundary=0
 !----- Stream the scalar
 DO k=1,nzSub
    DO j=1,nySub
@@ -78,7 +81,8 @@ DO k=1,nzSub
                IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
                   phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
-                  IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN !No absorption
+                  iamBoundary(i,j,k) = 1
+                  IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0)) THEN ! No absorption
                      phi(i,j,k) = phi(i,j,k) + (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
                   ELSE 
                      CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
@@ -122,6 +126,12 @@ DO k=1,nzSub
 !            END IF
 
          END IF
+         IF (Pw .GT. 0) THEN    
+            dV= (100.0*zcf)**3.0_dbl
+            dM=  phi(i,j,k) * tcf * Pw * dA_permeability(k)
+            phi(i,j,k) = phi(i,j,k) - dM /dV
+            phiAbsorbedS =phiAbsorbedS + dM/dV
+         ENDIF
       END DO
    END DO
 END DO

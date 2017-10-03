@@ -35,6 +35,7 @@
 1.0        ! [coeffPhi]                  CoeffPhi*phi_wall + coeffGrad *(dphi/dn) = coeffConst  
 0.0        ! [coeffGrad]                 CoeffPhi*phi_wall + coeffGrad *(dphi/dn) = coeffConst      
 0.0        ! [coeffConst]                CoeffPhi*phi_wall + coeffGrad *(dphi/dn) = coeffConst 
+1.e-4      ! [Pw]                         Permeability (cm/s)
 10000.0    ! [nPers]                     Number of Periods
 453        ! [Output_Intervals]          Number of iterations between writing the output files 
 20000      ! [Restart_Intervals]         number of iterations between writing the restart files 

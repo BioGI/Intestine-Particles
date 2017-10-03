@@ -77,7 +77,7 @@ REAL(dbl) :: Sc 								! Schmidt number
 REAL(dbl) :: Dm,Dmcf								! binary molecular diffusivity (passive scalar in fluid), diffusivity conversion factor
 REAL(dbl) :: Delta								! scalar parameter
 REAL(dbl) :: phiIC, phiWall							! values of scalar: initial, wall, contribution from boundary
-REAL(dbl) :: coeffPhi, coeffGrad, coeffConst                                    ! Coefficients for the generalized scalar boundary condition (coeffPhi * phiWall + coeffGrad * dPhiDn_wall = coeffConst). 'n' is the direction from the wall into the fluid.
+REAL(dbl) :: coeffPhi, coeffGrad, coeffConst,Pw                                 ! Coefficients for the generalized scalar boundary condition (coeffPhi * phiWall + coeffGrad * dPhiDn_wall = coeffConst). 'n' is the direction from the wall into the fluid.
 REAL(dbl) :: phiAbsorbed							! total amount of scalar absorbed up to current time
 REAL(dbl) :: phiAbsorbedS							! total amount of scalar absorbed up to current time - through the macroscopic surface
 REAL(dbl) :: phiAbsorbedV							! total amount of scalar absorbed up to current time - through the villi
@@ -190,7 +190,8 @@ CHARACTER(5) :: sub	! rank + 1 for output file extensions
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Geometry Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+INTEGER(lng),ALLOCATABLE  :: boundary_node(:,:,:), N_boundary_node_l(:),N_boundary_node_g(:)
+REAL(dbl), ALLOCATABLE    :: dA_permeability(:)
 REAL(dbl), ALLOCATABLE		:: villiLoc(:,:)				! location of each villous
 REAL(dbl), ALLOCATABLE 		:: x(:),y(:),z(:)				! physical coordinate arrays
 REAL(dbl), ALLOCATABLE		:: xx(:),yy(:),zz(:)				! x,y,z arrays (global)
@@ -420,6 +421,7 @@ READ(10,*) phiIC           ! maximum scalar concentration
 READ(10,*) coeffPhi
 READ(10,*) coeffGrad
 READ(10,*) coeffConst
+READ(10,*) Pw                          ! Permeability (cm/s)  
 READ(10,*) nPers                       ! total number of periods to run
 READ(10,*) Output_Intervals            ! number of iterations between writing the output files 
 READ(10,*) Restart_Intervals           ! number of iterations between writing the restart files 

@@ -16,7 +16,7 @@ REAL(dbl) :: R_left, R_right, dz, Volume, Area
 REAL(dbl) :: xp,yp,zp,up,vp,wp,U_slip,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_pH,par_conc
 REAL(dbl) :: eps,S_ratio,Sh,tmp,Cb,deltaR,zcf3,Drug_Released
 REAL(dbl) :: Drug_Released_del_diff, Drug_Released_del_shear, Drug_Released_del_slip
-REAL(dbl) :: Pw,Gut_Surface,Gut_volume,Drug_Absorbed_Total
+REAL(dbl) :: Gut_Surface,Gut_volume,Drug_Absorbed_Total
 INTEGER   :: Continuation,Counter,n,num_Par, i, j, k, z_left, z_right, CPU, parid, cur_part
 CHARACTER(7):: TEMP,iter_char                                       ! iteration stored as a character
 CHARACTER(5):: sub_char,tmp_char
@@ -25,7 +25,6 @@ TYPE(ParRecord), POINTER :: currentt
 TYPE(ParRecord), POINTER :: nextt
 
 CALL ReadInput
-Pw   =1.0e-4                          ! Permeability
 Gut_surface= 7.0738                   ! cm2
 Gut_volume = 1.9958                   ! cm3
 nuL  = (2.0_dbl*tau -1.0_dbl)/6.0_dbl	! lattice kinematic viscosity
