@@ -13,7 +13,7 @@ REAL(dbl) :: rMax, teta1Max, teta2Max, rr, teta1, teta2
 REAL(dbl) :: x_particle, y_particle, z_particle
 REAL(dbl) :: R_Particle, R_Par_Max, D_Par_Max, R_Boundary
 REAL(dbl) :: R_left, R_right, dz, Volume, Area
-REAL(dbl) :: xp,yp,zp,up,vp,wp,U_slip,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_pH,par_conc 
+REAL(dbl) :: xp,yp,zp,up,vp,wp,U_slip,sh_conf,Sh_shear,Sh_slip,rp,bulk_conc,delNBbyCV,SSt,S,par_pH,par_conc
 REAL(dbl) :: eps,S_ratio,Sh,tmp,Cb,deltaR,zcf3,Drug_Released
 REAL(dbl) :: Drug_Released_del_diff, Drug_Released_del_shear, Drug_Released_del_slip
 REAL(dbl) :: Pw,Gut_Surface,Gut_volume,Drug_Absorbed_Total
@@ -35,9 +35,9 @@ kMax = nz
 nzSub= nz
 numprocs=1
 CPU=1
-S_ratio =2.30196707 ! For no buffer case only
 zcf=L/nz
 zcf3=zcf*zcf*zcf
+U_slip=0.0
 
 CALL Global_Setup
 CALL AdvanceGeometry
@@ -185,10 +185,9 @@ Drug_Loss_Percent=0
 OPEN (5,file='Drug-Conservation-00001-Extrapolated.dat')
 WRITE(5,'(A145)') '#VARIABLES =iter,time, Initial, Released_del_diff, Released_del_shear, Released_del_slip, Released_Total, Absorbed, Remained_in_Domain, Loss_Percent'
 
-Do i=iter, 2
+Do i=iter, 3000000
    np=0
    iter=iter+1
-
    currentt => ParListHead%next
    DO WHILE (ASSOCIATED(currentt))
       nextt => currentt%next
@@ -245,11 +244,10 @@ Do i=iter, 2
      STOP
   ENDIF
 
-  Output_Intervals=453
   IF ((MOD(iter, Output_Intervals) .EQ. 0))  THEN
      WRITE(iter_char(1:7),'(I7.7)') iter
      OPEN(170,FILE='pardat-'//iter_char//'-'//sub//'.csv')
-     WRITE(170,*) '"x","y","z","u","v","w","U_slip", "ParID","Sh_conf","Sh_shear","Sh_slip","rp","Cb/Cs","delNBbyCV","Sst","S","C_surface","CPU"'
+     WRITE(170,*) '"x","y","z","u","v","w","U_slip", "ParID","Sh_conf","Sh_shear","Sh_slip","rp","Cb/Cs","delNBbyCV","Sst","S","pH_Surface","C_surface","CPU"'
      currentt => ParListHead%next                                                       
      DO WHILE (ASSOCIATED(currentt))
         nextt => currentt%next   
@@ -260,7 +258,7 @@ Do i=iter, 2
                             currentt%pardata%up*vcf               ,',', &
                             currentt%pardata%vp*vcf               ,',', &
                             currentt%pardata%wp*vcf               ,',', &
-                            currentt%pardata%U_slip               ,',', &
+                            U_slip                                ,',', &
                             currentt%pardata%parid                ,',', &
                             currentt%pardata%sh_conf              ,',', &
                             currentt%pardata%sh_shear             ,',', &
@@ -274,7 +272,7 @@ Do i=iter, 2
                             currentt%pardata%par_conc             ,',', &
                             currentt%pardata%cur_part
         END IF 
-1001    format (6(F9.4,a2),(E18.9,a2),(I6,a2),3(F12.8,a2),3(F11.8,a2),3(F13.8,a2),I4)
+1001    format (6(F9.4,a2),(E18.9,a2),(I6,a2),3(F12.8,a2),3(F11.8,a2),4(F13.8,a2),I4)
         currentt => nextt
      ENDDO
      CLOSE(170)
