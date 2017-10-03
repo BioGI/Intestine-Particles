@@ -258,7 +258,6 @@ IF ((myid .EQ. master) .AND. (Flag_ParticleTrack) .AND. (iter .GE. iter_Start_ph
                         current%pardata%vpold,     &
                         current%pardata%wpold,     &
                         current%pardata%rpold,     &
-                        current%pardata%par_pH,    &
                         current%pardata%par_conc,  &
                         current%pardata%gamma_cont,&
                         current%pardata%sh_conf,   &

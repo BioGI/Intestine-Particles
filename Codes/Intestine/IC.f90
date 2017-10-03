@@ -156,7 +156,7 @@ IF (Flag_ParticleTrack) THEN
 
       DO i = 1, np
          READ(59,*) parid_r,xp_r,yp_r,zp_r,up_r,vp_r,wp_r,rp_r,xpold_r,ypold_r,zpold_r, &			
-	                  upold_r,vpold_r,wpold_r,rpold_r,par_pH_r,par_conc_r,gamma_cont_r,Sh_conf_r,Sh_shear_r,Sh_slip_r,S_r,   &
+	                  upold_r,vpold_r,wpold_r,rpold_r,par_conc_r,gamma_cont_r,Sh_conf_r,Sh_shear_r,Sh_slip_r,S_r,   &
                     Sst_r,Veff_r,Nbj_r,bulk_conc_r,delNBbyCV_r,cur_part_r,new_part_r                                
          CALL list_init(CurPar%next)      
          CurPar%next%prev => CurPar
@@ -176,7 +176,7 @@ IF (Flag_ParticleTrack) THEN
          CurPar%next%pardata%vpold 	= 	vpold_r
          CurPar%next%pardata%wpold 	= 	wpold_r
          CurPar%next%pardata%rpold 	= 	rpold_r
-         CurPar%next%pardata%par_pH = 	par_pH_r
+         CurPar%next%pardata%par_pH = 	pH_bulk 
          CurPar%next%pardata%par_conc 	= 	par_conc_r
          CurPar%next%pardata%gamma_cont 	= 	gamma_cont_r
          CurPar%next%pardata%sh_conf =	Sh_conf_r
