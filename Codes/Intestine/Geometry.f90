@@ -341,6 +341,67 @@ END SUBROUTINE SetProperties
 
 
 
+!==================================================================================================
+SUBROUTINE Permeability_Nodes				    ! defines the geometry via "node" array of flags
+!==================================================================================================
+IMPLICIT NONE 
+
+INTEGER(lng):: i,j,k,im1,jm1,km1,m,N_t,mpierr
+REAL(dbl)   :: Area,dA_ave,Area_t
+
+ALLOCATE(boundary_node(0:nxsub+1,0:nysub+1,0:nzsub+1))
+ALLOCATE(N_boundary_node_l(0:nz+1),N_boundary_node_g(0:nz+1),dA_permeability(0:nz+1))
+
+N_t=0
+dA_ave=0.0
+Area_t=0.0
+boundary_node=0
+N_boundary_node_l= 0
+
+DO k=1,nzsub
+   DO j=1,nysub
+      DO i=1,nxsub
+         IF (Node(i,j,k) .EQ.FLUID) THEN
+            DO m=0,NumDistDirs
+               im1= i- ex(m)
+               jm1= j- ey(m)
+               km1= k- ez(m)
+               IF (node(im1,jm1,km1) .EQ. SOLID) THEN
+                  boundary_node(i,j,k) =1
+              ENDIF
+            ENDDO
+        ENDIF   
+      ENDDO
+   ENDDO
+ENDDO
+
+DO k=1,nzsub
+   DO j=1,nysub
+      DO i=1,nxsub
+         N_boundary_node_l(k+kmin-1)=N_boundary_node_l(k+kmin-1)+ boundary_node(i,j,k) 
+      ENDDO
+   ENDDO
+ENDDO
+
+CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+CALL MPI_ALLREDUCE(N_boundary_node_l,N_boundary_node_g, nz+1, MPI_INT, MPI_SUM, MPI_COMM_WORLD, mpierr)
+
+DO k=1,nz
+   Area= 2.0_dbl * 3.1415 * rDom(k) * zcf *10000.0_dbl ! [cm2]
+   dA_permeability(k) = Area /N_boundary_node_g(k) 
+   Area_t=Area_t + Area 
+   N_t= N_t +N_boundary_node_g(k)
+   write(*,*) "k,N_boundary_node(k),dA_permeability(k) [cm2]",k,N_boundary_node_g(k),dA_permeability(k)
+ENDDO
+dA_ave=Area_t/N_t
+write(*,*) "Nb_t,Area_t,dAa_ave",N_t,Area_t,dA_ave
+
+!==================================================================================================
+END SUBROUTINE Permeability_Nodes				    ! defines the geometry via "node" array of flags
+!==================================================================================================
+
+
+
 
 
 
