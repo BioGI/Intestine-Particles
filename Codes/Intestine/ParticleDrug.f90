@@ -861,7 +861,7 @@ REAL(dbl)                :: S_ratio
 REAL(dbl)                :: R_P,Sh_P,delta_P
 REAL(dbl)                :: HA_o,pKaa,Kaa,Dha,Da,pKab,Kab,pKa1,Ka1
 REAL(dbl)                :: Hh,Kw,OHh,BHh,Btotal,Dh,Doh,Dbh,Db,kd
-REAL(dbl)                :: h,p,q,r,s,t,yy,yy_min,pH_s,proton,proton_bulk
+REAL(dbl)                :: h,p,q,r,s,t,yy,yy_min,pH_s,pH_L,pH_R,proton,proton_bulk
 INTEGER(lng)             :: ii
 TYPE(ParRecord), POINTER :: current
 TYPE(ParRecord), POINTER :: next
@@ -908,13 +908,19 @@ DO WHILE (ASSOCIATED(current))
             q=1.0e16*((Kab*Db*Dh)-(h*(sqrt(Dbh*kd))*Dh*Hh)+(h*(sqrt(Dbh*kd))*Doh*OHh) +(h*(sqrt(Db*kd))*Db*Bh))
             r=1.0e16*((-Kab*Db*Dh*Hh)+(Kab*Db*Doh*OHh)-(h*(sqrt(Dbh*kd))*Doh*Kw) -(h*(sqrt(Dbh*kd))*Da*HA_o*Kaa) -(Kab*(h*((sqrt(Db*kd))*Db*BHh)))-(Db**(2)*Kab*Bh)+(Db**(2)*Kab*Bh))
             s=1.0e16*((-Kab*Db*Doh*Kw)-(Kab*Db*Da*HA_o*Kaa))
-            yy_min=1.0e16
-            Do ii=1,6000
-               pH_s=pH_bulk- ii*0.001
+            pH_L=1.0
+            pH_R=pH_bulk
+            DO ii=1,100
+               pH_s= 0.5_dbl*(pH_L+pH_R)
                proton= 10.0_dbl**(-pH_s)
                yy= p*proton**3.0 + q*proton**2 + r*proton + s
-               IF (yy.GE.0) THEN
-                 GOTO 100
+               IF (yy .GE. 0) THEN 
+                  pH_L=pH_s
+               ELSE
+                  pH_R=pH_s
+               ENDIF
+               IF ((pH_R-pH_L) .LE. 1.0e-3) THEN
+                  GOTO 100
                ENDIF
             ENDDO
 100         current%pardata%par_pH= pH_s

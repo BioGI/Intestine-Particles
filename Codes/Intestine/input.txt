@@ -21,8 +21,8 @@
 1000.0     ! [den] (kg/m3)               Fluid's density
 1.00e-6    ! [nu] (m2/s)                 kinematic viscosity 
 0.3300     ! [S_intrinsic] (mu mol/cm3)  Drug solubility: intrinsic 
-2.0        ! [pH_bulk]                   Bulk pH 0f 6.5  
-0.00     ! [Bh]                        Bicarbonate buffer concentration (Molar)   
+6.5        ! [pH_bulk]                   Bulk pH 0f 6.5  
+0.010      ! [Bh]                        Bicarbonate buffer concentration (Molar)   
 7.50e-10   ! [diffm] (m2/s)              Drug's diffusivity
 268.0e-6   ! [molarvol] (cm^3/micromol)  Drug's molar volume
 1000.0     ! [den_P] (kg/m3)             Drug's density
