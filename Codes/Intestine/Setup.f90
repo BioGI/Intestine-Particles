@@ -521,7 +521,7 @@ IF (Flag_Couette) THEN
    ycf	= D     / (ny-1_lng)			    ! length conversion factor: y-direction
 END IF
 
-
+cs	   = (1.0_dbl)/(SQRT(3.0_dbl))		! speed of sound on the lattice
 nuL   = (2.0_dbl*tau - 1.0_dbl)/6.0_dbl	! lattice kinematic viscosity
 denL 	= 1.0_dbl				! arbitrary lattice density (1.0 for convenience)
 tcf 	= nuL*((xcf*xcf)/nu)				! time conversion factor
