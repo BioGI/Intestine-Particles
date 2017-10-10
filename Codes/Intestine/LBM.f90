@@ -790,7 +790,7 @@ SUBROUTINE Mass_Correction
 IMPLICIT NONE
 
 INTEGER(lng) :: i,j,k,m,mpierr                                          ! index variables
-INTEGER(dbl) :: num_Fluid_l, num_Fluid
+INTEGER(lng) :: num_Fluid_l, num_Fluid
 REAL(dbl)    :: rho_sum_l,   rho_sum
 REAL(dbl)    :: rho_ave, Correction
 
@@ -815,7 +815,7 @@ rho_ave= rho_sum / num_Fluid
 Correction = (denL-rho_ave)
 
 IF (myid .EQ. master) THEN              ! Prints out the density corrections to Density_Correction.dat
-   write(2473,*) iter,Correction
+   write(2473,*) iter,rho_ave
 END IF
 
 DO k=1,nzSub
