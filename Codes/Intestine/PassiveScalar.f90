@@ -126,7 +126,7 @@ DO k=1,nzSub
 !            END IF
 
          END IF
-         IF (iamBoundary(i,j,k).EQ.1) THEN    
+         IF ((Pw.GT.0) .AND. (iamBoundary(i,j,k).EQ.1)) THEN    
             dM=  phi(i,j,k) * tcf * Pw * dA_permeability(k)
             phi(i,j,k) = phi(i,j,k) - dM /dV
             phiAbsorbedS =phiAbsorbedS + dM/dV
