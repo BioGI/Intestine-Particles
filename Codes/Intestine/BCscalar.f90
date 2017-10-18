@@ -161,18 +161,18 @@ SUBROUTINE BC_Scalar_NoFlux(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scala
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1				! index variables
-REAL(dbl),   INTENT(OUT):: phiBC     					! scalar contribution from the boundary condition
-INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11		! Trilinear interpolation parameters
-INTEGER(lng) :: ip1,jp1,kp1,xaxis   				! First neighboring node location
-REAL(dbl)    :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd		! Trilinear interpolation parameters
-REAL(dbl)    :: xt,yt,zt,rt,vt,q						! Location of the boundary between i,j,k node and im1,jm1,km1 node
+INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1		! index variables
+REAL(dbl),   INTENT(OUT):: phiBC           				! scalar contribution from the boundary condition
+INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11	! Trilinear interpolation parameters
+INTEGER(lng) :: ip1,jp1,kp1,xaxis   			      	! First neighboring node location
+REAL(dbl)    :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd  ! Trilinear interpolation parameters
+REAL(dbl)    :: xt,yt,zt,rt,vt,q                  ! Location of the boundary between i,j,k node and im1,jm1,km1 node
 REAL(dbl)    :: nx,ny,nz,n_mag
 REAL(dbl)    :: Ax,Ay,Az,A_mag
 REAL(dbl)    :: Prod
 REAL(dbl)    :: rhoAstar, phiAstar, feq_Astar,  PkAstar,PkA 		! density at boundary and contribution of scalar from boundary
 REAL(dbl)    :: rhoBstar, phiBstar, fPlusBstar, PkBstar 		! Values interpolated to Bstar location
-REAL(dbl)    :: cosTheta, sinTheta					! COS(theta), SIN(theta)
+REAL(dbl)    :: cosTheta, sinTheta					 
 REAL(dbl)    :: ub, vb, wb
 REAL(dbl)    :: P1_x,P1_y,P1_z,P2_x,P2_y,P2_z
 REAL(dbl)    :: P1_phi,P2_phi
@@ -198,14 +198,13 @@ ELSE
    ENDIF
    ub = vt* cosTheta						! x-component of the velocity at i,j,k
    vb = vt* sinTheta						! y-component of the velocity at i,j,k
-   wb = -s_movingF/vcf 							! no z-component in this case)
+   wb = -s_movingF/vcf 				  ! no z-component in this case)
 END IF
 
 !--- Computing the normal to the geometry based on the boundary equation 
 nx= -xt/rt
 ny= -yt/rt
 nz= -amp1 *(2.0_dbl*PI/lambda1) *SIN(PI+(2.0_dbl *PI*zt/lambda1)) 
-
 !---normalizing the geometry normal vector 
 n_mag=sqrt(nx**2.0_dbl + ny**2.0_dbl + nz**2.0_dbl)
 nx=nx/n_mag
@@ -292,7 +291,7 @@ P2_phi = c0 * (1.0_dbl-zd) + c1 * zd
 
 !phiWall= P1_phi*((1.0+q)*(1.0+q)/(1.0+2.0*q))- P2_phi*(q*q/(1.0+2.0*q)) - &
 !          (q*(1+q)/(1+2.0*q))* (coeffConst/coeffGrad)
-phiWall= 1.3333333333333*P1_phi - 0.33333333333333*P2_phi
+phiWall= 1.333333333333333*P1_phi - 0.33333333333333*P2_phi
 
 !----- neighboring node (fluid side) ---------------------------------------------------------------
 ip1 = i + ex(m)

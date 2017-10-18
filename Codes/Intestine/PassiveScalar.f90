@@ -81,9 +81,11 @@ DO k=1,nzSub
                IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
                   phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN									! macro- boundary
-                  iamBoundary(i,j,k) = 1
                   IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0)) THEN ! No absorption
-                     phi(i,j,k) = phi(i,j,k) + (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
+                     !phi(i,j,k) = phi(i,j,k) + (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
+                     iamBoundary(i,j,k) = 1
+                     CALL BC_Scalar_NoFlux(m,i,j,k,im1,jm1,km1,phiBC) 
+                     phi(i,j,k) = phi(i,j,k) + phiBC     
                   ELSE 
                      CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC     
