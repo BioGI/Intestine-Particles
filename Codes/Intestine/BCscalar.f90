@@ -164,13 +164,15 @@ IMPLICIT NONE
 INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1		! index variables
 REAL(dbl),   INTENT(OUT):: phiBC           				! scalar contribution from the boundary condition
 INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11	! Trilinear interpolation parameters
-INTEGER(lng) :: ip1,jp1,kp1,xaxis   			      	! First neighboring node location
+INTEGER(lng) :: P1_N_Solid_nodes, P2_N_Solid_nodes
+INTEGER(lng) :: ip1,jp1,kp1   	                  ! First neighboring node location
+INTEGER(lng) :: xaxis,yaxis
 REAL(dbl)    :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd  ! Trilinear interpolation parameters
 REAL(dbl)    :: xt,yt,zt,rt,vt,q                  ! Location of the boundary between i,j,k node and im1,jm1,km1 node
-REAL(dbl)    :: nx,ny,nz,n_mag
+REAL(dbl)    :: Geom_nx,Geom_ny,Geom_nz,Geom_n_mag
 REAL(dbl)    :: Ax,Ay,Az,A_mag
 REAL(dbl)    :: Prod
-REAL(dbl)    :: rhoAstar, phiAstar, feq_Astar,  PkAstar,PkA 		! density at boundary and contribution of scalar from boundary
+REAL(dbl)    :: rhoAstar, phiAstar, feq_Astar,  PkAstar,PkA	! density at boundary and contribution of scalar from boundary
 REAL(dbl)    :: rhoBstar, phiBstar, fPlusBstar, PkBstar 		! Values interpolated to Bstar location
 REAL(dbl)    :: cosTheta, sinTheta					 
 REAL(dbl)    :: ub, vb, wb
@@ -196,26 +198,28 @@ ELSE
    ELSE
       vt = (vel(k)+vel(km1))*0.5_dbl
    ENDIF
-   ub = vt* cosTheta						! x-component of the velocity at i,j,k
-   vb = vt* sinTheta						! y-component of the velocity at i,j,k
-   wb = -s_movingF/vcf 				  ! no z-component in this case)
+   ub = vt* cosTheta						
+   vb = vt* sinTheta					
+   wb = -s_movingF/vcf 		
 END IF
 
-!--- Computing the normal to the geometry based on the boundary equation 
-nx= -xt/rt
-ny= -yt/rt
-nz= -amp1 *(2.0_dbl*PI/lambda1) *SIN(PI+(2.0_dbl *PI*zt/lambda1)) 
+!--- Computing the normal to the geometry based on the equation for boundary 
+Geom_nx= -xt/rt
+Geom_ny= -yt/rt
+Geom_nz= -amp1 *(2.0_dbl*PI/lambda1) *SIN(PI+(2.0_dbl *PI*zt/lambda1)) 
 !---normalizing the geometry normal vector 
-n_mag=sqrt(nx**2.0_dbl + ny**2.0_dbl + nz**2.0_dbl)
-nx=nx/n_mag
-ny=ny/n_mag
-nz=nz/n_mag
+Geom_n_mag=sqrt(Geom_nx**2.0_dbl + Geom_ny**2.0_dbl + Geom_nz**2.0_dbl)
+Geom_nx=Geom_nx/Geom_n_mag
+Geom_ny=Geom_ny/Geom_n_mag
+Geom_nz=Geom_nz/Geom_n_mag
 
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-P1_x= xt + nx*xcf
-P1_y= yt + ny*xcf
-P1_z= zt + nz*xcf
+xaxis=ANINT(0.5_dbl*(nx+1))
+yaxis=ANINT(0.5_dbl*(ny+1))
+P1_x= ((xt + Geom_nx*xcf)/xcf) - iMin + xaxis + 1
+P1_y= ((yt + Geom_ny*xcf)/xcf) - jMin + yaxis + 1
+P1_z= ((zt + Geom_nz*xcf)/xcf) - kMin + 2
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -223,6 +227,20 @@ iy0= FLOOR(P1_y)
 iy1= CEILING(P1_y)
 iz0= FLOOR(P1_z)
 iz1= CEILING(P1_z)
+
+P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+
+!IF (k.EQ. 5) THEN
+!   write(*,*) 'i,j,k',i,j,k
+!   write(*,*) 'im,jm,km',im1,jm1,km1
+!   write(*,*) 'Geom_nx,Geom_ny,Geom_nz',Geom_nx,Geom_ny,Geom_nz
+!   write(*,*) 'xi,yi,zi',x(i),y(j),z(k)
+!   write(*,*) 'xim,yim,zim',x(im1),y(jm1),z(km1)
+!   write(*,*) 'xt,yt,zt',xt,yt,zt
+!   write(*,*) 'P1_x,P1_y,P1_z,ix0,ix1,iy0,iy1,iz0,iz1',P1_x,P1_y,P1_z,ix0,ix1,iy0,iy1,iz0,iz1
+!   write(*,*) 'P1_N_solid_nodes',P1_N_Solid_nodes 
+!   STOP
+!ENDIF
 
 IF (ix1 /= ix0) THEN
    xd= (P1_x-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
@@ -252,9 +270,9 @@ P1_phi = c0 * (1.0_dbl-zd) + c1 * zd
 
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P2, which is two mesh size away from (xt,yt,zt) at the boundary
-P2_x= xt + 2.0_dbl*nx*xcf
-P2_y= yt + 2.0_dbl*ny*xcf
-P2_z= zt + 2.0_dbl*nz*xcf
+P2_x= ((xt + 2.0_dbl*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
+P2_y= ((yt + 2.0_dbl*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
+P2_z= ((zt + 2.0_dbl*Geom_nz*xcf)/xcf) - kMin + 2
 
 ix0= FLOOR(P2_x)
 ix1= CEILING(P2_x)
@@ -262,6 +280,10 @@ iy0= FLOOR(P2_y)
 iy1= CEILING(P2_y)
 iz0= FLOOR(P2_z)
 iz1= CEILING(P2_z)
+P2_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+
+!write(*,*) 'P1_N_solid_nodes,P2_N_Solid_nodes',P1_N_Solid_nodes, P2_N_Solid_nodes 
+
 IF (ix1 /= ix0) THEN
    xd= (P2_x-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
 ELSE
@@ -318,7 +340,7 @@ IF(q .LT. 0.25) THEN
   q = 0.25_dbl
 END IF
 phiBC	= ((PkAstar - PkA)/q) + PkAstar	
-
+!write(*,*) 'Solid Nodes',P1_N_Solid_nodes,P2_N_Solid_nodes
 !!--- normalizing the distribution vector in direction m
 !A_mag= SQRT(ex(m)**2.0_dbl + ey(m)**2.0_dbl + ez(m)**2.0_dbl)
 !Ax=ex(m)/A_mag
