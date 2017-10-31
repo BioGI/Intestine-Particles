@@ -388,7 +388,7 @@ REAL(dbl)    :: cosTheta, sinTheta
 REAL(dbl)    :: ub, vb, wb
 REAL(dbl)    :: P1_x,P1_y,P1_z,P2_x,P2_y,P2_z
 REAL(dbl)    :: P1_phi,P2_phi,phiWall_new, Del_phiWall,DphiDn
-REAL(dbl)    :: alpha
+REAL(dbl)    :: alpha,Diffusivity
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
@@ -426,7 +426,7 @@ Geom_nz=Geom_nz/Geom_n_mag
 
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-alpha=1.30_dbl               ! The coefficient which defines the distance to walk away from the boundary
+alpha=1.5_dbl               ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
 P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
@@ -441,6 +441,9 @@ iz0= FLOOR(P1_z)
 iz1= CEILING(P1_z)
 
 P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+!IF (P1_N_Solid_nodes .GT.0)THEN
+!   WRITE(*,*) 'P1 is in a lattice with solid node(i,j,k,N):',i,j,k, P1_N_Solid_nodes 
+!ENDIF
 
 !IF (k.EQ. 5) THEN
 !   write(*,*) 'i,j,k',i,j,k
@@ -470,16 +473,20 @@ ELSE
    zd= 0.0_dbl
 END IF
 !--- Interpolation in x-direction
-c00= phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
-c01= phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
-c10= phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
-c11= phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+c00= phiTemp(ix0,iy0,iz0) * (1.0000_dbl-xd) + phiTemp(ix1,iy0,iz0) * xd
+c01= phiTemp(ix0,iy0,iz1) * (1.0000_dbl-xd) + phiTemp(ix1,iy0,iz1) * xd
+c10= phiTemp(ix0,iy1,iz0) * (1.0000_dbl-xd) + phiTemp(ix1,iy1,iz0) * xd
+c11= phiTemp(ix0,iy1,iz1) * (1.0000_dbl-xd) + phiTemp(ix1,iy1,iz1) * xd
 !--- Interpolation in y-direction
-c0 = c00 * (1.0_dbl-yd) + c10 * yd
-c1 = c01 * (1.0_dbl-yd) + c11 * yd
+c0 = c00 * (1.0000_dbl-yd) + c10 * yd
+c1 = c01 * (1.0000_dbl-yd) + c11 * yd
 !--- Interpolation in z-direction
-P1_phi = c0 * (1.0_dbl-zd) + c1 * zd
+P1_phi = c0 * (1.0000_dbl-zd) + c1 * zd
 
+!IF(P1_phi.LT. 0.99)THEN
+!write(*,*) 'B:sur nodes',phiTemp(ix0,iy0,iz0), phiTemp(ix1,iy0,iz0),phiTemp(ix0,iy0,iz1), phiTemp(ix1,iy0,iz1),phiTemp(ix0,iy1,iz0), phiTemp(ix1,iy1,iz0),phiTemp(ix0,iy1,iz1), phiTemp(ix1,iy1,iz1)
+!write(*,*) 'B:node',P1_phi
+!ENDIF
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P2, which is two mesh size away from (xt,yt,zt) at the boundary
 P2_x= ((xt + 2.0_dbl*alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
@@ -512,26 +519,32 @@ ELSE
    zd= 0.0_dbl
 END IF
 !--- Interpolation in x-direction
-c00= phi(ix0,iy0,iz0) * (1.0_dbl-xd) + phi(ix1,iy0,iz0) * xd
-c01= phi(ix0,iy0,iz1) * (1.0_dbl-xd) + phi(ix1,iy0,iz1) * xd
-c10= phi(ix0,iy1,iz0) * (1.0_dbl-xd) + phi(ix1,iy1,iz0) * xd
-c11= phi(ix0,iy1,iz1) * (1.0_dbl-xd) + phi(ix1,iy1,iz1) * xd
+c00= phiTemp(ix0,iy0,iz0) * (1.0_dbl-xd) + phiTemp(ix1,iy0,iz0) * xd
+c01= phiTemp(ix0,iy0,iz1) * (1.0_dbl-xd) + phiTemp(ix1,iy0,iz1) * xd
+c10= phiTemp(ix0,iy1,iz0) * (1.0_dbl-xd) + phiTemp(ix1,iy1,iz0) * xd
+c11= phiTemp(ix0,iy1,iz1) * (1.0_dbl-xd) + phiTemp(ix1,iy1,iz1) * xd
 !--- Interpolation in y-direction
 c0 = c00 * (1.0_dbl-yd) + c10 * yd
 c1 = c01 * (1.0_dbl-yd) + c11 * yd
 !--- Interpolation in z-direction
 P2_phi = c0 * (1.0_dbl-zd) + c1 * zd
 
+Diffusivity=((nuL/Sc)*(xcf**2.0_dbl)/tcf)*10000.0_dbl   ! Diffusivity used in LBM [cm2/s]
 DphiDn=      0.0_dbl
 Del_phiWall= 1.0_dbl
 phiWall=     (4.0_dbl*P1_phi - 1.0_dbl*P2_phi -2.0_dbl*DphiDn) / 3.0_dbl 
-DO WHILE (Del_phiWall .GE. 1.0e-6) 
-   DphiDn= (Pw*phiWall/(diffm*10000.0_dbl))*xcf
+DO WHILE (Del_phiWall .GE. 1.0e-10) 
+   DphiDn= (Pw*phiWall/Diffusivity)*(100.0*xcf)
    phiWall_new= (4.0_dbl*P1_phi - 1.0_dbl*P2_phi -2.0_dbl*DphiDn) / 3.0_dbl 
    Del_phiWall =abs(phiWall_new-phiWall)
    phiWall=phiWall_new
 ENDDO
-
+!IF (((k.EQ.20).OR.(k.EQ.196)).AND.(I.EQ.68).AND.(J.GT.68)) THEN
+!IF ((k.EQ.108).AND.(I.EQ.68).AND.(J.GT.68)) THEN
+!   write(*,*) '================================= iter=',iter
+!   write(*,*) 'i,j,k,nx,ny,nz',i,j,k,Geom_nx,Geom_ny,Geom_nz
+!   write(*,*) 'P1_phi.P2_phi,Dphidn,phiWall',P1_phi,P2_phi,DphiDn,phiWall
+!ENDIF   
 !----- neighboring node (fluid side) ---------------------------------------------------------------
 ip1 = i + ex(m)
 jp1 = j + ey(m)
