@@ -161,8 +161,8 @@ SUBROUTINE BC_Scalar_Permeability(m,i,j,k,im1,jm1,km1,phiBC)				! implements the
 !===================================================================================================
 IMPLICIT NONE
 
-INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1		! index variables
 REAL(dbl),   INTENT(OUT):: phiBC           				! scalar contribution from the boundary condition
+INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1		! index variables
 INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11	! Trilinear interpolation parameters
 INTEGER(lng) :: P1_N_Solid_nodes, P2_N_Solid_nodes
 INTEGER(lng) :: ip1,jp1,kp1   	                  ! First neighboring node location
@@ -231,21 +231,15 @@ iz0= FLOOR(P1_z)
 iz1= CEILING(P1_z)
 
 P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
-!IF (P1_N_Solid_nodes .GT.0)THEN
-!   WRITE(*,*) 'P1 is in a lattice with solid node(i,j,k,N):',i,j,k, P1_N_Solid_nodes 
-!ENDIF
 
-!IF (k.EQ. 5) THEN
-!   write(*,*) 'i,j,k',i,j,k
-!   write(*,*) 'im,jm,km',im1,jm1,km1
-!   write(*,*) 'Geom_nx,Geom_ny,Geom_nz',Geom_nx,Geom_ny,Geom_nz
-!   write(*,*) 'xi,yi,zi',x(i),y(j),z(k)
-!   write(*,*) 'xim,yim,zim',x(im1),y(jm1),z(km1)
-!   write(*,*) 'xt,yt,zt',xt,yt,zt
-!   write(*,*) 'P1_x,P1_y,P1_z,ix0,ix1,iy0,iy1,iz0,iz1',P1_x,P1_y,P1_z,ix0,ix1,iy0,iy1,iz0,iz1
-!   write(*,*) 'P1_N_solid_nodes',P1_N_Solid_nodes 
-!   STOP
-!ENDIF
+IF (P1_N_Solid_nodes .GT.0) THEN
+   WRITE(*,*) 'iter:',iter,'-----------------------'
+   WRITE(*,*) 'node: i,j,k,m:',i,j,k,m
+   WRITE(*,*) 'Geom_n:',Geom_nx,Geom_ny,Geom_nz
+   WRITE(*,*) 'P1: x,y,z,N',P1_x,P1_y,P1_z,P1_N_Solid_nodes 
+   WRITE(*,*) 'P1: ix,iy,iz:',ix0,ix1,iy0,iy1,iz0,iz1
+   WRITE(*,*) 'Status', node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1) 
+ENDIF
 
 IF (ix1 /= ix0) THEN
    xd= (P1_x-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
@@ -273,10 +267,6 @@ c1 = c01 * (1.0000_dbl-yd) + c11 * yd
 !--- Interpolation in z-direction
 P1_phi = c0 * (1.0000_dbl-zd) + c1 * zd
 
-!IF(P1_phi.LT. 0.99)THEN
-!write(*,*) 'B:sur nodes',phiTemp(ix0,iy0,iz0), phiTemp(ix1,iy0,iz0),phiTemp(ix0,iy0,iz1), phiTemp(ix1,iy0,iz1),phiTemp(ix0,iy1,iz0), phiTemp(ix1,iy1,iz0),phiTemp(ix0,iy1,iz1), phiTemp(ix1,iy1,iz1)
-!write(*,*) 'B:node',P1_phi
-!ENDIF
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P2, which is two mesh size away from (xt,yt,zt) at the boundary
 P2_x= ((xt + 2.0_dbl*alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
@@ -289,9 +279,7 @@ iy0= FLOOR(P2_y)
 iy1= CEILING(P2_y)
 iz0= FLOOR(P2_z)
 iz1= CEILING(P2_z)
-P2_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
-
-!write(*,*) 'P1_N_solid_nodes,P2_N_Solid_nodes',P1_N_Solid_nodes, P2_N_Solid_nodes 
+P2_N_Solid_nodes = node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
 
 IF (ix1 /= ix0) THEN
    xd= (P2_x-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
@@ -329,12 +317,6 @@ DO WHILE (Del_phiWall .GE. 1.0e-10)
    Del_phiWall =abs(phiWall_new-phiWall)
    phiWall=phiWall_new
 ENDDO
-!IF (((k.EQ.20).OR.(k.EQ.196)).AND.(I.EQ.68).AND.(J.GT.68)) THEN
-!IF ((k.EQ.108).AND.(I.EQ.68).AND.(J.GT.68)) THEN
-!   write(*,*) '================================= iter=',iter
-!   write(*,*) 'i,j,k,nx,ny,nz',i,j,k,Geom_nx,Geom_ny,Geom_nz
-!   write(*,*) 'P1_phi.P2_phi,Dphidn,phiWall',P1_phi,P2_phi,DphiDn,phiWall
-!ENDIF   
 !----- neighboring node (fluid side) ---------------------------------------------------------------
 ip1 = i + ex(m)
 jp1 = j + ey(m)
@@ -348,13 +330,13 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
 END IF
 
 !----- Computing values at A* & the scalar streamed from A* (Chpter 3 paper) -----------------------
-rhoAstar= (rho(i,j,k)-rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)		! Extrapolate density
-CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)    		! f_eq in mth direction
-phiAstar= phiWall							! phi at solid surface
-PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar			! Contribution from A* to B*  
+rhoAstar= (rho(i,j,k)-rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)		 ! Extrapolate density
+CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)    		       ! f_eq in mth direction
+phiAstar= phiWall                                                  ! phi at solid surface
+PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar		             ! Contribution from A* to B*  
 
 !----- Using only A and A* for interpolation (instead of A* and B*) 
-PkA= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)		! contribution from current node to next in the mth direction
+PkA= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)      ! contribution from current node to next in the mth direction
 
 IF(q .LT. 0.25) THEN
   q = 0.25_dbl
@@ -363,6 +345,8 @@ phiBC	= ((PkAstar - PkA)/q) + PkAstar
 !===================================================================================================
 END SUBROUTINE BC_Scalar_Permeability
 !===================================================================================================
+
+
 
 
 
