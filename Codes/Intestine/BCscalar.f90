@@ -221,7 +221,7 @@ xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
 P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
 P1_y= ((yt + alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P1_z= ((zt + alpha*Geom_nz*xcf)/xcf) - kMin + 2
+P1_z= ((zt + alpha*Geom_nz*xcf)/xcf) - kMin + 1
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -281,7 +281,7 @@ P1_phi = c0 * (1.0000_dbl-zd) + c1 * zd
 !--- Finding location of the point, P2, which is two mesh size away from (xt,yt,zt) at the boundary
 P2_x= ((xt + 2.0_dbl*alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
 P2_y= ((yt + 2.0_dbl*alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P2_z= ((zt + 2.0_dbl*alpha*Geom_nz*xcf)/xcf) - kMin + 2
+P2_z= ((zt + 2.0_dbl*alpha*Geom_nz*xcf)/xcf) - kMin + 1
 
 ix0= FLOOR(P2_x)
 ix1= CEILING(P2_x)
