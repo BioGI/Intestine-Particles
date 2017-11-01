@@ -82,14 +82,8 @@ DO k=1,nzSub
                IF (node(im1,jm1,km1) .EQ. FLUID) THEN 
                   phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							                                                    		! iCommunicating with a solid node acroos the boundary
-                  IF      ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) .AND. (Pw.EQ.0.0)) THEN ! No absorption
+                  IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
                      !iamBoundary(i,j,k) = 1
-                     CALL BC_Scalar_NoFlux(m,i,j,k,im1,jm1,km1,phiBC) 
-                     phi(i,j,k) = phi(i,j,k) + phiBC    
-                     phiIN = phiBC
-                     phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
-                     phiAbsorbedS = phiAbsorbedS + (phiOUT-phiIN)	                                                      			! scalar absorbed at current location in mth direction
-                  ELSE IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) .AND. (Pw.GT.0.0)) THEN ! Permeability
                      CALL BC_Scalar_Permeability(m,i,j,k,im1,jm1,km1,phiBC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC    
                      phiIN = phiBC
