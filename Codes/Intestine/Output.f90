@@ -667,9 +667,9 @@ Drug_Loss_Modified 	= (Drug_Released_Total+ Drug_Initial- Drug_Negative) - (Drug
 IF (Drug_Released_Total .LT. 1e-10) THEN
     Drug_Released_Total = 0.000000000_dbl
 END IF
-IF (Drug_Absorbed .lt. 1.0e-10) THEN
-    Drug_Absorbed = 0.00000000_dbl
-ENDIF
+!IF (Drug_Absorbed .lt. 1.0e-10) THEN
+!    Drug_Absorbed = 0.00000000_dbl
+!ENDIF
 IF (Drug_Released_del_diff .lt. 1.0e-10) THEN
     Drug_Released_del_diff = 0.0000000000_dbl
 ENDIF
