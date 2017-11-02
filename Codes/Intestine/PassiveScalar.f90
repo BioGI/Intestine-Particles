@@ -83,7 +83,7 @@ DO k=1,nzSub
                   phi(i,j,k) = phi(i,j,k) + (fplus(m,im1,jm1,km1)/rho(im1,jm1,km1) - wt(m)*Delta)*phiTemp(im1,jm1,km1)
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							                                                    		! iCommunicating with a solid node acroos the boundary
                   IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
-                     !iamBoundary(i,j,k) = 1
+                     iamBoundary(i,j,k) = 1
                      CALL BC_Scalar_Permeability(m,i,j,k,im1,jm1,km1,phiBC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC    
                      phiIN = phiBC
@@ -131,11 +131,11 @@ DO k=1,nzSub
 !            END IF
 
          END IF
-         !IF ((Pw.GT.0) .AND. (iamBoundary(i,j,k).EQ.1)) THEN    
-         !   dM=  phi(i,j,k) * tcf * Pw * dA_permeability(k)
-         !   phi(i,j,k) = phi(i,j,k) - dM /dV
-         !   phiAbsorbedS =phiAbsorbedS + dM/dV
-         !ENDIF
+         IF ((Flag_2step_Permeability) .AND. (iamBoundary(i,j,k).EQ.1)) THEN    
+            dM=  phiTemp(i,j,k) * tcf * Pw * dA_permeability(k)
+            phi(i,j,k) = phi(i,j,k) - dM /dV
+            phiAbsorbedS =phiAbsorbedS + dM/dV
+         ENDIF
       END DO
    END DO
 END DO

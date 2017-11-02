@@ -60,6 +60,7 @@ LOGICAL :: Flag_Shear_Effects          ! Flag for including shear effects in She
 LOGICAL :: Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number
 LOGICAL :: Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number
 LOGICAL :: Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
+LOGICAL :: Flag_2step_Permeability     ! Flag for two step Permeability
 LOGICAL :: Flag_Restart                ! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -435,6 +436,7 @@ READ(10,*) Flag_Shear_Effects          ! Flag for including shear effects in She
 READ(10,*) Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number        
 READ(10,*) Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
 READ(10,*) Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
+READ(10,*) Flag_2step_Permeability     ! Flag for 2 step permeability BC
 READ(10,*) Flag_Restart                ! Falg for using restart files instead of starting from zero   
 CLOSE(10)
 

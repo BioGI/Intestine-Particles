@@ -178,7 +178,7 @@ REAL(dbl)    :: cosTheta, sinTheta
 REAL(dbl)    :: ub, vb, wb
 REAL(dbl)    :: P1_x,P1_y,P1_z,P2_x,P2_y,P2_z
 REAL(dbl)    :: P1_phi,P2_phi,phiWall_new, Del_phiWall,DphiDn
-REAL(dbl)    :: alpha,Diffusivity
+REAL(dbl)    :: alpha,Diffusivity,Pww
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
@@ -307,12 +307,17 @@ c1 = c01 * (1.0_dbl-yd) + c11 * yd
 !--- Interpolation in z-direction
 P2_phi = c0 * (1.0_dbl-zd) + c1 * zd
 
+IF (Flag_2step_Permeability) THEN
+   Pww=1.0e-16  !No flux at this stage. Later in PassiveSacalr the preamibility is applied
+ELSE
+   Pww=Pw
+ENDIF 
 Diffusivity=((nuL/Sc)*(xcf**2.0_dbl)/tcf)*10000.0_dbl   ! Diffusivity used in LBM [cm2/s]
 DphiDn=      0.0_dbl
 Del_phiWall= 1.0_dbl
 phiWall=     (4.0_dbl*P1_phi - 1.0_dbl*P2_phi -2.0_dbl*DphiDn) / 3.0_dbl 
 DO WHILE (Del_phiWall .GE. 1.0e-10) 
-   DphiDn= (Pw*phiWall/Diffusivity)*(100.0*xcf)
+   DphiDn= (Pww*phiWall/Diffusivity)*(100.0*xcf)
    phiWall_new= (4.0_dbl*P1_phi - 1.0_dbl*P2_phi -2.0_dbl*DphiDn) / 3.0_dbl 
    Del_phiWall =abs(phiWall_new-phiWall)
    phiWall=phiWall_new

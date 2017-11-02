@@ -49,5 +49,6 @@
 .FALSE.    ! [Flag_Convection_Effects]   Flag for including convection effects in Sherwood number  
 .FALSE.    ! [Flag_Confinement_Effects]  Flag for including confinement effectgs in Sherwood number       
 .FALSE.    ! [Flag_Rectify_Neg_phi]      Flag for rectifying negative phi (make it zero) or leave it as is  (Flag_Rectify_Neg_phi) 
+.FALSE.    ! [Flag_2step_Permeability]   Flag for 2 step Permeability BC 
 .FALSE.    ! [Flag_Restart]              Falg for using restart files instead of starting from zero
 
