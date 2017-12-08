@@ -52,9 +52,9 @@ IF (Flag_ParticleTrack) THEN 					! If particle tracking is 'on' then do the fol
    CALL Particle_Setup
 ENDIF
 
-IF (Pw .GT. 0.0) THEN
-   CALL Permeability_Nodes
-ENDIF
+!IF (Pw .GT. 0.0) THEN
+!   CALL Permeability_Nodes
+!ENDIF
 
 CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)				! synchronize all processes before starting simulation [Intrinsic]
 
