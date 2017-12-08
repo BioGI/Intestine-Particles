@@ -84,7 +84,7 @@ DO k=1,nzSub
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							                                                    		! iCommunicating with a solid node acroos the boundary
                   IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
                      iamBoundary(i,j,k) = 1
-                     CALL BC_Scalar_Permeability(m,i,j,k,im1,jm1,km1,phiBC) 
+                     CALL BC_Scalar_Permeability_1storder(m,i,j,k,im1,jm1,km1,phiBC) 
                      !CALL BC_flux0(m,i,j,k,im1,jm1,km1,phiBC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC    
                      phiIN = phiBC
