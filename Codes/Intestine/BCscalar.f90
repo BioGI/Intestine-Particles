@@ -233,14 +233,14 @@ iz1= CEILING(P1_z)
 
 P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
 
-IF (P1_N_Solid_nodes .GT.0) THEN
-   WRITE(*,*) 'iter:',iter,'-----------------------'
-   WRITE(*,*) 'node: i,j,k,m:',i,j,k,m
-   WRITE(*,*) 'Geom_n:',Geom_nx,Geom_ny,Geom_nz
-   WRITE(*,*) 'P1: x,y,z,N',P1_x,P1_y,P1_z,P1_N_Solid_nodes 
-   WRITE(*,*) 'P1: ix,iy,iz:',ix0,ix1,iy0,iy1,iz0,iz1
-   WRITE(*,*) 'Status', node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1) 
-ENDIF
+!IF (P1_N_Solid_nodes .GT.0) THEN
+!   WRITE(*,*) 'iter:',iter,'-----------------------'
+!   WRITE(*,*) 'node: i,j,k,m:',i,j,k,m
+!   WRITE(*,*) 'Geom_n:',Geom_nx,Geom_ny,Geom_nz
+!   WRITE(*,*) 'P1: x,y,z,N',P1_x,P1_y,P1_z,P1_N_Solid_nodes 
+!   WRITE(*,*) 'P1: ix,iy,iz:',ix0,ix1,iy0,iy1,iz0,iz1
+!   WRITE(*,*) 'Status', node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1) 
+!ENDIF
 
 IF (ix1 /= ix0) THEN
    xd= (P1_x-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
@@ -393,14 +393,14 @@ iz1= CEILING(P1_z)
 
 P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
 
-IF (P1_N_Solid_nodes .GT.0) THEN
-   WRITE(*,*) 'iter:',iter,'-----------------------'
-   WRITE(*,*) 'node: i,j,k,m:',i,j,k,m
-   WRITE(*,*) 'Geom_n:',Geom_nx,Geom_ny,Geom_nz
-   WRITE(*,*) 'P1: x,y,z,N',P1_x,P1_y,P1_z,P1_N_Solid_nodes 
-   WRITE(*,*) 'P1: ix,iy,iz:',ix0,ix1,iy0,iy1,iz0,iz1
-   WRITE(*,*) 'Status', node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1) 
-ENDIF
+!IF (P1_N_Solid_nodes .GT.0) THEN
+!   WRITE(*,*) 'iter:',iter,'-----------------------'
+!   WRITE(*,*) 'node: i,j,k,m:',i,j,k,m
+!   WRITE(*,*) 'Geom_n:',Geom_nx,Geom_ny,Geom_nz
+!   WRITE(*,*) 'P1: x,y,z,N',P1_x,P1_y,P1_z,P1_N_Solid_nodes 
+!   WRITE(*,*) 'P1: ix,iy,iz:',ix0,ix1,iy0,iy1,iz0,iz1
+!   WRITE(*,*) 'Status', node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1) 
+!ENDIF
 
 IF (ix1 /= ix0) THEN
    xd= (P1_x-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
