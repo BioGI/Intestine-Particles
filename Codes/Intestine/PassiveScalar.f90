@@ -65,6 +65,15 @@ Over_Sat_Total      = 0.0_dbl
 iamBoundary=0
 dV= (100.0*zcf)**3.0_dbl
 !----- Stream the scalar
+N0=0
+N1=0
+N2=0
+N3=0
+N4=0
+N5=0
+N6=0
+N7=0
+N8=0
 DO k=1,nzSub
    DO j=1,nySub
       DO i=1,nxSub
@@ -84,6 +93,7 @@ DO k=1,nzSub
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							                                                    		! iCommunicating with a solid node acroos the boundary
                   IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
                      iamBoundary(i,j,k) = 1
+                     !CALL BC_Scalar_Permeability(m,i,j,k,im1,jm1,km1,phiBC) 
                      CALL BC_Scalar_Permeability_1storder(m,i,j,k,im1,jm1,km1,phiBC) 
                      !CALL BC_flux0(m,i,j,k,im1,jm1,km1,phiBC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC    
@@ -141,7 +151,7 @@ DO k=1,nzSub
    END DO
 END DO
 
-
+WRITE(*,*) 'N0,N1,N2,N3,N4,N5,N6,N7,N8',N0,N1,N2,N3,N4,N5,N6,N7,N8
 !----- Printing out the outputs for Monitoring Negative-phi issue
 IF (Flag_Rectify_Neg_phi) THEN
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)

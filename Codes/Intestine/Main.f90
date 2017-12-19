@@ -45,7 +45,7 @@ CALL ICs							      ! set initial conditions [MODULE: ICBC]
 CALL OpenOutputFiles				! opens output files for writing [MODULE: Output.f90]
 CALL PrintParams						! print simulation info [MODULE: Output]
 CALL PrintFields						! output the velocity, density, and scalar fields [MODULE: Output]
-CALL PrintComputationalTime(0) 						! Start simulation timer, print status [MODULE: Output]
+!CALL PrintComputationalTime(0) 						! Start simulation timer, print status [MODULE: Output]
 
 IF (Flag_ParticleTrack) THEN 					! If particle tracking is 'on' then do the following
    CALL IniParticles

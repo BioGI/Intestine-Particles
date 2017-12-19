@@ -33,6 +33,7 @@ REAL(dbl), 		ALLOCATABLE :: Dudt_x(:,:,:),Dudt_y(:,:,:),Dudt_z(:,:,:)
 
 REAL(dbl), 		ALLOCATABLE :: rho(:,:,:)                          ! density
 INTEGER(lng), 	ALLOCATABLE :: node(:,:,:)                       ! node flags (FLUID/SOLID)
+INTEGER(lng), 	ALLOCATABLE :: nnode(:,:,:)                      ! node flags (FLUID/SOLID)
 REAL(dbl), 		ALLOCATABLE :: ex(:),ey(:),ez(:)                   ! LBM discretized velocity vectors
 INTEGER(lng), 	ALLOCATABLE :: bb(:), sym(:,:)                   ! bounceback and symmetry directions
 REAL(dbl), 		ALLOCATABLE :: wt(:)                               ! weighting coefficients for the equilibrium distribution functions
@@ -64,11 +65,12 @@ LOGICAL :: Flag_2step_Permeability     ! Flag for two step Permeability
 LOGICAL :: Flag_Restart                ! Restart Flag
 
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Scalar Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+INTEGER(lng) ,ALLOCATABLE:: NumFluids_Veff_l(:),NumFluids_Veff(:)
+INTEGER(lng), ALLOCATABLE:: opX(:),opY(:),opZ(:) 
 REAL(dbl), ALLOCATABLE :: phi(:,:,:)						! passive scalar
 REAL(dbl), ALLOCATABLE :: overlap(:,:,:)                   ! Partitioning for drug dissolution model
 REAL(dbl), ALLOCATABLE :: overlap_sum(:),overlap_sum_l(:) ! Partitioning for drug dissolution model
 REAL(dbl), ALLOCATABLE :: Cb_Total_Veff_l(:),Cb_Total_Veff(:)
-INTEGER(lng) ,ALLOCATABLE::NumFluids_Veff_l(:),NumFluids_Veff(:)
 REAL(dbl), ALLOCATABLE :: delphi_particle(:,:,:)				   ! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_x(:,:,:)	 			 ! passive scalar contribution from particles
 REAL(dbl), ALLOCATABLE :: tausgs_particle_y(:,:,:)	 		   ! passive scalar contribution from particles
@@ -275,9 +277,10 @@ REAL(dbl),    PARAMETER	:: R0 = 0.0026_dbl
 REAL(dbl),    PARAMETER	:: Min_R_Acceptable= 1.0e-7 				! Minimum particle radius. Smaller particles are considered completely dissolved and no computation is done  for them.
 
 INTEGER(lng):: np								! number of particles
-INTEGER(dbl):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
-INTEGER(dbl):: num_particles							! Total number of particles in domain
-INTEGER(dbl):: CaseNo
+INTEGER(lng):: Cb_numFluids							! Number of fluid nodes in the process for Global bulk scalar Concentration
+INTEGER(lng):: num_particles							! Total number of particles in domain
+INTEGER(lng):: CaseNo
+INTEGER(lng):: N0,N1,N2,N3,N4,N5,N6,N7,N8
 
 REAL(dbl) :: molarvol 								! (cm^3/mole) drug's molar volume
 REAL(dbl) :: diffm			   					  ! (cm2/s) drug's diffusivity	
@@ -1574,6 +1577,7 @@ ALLOCATE(overlap(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(overlap_sum(0:np),overlap_Sum_l(0:np))
 ALLOCATE(Cb_Total_Veff_l(1:np),Cb_Total_Veff(1:np))
 ALLOCATE(NumFluids_Veff_l(1:np),NumFluids_Veff(1:np))
+ALLOCATE(opX(1:nx),opY(1:ny),opZ(1:nz))
 
 ALLOCATE(delphi_particle(0:nxSub+1,0:nySub+1,0:nzSub+1))
 ALLOCATE(tausgs_particle_x(0:nxSub+1,0:nySub+1,0:nzSub+1))
@@ -1582,7 +1586,9 @@ ALLOCATE(tausgs_particle_z(0:nxSub+1,0:nySub+1,0:nzSub+1))
 
 ! Node Flags
 ALLOCATE(node(0:nxSub+1,0:nySub+1,0:nzSub+1))
+ALLOCATE(nnode(0:nxSub+1,0:nySub+1,0:nzSub+1))
 node = -99_lng 
+nnode= -99_lng 
 
 ! LBM Miscellaneous
 ALLOCATE(ex(0:NumDistDirs),ey(0:NumDistDirs),ez(0:NumDistDirs))

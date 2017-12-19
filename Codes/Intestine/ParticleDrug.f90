@@ -892,7 +892,6 @@ Dbh=14.6e-6                       ! Dbh= diffusion coefficient of H2CO3
 Db= 14.6e-6                       ! Db = diffusion coefficient of HCO3-
 kd=50                             ! kd = dehydration rate constant for the IRR model
 
-OPEN(131,FILE='Farhad_Debug.dat')
 current => ParListHead%next
 DO WHILE (ASSOCIATED(current))
    next => current%next 

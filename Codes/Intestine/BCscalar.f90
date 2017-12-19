@@ -79,12 +79,13 @@ END IF
 
 !---------------------------------------------------------------------------------------------------
 !----- Estimating  phi at the wall in case of Neumann or Mixed BC ----------------------------------
-!----- Two Fluid nodes are needed for extrapolation ------------------------------------------------
+!----- Two Fluid nodes are needed for extrapolation ------------------------------------------------(Counter1.LT.4)) THEN
+
 !----- 1st node; A, is adjacent to the boundary ----------------------------------------------------
 !----- 2nd node; B, is a fluid neighbor of A, in the direction closest to geometry-normal ----------
 !---------------------------------------------------------------------------------------------------
 IF (coeffGrad .NE. 0.0) then
-   Geom_norm_x= 1.0
+   Geom_norm_x= 1.0 
    Geom_norm_y= 0.0
    Geom_norm_z= 0.0
    n_prod_max= 0.0_dbl
@@ -158,28 +159,32 @@ END SUBROUTINE BC_Scalar
 
 
 !===================================================================================================
-SUBROUTINE BC_Scalar_Permeability_1storder(m,i,j,k,im1,jm1,km1,phiBC)				! implements the scalar BCs 
+SUBROUTINE BC_Scalar_Permeability_1storder(m,i,j,k,im1,jm1,km1,phiBC)		 ! implements the scalar BCs 
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl),   INTENT(OUT):: phiBC           				! scalar contribution from the boundary condition
-INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1		! index variables
-INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11	! Trilinear interpolation parameters
+REAL(dbl),   INTENT(OUT):: phiBC           				 ! scalar contribution from the boundary condition
+INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1		 ! index variables
+INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11	 ! Trilinear interpolation parameters
 INTEGER(lng) :: P1_N_Solid_nodes, P2_N_Solid_nodes
-INTEGER(lng) :: ip1,jp1,kp1   	                  ! First neighboring node location
+INTEGER(lng) :: ip1,jp1,kp1,ii,jj,kk,mm,N_Case            ! First neighboring node location
 INTEGER(lng) :: xaxis,yaxis
-REAL(dbl)    :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd  ! Trilinear interpolation parameters
-REAL(dbl)    :: xt,yt,zt,rt,vt,q                  ! Location of the boundary between i,j,k node and im1,jm1,km1 node
+INTEGER(lng) :: phi_N,key1,key2,key3
+INTEGER(lng) :: Counter1,Counter2,Interpolation_Dim,Communication_Dim
+REAL(dbl)    :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd,dd! Trilinear interpolation parameters
+REAL(dbl)    :: xt,yt,zt,rt,vt,q                   ! Location of the boundary between i,j,k node and im1,jm1,km1 node
 REAL(dbl)    :: Geom_nx,Geom_ny,Geom_nz,Geom_n_mag
 REAL(dbl)    :: Ax,Ay,Az,A_mag
 REAL(dbl)    :: Prod
 REAL(dbl)    :: rhoAstar, phiAstar, feq_Astar,  PkAstar,PkA	! density at boundary and contribution of scalar from boundary
 REAL(dbl)    :: rhoBstar, phiBstar, fPlusBstar, PkBstar 		! Values interpolated to Bstar location
+REAL(dbl)    :: rhoWall,rho1,rho2,rho3,rho_sum
 REAL(dbl)    :: cosTheta, sinTheta					 
 REAL(dbl)    :: ub, vb, wb
 REAL(dbl)    :: P1_x,P1_y,P1_z,P2_x,P2_y,P2_z
 REAL(dbl)    :: P1_phi,P2_phi,phiWall_new, Del_phiWall,DphiDn
 REAL(dbl)    :: alpha,Diffusivity,Pww
+REAL(dbl)    :: phi_sum, phi_ave,phi1,phi2,phi3
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
@@ -202,27 +207,15 @@ ELSE
    ENDIF
    ub = vt* cosTheta						
    vb = vt* sinTheta					
-   wb = -s_movingF/vcf 		
+   wb = -s_movingF/vcf 
 END IF
 
-!--- Computing the normal to the geometry based on the equation for boundary 
-Geom_nx= -xt/rt
-Geom_ny= -yt/rt
-Geom_nz= -amp1 *(2.0_dbl*PI/lambda1) *SIN(PI+(2.0_dbl *PI*zt/lambda1)) 
-!---normalizing the geometry normal vector 
-Geom_n_mag=sqrt(Geom_nx**2.0_dbl + Geom_ny**2.0_dbl + Geom_nz**2.0_dbl)
-Geom_nx=Geom_nx/Geom_n_mag
-Geom_ny=Geom_ny/Geom_n_mag
-Geom_nz=Geom_nz/Geom_n_mag
-
-!--------------------------------------------------------------------------------------------------
-!--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-alpha=1.5_dbl               ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
-P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
-P1_y= ((yt + alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P1_z= ((zt + alpha*Geom_nz*xcf)/xcf) - kMin + 1
+
+P1_x= (xt/xcf) - iMin + xaxis + 1
+P1_y= (yt/xcf) - jMin + yaxis + 1
+P1_z= (zt/xcf) - kMin + 1
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -231,17 +224,210 @@ iy1= CEILING(P1_y)
 iz0= FLOOR(P1_z)
 iz1= CEILING(P1_z)
 
-P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+Communication_Dim= abs(i-im1) + abs(j-jm1) + abs(k-km1) !--- Interpolation based on a line (1D), face (2D) or cube (3D) 
 
-!IF (P1_N_Solid_nodes .GT.0) THEN
-!   WRITE(*,*) 'iter:',iter,'-----------------------'
-!   WRITE(*,*) 'node: i,j,k,m:',i,j,k,m
-!   WRITE(*,*) 'Geom_n:',Geom_nx,Geom_ny,Geom_nz
-!   WRITE(*,*) 'P1: x,y,z,N',P1_x,P1_y,P1_z,P1_N_Solid_nodes 
-!   WRITE(*,*) 'P1: ix,iy,iz:',ix0,ix1,iy0,iy1,iz0,iz1
-!   WRITE(*,*) 'Status', node(ix0,iy0,iz0),node(ix1,iy0,iz0),node(ix0,iy1,iz0),node(ix0,iy0,iz1),node(ix1,iy1,iz0),node(ix1,iy0,iz1),node(ix0,iy1,iz1),node(ix1,iy1,iz1) 
-!ENDIF
+IF (Communication_Dim.EQ.1) THEN ! P1 is located on one of the edges of the cube
+   phiWall= phiTemp(i,j,k)
+   rhoWall= rho(i,j,k)
+   N_Case=1
+   GOTO 300
+ELSEIF (Communication_Dim.EQ.2) THEN ! P1 is located on one of the faces of the cube
+   Interpolation_Dim = Node(im1,j,k) + Node(i,jm1,k)+ Node(i,j,km1) - 1
+   IF (Interpolation_Dim.EQ.2) THEN
+      phiTemp(im1,jm1,km1)= phiTemp(im1,j,k) *(2*abs(im1-i)-1) &
+                          + phiTemp(i,jm1,k) *(2*abs(jm1-j)-1) &
+                          + phiTemp(i,j,km1) *(2*abs(km1-k)-1) 
+      rho(im1,jm1,km1)    = rho(im1,j,k) *(2*abs(im1-i)-1) &
+                          + rho(i,jm1,k) *(2*abs(jm1-j)-1) &
+                          + rho(i,j,km1) *(2*abs(km1-k)-1) 
+      dd=sqrt((P1_x-i)**2 +(P1_y-j)**2 +(P1_z-k)**2) 
+      phiwall = ( (sqrt(2.0_dbl)-dd)*phiTemp(i,j,k) + dd*phiTemp(im1,jm1,km1)) /sqrt(2.0_dbl) 
+      rhoWall = ( (sqrt(2.0_dbl)-dd)*    rho(i,j,k) + dd*    rho(im1,jm1,km1)) /sqrt(2.0_dbl) 
+      N_Case=2
+   ELSEIF (Interpolation_Dim.EQ.1) THEN
+      phiTemp(im1,jm1,km1)= abs(im1-i)* node(im1,j,k) * phiTemp(im1,j,k) &
+                          + abs(jm1-j)* node(i,jm1,k) * phiTemp(i,jm1,k) &
+                          + abs(km1-k)* node(i,j,km1) * phiTemp(i,j,km1) 
+      rho(im1,jm1,km1)    = abs(im1-i)* node(im1,j,k) * rho(im1,j,k) &
+                          + abs(jm1-j)* node(i,jm1,k) * rho(i,jm1,k) &
+                          + abs(km1-k)* node(i,j,km1) * rho(i,j,km1) 
+      dd=sqrt((P1_x-i)**2 +(P1_y-j)**2 +(P1_z-k)**2) 
+      phiWall= ( (sqrt(2.0_dbl)-dd)*phiTemp(i,j,k) + dd*phiTemp(im1,jm1,km1)) /sqrt(2.0_dbl) 
+      rhoWall= ( (sqrt(2.0_dbl)-dd)*rho(i,j,k)     + dd*rho(im1,jm1,km1)    ) /sqrt(2.0_dbl) 
+      N_Case=3
+   ELSEIF (Interpolation_Dim.EQ.0) THEN
+      phiWall= phiTemp(i,j,k) 
+      rhoWall= rho(i,j,k) 
+      N_Case=4
+   ENDIF
+   GOTO 300
+ELSEIF (Communication_Dim.EQ.3) THEN ! P1 is located on one of the faces of the cube
 
+   !===================================================================================================================================================
+   !=== Treating the Solid nodes in a cell to assing drug concentration values to them, since all 8 nodes are going to be used 
+   !=== for trilinear interpolation of the drug concentration (to the location of the A* at the boundary)
+   !===================================================================================================================================================
+   opX(ix0)=ix1
+   opX(ix1)=ix0
+   opY(iy0)=iy1
+   opY(iy1)=iy0
+   opZ(iz0)=iz1
+   opZ(iz1)=iz0
+
+   P1_N_Solid_nodes = node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+
+   !--- 1 Solid node: Case A --------------------------------------------------------------------------------------------------------------------------
+   IF (P1_N_Solid_nodes .EQ. 1) THEN
+      DO ii=ix0,ix1
+         DO jj=iy0,iy1
+            DO kk=iz0,iz1
+               IF (node(ii,jj,kk).EQ.1) THEN 
+                   phiTemp(ii,jj,kk) =(2.0_dbl*(phiTemp(opX(ii),jj,kk) + phiTemp(ii,opY(jj),kk) + phiTemp(ii,jj,opZ(kk))) & 
+                                     -(phiTemp(opX(ii),opY(jj),kk) + phiTemp(ii,opY(jj),opZ(kk)) + phiTemp(opX(ii),jj,opZ(kk))))/3.0_dbl
+                   rho(ii,jj,kk)     =(2.0_dbl*(rho(opX(ii),jj,kk) + rho(ii,opY(jj),kk) + rho(ii,jj,opZ(kk))) & 
+                                     -(rho(opX(ii),opY(jj),kk) + rho(ii,opY(jj),opZ(kk)) + rho(opX(ii),jj,opZ(kk))))/3.0_dbl
+                   N_Case=5
+               ENDIF
+            ENDDO
+         ENDDO
+      ENDDO
+   ENDIF
+
+   !--- 2 Solid nodes:  Cases B, C, D -------------------------------------------------------------------------------------------------------------------
+   IF (P1_N_Solid_nodes .EQ. 2) THEN
+      DO ii=ix0,ix1
+         DO jj=iy0,iy1
+            DO kk=iz0,iz1
+               IF (node(ii,jj,kk).EQ.1) THEN 
+                  !--- face1
+                  key1= (1.0_lng-node(opX(ii),jj,kk)) *(1.0_lng-node(ii,opY(jj),kk)) *(1.0_lng-node(opX(ii),opY(jj),kk)) 
+                  phi1= phiTemp(opX(ii),jj,kk) + phiTemp(ii,opY(jj),kk) - phiTemp(opX(ii),opY(jj),kk)
+                  rho1=     rho(opX(ii),jj,kk) +     rho(ii,opY(jj),kk) -     rho(opX(ii),opY(jj),kk)
+                  !--- face2
+                  key2= (1.0_lng-node(opX(ii),jj,kk)) *(1.0_lng-node(ii,jj,opZ(kk))) *(1.0_lng-node(opX(ii),jj,opZ(kk))) 
+                  phi2= phiTemp(opX(ii),jj,kk) + phiTemp(ii,jj,opZ(kk)) - phiTemp(opX(ii),jj,opZ(kk))
+                  rho2=     rho(opX(ii),jj,kk) +     rho(ii,jj,opZ(kk)) -     rho(opX(ii),jj,opZ(kk))
+                  !--- face3
+                  key3= (1.0_lng-node(ii,opY(jj),kk)) *(1.0_lng-node(ii,jj,opZ(kk))) *(1.0_lng-node(ii,opY(jj),opZ(kk))) 
+                  phi3= phiTemp(ii,opY(jj),kk) + phiTemp(ii,jj,opZ(kk)) - phiTemp(ii,opY(jj),opZ(kk))
+                  rho3=     rho(ii,opY(jj),kk) +     rho(ii,jj,opZ(kk)) -     rho(ii,opY(jj),opZ(kk))
+
+                  phiTemp(ii,jj,kk) = (key1*phi1+key2*phi2+key3*phi3)/(key1+key2+key3)
+                  rho(ii,jj,kk)     = (key1*rho1+key2*rho2+key3*rho3)/(key1+key2+key3)
+                  N_Case=6
+               ENDIF
+            ENDDO
+         ENDDO
+      ENDDO
+   ENDIF
+
+   !--- 3,4,5,6 Solid nodes: Cases E-U ------------------------------------------------------------------------------------------------------------------
+   IF ((P1_N_Solid_nodes .EQ. 3).OR.(P1_N_Solid_nodes .EQ. 4).OR.(P1_N_Solid_nodes .EQ. 5).OR.(P1_N_Solid_nodes .EQ. 6))  THEN
+      nnode(ix0,iy0,iz0)= node(ix0,iy0,iz0)
+      nnode(ix1,iy0,iz0)= node(ix1,iy0,iz0)
+      nnode(ix0,iy1,iz0)= node(ix0,iy1,iz0)
+      nnode(ix0,iy0,iz1)= node(ix0,iy0,iz1)
+      nnode(ix1,iy1,iz0)= node(ix1,iy1,iz0)
+      nnode(ix1,iy0,iz1)= node(ix1,iy0,iz1)
+      nnode(ix0,iy1,iz1)= node(ix0,iy1,iz1)
+      nnode(ix1,iy1,iz1)= node(ix1,iy1,iz1)
+100   Counter1= 0
+      DO ii=ix0,ix1
+         DO jj=iy0,iy1
+            DO kk=iz0,iz1
+               IF (nnode(ii,jj,kk).EQ.1) THEN
+                  !--- face1 ------------------------------------------------------------------------
+                  key1= (1-nnode(opX(ii),jj,kk))*(1-nnode(ii,opY(jj),kk))*(1-nnode(opX(ii),opY(jj),kk)) 
+                  phi1=  phiTemp(opX(ii),jj,kk) + phiTemp(ii,opY(jj),kk) - phiTemp(opX(ii),opY(jj),kk)
+                  rho1=      rho(opX(ii),jj,kk) +     rho(ii,opY(jj),kk) -     rho(opX(ii),opY(jj),kk)
+                  !--- face2 ------------------------------------------------------------------------
+                  key2= (1-nnode(opX(ii),jj,kk))*(1-nnode(ii,jj,opZ(kk)))*(1-nnode(opX(ii),jj,opZ(kk))) 
+                  phi2=  phiTemp(opX(ii),jj,kk) + phiTemp(ii,jj,opZ(kk)) - phiTemp(opX(ii),jj,opZ(kk))
+                  rho2=      rho(opX(ii),jj,kk) +     rho(ii,jj,opZ(kk)) -     rho(opX(ii),jj,opZ(kk))
+                  !--- face3 ------------------------------------------------------------------------
+                  key3= (1-nnode(ii,opY(jj),kk))*(1-nnode(ii,jj,opZ(kk)))*(1-nnode(ii,opY(jj),opZ(kk))) 
+                  phi3=  phiTemp(ii,opY(jj),kk) + phiTemp(ii,jj,opZ(kk)) - phiTemp(ii,opY(jj),opZ(kk))
+                  rho3=      rho(ii,opY(jj),kk) +     rho(ii,jj,opZ(kk)) -    rho(ii,opY(jj),opZ(kk))
+
+                  IF ((key1+key2+key3) .GT. 0) THEN !--- At least one face of the cube connected to this node can be used for bilinear interpolation of drug concentration
+                     phiTemp(ii,jj,kk) = (key1*phi1+key2*phi2+key3*phi3)/(key1+key2+key3) !--- Concentration is assigned to this solid node
+                     rho(ii,jj,kk)     = (key1*rho1+key2*rho2+key3*rho3)/(key1+key2+key3) !--- Concentration is assigned to this solid node
+                     nnode(ii,jj,kk) = 0 !--- This node is marked as non-solid in case any other node needs its value for interpolation       
+                  ELSE !--- None of the 3 faces connected to this node can be used for bilinear interpolation of teh drug concentration  
+                     Counter1=Counter1+1  ! Number of nodes in the cell that cannot be dealt with using linear interpolation
+                  ENDIF
+               ENDIF
+            ENDDO
+         ENDDO
+      ENDDO
+
+      IF ((Counter1.GT.0).AND.(Counter1.LT.4)) THEN
+         N_Case=7
+         GOTO 100
+      ELSEIF (Counter1.GE.4) THEN
+         N_Case=8
+200      Counter2=0
+         DO ii=ix0,ix1
+            DO jj=iy0,iy1
+               DO kk=iz0,iz1
+                  IF (nnode(ii,jj,kk).EQ.1) THEN
+                     phi_N   = (1-nnode(opX(ii),jj,kk)) + (1-nnode(ii,opY(jj),kk)) +(1-nnode(ii,jj,opZ(kk)))
+                     IF (phi_N .GT.0) THEN
+                        phi_sum = (1-nnode(opX(ii),jj,kk)) * phiTemp(opX(ii),jj,kk) &
+                                + (1-nnode(ii,opY(jj),kk)) * phiTemp(ii,opY(jj),kk) &
+                                + (1-nnode(ii,jj,opZ(kk))) * phiTemp(ii,jj,opZ(kk))
+                        rho_sum = (1-nnode(opX(ii),jj,kk)) *     rho(opX(ii),jj,kk) &
+                                + (1-nnode(ii,opY(jj),kk)) *     rho(ii,opY(jj),kk) &
+                                + (1-nnode(ii,jj,opZ(kk))) *     rho(ii,jj,opZ(kk))
+                        phiTemp(ii,jj,kk) = phi_sum/phi_N
+                            rho(ii,jj,kk) = rho_sum/phi_N
+                        nnode(ii,jj,kk) = 0
+                     ELSE
+                        Counter2=Counter2+1  
+                     ENDIF
+                  ENDIF
+               ENDDO
+            ENDDO
+         ENDDO
+         IF (Counter2.GT.0) THEN
+            GOTO 200
+            N_Case=9
+         ENDIF   
+      ENDIF   
+   ENDIF
+   !--- 7 Solid nodes: Case V ------------------------------------------------------------------------------------------------------------------------------------
+   !IF (P1_N_Solid_nodes .EQ. 7)  THEN !--- Only one fluid node exist in this cube --> concentration at P1 set equal to concentration at the fluid node 
+
+   IF (P1_N_Solid_nodes .EQ. 7)  THEN !--- Only one fluid node exist in this cube --> concentration at P1 set equal to concentration at the fluid node 
+      DO ii=ix0,ix1
+         DO jj=iy0,iy1
+            DO kk=iz0,iz1
+               IF (node(ii,jj,kk).EQ.1) THEN 
+                  phiWall= (1-node(opX(ii),jj,kk))           * phiTemp(opX(ii),jj,kk)      &
+                         + (1-node(ii,opY(jj),kk))           * phiTemp(ii,opY(jj),kk)      &
+                         + (1-node(ii,jj,opZ(kk)))           * phiTemp(ii,jj,opZ(kk))      &
+                         + (1-node(opX(ii),opY(jj),kk))      * phiTemp(opX(ii),opY(jj),kk) &
+                         + (1-node(opX(ii),jj,opZ(kk)))      * phiTemp(opX(ii),jj,opZ(kk)) &
+                         + (1-node(ii,opY(jj),opZ(kk)))      * phiTemp(ii,opY(jj),opZ(kk)) &
+                         + (1-node(opX(ii),opY(jj),opZ(kk))) * phiTemp(opX(ii),opY(jj),opZ(kk)) 
+                  rhoWall= (1-node(opX(ii),jj,kk))           *     rho(opX(ii),jj,kk)      &
+                         + (1-node(ii,opY(jj),kk))           *     rho(ii,opY(jj),kk)      &
+                         + (1-node(ii,jj,opZ(kk)))           *     rho(ii,jj,opZ(kk))      &
+                         + (1-node(opX(ii),opY(jj),kk))      *     rho(opX(ii),opY(jj),kk) &
+                         + (1-node(opX(ii),jj,opZ(kk)))      *     rho(opX(ii),jj,opZ(kk)) &
+                         + (1-node(ii,opY(jj),opZ(kk)))      *     rho(ii,opY(jj),opZ(kk)) &
+                         + (1-node(opX(ii),opY(jj),opZ(kk))) *     rho(opX(ii),opY(jj),opZ(kk)) 
+                   N_Case=10
+                   GOTO 300
+               ENDIF
+            ENDDO
+         ENDDO
+      ENDDO
+   ENDIF
+ENDIF   
+!===================================================================================================================================================
+!=== Trilinear interpolation of drug concentration to the location of A* (phiWall)
+!===================================================================================================================================================
 IF (ix1 /= ix0) THEN
    xd= (P1_x-REAL(ix0,dbl))/(REAL(ix1,dbl)-REAL(ix0,dbl))
 ELSE
@@ -266,28 +452,29 @@ c11= phiTemp(ix0,iy1,iz1) * (1.0000_dbl-xd) + phiTemp(ix1,iy1,iz1) * xd
 c0 = c00 * (1.0000_dbl-yd) + c10 * yd
 c1 = c01 * (1.0000_dbl-yd) + c11 * yd
 !--- Interpolation in z-direction
-P1_phi = c0 * (1.0000_dbl-zd) + c1 * zd
-!----------------------------------------------------------------------------------------------------
-IF (Flag_2step_Permeability) THEN
-   Pww=1.0e-16  !No flux at this stage. Later in PassiveSacalr the preamibility is applied
-ELSE
-   Pww=Pw
-ENDIF 
-Diffusivity=((nuL/Sc)*(xcf**2.0_dbl)/tcf)*10000.0_dbl   ! Diffusivity used in LBM [cm2/s]
-DphiDn=      0.0_dbl
-Del_phiWall= 1.0_dbl
-phiWall= P1_phi - DphiDn*alpha*(xcf*100.0_dbl)
+phiWall = c0 * (1.0000_dbl-zd) + c1 * zd
+!--- Interpolation in x-direction
+c00= rho(ix0,iy0,iz0) * (1.0000_dbl-xd) + rho(ix1,iy0,iz0) * xd
+c01= rho(ix0,iy0,iz1) * (1.0000_dbl-xd) + rho(ix1,iy0,iz1) * xd
+c10= rho(ix0,iy1,iz0) * (1.0000_dbl-xd) + rho(ix1,iy1,iz0) * xd
+c11= rho(ix0,iy1,iz1) * (1.0000_dbl-xd) + rho(ix1,iy1,iz1) * xd
+!--- Interpolation in y-direction
+c0 = c00 * (1.0000_dbl-yd) + c10 * yd
+c1 = c01 * (1.0000_dbl-yd) + c11 * yd
+!--- Interpolation in z-direction
+rhoWall = c0 * (1.0000_dbl-zd) + c1 * zd
 
-DO WHILE (Del_phiWall .GE. 1.0e-10) 
-   DphiDn= (Pww*phiWall/Diffusivity)*(100.0*xcf)
-   phiWall_new= P1_phi - DphiDn*alpha*(xcf*100.0_dbl)
-   Del_phiWall =abs(phiWall_new-phiWall)
-   phiWall=phiWall_new
-ENDDO
+!N_Case=11
+
+
+!===================================================================================================================================================
+!=== Treat the Neumann BC similar to the way we treated Dirichlet BC now that the phi_wall is defined
+!===================================================================================================================================================
 !----- neighboring node (fluid side) ---------------------------------------------------------------
-ip1 = i + ex(m)
-jp1 = j + ey(m)
-kp1 = k + ez(m)
+300 ip1 = i + ex(m)
+    jp1 = j + ey(m)
+    kp1 = k + ez(m)
+WRITE(*,*) 'phiWall,N_Case,i,j,k,im1,jm1,km1,q,iter',phiWall,N_Case,i,j,k,im1,jm1,km1,q,iter
 !------ This rarely happens (both neighboring nodes over a line are solid)
 !------  use values from the current node as an approximation
 IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
@@ -297,9 +484,10 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
 END IF
 
 !----- Computing values at A* & the scalar streamed from A* (Chpter 3 paper) -----------------------
-rhoAstar= (rho(i,j,k)-rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)		 ! Extrapolate density
-CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)    		       ! f_eq in mth direction
 phiAstar= phiWall                                                  ! phi at solid surface
+rhoAstar= rhoWall                                                  ! phi at solid surface
+!rhoAstar= (rho(i,j,k)-rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)		 ! Extrapolate density
+CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)    		       ! f_eq in mth direction
 PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar		             ! Contribution from A* to B*  
 
 !----- Using only A and A* for interpolation (instead of A* and B*) 
@@ -308,7 +496,7 @@ PkA= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)      ! contributio
 IF(q .LT. 0.25) THEN
   q = 0.25_dbl
 END IF
-phiBC	= ((PkAstar - PkA)/q) + PkAstar	
+phiBC	= ((PkAstar - PkA)/q) + PkA	
 !===================================================================================================
 END SUBROUTINE BC_Scalar_Permeability_1storder
 !===================================================================================================
