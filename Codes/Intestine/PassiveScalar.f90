@@ -97,9 +97,9 @@ DO k=1,nzSub
                      CALL BC_Scalar_Permeability_1storder(m,i,j,k,im1,jm1,km1,phiBC) 
                      !CALL BC_flux0(m,i,j,k,im1,jm1,km1,phiBC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC    
-                     phiIN = phiBC
-                     phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
-                     phiAbsorbedS = phiAbsorbedS + (phiOUT-phiIN)		                                                       		! scalar absorbed at current location in mth direction
+                     !phiIN = phiBC
+                     !phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)
+                     !phiAbsorbedS = phiAbsorbedS + (phiOUT-phiIN)		                                                       		! scalar absorbed at current location in mth direction
                   ELSE                                                                                                        ! Immidiate uptake 
                      CALL BC_Scalar(m,i,j,k,im1,jm1,km1,phiBC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC     
