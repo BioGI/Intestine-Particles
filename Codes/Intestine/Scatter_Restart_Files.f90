@@ -64,6 +64,7 @@ READ(10,*)  !phiIC           ! maximum scalar concentration
 READ(10,*)  !coeffPhi
 READ(10,*)  !coeffGrad
 READ(10,*)  !coeffConst
+READ(10,*)  !Pw                          ! Permeability (cm/s)  
 READ(10,*)  !nPers                       ! total number of periods to run
 READ(10,*)  !Output_Intervals            ! number of iterations between writing the output files 
 READ(10,*)  !Restart_Intervals           ! number of iterations between writing the restart files 
@@ -77,6 +78,7 @@ READ(10,*)  !Flag_Shear_Effects          ! Flag for including shear effects in S
 READ(10,*) Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number        
 READ(10,*)  !Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
 READ(10,*)  !Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
+READ(10,*)  !Flag_2step_Permeability     ! Flag for 2 step permeability BC
 READ(10,*)  !Flag_Restart                ! Falg for using restart files instead of starting from zero
 CLOSE(10)
 
