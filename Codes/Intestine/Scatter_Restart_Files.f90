@@ -50,7 +50,8 @@ READ(10,*)  !Tmix				  ! period of mixed mode simulation
 READ(10,*)  !den					! Liquid's density
 READ(10,*)  !nu					  ! Liquid's kinematic viscosity
 READ(10,*)  !S_intrinsic	   ! Drug solubility: intrinsic (mu mole/cm^3)
-READ(10,*)  !S_bulk     	   ! Drug solubility: at bulk pH of 6.5  (mu mole/cm^3)
+READ(10,*)  !pH_bulk     	   ! Drug solubility: at bulk pH of 6.5  (mu mole/cm^3)
+READ(10,*)  !Bh              ! Bicarbonate buffer concentration (Molar)
 READ(10,*)  !diffm           ! Drug's diffusivity (cm2/s)
 READ(10,*)  !molarvol        ! Drug's molar volume (cm^3/mole)
 READ(10,*)  !den_P           ! Drug's density  (kg/m3)
@@ -75,7 +76,7 @@ READ(10,*)  !Flag_BounceBack_2nd_Order   ! Flag for 2nd order LBM BC. If False -
 READ(10,*)  !Flag_ParticleTrack          ! Flag for tracking particles           
 READ(10,*)  !Flag_Particle_Init_Sphere   ! Flag to initiate particles in a sphere (TRUE) or in the whole domain (False) 
 READ(10,*)  !Flag_Shear_Effects          ! Flag for including shear effects in Sherwood number        
-READ(10,*) Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number        
+READ(10,*)  Flag_Convection_Effects     ! Flag for including convection effects in Sherwood number        
 READ(10,*)  !Flag_Confinement_Effects    ! Flag for including confinement effectgs in Sherwood number 
 READ(10,*)  !Flag_Rectify_Neg_phi        ! Flag for rectifying negative phi (make it zero) or leave it as is
 READ(10,*)  !Flag_2step_Permeability     ! Flag for 2 step permeability BC
