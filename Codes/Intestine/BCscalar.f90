@@ -237,7 +237,9 @@ iz1= CEILING(P1_z)
 
 P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
 
-IF(P1_N_Solid_nodes.EQ.1)THEN
+IF(P1_N_Solid_nodes.EQ.0)THEN
+  N0=N0+1
+ELSEIF(P1_N_Solid_nodes.EQ.1)THEN
   N1=N1+1
 ELSEIF(P1_N_Solid_nodes.EQ.2)THEN
   N2=N2+1
