@@ -508,7 +508,7 @@ rhoWall = c0 * (1.0000_dbl-zd) + c1 * zd
 300 ip1 = i + ex(m)
     jp1 = j + ey(m)
     kp1 = k + ez(m)
-WRITE(*,*) 'phiWall,N_Case,i,j,k,im1,jm1,km1,q,iter',phiWall,N_Case,i,j,k,im1,jm1,km1,q,iter
+!WRITE(*,*) 'phiWall,N_Case,i,j,k,im1,jm1,km1,q,iter',phiWall,N_Case,i,j,k,im1,jm1,km1,q,iter
 !------ This rarely happens (both neighboring nodes over a line are solid)
 !------  use values from the current node as an approximation
 IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
