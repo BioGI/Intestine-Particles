@@ -132,24 +132,30 @@ DO k=1,nzSub
                   END IF                    
                END IF
             ENDIF
-!---------- Monitoring over saturation
-!            IF (phi(i,j,k) .GT. Cs_mol) THEN
-!               Over_Sat_Counter= Over_Sat_Counter + 1
-!               Over_Sat_Total  = Over_Sat_Total   + phi(i,j,k)
-!               IF (Largest_phi .LT. phi(i,j,k) ) THEN
-!                  Largest_phi= phi(i,j,k)
-!               END IF
-!            END IF
-
          END IF
-         IF ((Flag_2step_Permeability) .AND. (iamBoundary(i,j,k).EQ.1)) THEN    
-            dM=  phiTemp(i,j,k) * tcf * Pw * dA_permeability(k)
-            phi(i,j,k) = phi(i,j,k) - dM /dV
-            phiAbsorbedS =phiAbsorbedS + dM/dV
-         ENDIF
       END DO
    END DO
 END DO
+
+IF((iter-iter0) .LE. 2)THEN
+   WRITE(*,*) 'N1,N2,N3,N4,N5,N6,N7,N8',N1,N2,N3,N4,N5,N6,N7,N8
+ENDIF
+
+IF (Flag_2step_Permeability) THEN    
+   DO k=1,nzSub
+      DO j=1,nySub
+         DO i=1,nxSub
+            IF ((node(i,j,k) .EQ. FLUID).AND.(iamBoundary(i,j,k).EQ.1)) THEN
+               dM=  phiTemp(i,j,k) * tcf * Pw * dA_permeability(k)
+               phi(i,j,k) = phi(i,j,k) - dM /dV
+               phiAbsorbedS =phiAbsorbedS + dM/dV
+            ENDIF
+         END DO
+      END DO
+   END DO
+ENDIF
+
+
 
 WRITE(*,*) 'N0,N1,N2,N3,N4,N5,N6,N7,N8',N0,N1,N2,N3,N4,N5,N6,N7,N8
 !----- Printing out the outputs for Monitoring Negative-phi issue

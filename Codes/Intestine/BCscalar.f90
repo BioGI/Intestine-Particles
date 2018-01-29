@@ -210,12 +210,23 @@ ELSE
    wb = -s_movingF/vcf 
 END IF
 
+!--- Computing the normal to the geometry based on the equation for boundary 
+Geom_nx= -xt/rt
+Geom_ny= -yt/rt
+Geom_nz= -amp1 *(2.0_dbl*PI/lambda1) *SIN(PI+(2.0_dbl *PI*zt/lambda1)) 
+!---normalizing the geometry normal vector 
+Geom_n_mag=sqrt(Geom_nx**2.0_dbl + Geom_ny**2.0_dbl + Geom_nz**2.0_dbl)
+Geom_nx=Geom_nx/Geom_n_mag
+Geom_ny=Geom_ny/Geom_n_mag
+Geom_nz=Geom_nz/Geom_n_mag
+!--------------------------------------------------------------------------------------------------
+!--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
+alpha=1.0_dbl               ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
-
-P1_x= (xt/xcf) - iMin + xaxis + 1
-P1_y= (yt/xcf) - jMin + yaxis + 1
-P1_z= (zt/xcf) - kMin + 1
+P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
+P1_y= ((yt + alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
+P1_z= ((zt + alpha*Geom_nz*xcf)/xcf) - kMin + 1
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -223,6 +234,27 @@ iy0= FLOOR(P1_y)
 iy1= CEILING(P1_y)
 iz0= FLOOR(P1_z)
 iz1= CEILING(P1_z)
+
+P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
+
+IF(P1_N_Solid_nodes.EQ.1)THEN
+  N1=N1+1
+ELSEIF(P1_N_Solid_nodes.EQ.2)THEN
+  N2=N2+1
+ELSEIF(P1_N_Solid_nodes.EQ.3)THEN
+  N3=N3+1
+ELSEIF(P1_N_Solid_nodes.EQ.4)THEN
+  N4=N4+1
+ELSEIF(P1_N_Solid_nodes.EQ.5)THEN
+  N5=N5+1
+ELSEIF(P1_N_Solid_nodes.EQ.6)THEN
+  N6=N6+1
+ELSEIF(P1_N_Solid_nodes.EQ.7)THEN
+  N7=N7+1
+ELSEIF(P1_N_Solid_nodes.EQ.8)THEN
+  N8=N8+1
+ENDIF
+
 
 Communication_Dim= abs(i-im1) + abs(j-jm1) + abs(k-km1) !--- Interpolation based on a line (1D), face (2D) or cube (3D) 
 
