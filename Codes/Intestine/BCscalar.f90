@@ -221,7 +221,7 @@ Geom_ny=Geom_ny/Geom_n_mag
 Geom_nz=Geom_nz/Geom_n_mag
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-alpha=1.0_dbl               ! The coefficient which defines the distance to walk away from the boundary
+alpha=0.5_dbl               ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
 P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
