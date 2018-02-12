@@ -137,7 +137,7 @@ DO k=1,nzSub
 END DO
 
 IF((iter-iter0) .LE. 2)THEN
-   WRITE(*,*) 'N1,N2,N3,N4,N5,N6,N7,N8',N1,N2,N3,N4,N5,N6,N7,N8
+   WRITE(*,*) 'CPU:N0,N1,N2,N3,N4,N5,N6,N7,N8',myid,N0,N1,N2,N3,N4,N5,N6,N7,N8
 ENDIF
 
 IF (Flag_2step_Permeability) THEN    
@@ -154,9 +154,6 @@ IF (Flag_2step_Permeability) THEN
    END DO
 ENDIF
 
-
-
-WRITE(*,*) 'N0,N1,N2,N3,N4,N5,N6,N7,N8',N0,N1,N2,N3,N4,N5,N6,N7,N8
 !----- Printing out the outputs for Monitoring Negative-phi issue
 IF (Flag_Rectify_Neg_phi) THEN
    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
