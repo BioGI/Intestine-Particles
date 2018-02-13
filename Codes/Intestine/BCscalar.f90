@@ -183,7 +183,7 @@ REAL(dbl)    :: cosTheta, sinTheta
 REAL(dbl)    :: ub, vb, wb
 REAL(dbl)    :: P1_x,P1_y,P1_z,P2_x,P2_y,P2_z
 REAL(dbl)    :: P1_phi,P2_phi,phiWall_new, Del_phiWall,DphiDn
-REAL(dbl)    :: alpha,Diffusivity,Pww
+REAL(dbl)    :: alpha_coeff,Diffusivity,Pww
 REAL(dbl)    :: phi_sum, phi_ave,phi1,phi2,phi3
 REAL(dbl)    :: rho_P1, phi_P1
 
@@ -222,12 +222,12 @@ Geom_ny=Geom_ny/Geom_n_mag
 Geom_nz=Geom_nz/Geom_n_mag
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-alpha=0.75_dbl               ! The coefficient which defines the distance to walk away from the boundary
+alpha_coeff=0.500000              ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
-P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
-P1_y= ((yt + alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P1_z= ((zt + alpha*Geom_nz*xcf)/xcf) - kMin + 1
+P1_x= ((xt + alpha_coeff*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
+P1_y= ((yt + alpha_coeff*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
+P1_z= ((zt + alpha_coeff*Geom_nz*xcf)/xcf) - kMin + 1
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -235,6 +235,17 @@ iy0= FLOOR(P1_y)
 iy1= CEILING(P1_y)
 iz0= FLOOR(P1_z)
 iz1= CEILING(P1_z)
+
+IF(ix0.EQ.ix1)THEN
+  ix1=ix0+1
+ENDIF
+IF(iy0.EQ.iy1)THEN
+  iy1=iy0+1
+ENDIF
+IF(iz0.EQ.iz1)THEN
+  iz1=iz0+1
+ENDIF
+
 
 P1_N_Solid_nodes =   node(ix0,iy0,iz0)+node(ix1,iy0,iz0)+node(ix0,iy1,iz0)+node(ix0,iy0,iz1)+node(ix1,iy1,iz0)+node(ix1,iy0,iz1)+node(ix0,iy1,iz1)+node(ix1,iy1,iz1) 
 
@@ -530,7 +541,7 @@ REAL(dbl)    :: cosTheta, sinTheta
 REAL(dbl)    :: ub, vb, wb
 REAL(dbl)    :: P1_x,P1_y,P1_z,P2_x,P2_y,P2_z
 REAL(dbl)    :: P1_phi,P2_phi,phiWall_new, Del_phiWall,DphiDn
-REAL(dbl)    :: alpha,Diffusivity,Pww
+REAL(dbl)    :: alpha_coeff,Diffusivity,Pww
 REAL(dbl)    :: phi_sum, phi_ave,phi1,phi2,phi3
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
@@ -568,12 +579,12 @@ Geom_ny=Geom_ny/Geom_n_mag
 Geom_nz=Geom_nz/Geom_n_mag
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-alpha=0.5_dbl               ! The coefficient which defines the distance to walk away from the boundary
+alpha_coeff=0.5_dbl               ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
-P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
-P1_y= ((yt + alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P1_z= ((zt + alpha*Geom_nz*xcf)/xcf) - kMin + 1
+P1_x= ((xt + alpha_coeff*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
+P1_y= ((yt + alpha_coeff*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
+P1_z= ((zt + alpha_coeff*Geom_nz*xcf)/xcf) - kMin + 1
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -908,7 +919,7 @@ REAL(dbl)    :: cosTheta, sinTheta
 REAL(dbl)    :: ub, vb, wb
 REAL(dbl)    :: P1_x,P1_y,P1_z,P2_x,P2_y,P2_z
 REAL(dbl)    :: P1_phi,P2_phi,phiWall_new, Del_phiWall,DphiDn
-REAL(dbl)    :: alpha,Diffusivity,Pww
+REAL(dbl)    :: alpha_coeff,Diffusivity,Pww
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
 
@@ -946,12 +957,12 @@ Geom_nz=Geom_nz/Geom_n_mag
 
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-alpha=1.5_dbl               ! The coefficient which defines the distance to walk away from the boundary
+alpha_coeff=1.5_dbl               ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
-P1_x= ((xt + alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
-P1_y= ((yt + alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P1_z= ((zt + alpha*Geom_nz*xcf)/xcf) - kMin + 1
+P1_x= ((xt + alpha_coeff*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
+P1_y= ((yt + alpha_coeff*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
+P1_z= ((zt + alpha_coeff*Geom_nz*xcf)/xcf) - kMin + 1
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -999,9 +1010,9 @@ P1_phi = c0 * (1.0000_dbl-zd) + c1 * zd
 
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P2, which is two mesh size away from (xt,yt,zt) at the boundary
-P2_x= ((xt + 2.0_dbl*alpha*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
-P2_y= ((yt + 2.0_dbl*alpha*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P2_z= ((zt + 2.0_dbl*alpha*Geom_nz*xcf)/xcf) - kMin + 1
+P2_x= ((xt + 2.0_dbl*alpha_coeff*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
+P2_y= ((yt + 2.0_dbl*alpha_coeff*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
+P2_z= ((zt + 2.0_dbl*alpha_coeff*Geom_nz*xcf)/xcf) - kMin + 1
 
 ix0= FLOOR(P2_x)
 ix1= CEILING(P2_x)
