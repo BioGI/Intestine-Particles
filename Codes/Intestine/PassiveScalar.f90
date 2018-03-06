@@ -45,11 +45,15 @@ REAL(dbl)   :: dV,dM
 INTEGER(lng):: Over_Sat_Counter, Over_Sat_Counter_Global
 REAL(dbl)   :: Over_sat_Total,   Over_Sat_Total_Global
 REAL(dbl)   :: Largest_phi, Largest_phi_Global							! OverSaturation issue monitoring
-REAL(dbl)   :: phiBC                                        ! scalar contribution from boundary
+REAL(dbl)   :: phiBC,P_Astar_Bstar                          ! scalar contribution from boundary
 REAL(dbl)   :: phiOutSurf,phiInSurf                         ! scalar contribution coming from and going into the boundary
 REAL(dbl)   :: tausgs                                       ! contribution form tau_sgs term from particle closure
 REAL(dbl)   :: zcf3                                         ! Cell volume
 REAL(dbl)   :: phiIN,phiOUT
+REAL(dbl)   :: P_A_O,P_A_B
+REAL(dbl)   :: Sum_numerator,Sum_denominator,Sum_numerator_g,Sum_denominator_g
+REAL(dbl)   :: alpha_BC
+REAL(dbl)   :: q
 
 CALL IC_Drug_Distribution 									! sets/maintains initial distributions of scalar [MODULE: IC.f90]
 
@@ -64,6 +68,41 @@ Over_Sat_Total      = 0.0_dbl
 !phiTotal            = 0.0_dbl
 iamBoundary=0
 dV= (100.0*zcf)**3.0_dbl
+
+!----- Stream the scalar
+IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
+   Sum_numerator  =0.0_dbl
+   Sum_denominator=0.0_dbl
+   alpha_BC=1.0_dbl
+   DO k=1,nzSub
+      DO j=1,nySub
+         DO i=1,nxSub
+            IF (node(i,j,k) .EQ. FLUID) THEN
+               DO m=0,NumDistDirs       !  neighboring node 
+                  im1= i- ex(m)
+                  jm1= j- ey(m)
+                  km1= k- ez(m)
+                  IF (node(im1,jm1,km1) .EQ. SOLID) THEN		! Communicating with a solid node acroos the boundary
+                     P_A_O          =(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta) * phiTemp(i,j,k)
+                     P_A_B          =(fplus(m,i,j,k)    /rho(i,j,k) - wt(m)    *Delta) * phiTemp(i,j,k)
+                     CALL BC_Zero_Flux(m,i,j,k,im1,jm1,km1,q,phiBC,P_Astar_Bstar,alpha_BC) 
+                     Sum_numerator  =Sum_numerator +  P_A_O + (1-q/q)*P_A_B
+                     Sum_denominator=Sum_denominator+ P_Astar_Bstar/q
+                  END IF
+               END DO
+            END IF   
+         END DO 
+      END DO
+   END DO
+   CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+   CALL MPI_ALLREDUCE(Sum_numerator,  Sum_numerator_g,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+   CALL MPI_ALLREDUCE(Sum_denominator,Sum_denominator_g, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
+   alpha_BC= Sum_numerator_g/Sum_denominator_g
+ 
+   WRITE(*,*) 'iter,up,down,alpha',iter,Sum_numerator_g,Sum_denominator_g,alpha_BC
+END IF 
+
+
 !----- Stream the scalar
 N0=0
 N1=0
@@ -81,7 +120,7 @@ DO k=1,nzSub
             IF (iter .EQ. iter_Start_phi) THEN
                phiTotal = phiTotal + phi(i,j,k)
             ENDIF
-            phi(i,j,k) = Delta * phiTemp(i,j,k)  
+            phi(i,j,k) = Delta * phiTemp(i,j,k) 
 
             DO m=0,NumDistDirs
                !-----  neighboring node --------------------------------------------------------------
@@ -93,8 +132,8 @@ DO k=1,nzSub
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							                                                    		! iCommunicating with a solid node acroos the boundary
                   IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
                      iamBoundary(i,j,k) = 1
-                     !CALL BC_Scalar_Permeability_1storder(m,i,j,k,im1,jm1,km1,phiBC) 
-                     CALL BC_Zero_Flux(m,i,j,k,im1,jm1,km1,phiBC) 
+
+                     CALL BC_Zero_Flux(m,i,j,k,im1,jm1,km1,q,phiBC,P_Astar_Bstar,alpha_BC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC    
                      !phiIN = phiBC
                      !phiOUT= (fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta)*phiTemp(i,j,k)

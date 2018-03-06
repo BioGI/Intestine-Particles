@@ -159,11 +159,12 @@ END SUBROUTINE BC_Scalar
 
 
 !===================================================================================================
-SUBROUTINE BC_Zero_Flux(m,i,j,k,im1,jm1,km1,phiBC)		 ! implements the scalar BCs 
+SUBROUTINE BC_Zero_Flux(m,i,j,k,im1,jm1,km1,q,phiBC,P_Astar_Bstar,alpha_BC)		 ! implements the scalar BCs 
 !===================================================================================================
 IMPLICIT NONE
 
-REAL(dbl),   INTENT(OUT):: phiBC           				 ! scalar contribution from the boundary condition
+REAL(dbl),   INTENT(OUT):: q,phiBC,P_Astar_Bstar     ! scalar contribution from the boundary condition
+REAL(dbl),   INTENT(IN) :: alpha_BC     ! scalar contribution from the boundary condition
 INTEGER(lng),INTENT(IN) :: m,i,j,k,im1,jm1,km1		 ! index variables
 INTEGER(lng) :: ix0,ix1,iy0,iy1,iz0,iz00,iz1,iz11	 ! Trilinear interpolation parameters
 INTEGER(lng) :: P1_N_Solid_nodes, P2_N_Solid_nodes
@@ -172,7 +173,7 @@ INTEGER(lng) :: xaxis,yaxis
 INTEGER(lng) :: phi_N,key1,key2,key3
 INTEGER(lng) :: Counter1,Counter2,Interpolation_Dim,Communication_Dim
 REAL(dbl)    :: c00,c01,c10,c11,c0,c1,c,xd,yd,zd,dd! Trilinear interpolation parameters
-REAL(dbl)    :: xt,yt,zt,rt,vt,q                   ! Location of the boundary between i,j,k node and im1,jm1,km1 node
+REAL(dbl)    :: xt,yt,zt,rt,vt                   ! Location of the boundary between i,j,k node and im1,jm1,km1 node
 REAL(dbl)    :: Geom_nx,Geom_ny,Geom_nz,Geom_n_mag
 REAL(dbl)    :: Ax,Ay,Az,A_mag
 REAL(dbl)    :: Prod
@@ -188,6 +189,9 @@ REAL(dbl)    :: phi_sum, phi_ave,phi1,phi2,phi3
 REAL(dbl)    :: rho_P1, phi_P1
 
 CALL qCalc_iter(m,i,j,k,im1,jm1,km1,xt,yt,zt,rt,q)
+IF(q .LT. 0.25) THEN
+  q = 0.25_dbl
+END IF
 
 IF (Flag_Couette) THEN
    ub= 0.0_dbl
@@ -222,12 +226,12 @@ Geom_ny=Geom_ny/Geom_n_mag
 Geom_nz=Geom_nz/Geom_n_mag
 !--------------------------------------------------------------------------------------------------
 !--- Finding location of the point, P1, which is one mesh size away from (xt,yt,zt) at the boundary
-alpha_coeff=0.500000              ! The coefficient which defines the distance to walk away from the boundary
+alpha_coeff=1.00000000            ! The coefficient which defines the distance to walk away from the boundary
 xaxis=ANINT(0.5_dbl*(nx+1))
 yaxis=ANINT(0.5_dbl*(ny+1))
 P1_x= ((xt + alpha_coeff*Geom_nx*xcf)/xcf) - iMin + xaxis + 1
 P1_y= ((yt + alpha_coeff*Geom_ny*xcf)/xcf) - jMin + yaxis + 1
-P1_z= ((zt + alpha_coeff*Geom_nz*xcf)/xcf) - kMin + 1
+P1_z= ((zt + alpha_coeff*Geom_nz*xcf)/xcf) - kMin + 1.50000
 
 ix0= FLOOR(P1_x)
 ix1= CEILING(P1_x)
@@ -490,19 +494,15 @@ IF(node(ip1,jp1,kp1) .NE. FLUID) THEN
 END IF
 
 !----- Computing values at A* & the scalar streamed from A* (Chpter 3 paper) -----------------------
-phiAstar= phiWall                                                  ! phi at solid surface
+phiAstar= alpha_BC*phiWall                                                  ! phi at solid surface
 rhoAstar= rhoWall                                                  ! phi at solid surface
 !rhoAstar= (rho(i,j,k)-rho(ip1,jp1,kp1))*(1+q)+ rho(ip1,jp1,kp1)		 ! Extrapolate density
 CALL Equilibrium_LOCAL(m,rhoAstar,ub,vb,wb,feq_Astar)    		       ! f_eq in mth direction
-PkAstar= (feq_Astar/rhoAstar- wt(m)*Delta)*phiAstar		             ! Contribution from A* to B*  
-
+P_Astar_Bstar  = (feq_Astar         /rhoAstar   - wt(m)    *Delta) * phiAstar		             ! Contribution from A* to B*  
 !----- Using only A and A* for interpolation (instead of A* and B*) 
 PkA= (fplus(m,i,j,k)/rho(i,j,k) - wt(m)*Delta)*phiTemp(i,j,k)      ! contribution from current node to next in the mth direction
 
-IF(q .LT. 0.25) THEN
-  q = 0.25_dbl
-END IF
-phiBC	= ((PkAstar - PkA)/q) + PkA	
+phiBC	= ((P_Astar_Bstar - PkA)/q) + PkA	
 !===================================================================================================
 END SUBROUTINE BC_Zero_Flux
 !===================================================================================================
