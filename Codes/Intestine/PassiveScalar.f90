@@ -98,8 +98,9 @@ IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) )
    CALL MPI_ALLREDUCE(Sum_numerator,  Sum_numerator_g,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
    CALL MPI_ALLREDUCE(Sum_denominator,Sum_denominator_g, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, mpierr)
    alpha_BC= Sum_numerator_g/Sum_denominator_g
- 
-   WRITE(*,*) 'iter,up,down,alpha',iter,Sum_numerator_g,Sum_denominator_g,alpha_BC
+   IF (myid.EQ.master) THEN
+       WRITE(*,*) 'iter,up,down,alpha',iter,Sum_numerator_g,Sum_denominator_g,alpha_BC
+   ENDIF
 END IF 
 
 
