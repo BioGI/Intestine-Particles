@@ -86,7 +86,7 @@ IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) )
                      P_A_O          =(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta) * phiTemp(i,j,k)
                      P_A_B          =(fplus(m,i,j,k)    /rho(i,j,k) - wt(m)    *Delta) * phiTemp(i,j,k)
                      CALL BC_Zero_Flux(m,i,j,k,im1,jm1,km1,q,phiBC,P_Astar_Bstar,alpha_BC) 
-                     Sum_numerator  =Sum_numerator +  P_A_O + (1.0000000-q/q)*P_A_B
+                     Sum_numerator  =Sum_numerator +  P_A_O + ((1.0000000-q)/q)*P_A_B
                      Sum_denominator=Sum_denominator+ P_Astar_Bstar/q
                   END IF
                END DO
