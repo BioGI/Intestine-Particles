@@ -41,8 +41,8 @@ IMPLICIT NONE
 
 INTEGER(lng):: i,j,k,m,im1,jm1,km1,mpierr
 INTEGER(lng):: iamBoundary(136,136,217)
-REAL(dbl)   :: dV,dM         
 INTEGER(lng):: Over_Sat_Counter, Over_Sat_Counter_Global
+REAL(dbl)   :: dV,dM         
 REAL(dbl)   :: Over_sat_Total,   Over_Sat_Total_Global
 REAL(dbl)   :: Largest_phi, Largest_phi_Global							! OverSaturation issue monitoring
 REAL(dbl)   :: phiBC,P_Astar_Bstar                          ! scalar contribution from boundary
@@ -71,9 +71,9 @@ dV= (100.0*zcf)**3.0_dbl
 
 !----- Stream the scalar
 IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
-   Sum_numerator  =0.0_dbl
-   Sum_denominator=0.0_dbl
-   alpha_BC=1.0_dbl
+   Sum_numerator  =0.0000_dbl
+   Sum_denominator=0.000_dbl
+   alpha_BC=1.000_dbl
    DO k=1,nzSub
       DO j=1,nySub
          DO i=1,nxSub
@@ -86,7 +86,7 @@ IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) )
                      P_A_O          =(fplus(bb(m),i,j,k)/rho(i,j,k) - wt(bb(m))*Delta) * phiTemp(i,j,k)
                      P_A_B          =(fplus(m,i,j,k)    /rho(i,j,k) - wt(m)    *Delta) * phiTemp(i,j,k)
                      CALL BC_Zero_Flux(m,i,j,k,im1,jm1,km1,q,phiBC,P_Astar_Bstar,alpha_BC) 
-                     Sum_numerator  =Sum_numerator +  P_A_O + (1-q/q)*P_A_B
+                     Sum_numerator  =Sum_numerator +  P_A_O + (1.0000000-q/q)*P_A_B
                      Sum_denominator=Sum_denominator+ P_Astar_Bstar/q
                   END IF
                END DO
@@ -133,7 +133,6 @@ DO k=1,nzSub
                ELSE IF(node(im1,jm1,km1) .EQ. SOLID) THEN							                                                    		! iCommunicating with a solid node acroos the boundary
                   IF ((coeffGrad .EQ. 1.0) .AND. (coeffPhi .EQ. 0.0) .AND. (coeffConst .EQ. 0.0) ) THEN ! No Flux or Permeability
                      iamBoundary(i,j,k) = 1
-
                      CALL BC_Zero_Flux(m,i,j,k,im1,jm1,km1,q,phiBC,P_Astar_Bstar,alpha_BC) 
                      phi(i,j,k) = phi(i,j,k) + phiBC    
                      !phiIN = phiBC

@@ -339,8 +339,8 @@ ENDIF
       nnode(ix1,iy1,iz0)= node(ix1,iy1,iz0)
       nnode(ix1,iy0,iz1)= node(ix1,iy0,iz1)
       nnode(ix0,iy1,iz1)= node(ix0,iy1,iz1)
-      nnode(ix1,iy1,iz1)= node(ix1,iy1,iz1)
-100   Counter1= 0
+100   nnode(ix1,iy1,iz1)= node(ix1,iy1,iz1)
+      Counter1= 0
       DO ii=ix0,ix1
          DO jj=iy0,iy1
             DO kk=iz0,iz1
